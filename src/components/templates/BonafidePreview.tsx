@@ -2,6 +2,7 @@
 import React, { useRef, useState } from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
+import { Signature } from "lucide-react";
 
 interface BonafidePreviewProps {
   data: BonafideData;
@@ -82,9 +83,17 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             </div>
             
             <div className="text-right mt-4 md:mt-0">
-              <div className="h-16 mb-2">
-                {/* Space for signature */}
-              </div>
+              {data.includeDigitalSignature ? (
+                <div className="h-16 mb-2 flex justify-end">
+                  <div className="border-b-2 border-gray-800 flex items-center justify-center p-2">
+                    <Signature className="h-10 w-10 text-primary" />
+                  </div>
+                </div>
+              ) : (
+                <div className="h-16 mb-2">
+                  {/* Space for signature */}
+                </div>
+              )}
               <p className="font-bold">{data.signatoryName || "[Signatory Name]"}</p>
               <p>{data.signatoryDesignation || "[Designation]"}</p>
               <p>{data.institutionName || "[Institution Name]"}</p>

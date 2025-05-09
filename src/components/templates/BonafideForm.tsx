@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 interface BonafideFormProps {
   data: BonafideData;
@@ -29,6 +30,7 @@ const formSchema = z.object({
   place: z.string().min(2, { message: "Place is required" }),
   signatoryName: z.string().min(2, { message: "Signatory name is required" }),
   signatoryDesignation: z.string().min(2, { message: "Designation is required" }),
+  includeDigitalSignature: z.boolean().default(false),
 });
 
 export function BonafideForm({ data, setData }: BonafideFormProps) {
@@ -348,6 +350,30 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               )}
             />
           </div>
+          
+          <FormField
+            control={form.control}
+            name="includeDigitalSignature"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Digital Signature</FormLabel>
+                  <FormDescription className="text-sm text-muted-foreground">
+                    Include digital signature in the certificate
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      handleChange("includeDigitalSignature")(checked);
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
 
         <Button type="submit" className="w-full">Update Preview</Button>

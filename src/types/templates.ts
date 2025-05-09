@@ -13,4 +13,5 @@ export interface BonafideData {
   place: string;
   signatoryName: string;
   signatoryDesignation: string;
+  includeDigitalSignature: boolean;
 }

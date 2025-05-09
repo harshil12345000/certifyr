@@ -14,12 +14,16 @@ const TemplateDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Get institution name from user profile/settings - in a real app, this would come from an API or context
+  const userInstitutionName = "ABC University"; // This would be fetched from user profile
+  
   const [certificateData, setCertificateData] = useState<BonafideData>({
     fullName: "",
     gender: "male",
     parentName: "",
     type: "student",
-    institutionName: "ABC University",
+    institutionName: userInstitutionName, // Auto-populated from user's institution
     startDate: "",
     courseOrDesignation: "",
     department: "",
@@ -28,6 +32,7 @@ const TemplateDetail = () => {
     place: "Mumbai, Maharashtra",
     signatoryName: "Dr. Anil Kumar",
     signatoryDesignation: "Principal",
+    includeDigitalSignature: false,
   });
 
   const handleSaveDraft = () => {
