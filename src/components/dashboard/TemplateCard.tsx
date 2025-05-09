@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export interface TemplateCardProps {
   id: string;
@@ -38,9 +39,9 @@ export function TemplateCard({
           {usageCount} uses
         </span>
         <Button variant="ghost" size="sm" className="gap-1" asChild>
-          <a href={`/templates/${id}`}>
+          <Link to={`/templates/${id}`}>
             Use <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
         </Button>
       </div>
     </div>

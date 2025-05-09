@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Templates from "./pages/Templates";
+import TemplateDetail from "./pages/TemplateDetail";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -21,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/templates" element={<Templates />} />
+          <Route path="/templates/:id" element={<TemplateDetail />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/settings" element={<Settings />} />
           {/* Add more routes as needed */}
