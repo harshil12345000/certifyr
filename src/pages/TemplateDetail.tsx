@@ -1,6 +1,6 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, Download, Copy, Printer } from "lucide-react";
@@ -9,11 +9,14 @@ import { BonafideForm } from "@/components/templates/BonafideForm";
 import { BonafidePreview } from "@/components/templates/BonafidePreview";
 import { BonafideData } from "@/types/templates";
 import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const TemplateDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const previewRef = useRef<HTMLDivElement>(null);
   
   // Get institution name from user profile/settings - in a real app, this would come from an API or context
   const userInstitutionName = "ABC University"; // This would be fetched from user profile
@@ -35,26 +38,145 @@ const TemplateDetail = () => {
     includeDigitalSignature: false,
   });
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Save draft functionality
   const handleSaveDraft = () => {
-    toast({
-      title: "Draft saved",
-      description: "Your certificate draft has been saved successfully."
-    });
+    try {
+      // In a real app, this would save to a database or cloud storage
+      const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
+      const draftId = id || `draft-${Date.now()}`;
+      drafts[draftId] = certificateData;
+      localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
+      
+      toast({
+        title: "Draft saved",
+        description: "Your certificate draft has been saved successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving draft",
+        description: "There was an error saving your draft. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleExport = (format: "pdf" | "jpg") => {
-    // This would be replaced with actual export logic
+  // Export as PDF functionality
+  const handleExportPDF = async () => {
+    if (!previewRef.current) return;
+    
+    setIsExporting(true);
     toast({
-      title: `Exporting as ${format.toUpperCase()}`,
-      description: "Your certificate is being exported..."
+      title: "Exporting as PDF",
+      description: "Your certificate is being prepared..."
+    });
+    
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        logging: false,
+        useCORS: true
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 30;
+      
+      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`${certificateData.fullName || 'bonafide'}_certificate.pdf`);
+      
+      toast({
+        title: "Export Complete",
+        description: "Your PDF has been downloaded successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "There was an error creating your PDF. Please try again.",
+        variant: "destructive"
+      });
+      console.error("PDF export error:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export as JPG functionality
+  const handleExportJPG = async () => {
+    if (!previewRef.current) return;
+    
+    setIsExporting(true);
+    toast({
+      title: "Exporting as JPG",
+      description: "Your certificate is being prepared..."
+    });
+    
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        logging: false,
+        useCORS: true
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${certificateData.fullName || 'bonafide'}_certificate.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 1.0);
+      link.click();
+      
+      toast({
+        title: "Export Complete",
+        description: "Your JPG has been downloaded successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "There was an error creating your JPG. Please try again.",
+        variant: "destructive"
+      });
+      console.error("JPG export error:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Copy link functionality
+  const handleCopyLink = () => {
+    const shareableLink = `${window.location.origin}/templates/${id}?share=true`;
+    
+    navigator.clipboard.writeText(shareableLink)
+      .then(() => {
+        toast({
+          title: "Link copied",
+          description: "Certificate link copied to clipboard"
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Copy failed",
+          description: "Failed to copy link to clipboard",
+          variant: "destructive"
+        });
+      });
+  };
+
+  // Print functionality
+  const handlePrint = () => {
+    toast({
+      title: "Preparing to print",
+      description: "Opening print dialog..."
     });
     
     setTimeout(() => {
-      toast({
-        title: "Export Complete",
-        description: `Your certificate has been exported as ${format.toUpperCase()}`
-      });
-    }, 1500);
+      window.print();
+    }, 500);
   };
 
   return (
@@ -78,17 +200,42 @@ const TemplateDetail = () => {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <Button variant="outline" onClick={handleSaveDraft}>Save Draft</Button>
-          <Button onClick={() => handleExport("pdf")} className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleSaveDraft} 
+            disabled={isExporting}
+          >
+            Save Draft
+          </Button>
+          <Button 
+            onClick={handleExportPDF} 
+            className="gap-2"
+            disabled={isExporting}
+          >
             <Download className="h-4 w-4" /> Export PDF
           </Button>
-          <Button variant="outline" onClick={() => handleExport("jpg")} className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExportJPG} 
+            className="gap-2"
+            disabled={isExporting}
+          >
             <Download className="h-4 w-4" /> Export JPG
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleCopyLink} 
+            className="gap-2"
+            disabled={isExporting}
+          >
             <Copy className="h-4 w-4" /> Copy Link
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handlePrint} 
+            className="gap-2"
+            disabled={isExporting}
+          >
             <Printer className="h-4 w-4" /> Print
           </Button>
         </div>
@@ -106,7 +253,9 @@ const TemplateDetail = () => {
             </TabsContent>
 
             <TabsContent value="preview" className="p-4">
-              <BonafidePreview data={certificateData} />
+              <div ref={previewRef}>
+                <BonafidePreview data={certificateData} />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
