@@ -10,26 +10,26 @@ export const statsData = [
   {
     title: "Total Documents",
     value: "284",
-    icon: <FileText className="h-6 w-6" />,
+    icon: FileText,
     description: "this month",
     trend: { value: "12%", positive: true }
   },
   {
     title: "Active Templates",
     value: "24",
-    icon: <FileText className="h-6 w-6" />,
+    icon: FileText,
     description: "across 6 categories"
   },
   {
     title: "Staff Members",
     value: "48",
-    icon: <Users className="h-6 w-6" />,
+    icon: Users,
     description: "with access"
   },
   {
     title: "Avg. Processing Time",
     value: "2.4h",
-    icon: <Clock className="h-6 w-6" />,
+    icon: Clock,
     trend: { value: "30%", positive: true },
     description: "faster than last month"
   }
@@ -115,41 +115,41 @@ export const documentCategories = [
     name: "Student Documents",
     description: "Certificates and letters for educational purposes",
     count: 15,
-    icon: <CheckCircle className="h-4 w-4" />
+    icon: CheckCircle
   },
   { 
     id: "cat-employment", 
     name: "Employment Records",
     description: "Employment verification and work experience",
     count: 12,
-    icon: <CheckCircle className="h-4 w-4" />
+    icon: CheckCircle
   },
   { 
     id: "cat-official", 
     name: "Official Certificates",
     description: "Government and legally binding documents",
     count: 8,
-    icon: <CheckCircle className="h-4 w-4" />
+    icon: CheckCircle
   },
   { 
     id: "cat-financial", 
     name: "Financial Documents",
     description: "Income and financial status verification",
     count: 6,
-    icon: <CheckCircle className="h-4 w-4" />
+    icon: CheckCircle
   },
   { 
     id: "cat-travel", 
     name: "Travel & Visa",
     description: "Documents for travel and visa applications",
     count: 5,
-    icon: <CheckCircle className="h-4 w-4" />
+    icon: CheckCircle
   },
   { 
     id: "cat-misc", 
     name: "Miscellaneous",
     description: "Other institutional documents and letters",
     count: 4,
-    icon: <CheckCircle className="h-4 w-4" />
+    icon: CheckCircle
   }
 ];

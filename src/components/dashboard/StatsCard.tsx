@@ -1,10 +1,11 @@
 
 import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
 
 interface StatsCardProps {
   title: string;
   value: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   description?: string;
   trend?: {
     value: string;
@@ -16,7 +17,7 @@ interface StatsCardProps {
 export function StatsCard({
   title,
   value,
-  icon,
+  icon: Icon,
   description,
   trend,
   className
@@ -26,7 +27,7 @@ export function StatsCard({
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500">
-          {icon}
+          <Icon className="h-6 w-6" />
         </div>
       </div>
       <div className="mt-auto">

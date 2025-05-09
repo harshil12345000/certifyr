@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { TemplateCard } from '@/components/dashboard/TemplateCard';
 import { documentCategories } from '@/data/mockData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, Check } from 'lucide-react';
+import { Search, Plus, Filter, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -239,20 +238,23 @@ const Templates = () => {
         {/* Template Categories */}
         <h2 className="text-lg font-medium mt-8 mb-4">Browse Categories</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documentCategories.map((category) => (
-            <div key={category.id} className="glass-card p-5 flex flex-col">
-              <div className="mb-2">
-                <Badge variant="outline" className="bg-primary-50 border-primary-200 text-primary-700">
-                  {category.count} Templates
-                </Badge>
+          {documentCategories.map((category) => {
+            const Icon = category.icon;
+            return (
+              <div key={category.id} className="glass-card p-5 flex flex-col">
+                <div className="mb-2">
+                  <Badge variant="outline" className="bg-primary-50 border-primary-200 text-primary-700">
+                    {category.count} Templates
+                  </Badge>
+                </div>
+                <h3 className="font-medium text-lg mb-1">{category.name}</h3>
+                <p className="text-sm text-muted-foreground mb-4 flex-grow">{category.description}</p>
+                <Button variant="ghost" className="justify-start p-0 hover:bg-transparent hover:text-primary-600" size="sm">
+                  View category <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
-              <h3 className="font-medium text-lg mb-1">{category.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4 flex-grow">{category.description}</p>
-              <Button variant="ghost" className="justify-start p-0 hover:bg-transparent hover:text-primary-600" size="sm">
-                View category <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </DashboardLayout>
