@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -14,16 +13,19 @@ import jsPDF from "jspdf";
 
 // Add global styles for A4 document sizing
 import "./TemplateStyles.css";
-
 const TemplateDetail = () => {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const previewRef = useRef<HTMLDivElement>(null);
-  
+
   // Get institution name from user profile/settings - in a real app, this would come from an API or context
   const userInstitutionName = "ABC University"; // This would be fetched from user profile
-  
+
   // Try to load saved draft if it exists
   const loadSavedDraft = () => {
     try {
@@ -34,13 +36,13 @@ const TemplateDetail = () => {
       return null;
     }
   };
-
   const initialData = loadSavedDraft() || {
     fullName: "",
     gender: "male",
     parentName: "",
     type: "student",
-    institutionName: userInstitutionName, // Auto-populated from user's institution
+    institutionName: userInstitutionName,
+    // Auto-populated from user's institution
     startDate: "",
     courseOrDesignation: "",
     department: "",
@@ -49,9 +51,8 @@ const TemplateDetail = () => {
     place: "Mumbai, Maharashtra",
     signatoryName: "Dr. Anil Kumar",
     signatoryDesignation: "Principal",
-    includeDigitalSignature: false,
+    includeDigitalSignature: false
   };
-  
   const [certificateData, setCertificateData] = useState<BonafideData>(initialData);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -63,7 +64,6 @@ const TemplateDetail = () => {
       const draftId = id || `draft-${Date.now()}`;
       drafts[draftId] = certificateData;
       localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
-      
       toast({
         title: "Draft saved",
         description: "Your certificate draft has been saved successfully."
@@ -81,13 +81,11 @@ const TemplateDetail = () => {
   // Export as PDF functionality - with A4 sizing
   const handleExportPDF = async () => {
     if (!previewRef.current) return;
-    
     setIsExporting(true);
     toast({
       title: "Exporting as PDF",
       description: "Your certificate is being prepared..."
     });
-    
     try {
       // Set up PDF with A4 dimensions (210 x 297 mm)
       const pdf = new jsPDF({
@@ -95,27 +93,24 @@ const TemplateDetail = () => {
         unit: "mm",
         format: "a4"
       });
-      
       const canvas = await html2canvas(previewRef.current.querySelector('.a4-document') as HTMLElement, {
         scale: 2,
         logging: false,
         useCORS: true,
         backgroundColor: "#ffffff"
       });
-      
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
+
       // Calculate dimensions to fit A4 properly
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+
       // Add the image to the PDF
       pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-      
+
       // Save the PDF
       pdf.save(`${certificateData.fullName || 'bonafide'}_certificate.pdf`);
-      
       toast({
         title: "Export Complete",
         description: "Your PDF has been downloaded successfully."
@@ -135,13 +130,11 @@ const TemplateDetail = () => {
   // Export as JPG functionality - with A4 sizing
   const handleExportJPG = async () => {
     if (!previewRef.current) return;
-    
     setIsExporting(true);
     toast({
       title: "Exporting as JPG",
       description: "Your certificate is being prepared..."
     });
-    
     try {
       const canvas = await html2canvas(previewRef.current.querySelector('.a4-document') as HTMLElement, {
         scale: 2,
@@ -149,14 +142,11 @@ const TemplateDetail = () => {
         useCORS: true,
         backgroundColor: "#ffffff"
       });
-      
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
       const link = document.createElement('a');
       link.download = `${certificateData.fullName || 'bonafide'}_certificate.jpg`;
       link.href = imgData;
       link.click();
-      
       toast({
         title: "Export Complete",
         description: "Your JPG has been downloaded successfully."
@@ -177,32 +167,29 @@ const TemplateDetail = () => {
   const handleCopyLink = () => {
     // Create a unique link ID if one doesn't exist
     const linkId = id || `cert-${Date.now().toString(36)}`;
-    
+
     // If no ID exists, save the current state with the new ID
     if (!id) {
       const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
       drafts[linkId] = certificateData;
       localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
     }
-    
+
     // Generate a shareable link
     const shareableLink = `${window.location.origin}/templates/${linkId}?share=true`;
-    
-    navigator.clipboard.writeText(shareableLink)
-      .then(() => {
-        toast({
-          title: "Link copied",
-          description: "Certificate link copied to clipboard"
-        });
-      })
-      .catch((err) => {
-        toast({
-          title: "Copy failed",
-          description: "Failed to copy link to clipboard",
-          variant: "destructive"
-        });
-        console.error("Copy link error:", err);
+    navigator.clipboard.writeText(shareableLink).then(() => {
+      toast({
+        title: "Link copied",
+        description: "Certificate link copied to clipboard"
       });
+    }).catch(err => {
+      toast({
+        title: "Copy failed",
+        description: "Failed to copy link to clipboard",
+        variant: "destructive"
+      });
+      console.error("Copy link error:", err);
+    });
   };
 
   // Print functionality
@@ -211,10 +198,9 @@ const TemplateDetail = () => {
       title: "Preparing to print",
       description: "Opening print dialog..."
     });
-    
+
     // Create a new window for printing just the certificate
     const printWindow = window.open('', '_blank');
-    
     if (!printWindow) {
       toast({
         title: "Print failed",
@@ -223,7 +209,7 @@ const TemplateDetail = () => {
       });
       return;
     }
-    
+
     // Add necessary styles and content to the new window
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -369,7 +355,6 @@ const TemplateDetail = () => {
         </body>
       </html>
     `);
-    
     printWindow.document.close();
   };
 
@@ -384,7 +369,6 @@ const TemplateDetail = () => {
         return "child";
     }
   };
-
   const getPronoun = () => {
     switch (certificateData.gender) {
       case "male":
@@ -395,25 +379,19 @@ const TemplateDetail = () => {
         return "They";
     }
   };
-
   const getPersonType = () => {
     return certificateData.type === "student" ? "studying" : "working";
   };
-
   const getPosition = () => {
     return certificateData.type === "student" ? "enrolled" : "employed";
   };
-
   const formatDate = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    
     return `${day}/${month}/${year}`;
   };
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -433,42 +411,19 @@ const TemplateDetail = () => {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <Button 
-            variant="outline" 
-            onClick={handleSaveDraft} 
-            disabled={isExporting}
-          >
+          <Button variant="outline" onClick={handleSaveDraft} disabled={isExporting}>
             Save Draft
           </Button>
-          <Button 
-            onClick={handleExportPDF} 
-            className="gap-2"
-            disabled={isExporting}
-          >
+          <Button onClick={handleExportPDF} className="gap-2" disabled={isExporting}>
             <Download className="h-4 w-4" /> Export PDF
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleExportJPG} 
-            className="gap-2"
-            disabled={isExporting}
-          >
+          <Button variant="outline" onClick={handleExportJPG} className="gap-2" disabled={isExporting}>
             <Download className="h-4 w-4" /> Export JPG
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleCopyLink} 
-            className="gap-2"
-            disabled={isExporting}
-          >
+          <Button variant="outline" onClick={handleCopyLink} className="gap-2" disabled={isExporting}>
             <Copy className="h-4 w-4" /> Copy Link
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={handlePrint} 
-            className="gap-2"
-            disabled={isExporting}
-          >
+          <Button variant="outline" onClick={handlePrint} className="gap-2" disabled={isExporting}>
             <Printer className="h-4 w-4" /> Print
           </Button>
         </div>
@@ -476,7 +431,7 @@ const TemplateDetail = () => {
         {/* Main content */}
         <div className="glass-card">
           <Tabs defaultValue="form">
-            <TabsList className="grid grid-cols-2 w-full max-w-md mb-6">
+            <TabsList className="grid grid-cols-2 w-full max-w-md mb-6 mx-[107px] my-[13px]">
               <TabsTrigger value="form">Form</TabsTrigger>
               <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
@@ -493,8 +448,6 @@ const TemplateDetail = () => {
           </Tabs>
         </div>
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 };
-
 export default TemplateDetail;
