@@ -71,7 +71,7 @@ export const recentDocuments = [
     id: "doc-001",
     name: "Bonafide Certificate - Rahul Sharma",
     type: "Certificate",
-    status: "Signed",
+    status: "Signed" as const,
     date: "Today, 10:45 AM",
     recipient: "rahul.s@gmail.com"
   },
@@ -79,7 +79,7 @@ export const recentDocuments = [
     id: "doc-002",
     name: "Experience Letter - Priya Patel",
     type: "Letter",
-    status: "Sent",
+    status: "Sent" as const,
     date: "Today, 09:23 AM",
     recipient: "priya.p@outlook.com"
   },
@@ -87,7 +87,7 @@ export const recentDocuments = [
     id: "doc-003",
     name: "NOC for Banking - Amit Kumar",
     type: "Certificate",
-    status: "Created",
+    status: "Created" as const,
     date: "Yesterday, 04:17 PM",
     recipient: ""
   },
@@ -95,7 +95,7 @@ export const recentDocuments = [
     id: "doc-004",
     name: "Internship Offer - Sneha Gupta",
     type: "Letter",
-    status: "Signed",
+    status: "Signed" as const,
     date: "Yesterday, 11:30 AM",
     recipient: "sneha.g22@gmail.com"
   },
@@ -103,7 +103,7 @@ export const recentDocuments = [
     id: "doc-005",
     name: "Address Verification - Vikram Singh",
     type: "Certificate",
-    status: "Created",
+    status: "Created" as const,
     date: "Jun 12, 2025",
     recipient: ""
   }

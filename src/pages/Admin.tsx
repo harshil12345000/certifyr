@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Settings, Lock, Mail, Building } from 'lucide-react';
+import { UserPlus, Settings, Lock, Mail, Building, FileText } from 'lucide-react';
 
 const Admin = () => {
   return (
