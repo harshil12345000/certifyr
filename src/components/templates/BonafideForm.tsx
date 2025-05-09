@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 
 interface BonafideFormProps {
   data: BonafideData;
