@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +11,155 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 const Settings = () => {
+  const { toast } = useToast();
+  const [profileData, setProfileData] = useState({
+    firstName: "Admin",
+    lastName: "User",
+    email: "admin@certifyr.com",
+    jobTitle: "Principal",
+    department: "management",
+    phone: "+91 98765 43210",
+    bio: ""
+  });
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const [notificationSettings, setNotificationSettings] = useState({
+    newDocumentRequests: true,
+    documentSigned: true,
+    documentDelivered: true,
+    newUserRegistrations: true,
+    securityAlerts: true,
+    productUpdates: false,
+    emailNotifications: true,
+    inAppNotifications: true
+  });
+
+  const [appearanceSettings, setAppearanceSettings] = useState({
+    theme: "light",
+    textSize: "medium"
+  });
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setProfileData(prev => ({
+      ...prev,
+      [id.replace('first-name', 'firstName').replace('last-name', 'lastName').replace('job-title', 'jobTitle')]: value
+    }));
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    setProfileData(prev => ({ ...prev, department: value }));
+  };
+
+  const handleSaveProfile = () => {
+    // In a real app, this would send data to an API
+    localStorage.setItem('profileData', JSON.stringify(profileData));
+    toast({
+      title: "Profile updated",
+      description: "Your profile information has been saved successfully."
+    });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [id.replace('current-password', 'currentPassword')
+         .replace('new-password', 'newPassword')
+         .replace('confirm-password', 'confirmPassword')]: value
+    }));
+  };
+
+  const handleUpdatePassword = () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Passwords do not match",
+        description: "Your new password and confirmation don't match.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Your new password should be at least 8 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // In a real app, this would send data to an API
+    toast({
+      title: "Password updated",
+      description: "Your password has been changed successfully."
+    });
+    
+    // Reset form
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: ""
+    });
+  };
+
+  const handleNotificationToggle = (setting: keyof typeof notificationSettings) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+  };
+
+  const handleSaveNotifications = () => {
+    // In a real app, this would send data to an API
+    localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+    toast({
+      title: "Notification preferences saved",
+      description: "Your notification settings have been updated."
+    });
+  };
+
+  const handleThemeChange = (theme: string) => {
+    setAppearanceSettings(prev => ({ ...prev, theme }));
+  };
+
+  const handleTextSizeChange = (textSize: string) => {
+    setAppearanceSettings(prev => ({ ...prev, textSize }));
+  };
+
+  const handleSaveAppearance = () => {
+    // In a real app, this would send data to an API
+    localStorage.setItem('appearanceSettings', JSON.stringify(appearanceSettings));
+    toast({
+      title: "Appearance settings saved",
+      description: "Your appearance preferences have been updated."
+    });
+  };
+
+  const handle2FASetup = () => {
+    toast({
+      title: "2FA Setup",
+      description: "Two-factor authentication setup would launch here."
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    // In a real app, this would show a confirmation dialog
+    toast({
+      title: "Account deletion",
+      description: "This would typically show a confirmation dialog before proceeding.",
+      variant: "destructive"
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -63,28 +211,52 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="first-name">First Name</Label>
-                      <Input id="first-name" placeholder="First name" defaultValue="Admin" />
+                      <Input 
+                        id="first-name" 
+                        placeholder="First name" 
+                        value={profileData.firstName}
+                        onChange={handleProfileChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="last-name">Last Name</Label>
-                      <Input id="last-name" placeholder="Last name" defaultValue="User" />
+                      <Input 
+                        id="last-name" 
+                        placeholder="Last name" 
+                        value={profileData.lastName}
+                        onChange={handleProfileChange}
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" placeholder="Your email" defaultValue="admin@certifyr.com" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="Your email" 
+                      value={profileData.email}
+                      onChange={handleProfileChange}
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="job-title">Job Title</Label>
-                    <Input id="job-title" placeholder="Your role" defaultValue="Principal" />
+                    <Input 
+                      id="job-title" 
+                      placeholder="Your role" 
+                      value={profileData.jobTitle}
+                      onChange={handleProfileChange}
+                    />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="department">Department</Label>
-                      <Select defaultValue="management">
+                      <Select 
+                        value={profileData.department}
+                        onValueChange={handleDepartmentChange}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select department" />
                         </SelectTrigger>
@@ -98,18 +270,28 @@ const Settings = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="+91 XXXXX XXXXX" defaultValue="+91 98765 43210" />
+                      <Input 
+                        id="phone" 
+                        placeholder="+91 XXXXX XXXXX" 
+                        value={profileData.phone}
+                        onChange={handleProfileChange}
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
-                    <Input id="bio" placeholder="A brief description about yourself" />
+                    <Input 
+                      id="bio" 
+                      placeholder="A brief description about yourself" 
+                      value={profileData.bio}
+                      onChange={handleProfileChange}
+                    />
                   </div>
                 </div>
                 
                 <div className="pt-4">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveProfile}>Save Changes</Button>
                 </div>
               </div>
             </div>
@@ -125,19 +307,34 @@ const Settings = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
+                    <Input 
+                      id="current-password" 
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
+                    <Input 
+                      id="new-password" 
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input id="confirm-password" type="password" />
+                    <Input 
+                      id="confirm-password" 
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                    />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button>Update Password</Button>
+                  <Button onClick={handleUpdatePassword}>Update Password</Button>
                 </CardFooter>
               </Card>
               
@@ -156,7 +353,7 @@ const Settings = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline">Configure 2FA</Button>
+                  <Button variant="outline" onClick={handle2FASetup}>Configure 2FA</Button>
                 </CardFooter>
               </Card>
               
@@ -171,7 +368,7 @@ const Settings = () => {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="destructive">Delete Account</Button>
+                  <Button variant="destructive" onClick={handleDeleteAccount}>Delete Account</Button>
                 </CardFooter>
               </Card>
             </div>
@@ -192,7 +389,10 @@ const Settings = () => {
                         <p className="font-medium">New document requests</p>
                         <p className="text-sm text-muted-foreground">Get notified when new documents need your approval</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.newDocumentRequests}
+                        onCheckedChange={() => handleNotificationToggle('newDocumentRequests')}
+                      />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -200,7 +400,10 @@ const Settings = () => {
                         <p className="font-medium">Document signed</p>
                         <p className="text-sm text-muted-foreground">Get notified when documents are signed</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.documentSigned}
+                        onCheckedChange={() => handleNotificationToggle('documentSigned')}
+                      />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -208,7 +411,10 @@ const Settings = () => {
                         <p className="font-medium">Document delivered</p>
                         <p className="text-sm text-muted-foreground">Get notified when documents are delivered</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.documentDelivered}
+                        onCheckedChange={() => handleNotificationToggle('documentDelivered')}
+                      />
                     </div>
                   </div>
                 </div>
@@ -223,7 +429,10 @@ const Settings = () => {
                         <p className="font-medium">New user registrations</p>
                         <p className="text-sm text-muted-foreground">Get notified when new users register</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.newUserRegistrations}
+                        onCheckedChange={() => handleNotificationToggle('newUserRegistrations')}
+                      />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -231,7 +440,10 @@ const Settings = () => {
                         <p className="font-medium">Security alerts</p>
                         <p className="text-sm text-muted-foreground">Get notified about security events</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.securityAlerts}
+                        onCheckedChange={() => handleNotificationToggle('securityAlerts')}
+                      />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -239,7 +451,10 @@ const Settings = () => {
                         <p className="font-medium">Product updates</p>
                         <p className="text-sm text-muted-foreground">Get notified about new features and improvements</p>
                       </div>
-                      <Switch />
+                      <Switch 
+                        checked={notificationSettings.productUpdates}
+                        onCheckedChange={() => handleNotificationToggle('productUpdates')}
+                      />
                     </div>
                   </div>
                 </div>
@@ -254,7 +469,10 @@ const Settings = () => {
                         <p className="font-medium">Email notifications</p>
                         <p className="text-sm text-muted-foreground">Receive notifications via email</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.emailNotifications}
+                        onCheckedChange={() => handleNotificationToggle('emailNotifications')}
+                      />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -262,13 +480,16 @@ const Settings = () => {
                         <p className="font-medium">In-app notifications</p>
                         <p className="text-sm text-muted-foreground">Show notifications in the application</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch 
+                        checked={notificationSettings.inAppNotifications}
+                        onCheckedChange={() => handleNotificationToggle('inAppNotifications')}
+                      />
                     </div>
                   </div>
                 </div>
                 
                 <div className="pt-4">
-                  <Button>Save Preferences</Button>
+                  <Button onClick={handleSaveNotifications}>Save Preferences</Button>
                 </div>
               </div>
             </div>
@@ -286,15 +507,24 @@ const Settings = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4">
-                      <div className="border rounded-lg p-4 cursor-pointer bg-white ring-2 ring-primary ring-offset-2">
+                      <div 
+                        className={`border rounded-lg p-4 cursor-pointer bg-white ${appearanceSettings.theme === 'light' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        onClick={() => handleThemeChange('light')}
+                      >
                         <div className="h-10 rounded-md bg-white border mb-2"></div>
                         <div className="text-center text-sm font-medium">Light</div>
                       </div>
-                      <div className="border rounded-lg p-4 cursor-pointer">
+                      <div 
+                        className={`border rounded-lg p-4 cursor-pointer ${appearanceSettings.theme === 'dark' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        onClick={() => handleThemeChange('dark')}
+                      >
                         <div className="h-10 rounded-md bg-slate-900 mb-2"></div>
                         <div className="text-center text-sm font-medium">Dark</div>
                       </div>
-                      <div className="border rounded-lg p-4 cursor-pointer">
+                      <div 
+                        className={`border rounded-lg p-4 cursor-pointer ${appearanceSettings.theme === 'system' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        onClick={() => handleThemeChange('system')}
+                      >
                         <div className="h-10 rounded-md bg-gradient-to-r from-white to-slate-900 mb-2"></div>
                         <div className="text-center text-sm font-medium">System</div>
                       </div>
@@ -310,7 +540,10 @@ const Settings = () => {
                   <CardContent className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <Label htmlFor="text-size" className="min-w-24">Text Size:</Label>
-                      <Select defaultValue="medium">
+                      <Select 
+                        value={appearanceSettings.textSize}
+                        onValueChange={handleTextSizeChange}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select text size" />
                         </SelectTrigger>
@@ -333,7 +566,7 @@ const Settings = () => {
                   </CardContent>
                 </Card>
                 
-                <Button>Save Preferences</Button>
+                <Button onClick={handleSaveAppearance}>Save Preferences</Button>
               </div>
             </div>
           </TabsContent>

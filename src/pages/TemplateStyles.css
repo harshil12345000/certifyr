@@ -1,0 +1,51 @@
+
+/* A4 document styling */
+.a4-document {
+  /* A4 dimensions: 210mm x 297mm */
+  width: 100%;
+  max-width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: white;
+  box-sizing: border-box;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Print-specific styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .a4-document,
+  .a4-document * {
+    visibility: visible;
+  }
+  
+  .a4-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    page-break-after: always;
+  }
+
+  /* Hide UI elements when printing */
+  button, 
+  .tabs, 
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+}
+
+/* For PDF/JPG export, ensure A4 proportions */
+@page {
+  size: A4;
+  margin: 0;
+}

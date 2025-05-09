@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +10,74 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Settings, Lock, Mail, Building, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Admin = () => {
+  const { toast } = useToast();
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [sealFile, setSealFile] = useState<File | null>(null);
+  const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [organizationDetails, setOrganizationDetails] = useState({
+    name: "Delhi Public School",
+    type: "School",
+    address: "123 Education Lane, New Delhi, 110001",
+    phone: "+91 98765 43210",
+    email: "info@dpsdelhi.edu.in",
+    website: "https://dpsdelhi.edu.in",
+    registration: "CBSE-1049/DL",
+    affiliation: "Central Board of Secondary Education",
+    tagline: "Knowledge, Character, Excellence"
+  });
+
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: React.Dispatch<React.SetStateAction<File | null>>,
+    fileType: string
+  ) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setFile(files[0]);
+      toast({
+        title: `${fileType} uploaded`,
+        description: `File "${files[0].name}" has been uploaded successfully.`
+      });
+    }
+  };
+
+  const handleSaveOrganization = () => {
+    // In a real app, this would send data to an API
+    localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
+    toast({
+      title: "Organization details saved",
+      description: "Your organization details have been saved successfully."
+    });
+  };
+  
+  const handleSaveBranding = () => {
+    // In a real app, this would upload files to a storage service
+    const brandingInfo = {
+      logo: logoFile?.name || null,
+      seal: sealFile?.name || null,
+      letterhead: letterheadFile?.name || null,
+      signature: signatureFile?.name || null,
+      tagline: organizationDetails.tagline
+    };
+    localStorage.setItem('brandingInfo', JSON.stringify(brandingInfo));
+    toast({
+      title: "Branding settings saved",
+      description: "Your branding settings have been saved successfully."
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setOrganizationDetails(prev => ({
+      ...prev,
+      [id.replace('org-', '')]: value
+    }));
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -54,33 +121,63 @@ const Admin = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="org-name">Organization Name</Label>
-                      <Input id="org-name" placeholder="Acme College" defaultValue="Delhi Public School" />
+                      <Input 
+                        id="org-name" 
+                        placeholder="Acme College" 
+                        value={organizationDetails.name}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="org-type">Institution Type</Label>
-                      <Input id="org-type" placeholder="School/College/Corporate" defaultValue="School" />
+                      <Input 
+                        id="org-type" 
+                        placeholder="School/College/Corporate" 
+                        value={organizationDetails.type}
+                        onChange={handleInputChange}
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="org-address">Address</Label>
-                    <Input id="org-address" placeholder="Full address" defaultValue="123 Education Lane, New Delhi, 110001" />
+                    <Input 
+                      id="org-address" 
+                      placeholder="Full address" 
+                      value={organizationDetails.address}
+                      onChange={handleInputChange}
+                    />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="org-phone">Phone Number</Label>
-                      <Input id="org-phone" placeholder="+91 XXXXX XXXXX" defaultValue="+91 98765 43210" />
+                      <Input 
+                        id="org-phone" 
+                        placeholder="+91 XXXXX XXXXX" 
+                        value={organizationDetails.phone}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="org-email">Official Email</Label>
-                      <Input id="org-email" placeholder="contact@example.com" defaultValue="info@dpsdelhi.edu.in" />
+                      <Input 
+                        id="org-email" 
+                        placeholder="contact@example.com" 
+                        value={organizationDetails.email}
+                        onChange={handleInputChange}
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="org-website">Website</Label>
-                    <Input id="org-website" placeholder="https://example.com" defaultValue="https://dpsdelhi.edu.in" />
+                    <Input 
+                      id="org-website" 
+                      placeholder="https://example.com" 
+                      value={organizationDetails.website}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
                 
@@ -89,17 +186,27 @@ const Admin = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="org-registration">Registration Number</Label>
-                      <Input id="org-registration" placeholder="REG123456" defaultValue="CBSE-1049/DL" />
+                      <Input 
+                        id="org-registration" 
+                        placeholder="REG123456" 
+                        value={organizationDetails.registration}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="org-affiliation">Affiliation</Label>
-                      <Input id="org-affiliation" placeholder="e.g. CBSE, ICSE, etc." defaultValue="Central Board of Secondary Education" />
+                      <Input 
+                        id="org-affiliation" 
+                        placeholder="e.g. CBSE, ICSE, etc." 
+                        value={organizationDetails.affiliation}
+                        onChange={handleInputChange}
+                      />
                     </div>
                   </div>
                 </div>
                 
                 <div className="pt-4">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveOrganization}>Save Changes</Button>
                 </div>
               </div>
             </div>
@@ -222,27 +329,72 @@ const Admin = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label>Organization Logo</Label>
-                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                          <Building className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">Upload your logo</p>
-                          <p className="text-xs text-muted-foreground">Recommended size: 200x200px</p>
-                          <Button variant="outline" size="sm" className="mt-4">Upload Logo</Button>
+                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+                          {logoFile ? (
+                            <div className="flex flex-col items-center">
+                              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
+                                <img 
+                                  src={URL.createObjectURL(logoFile)} 
+                                  alt="Logo preview" 
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                              <p className="text-sm font-medium">{logoFile.name}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <Building className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground mb-2">Upload your logo</p>
+                              <p className="text-xs text-muted-foreground">Recommended size: 200x200px</p>
+                            </>
+                          )}
+                          <Input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, setLogoFile, "Logo")}
+                          />
                         </div>
                       </div>
                       <div className="space-y-3">
                         <Label>Official Seal</Label>
-                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                          <Building className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">Upload your seal</p>
-                          <p className="text-xs text-muted-foreground">Recommended size: 200x200px</p>
-                          <Button variant="outline" size="sm" className="mt-4">Upload Seal</Button>
+                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+                          {sealFile ? (
+                            <div className="flex flex-col items-center">
+                              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
+                                <img 
+                                  src={URL.createObjectURL(sealFile)} 
+                                  alt="Seal preview" 
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                              <p className="text-sm font-medium">{sealFile.name}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <Building className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground mb-2">Upload your seal</p>
+                              <p className="text-xs text-muted-foreground">Recommended size: 200x200px</p>
+                            </>
+                          )}
+                          <Input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, setSealFile, "Seal")}
+                          />
                         </div>
                       </div>
                     </div>
                     
                     <div className="space-y-3">
                       <Label htmlFor="org-tagline">Organization Tagline</Label>
-                      <Input id="org-tagline" placeholder="Enter your tagline" defaultValue="Knowledge, Character, Excellence" />
+                      <Input 
+                        id="org-tagline" 
+                        placeholder="Enter your tagline" 
+                        value={organizationDetails.tagline}
+                        onChange={(e) => setOrganizationDetails(prev => ({...prev, tagline: e.target.value}))}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -256,24 +408,64 @@ const Admin = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label htmlFor="letterhead">Letterhead</Label>
-                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                          <FileText className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">Upload letterhead design</p>
-                          <Button variant="outline" size="sm" className="mt-4">Upload Letterhead</Button>
+                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+                          {letterheadFile ? (
+                            <div className="flex flex-col items-center">
+                              <div className="w-32 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
+                                <img 
+                                  src={URL.createObjectURL(letterheadFile)} 
+                                  alt="Letterhead preview" 
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                              <p className="text-sm font-medium">{letterheadFile.name}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <FileText className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground mb-2">Upload letterhead design</p>
+                            </>
+                          )}
+                          <Input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, setLetterheadFile, "Letterhead")}
+                          />
                         </div>
                       </div>
                       <div className="space-y-3">
                         <Label htmlFor="signature">Digital Signature</Label>
-                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
-                          <FileText className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">Upload signature image</p>
-                          <Button variant="outline" size="sm" className="mt-4">Upload Signature</Button>
+                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+                          {signatureFile ? (
+                            <div className="flex flex-col items-center">
+                              <div className="w-32 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
+                                <img 
+                                  src={URL.createObjectURL(signatureFile)} 
+                                  alt="Signature preview" 
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                              <p className="text-sm font-medium">{signatureFile.name}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <FileText className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground mb-2">Upload signature image</p>
+                            </>
+                          )}
+                          <Input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, setSignatureFile, "Signature")}
+                          />
                         </div>
                       </div>
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button>Save Changes</Button>
+                    <Button onClick={handleSaveBranding}>Save Changes</Button>
                   </CardFooter>
                 </Card>
               </div>
