@@ -1,5 +1,5 @@
 
-import React, { forwardRef } from "react";
+import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature } from "lucide-react";
