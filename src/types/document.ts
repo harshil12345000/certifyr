@@ -25,7 +25,7 @@ export interface Document {
   id: string;
   name: string;
   type: string;
-  status: string;
+  status: "Signed" | "Sent" | "Created";
   date: string;
   recipient: string | null;
 }

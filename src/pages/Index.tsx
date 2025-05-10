@@ -16,7 +16,7 @@ const mockDocuments = [
     id: "doc-1",
     name: "Bonafide Certificate - John Smith",
     type: "Certificate",
-    status: "Signed",
+    status: "Signed" as const,
     date: "2023-06-01",
     recipient: "John Smith"
   },
@@ -24,7 +24,7 @@ const mockDocuments = [
     id: "doc-2",
     name: "Leave Application - HR Department",
     type: "Application",
-    status: "Sent",
+    status: "Sent" as const,
     date: "2023-05-28",
     recipient: "HR Manager"
   },
@@ -32,7 +32,7 @@ const mockDocuments = [
     id: "doc-3",
     name: "Income Certificate - David Miller",
     type: "Certificate",
-    status: "Created",
+    status: "Created" as const,
     date: "2023-05-25",
     recipient: null
   }

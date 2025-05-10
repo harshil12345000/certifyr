@@ -4,15 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-type Document = {
-  id: string;
-  name: string;
-  type: string;
-  status: 'Created' | 'Signed' | 'Sent';
-  date: string;
-  recipient?: string;
-};
+import { Document } from '@/types/document';
 
 interface RecentDocumentsProps {
   documents: Document[];
