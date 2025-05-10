@@ -431,7 +431,7 @@ const TemplateDetail = () => {
         {/* Main content */}
         <div className="glass-card">
           <Tabs defaultValue="form">
-            <TabsList className="grid grid-cols-2 w-full max-w-md mb-6 my-[13px] mx-[15px]">
+            <TabsList className="grid grid-cols-2 w-full max-w-md mb-6 my-[13px] mx-0 px-[5px] py-0">
               <TabsTrigger value="form">Form</TabsTrigger>
               <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
