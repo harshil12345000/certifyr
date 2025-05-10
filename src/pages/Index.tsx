@@ -1,87 +1,149 @@
 
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { StatsCard } from '@/components/dashboard/StatsCard';
-import { TemplateCard } from '@/components/dashboard/TemplateCard';
-import { RecentDocuments } from '@/components/dashboard/RecentDocuments';
-import { ActivityChart } from '@/components/dashboard/ActivityChart';
-import { Button } from '@/components/ui/button';
-import { Plus, FileText, ChevronRight } from 'lucide-react';
-import { statsData, popularTemplates, recentDocuments } from '@/data/mockData';
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { StatsCard } from "@/components/dashboard/StatsCard";
+import { ActivityChart } from "@/components/dashboard/ActivityChart";
+import { RecentDocuments } from "@/components/dashboard/RecentDocuments";
+import { popularTemplates } from "@/data/mockData";
+import { TemplateCard } from "@/components/dashboard/TemplateCard";
+import { SavedDrafts } from "@/components/dashboard/SavedDrafts";
+import { Button } from "@/components/ui/button";
+import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
+
+const mockDocuments = [
+  {
+    id: "doc-1",
+    name: "Bonafide Certificate - John Smith",
+    type: "Certificate",
+    status: "Signed",
+    date: "2023-06-01",
+    recipient: "John Smith"
+  },
+  {
+    id: "doc-2",
+    name: "Leave Application - HR Department",
+    type: "Application",
+    status: "Sent",
+    date: "2023-05-28",
+    recipient: "HR Manager"
+  },
+  {
+    id: "doc-3",
+    name: "Income Certificate - David Miller",
+    type: "Certificate",
+    status: "Created",
+    date: "2023-05-25",
+    recipient: null
+  }
+] as const;
 
 const Index = () => {
+  const [stats] = useState([
+    {
+      title: "Documents Created",
+      value: "128",
+      change: "+12.3%",
+      trend: "up",
+      icon: <FileText className="h-4 w-4" />
+    },
+    {
+      title: "Documents Signed",
+      value: "89",
+      change: "+18.7%",
+      trend: "up",
+      icon: <FileSignature className="h-4 w-4" />
+    },
+    {
+      title: "Pending Documents",
+      value: "12",
+      change: "-4.3%",
+      trend: "down",
+      icon: <FileClock className="h-4 w-4" />
+    },
+    {
+      title: "Total Templates",
+      value: "23",
+      change: "+3.2%",
+      trend: "up",
+      icon: <BarChart className="h-4 w-4" />
+    }
+  ]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold mb-1">Welcome to Certifyr</h1>
-            <p className="text-muted-foreground">Create, manage and track your institutional documents</p>
+            <h1 className="text-2xl font-semibold mb-1">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back! Here's your document activity</p>
           </div>
-          <Button className="gradient-blue md:self-start gap-2">
-            <Plus className="h-4 w-4" /> New Document
+          <Button className="gradient-blue md:self-start">
+            + Create Document
           </Button>
         </div>
 
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {statsData.map((stat, index) => (
-            <StatsCard 
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              description={stat.description}
-              trend={stat.trend}
-            />
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, index) => (
+            <StatsCard key={index} {...stat} />
           ))}
         </div>
 
-        {/* Popular Templates and Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7">
+        {/* Saved Drafts */}
+        <SavedDrafts />
+
+        {/* Charts and tables */}
+        <div className="grid lg:grid-cols-7 gap-6">
+          {/* Activity Chart - 4/7 width */}
+          <div className="glass-card p-6 lg:col-span-4">
+            <h2 className="text-lg font-medium mb-4">Activity Overview</h2>
+            <ActivityChart />
+          </div>
+
+          {/* Popular Templates - 3/7 width */}
+          <div className="glass-card p-6 lg:col-span-3">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium">Popular Templates</h2>
-              <Link to="/templates" className="text-sm text-primary-500 flex items-center hover:text-primary-600">
-                View all <ChevronRight className="h-4 w-4" />
-              </Link>
+              <Button variant="ghost" size="sm" className="text-primary">View All</Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {popularTemplates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  id={template.id}
-                  title={template.title}
-                  description={template.description}
-                  category={template.category}
-                  usageCount={template.usageCount}
-                />
+            <div className="space-y-4">
+              {popularTemplates.slice(0, 3).map((template) => (
+                <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+                  <div className="rounded-full w-9 h-9 bg-primary-500/10 text-primary-500 flex items-center justify-center">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">{template.title}</h3>
+                    <p className="text-xs text-muted-foreground">{template.description}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-primary">Use</Button>
+                </div>
               ))}
             </div>
-          </div>
-          <div className="lg:col-span-5">
-            <ActivityChart />
           </div>
         </div>
 
         {/* Recent Documents */}
-        <div>
-          <RecentDocuments documents={recentDocuments} />
-        </div>
+        <RecentDocuments documents={mockDocuments} />
 
-        {/* CTA Section */}
-        <div className="glass-card p-6 bg-gradient-to-br from-certifyr-blue-light/50 to-certifyr-blue/20">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-4 md:mb-0">
-              <h2 className="text-lg font-medium mb-1">Need a custom template?</h2>
-              <p className="text-muted-foreground max-w-lg">
-                Use our AI assistant to create a custom document template tailored to your exact requirements.
-              </p>
-            </div>
-            <Button className="gradient-blue gap-2">
-              <FileText className="h-4 w-4" /> Create Custom Template
-            </Button>
+        {/* Recent Templates */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium">Recently Added Templates</h2>
+            <Button variant="ghost" size="sm" className="text-primary">View All</Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {popularTemplates.slice(0, 4).map((template) => (
+              <TemplateCard
+                key={template.id}
+                id={template.id}
+                title={template.title}
+                description={template.description}
+                category={template.category}
+                usageCount={template.usageCount}
+              />
+            ))}
           </div>
         </div>
       </div>

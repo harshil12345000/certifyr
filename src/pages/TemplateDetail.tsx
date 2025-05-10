@@ -1,34 +1,97 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Download, Copy, Printer } from "lucide-react";
+import { ArrowLeft, FileText, Download, Copy, Printer, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BonafideForm } from "@/components/templates/BonafideForm";
 import { BonafidePreview } from "@/components/templates/BonafidePreview";
 import { BonafideData } from "@/types/templates";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 // Add global styles for A4 document sizing
 import "./TemplateStyles.css";
+
+type DocumentDraft = {
+  id: string;
+  name: string;
+  template_id: string;
+  data: BonafideData;
+  created_at: string;
+  updated_at: string;
+};
+
 const TemplateDetail = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const previewRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  
+  const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [documentName, setDocumentName] = useState("");
+  const [existingDraft, setExistingDraft] = useState<DocumentDraft | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get institution name from user profile/settings - in a real app, this would come from an API or context
   const userInstitutionName = "ABC University"; // This would be fetched from user profile
 
-  // Try to load saved draft if it exists
-  const loadSavedDraft = () => {
+  // Function to load draft from Supabase
+  const loadDraftFromSupabase = async (draftId: string) => {
     try {
+      setIsLoading(true);
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
+      const { data, error } = await supabase
+        .from('document_drafts')
+        .select('*')
+        .eq('template_id', draftId)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setExistingDraft(data as DocumentDraft);
+        setDocumentName(data.name);
+        return data.data as BonafideData;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error loading draft from Supabase:", error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Try to load saved draft if it exists
+  const loadSavedDraft = async () => {
+    try {
+      // If the user is logged in, try to load from Supabase first
+      if (user && id) {
+        const supabaseDraft = await loadDraftFromSupabase(id);
+        if (supabaseDraft) {
+          return supabaseDraft;
+        }
+      }
+      
+      // Fallback to localStorage if no Supabase draft is found
       const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
       return id && drafts[id] ? drafts[id] : null;
     } catch (error) {
@@ -36,13 +99,13 @@ const TemplateDetail = () => {
       return null;
     }
   };
-  const initialData = loadSavedDraft() || {
+
+  const initialData = {
     fullName: "",
     gender: "male",
     parentName: "",
     type: "student",
-    institutionName: userInstitutionName,
-    // Auto-populated from user's institution
+    institutionName: userInstitutionName, // Auto-populated from user's institution
     startDate: "",
     courseOrDesignation: "",
     department: "",
@@ -53,28 +116,124 @@ const TemplateDetail = () => {
     signatoryDesignation: "Principal",
     includeDigitalSignature: false
   };
+
   const [certificateData, setCertificateData] = useState<BonafideData>(initialData);
-  const [isExporting, setIsExporting] = useState(false);
+
+  // Load draft on component mount
+  useEffect(() => {
+    const loadDraft = async () => {
+      const draft = await loadSavedDraft();
+      if (draft) {
+        setCertificateData(draft);
+      }
+    };
+    
+    loadDraft();
+  }, [id, user]);
 
   // Save draft functionality
   const handleSaveDraft = () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save drafts to your account.",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    if (existingDraft) {
+      // If draft already exists, update it directly
+      updateDraftInSupabase(existingDraft.id);
+    } else {
+      // Otherwise open the dialog to name the document
+      setIsSaveDialogOpen(true);
+    }
+  };
+
+  const createDraftInSupabase = async () => {
+    if (!user || !documentName.trim()) {
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      // In a real app, this would save to a database or cloud storage
-      const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
-      const draftId = id || `draft-${Date.now()}`;
-      drafts[draftId] = certificateData;
-      localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
+      const { data, error } = await supabase
+        .from('document_drafts')
+        .insert({
+          user_id: user.id,
+          template_id: id || `template-${Date.now()}`,
+          name: documentName,
+          data: certificateData
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setExistingDraft(data as DocumentDraft);
+      setIsSaveDialogOpen(false);
+      
       toast({
         title: "Draft saved",
         description: "Your certificate draft has been saved successfully."
       });
-    } catch (error) {
+      
+      // Also save to localStorage as fallback
+      const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
+      const draftId = id || `draft-${Date.now()}`;
+      drafts[draftId] = certificateData;
+      localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
+    } catch (error: any) {
       toast({
         title: "Error saving draft",
-        description: "There was an error saving your draft. Please try again.",
+        description: error.message || "There was an error saving your draft. Please try again.",
         variant: "destructive"
       });
       console.error("Save draft error:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateDraftInSupabase = async (draftId: string) => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    
+    try {
+      const { error } = await supabase
+        .from('document_drafts')
+        .update({
+          data: certificateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', draftId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Draft updated",
+        description: "Your certificate draft has been updated successfully."
+      });
+      
+      // Also update localStorage as fallback
+      const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
+      const draftId = id || `draft-${Date.now()}`;
+      drafts[draftId] = certificateData;
+      localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
+    } catch (error: any) {
+      toast({
+        title: "Error updating draft",
+        description: error.message || "There was an error updating your draft. Please try again.",
+        variant: "destructive"
+      });
+      console.error("Update draft error:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -164,32 +323,63 @@ const TemplateDetail = () => {
   };
 
   // Copy link functionality
-  const handleCopyLink = () => {
-    // Create a unique link ID if one doesn't exist
-    const linkId = id || `cert-${Date.now().toString(36)}`;
-
-    // If no ID exists, save the current state with the new ID
-    if (!id) {
-      const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
-      drafts[linkId] = certificateData;
-      localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
+  const handleCopyLink = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create shareable links.",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
     }
-
-    // Generate a shareable link
-    const shareableLink = `${window.location.origin}/templates/${linkId}?share=true`;
-    navigator.clipboard.writeText(shareableLink).then(() => {
+    
+    try {
+      // First ensure draft is saved
+      let draftId = existingDraft?.id;
+      
+      if (!draftId) {
+        // If not saved yet, ask user to save
+        toast({
+          title: "Save required",
+          description: "Please save your draft first to create a shareable link.",
+        });
+        setIsSaveDialogOpen(true);
+        return;
+      }
+      
+      // Create shared link in database
+      const { data: sharedLink, error } = await supabase
+        .from('shared_links')
+        .insert({
+          document_id: draftId,
+          user_id: user.id,
+          // Optional: Set expiration date for the link
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Generate a shareable link
+      const shareableLink = `${window.location.origin}/templates/${id}?share=${sharedLink.id}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareableLink);
+      
       toast({
         title: "Link copied",
-        description: "Certificate link copied to clipboard"
+        description: "Certificate link copied to clipboard (valid for 30 days)"
       });
-    }).catch(err => {
+    } catch (err: any) {
       toast({
         title: "Copy failed",
-        description: "Failed to copy link to clipboard",
+        description: err.message || "Failed to copy link to clipboard",
         variant: "destructive"
       });
       console.error("Copy link error:", err);
-    });
+    }
   };
 
   // Print functionality
@@ -391,7 +581,20 @@ const TemplateDetail = () => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
-  return <DashboardLayout>
+  
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading document...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
       <div className="animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -401,7 +604,7 @@ const TemplateDetail = () => {
           <div>
             <h1 className="text-2xl font-semibold flex items-center gap-2">
               <FileText className="h-6 w-6" />
-              Bonafide Certificate
+              {existingDraft?.name || "Bonafide Certificate"}
             </h1>
             <p className="text-muted-foreground">
               Create a standard bonafide certificate for students or employees
@@ -411,19 +614,26 @@ const TemplateDetail = () => {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <Button variant="outline" onClick={handleSaveDraft} disabled={isExporting}>
+          <Button 
+            variant="outline" 
+            onClick={handleSaveDraft} 
+            disabled={isSaving || isExporting}
+          >
+            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Save Draft
           </Button>
-          <Button onClick={handleExportPDF} className="gap-2" disabled={isExporting}>
-            <Download className="h-4 w-4" /> Export PDF
+          <Button onClick={handleExportPDF} className="gap-2" disabled={isExporting || isSaving}>
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 
+            Export PDF
           </Button>
-          <Button variant="outline" onClick={handleExportJPG} className="gap-2" disabled={isExporting}>
-            <Download className="h-4 w-4" /> Export JPG
+          <Button variant="outline" onClick={handleExportJPG} className="gap-2" disabled={isExporting || isSaving}>
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 
+            Export JPG
           </Button>
-          <Button variant="outline" onClick={handleCopyLink} className="gap-2" disabled={isExporting}>
+          <Button variant="outline" onClick={handleCopyLink} className="gap-2" disabled={isExporting || isSaving}>
             <Copy className="h-4 w-4" /> Copy Link
           </Button>
-          <Button variant="outline" onClick={handlePrint} className="gap-2" disabled={isExporting}>
+          <Button variant="outline" onClick={handlePrint} className="gap-2" disabled={isExporting || isSaving}>
             <Printer className="h-4 w-4" /> Print
           </Button>
         </div>
@@ -448,6 +658,46 @@ const TemplateDetail = () => {
           </Tabs>
         </div>
       </div>
-    </DashboardLayout>;
+
+      {/* Save Dialog */}
+      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Draft</DialogTitle>
+            <DialogDescription>
+              Give your document a name to save it to your account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Document Name</Label>
+              <Input 
+                id="name" 
+                placeholder="Enter document name" 
+                value={documentName} 
+                onChange={(e) => setDocumentName(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={createDraftInSupabase} 
+              disabled={!documentName.trim() || isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </DashboardLayout>
+  );
 };
+
 export default TemplateDetail;
