@@ -1,10 +1,10 @@
+
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -39,11 +39,6 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
     defaultValues: data,
   });
 
-  const handleChange = (fieldName: keyof BonafideData) => (value: any) => {
-    setData(prev => ({ ...prev, [fieldName]: value }));
-  };
-
-  // Updating parent component state on form field changes
   const handleFormSubmit = (values: BonafideData) => {
     setData(values);
   };
@@ -52,6 +47,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Person Details Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Person Details</h3>
             
@@ -62,13 +58,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("fullName")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, fullName: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -85,7 +78,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                     value={field.value} 
                     onValueChange={(value) => {
                       field.onChange(value);
-                      handleChange("gender")(value);
+                      setData(prev => ({ ...prev, gender: value as "male" | "female" | "other" }));
                     }}
                   >
                     <FormControl>
@@ -111,13 +104,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Parent's Name</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("parentName")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, parentName: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,7 +124,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                     value={field.value} 
                     onValueChange={(value) => {
                       field.onChange(value);
-                      handleChange("type")(value);
+                      setData(prev => ({ ...prev, type: value as "student" | "employee" }));
                     }}
                   >
                     <FormControl>
@@ -153,6 +143,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
             />
           </div>
 
+          {/* Institution & Role Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Institution & Role</h3>
 
@@ -163,13 +154,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Institution Name</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("institutionName")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, institutionName: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -183,14 +171,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Start Date</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="date" 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("startDate")(e.target.value);
-                      }}
-                    />
+                    <Input type="date" {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, startDate: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -204,13 +188,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>{data.type === "student" ? "Course Name" : "Designation"}</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("courseOrDesignation")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, courseOrDesignation: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -224,13 +205,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Department</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("department")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, department: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -239,6 +217,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
           </div>
         </div>
 
+        {/* Certificate Details Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Certificate Details</h3>
 
@@ -253,7 +232,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                     {...field} 
                     onChange={(e) => {
                       field.onChange(e);
-                      handleChange("purpose")(e.target.value);
+                      setData(prev => ({ ...prev, purpose: e.target.value }));
                     }}
                     placeholder="e.g., passport application, bank account, visa processing"
                   />
@@ -271,14 +250,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Issue Date</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="date" 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("date")(e.target.value);
-                      }}
-                    />
+                    <Input type="date" {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, date: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -292,13 +267,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Place</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("place")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, place: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -307,6 +279,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
           </div>
         </div>
 
+        {/* Signatory Details Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Signatory Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,13 +290,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Signatory Name</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("signatoryName")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, signatoryName: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -337,13 +307,10 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                 <FormItem>
                   <FormLabel>Designation</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleChange("signatoryDesignation")(e.target.value);
-                      }}
-                    />
+                    <Input {...field} onChange={(e) => {
+                      field.onChange(e);
+                      setData(prev => ({ ...prev, signatoryDesignation: e.target.value }));
+                    }} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -351,6 +318,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
             />
           </div>
           
+          {/* Digital Signature Toggle */}
           <FormField
             control={form.control}
             name="includeDigitalSignature"
@@ -367,7 +335,7 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                     checked={field.value}
                     onCheckedChange={(checked) => {
                       field.onChange(checked);
-                      handleChange("includeDigitalSignature")(checked);
+                      setData(prev => ({ ...prev, includeDigitalSignature: checked }));
                     }}
                   />
                 </FormControl>
