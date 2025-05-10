@@ -28,7 +28,7 @@ export function Header() {
       <div className="flex flex-1 items-center justify-between">
         <div className="flex items-center space-x-2 md:w-72 px-0 mx- mx-[-210px]">
           <Search className="h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search templates, documents..." className="h-9 md:w-64 bg-transparent focus-visible:bg-white" />
+          <Input type="search" placeholder="Search templates, documents..." className="h-9 md:w-64 bg-transparent focus-visible:bg-white mx-[260px]" />
         </div>
 
         <div className="flex items-center gap-2">
