@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BonafideForm } from "@/components/templates/BonafideForm";
 import { BonafidePreview } from "@/components/templates/BonafidePreview";
 import { BonafideData } from "@/types/templates";
+import { DocumentDraft } from "@/types/document";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,15 +19,6 @@ import jsPDF from "jspdf";
 
 // Add global styles for A4 document sizing
 import "./TemplateStyles.css";
-
-type DocumentDraft = {
-  id: string;
-  name: string;
-  template_id: string;
-  data: BonafideData;
-  created_at: string;
-  updated_at: string;
-};
 
 const TemplateDetail = () => {
   const { id } = useParams();
@@ -66,9 +58,16 @@ const TemplateDetail = () => {
       }
       
       if (data) {
-        setExistingDraft(data as DocumentDraft);
+        // Type conversion to ensure compatibility
+        const draftData = data.data as unknown as BonafideData;
+        const documentDraft: DocumentDraft = {
+          ...data,
+          data: draftData
+        };
+        
+        setExistingDraft(documentDraft);
         setDocumentName(data.name);
-        return data.data as BonafideData;
+        return draftData;
       }
       
       return null;
@@ -100,7 +99,7 @@ const TemplateDetail = () => {
     }
   };
 
-  const initialData = {
+  const initialData: BonafideData = {
     fullName: "",
     gender: "male",
     parentName: "",
@@ -160,20 +159,31 @@ const TemplateDetail = () => {
     setIsSaving(true);
     
     try {
+      const draftId = id || `template-${Date.now()}`;
+      
       const { data, error } = await supabase
         .from('document_drafts')
         .insert({
           user_id: user.id,
-          template_id: id || `template-${Date.now()}`,
+          template_id: draftId,
           name: documentName,
-          data: certificateData
+          data: certificateData as unknown as Record<string, any>
         })
         .select()
         .single();
       
       if (error) throw error;
       
-      setExistingDraft(data as DocumentDraft);
+      if (data) {
+        const draftData = data.data as unknown as BonafideData;
+        const documentDraft: DocumentDraft = {
+          ...data,
+          data: draftData
+        };
+        
+        setExistingDraft(documentDraft);
+      }
+      
       setIsSaveDialogOpen(false);
       
       toast({
@@ -183,7 +193,6 @@ const TemplateDetail = () => {
       
       // Also save to localStorage as fallback
       const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
-      const draftId = id || `draft-${Date.now()}`;
       drafts[draftId] = certificateData;
       localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
     } catch (error: any) {
@@ -207,7 +216,7 @@ const TemplateDetail = () => {
       const { error } = await supabase
         .from('document_drafts')
         .update({
-          data: certificateData,
+          data: certificateData as unknown as Record<string, any>,
           updated_at: new Date().toISOString()
         })
         .eq('id', draftId)
@@ -222,8 +231,8 @@ const TemplateDetail = () => {
       
       // Also update localStorage as fallback
       const drafts = JSON.parse(localStorage.getItem('certificateDrafts') || '{}');
-      const draftId = id || `draft-${Date.now()}`;
-      drafts[draftId] = certificateData;
+      const localDraftId = id || `draft-${Date.now()}`;
+      drafts[localDraftId] = certificateData;
       localStorage.setItem('certificateDrafts', JSON.stringify(drafts));
     } catch (error: any) {
       toast({

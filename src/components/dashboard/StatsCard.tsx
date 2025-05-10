@@ -41,7 +41,7 @@ export function StatsCard({
                   trend.positive ? "text-green-600" : "text-red-600"
                 )}
               >
-                {trend.positive ? "+" : "-"}{trend.value}
+                {trend.value}
               </span>
             )}
             {description && (

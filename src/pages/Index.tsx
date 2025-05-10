@@ -9,6 +9,7 @@ import { TemplateCard } from "@/components/dashboard/TemplateCard";
 import { SavedDrafts } from "@/components/dashboard/SavedDrafts";
 import { Button } from "@/components/ui/button";
 import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
+import { Document } from "@/types/document";
 
 const mockDocuments = [
   {
@@ -35,7 +36,7 @@ const mockDocuments = [
     date: "2023-05-25",
     recipient: null
   }
-] as const;
+] as Document[];
 
 const Index = () => {
   const [stats] = useState([
@@ -44,28 +45,28 @@ const Index = () => {
       value: "128",
       change: "+12.3%",
       trend: "up",
-      icon: <FileText className="h-4 w-4" />
+      icon: FileText,
     },
     {
       title: "Documents Signed",
       value: "89",
       change: "+18.7%",
       trend: "up",
-      icon: <FileSignature className="h-4 w-4" />
+      icon: FileSignature,
     },
     {
       title: "Pending Documents",
       value: "12",
       change: "-4.3%",
       trend: "down",
-      icon: <FileClock className="h-4 w-4" />
+      icon: FileClock,
     },
     {
       title: "Total Templates",
       value: "23",
       change: "+3.2%",
       trend: "up",
-      icon: <BarChart className="h-4 w-4" />
+      icon: BarChart,
     }
   ]);
 
@@ -86,7 +87,16 @@ const Index = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <StatsCard key={index} {...stat} />
+            <StatsCard 
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              trend={{
+                value: stat.change,
+                positive: stat.trend === 'up'
+              }}
+              icon={stat.icon}
+            />
           ))}
         </div>
 
