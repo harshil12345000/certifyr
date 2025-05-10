@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,6 +15,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +33,10 @@ const loginSchema = z.object({
 
 const signupSchema = loginSchema.extend({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  organizationName: z.string().min(2, { message: "Organization name must be at least 2 characters" }),
+  organizationType: z.enum(["School", "College", "Company", "Other"], {
+    required_error: "Please select an organization type",
+  }),
 });
 
 const Auth = () => {
@@ -56,6 +67,8 @@ const Auth = () => {
       name: "",
       email: "",
       password: "",
+      organizationName: "",
+      organizationType: undefined,
     },
   });
 
@@ -119,6 +132,8 @@ const Auth = () => {
         options: {
           data: {
             name: values.name,
+            organization_name: values.organizationName,
+            organization_type: values.organizationType,
           }
         }
       });
@@ -242,6 +257,50 @@ const Auth = () => {
                           <Input className="pl-9" placeholder="Your name" {...field} />
                         </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="organizationName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Name</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input className="pl-9" placeholder="Your organization name" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="organizationType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select organization type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="School">School</SelectItem>
+                          <SelectItem value="College">College</SelectItem>
+                          <SelectItem value="Company">Company</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
