@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Lock, Mail, User, Building } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, Building, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,6 +37,7 @@ const signupSchema = loginSchema.extend({
   organizationType: z.enum(["School", "College", "Company", "Other"], {
     required_error: "Please select an organization type",
   }),
+  phone: z.string().min(10, { message: "Please enter a valid phone number" }).optional(),
 });
 
 const Auth = () => {
@@ -70,6 +71,7 @@ const Auth = () => {
       password: "",
       organizationName: "",
       organizationType: undefined,
+      phone: "",
     },
   });
 
@@ -135,6 +137,7 @@ const Auth = () => {
             name: values.name,
             organization_name: values.organizationName,
             organization_type: values.organizationType,
+            phone: values.phone || null,
           }
         }
       });
@@ -171,7 +174,7 @@ const Auth = () => {
           <p className="text-muted-foreground mt-2">Document management made simple</p>
         </div>
         
-        <div className="glass-card p-6">
+        <div className="bg-background rounded-lg shadow-lg p-6 border">
           <div className="flex mb-6">
             <button
               type="button"
@@ -259,16 +262,7 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            className="pl-9" 
-                            placeholder="Your name" 
-                            type="text"
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            value={field.value}
-                            name={field.name}
-                            ref={field.ref}
-                          />
+                          <Input className="pl-9" placeholder="Your name" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -285,16 +279,7 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            className="pl-9" 
-                            placeholder="Your organization name" 
-                            type="text"
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            value={field.value}
-                            name={field.name}
-                            ref={field.ref}
-                          />
+                          <Input className="pl-9" placeholder="Your organization name" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -308,7 +293,7 @@ const Auth = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Organization Type</FormLabel>
-                      <Select
+                      <Select 
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
@@ -324,6 +309,23 @@ const Auth = () => {
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input className="pl-9" placeholder="Your phone number" {...field} />
+                        </div>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
