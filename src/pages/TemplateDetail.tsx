@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -32,7 +33,7 @@ const TemplateDetail = () => {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [documentName, setDocumentName] = useState("");
   const [existingDraft, setExistingDraft] = useState<DocumentDraft | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Changed to false to avoid infinite loading
 
   // Get institution name from user profile/settings - in a real app, this would come from an API or context
   const userInstitutionName = "ABC University"; // This would be fetched from user profile
@@ -51,9 +52,10 @@ const TemplateDetail = () => {
         .select('*')
         .eq('template_id', draftId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Changed from single() to maybeSingle() to handle no results case
       
       if (error) {
+        console.error("Supabase query error:", error);
         throw error;
       }
       
@@ -121,9 +123,21 @@ const TemplateDetail = () => {
   // Load draft on component mount
   useEffect(() => {
     const loadDraft = async () => {
-      const draft = await loadSavedDraft();
-      if (draft) {
-        setCertificateData(draft);
+      setIsLoading(true); // Set loading state to true
+      try {
+        const draft = await loadSavedDraft();
+        if (draft) {
+          setCertificateData(draft);
+        }
+      } catch (error) {
+        console.error("Error in loadDraft:", error);
+        toast({
+          title: "Error loading draft",
+          description: "There was a problem loading your certificate draft.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false); // Always set loading to false when done
       }
     };
     

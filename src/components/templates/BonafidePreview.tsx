@@ -59,42 +59,26 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           </h2>
         </div>
 
-        {/* Certificate content */}
+        {/* Certificate content - Updated to match the requested template */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
-            This is to certify that{" "}
-            <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()}{" "}
-            of <strong>{data.parentName || "[Parent's Name]"}</strong>, is
-            a bonafide {data.type || "student/employee"} of{" "}
-            <strong>{data.institutionName || "[Institution Name]"}</strong>.
+            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || "[Institution Name]"}</strong>.
           </p>
 
           <p>
-            {getPronoun()} has been {getPersonType()} in this institution since{" "}
-            <strong>
-              {data.startDate ? formatDate(new Date(data.startDate)) : "[Start Date]"}
-            </strong>{" "}
-            and is currently {getPosition()} as a{" "}
-            <strong>
-              {data.courseOrDesignation || "[Course/Designation]"}
-            </strong>{" "}
-            in the{" "}
-            <strong>{data.department || "[Department]"}</strong>.
+            {getPronoun()} has been {getPersonType()} in this institution since <strong>{data.startDate ? formatDate(new Date(data.startDate)) : "[Start Date]"}</strong> and is currently {getPosition()} as a <strong>{data.courseOrDesignation || "[Course/Designation]"}</strong> in the <strong>{data.department || "[Department]"}</strong>.
           </p>
 
           <p>
-            This certificate is issued upon the request of the individual for the
-            purpose of{" "}
-            <strong>{data.purpose || "[Purpose]"}</strong>.
+            This certificate is issued upon the request of the individual for the purpose of <strong>{data.purpose || "[Purpose]"}</strong>.
           </p>
 
           <p>
-            We confirm that the above information is true and correct to the best of
-            our knowledge and records.
+            We confirm that the above information is true and correct to the best of our knowledge and records.
           </p>
         </div>
 
-        {/* Date and signature */}
+        {/* Date and signature - Updated to match the requested template layout */}
         <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
           <div>
             <p>
