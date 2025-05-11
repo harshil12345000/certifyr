@@ -259,7 +259,16 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9" placeholder="Your name" {...field} />
+                          <Input 
+                            className="pl-9" 
+                            placeholder="Your name" 
+                            type="text"
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            value={field.value}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -276,7 +285,16 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9" placeholder="Your organization name" {...field} />
+                          <Input 
+                            className="pl-9" 
+                            placeholder="Your organization name" 
+                            type="text"
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            value={field.value}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
