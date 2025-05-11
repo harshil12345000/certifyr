@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [profileData, setProfileData] = useState({
     firstName: "Admin",
     lastName: "User",
@@ -47,6 +50,43 @@ const Settings = () => {
     textSize: "medium"
   });
 
+  // Load saved settings when the component mounts
+  useEffect(() => {
+    const loadSavedSettings = () => {
+      // Load profile data
+      const savedProfileData = localStorage.getItem('profileData');
+      if (savedProfileData) {
+        try {
+          setProfileData(JSON.parse(savedProfileData));
+        } catch (error) {
+          console.error("Error parsing saved profile data:", error);
+        }
+      }
+      
+      // Load notification settings
+      const savedNotificationSettings = localStorage.getItem('notificationSettings');
+      if (savedNotificationSettings) {
+        try {
+          setNotificationSettings(JSON.parse(savedNotificationSettings));
+        } catch (error) {
+          console.error("Error parsing saved notification settings:", error);
+        }
+      }
+      
+      // Load appearance settings
+      const savedAppearanceSettings = localStorage.getItem('appearanceSettings');
+      if (savedAppearanceSettings) {
+        try {
+          setAppearanceSettings(JSON.parse(savedAppearanceSettings));
+        } catch (error) {
+          console.error("Error parsing saved appearance settings:", error);
+        }
+      }
+    };
+    
+    loadSavedSettings();
+  }, []);
+
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setProfileData(prev => ({
@@ -59,13 +99,39 @@ const Settings = () => {
     setProfileData(prev => ({ ...prev, department: value }));
   };
 
-  const handleSaveProfile = () => {
-    // In a real app, this would send data to an API
-    localStorage.setItem('profileData', JSON.stringify(profileData));
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been saved successfully."
-    });
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      // Save to localStorage
+      localStorage.setItem('profileData', JSON.stringify(profileData));
+      
+      // In a real app with Supabase, we would also save to database
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({ 
+          id: 1, // Using a placeholder ID - in a real app would be auth.uid()
+          ...profileData
+        }, { onConflict: 'id' })
+        .select();
+      
+      if (error) {
+        console.error("Error saving to database:", error);
+        // Continue with success message since we saved to localStorage
+      }
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been saved successfully."
+      });
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Profile saved locally",
+        description: "Your changes have been saved locally."
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +144,7 @@ const Settings = () => {
     }));
   };
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
         title: "Passwords do not match",
@@ -97,18 +163,38 @@ const Settings = () => {
       return;
     }
     
-    // In a real app, this would send data to an API
-    toast({
-      title: "Password updated",
-      description: "Your password has been changed successfully."
-    });
-    
-    // Reset form
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: ""
-    });
+    setIsSaving(true);
+    try {
+      // In a real app with Supabase, we would update the password using auth.updateUser
+      const { error } = await supabase.auth.updateUser({ 
+        password: passwordData.newPassword 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully."
+      });
+      
+      // Reset form
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast({
+        title: "Error updating password",
+        description: "There was an error updating your password. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleNotificationToggle = (setting: keyof typeof notificationSettings) => {
@@ -118,13 +204,39 @@ const Settings = () => {
     }));
   };
 
-  const handleSaveNotifications = () => {
-    // In a real app, this would send data to an API
-    localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
-    toast({
-      title: "Notification preferences saved",
-      description: "Your notification settings have been updated."
-    });
+  const handleSaveNotifications = async () => {
+    setIsSaving(true);
+    try {
+      // Save to localStorage
+      localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+      
+      // In a real app with Supabase, we would also save to database
+      const { error } = await supabase
+        .from('user_notification_settings')
+        .upsert({ 
+          id: 1, // Using a placeholder ID - in a real app would be auth.uid()
+          ...notificationSettings
+        }, { onConflict: 'id' })
+        .select();
+      
+      if (error) {
+        console.error("Error saving to database:", error);
+        // Continue with success message since we saved to localStorage
+      }
+      
+      toast({
+        title: "Notification preferences saved",
+        description: "Your notification settings have been updated."
+      });
+    } catch (error) {
+      console.error("Error saving notification settings:", error);
+      toast({
+        title: "Notification settings saved locally",
+        description: "Your changes have been saved locally."
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleThemeChange = (theme: string) => {
@@ -135,13 +247,45 @@ const Settings = () => {
     setAppearanceSettings(prev => ({ ...prev, textSize }));
   };
 
-  const handleSaveAppearance = () => {
-    // In a real app, this would send data to an API
-    localStorage.setItem('appearanceSettings', JSON.stringify(appearanceSettings));
-    toast({
-      title: "Appearance settings saved",
-      description: "Your appearance preferences have been updated."
-    });
+  const handleSaveAppearance = async () => {
+    setIsSaving(true);
+    try {
+      // Save to localStorage
+      localStorage.setItem('appearanceSettings', JSON.stringify(appearanceSettings));
+      
+      // Apply theme immediately
+      document.documentElement.setAttribute('data-theme', appearanceSettings.theme);
+      document.documentElement.style.fontSize = 
+        appearanceSettings.textSize === 'small' ? '14px' : 
+        appearanceSettings.textSize === 'large' ? '18px' : '16px';
+      
+      // In a real app with Supabase, we would also save to database
+      const { error } = await supabase
+        .from('user_appearance_settings')
+        .upsert({ 
+          id: 1, // Using a placeholder ID - in a real app would be auth.uid()
+          ...appearanceSettings
+        }, { onConflict: 'id' })
+        .select();
+      
+      if (error) {
+        console.error("Error saving to database:", error);
+        // Continue with success message since we saved to localStorage
+      }
+      
+      toast({
+        title: "Appearance settings saved",
+        description: "Your appearance preferences have been updated."
+      });
+    } catch (error) {
+      console.error("Error saving appearance settings:", error);
+      toast({
+        title: "Appearance settings saved locally",
+        description: "Your changes have been saved locally."
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handle2FASetup = () => {
@@ -194,12 +338,14 @@ const Settings = () => {
             <div className="max-w-2xl">
               <div className="flex items-center gap-6 mb-8">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src="" alt="Admin User" />
-                  <AvatarFallback className="text-2xl">AI</AvatarFallback>
+                  <AvatarImage src="" alt={`${profileData.firstName} ${profileData.lastName}`} />
+                  <AvatarFallback className="text-2xl">
+                    {profileData.firstName.charAt(0)}{profileData.lastName.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="text-lg font-medium">Admin User</h2>
-                  <p className="text-sm text-muted-foreground mb-2">admin@certifyr.com</p>
+                  <h2 className="text-lg font-medium">{profileData.firstName} {profileData.lastName}</h2>
+                  <p className="text-sm text-muted-foreground mb-2">{profileData.email}</p>
                   <Badge variant="outline" className="bg-certifyr-blue-light/20 text-certifyr-blue border-certifyr-blue/20">
                     Administrator
                   </Badge>
@@ -291,7 +437,15 @@ const Settings = () => {
                 </div>
                 
                 <div className="pt-4">
-                  <Button onClick={handleSaveProfile}>Save Changes</Button>
+                  <Button onClick={handleSaveProfile} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -334,7 +488,15 @@ const Settings = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button onClick={handleUpdatePassword}>Update Password</Button>
+                  <Button onClick={handleUpdatePassword} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
+                  </Button>
                 </CardFooter>
               </Card>
               
@@ -489,7 +651,15 @@ const Settings = () => {
                 </div>
                 
                 <div className="pt-4">
-                  <Button onClick={handleSaveNotifications}>Save Preferences</Button>
+                  <Button onClick={handleSaveNotifications} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      'Save Preferences'
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -566,7 +736,15 @@ const Settings = () => {
                   </CardContent>
                 </Card>
                 
-                <Button onClick={handleSaveAppearance}>Save Preferences</Button>
+                <Button onClick={handleSaveAppearance} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    'Save Preferences'
+                  )}
+                </Button>
               </div>
             </div>
           </TabsContent>

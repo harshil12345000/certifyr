@@ -3,12 +3,79 @@ import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 interface BonafidePreviewProps {
   data: BonafideData;
 }
 
 export function BonafidePreview({ data }: BonafidePreviewProps) {
+  const [organizationLogo, setOrganizationLogo] = useState<string | null>(null);
+  const [organizationSeal, setOrganizationSeal] = useState<string | null>(null);
+  const [signatureImage, setSignatureImage] = useState<string | null>(null);
+  const [brandingInfo, setBrandingInfo] = useState<any>(null);
+
+  useEffect(() => {
+    // Load branding settings from localStorage
+    const loadBrandingSettings = async () => {
+      try {
+        const brandingInfoStr = localStorage.getItem('brandingInfo');
+        if (brandingInfoStr) {
+          const branding = JSON.parse(brandingInfoStr);
+          setBrandingInfo(branding);
+          
+          // If we have file references, fetch from storage
+          if (branding.logo) {
+            try {
+              const { data: logoData, error: logoError } = await supabase.storage
+                .from('branding')
+                .download(`logos/${branding.logo}`);
+              
+              if (logoData && !logoError) {
+                setOrganizationLogo(URL.createObjectURL(logoData));
+              }
+            } catch (err) {
+              console.error("Error loading logo:", err);
+            }
+          }
+          
+          if (branding.seal) {
+            try {
+              const { data: sealData, error: sealError } = await supabase.storage
+                .from('branding')
+                .download(`seals/${branding.seal}`);
+              
+              if (sealData && !sealError) {
+                setOrganizationSeal(URL.createObjectURL(sealData));
+              }
+            } catch (err) {
+              console.error("Error loading seal:", err);
+            }
+          }
+
+          if (branding.signature) {
+            try {
+              const { data: sigData, error: sigError } = await supabase.storage
+                .from('branding')
+                .download(`signatures/${branding.signature}`);
+              
+              if (sigData && !sigError) {
+                setSignatureImage(URL.createObjectURL(sigData));
+              }
+            } catch (err) {
+              console.error("Error loading signature:", err);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading branding settings:", err);
+      }
+    };
+
+    loadBrandingSettings();
+  }, []);
+
   const getRelation = () => {
     switch (data.gender) {
       case "male":
@@ -39,17 +106,46 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
     return data.type === "student" ? "enrolled" : "employed";
   };
 
+  // Get organization details from localStorage
+  const getOrgDetails = () => {
+    try {
+      const orgDetailsStr = localStorage.getItem('organizationDetails');
+      if (orgDetailsStr) {
+        return JSON.parse(orgDetailsStr);
+      }
+    } catch (err) {
+      console.error("Error parsing organization details:", err);
+    }
+    return null;
+  };
+
+  const orgDetails = getOrgDetails();
+
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
       <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
         {/* Letterhead */}
         <div className="text-center border-b pb-4 mb-8">
+          {organizationLogo && (
+            <div className="flex justify-center mb-2">
+              <img 
+                src={organizationLogo} 
+                alt="Organization Logo" 
+                className="h-16 object-contain"
+              />
+            </div>
+          )}
           <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
-            {data.institutionName || "[Institution Name]"}
+            {data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}
           </h1>
           <p className="text-muted-foreground">
-            123 Education Street, Knowledge City, 400001 • +91 2222 333333 • info@institution.edu
+            {orgDetails ? orgDetails.address : "123 Education Street, Knowledge City, 400001"} • 
+            {orgDetails ? orgDetails.phone : "+91 2222 333333"} • 
+            {orgDetails ? orgDetails.email : "info@institution.edu"}
           </p>
+          {brandingInfo && brandingInfo.tagline && (
+            <p className="text-sm italic mt-1">{brandingInfo.tagline}</p>
+          )}
         </div>
 
         {/* Certificate title */}
@@ -62,7 +158,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
         {/* Certificate content - Updated to match the requested template */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
-            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || "[Institution Name]"}</strong>.
+            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</strong>.
           </p>
 
           <p>
@@ -85,16 +181,26 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
               <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
             </p>
             <p>
-              <strong>Place:</strong> {data.place || "[City, State]"}
+              <strong>Place:</strong> {data.place || (orgDetails ? orgDetails.address.split(',').slice(-2).join(', ').trim() : "[City, State]")}
             </p>
           </div>
           
           <div className="text-right mt-8 md:mt-0">
             {data.includeDigitalSignature ? (
               <div className="h-16 mb-4 flex justify-end">
-                <div className="border-b border-gray-800 px-6">
-                  <Signature className="h-12 w-12 text-primary" />
-                </div>
+                {signatureImage ? (
+                  <div className="border-b border-gray-800 px-6">
+                    <img 
+                      src={signatureImage} 
+                      alt="Digital Signature" 
+                      className="h-12 object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="border-b border-gray-800 px-6">
+                    <Signature className="h-12 w-12 text-primary" />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="h-16 mb-4">
@@ -103,9 +209,17 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             )}
             <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
             <p>{data.signatoryDesignation || "[Designation]"}</p>
-            <p>{data.institutionName || "[Institution Name]"}</p>
+            <p>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</p>
             <div className="mt-2 border border-dashed inline-block p-2">
-              <p className="text-xs text-center text-muted-foreground">SEAL/STAMP</p>
+              {organizationSeal ? (
+                <img 
+                  src={organizationSeal} 
+                  alt="Official Seal" 
+                  className="h-12 w-12 object-contain"
+                />
+              ) : (
+                <p className="text-xs text-center text-muted-foreground">SEAL/STAMP</p>
+              )}
             </div>
           </div>
         </div>

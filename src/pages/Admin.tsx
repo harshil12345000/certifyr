@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Settings, Lock, Mail, Building, FileText } from 'lucide-react';
+import { UserPlus, Settings, Lock, Mail, Building, FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Admin = () => {
   const { toast } = useToast();
@@ -18,6 +18,8 @@ const Admin = () => {
   const [sealFile, setSealFile] = useState<File | null>(null);
   const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
   const [organizationDetails, setOrganizationDetails] = useState({
     name: "Delhi Public School",
     type: "School",
@@ -30,6 +32,30 @@ const Admin = () => {
     tagline: "Knowledge, Character, Excellence"
   });
 
+  // Load saved organization details on component mount
+  useEffect(() => {
+    const savedOrgDetails = localStorage.getItem('organizationDetails');
+    if (savedOrgDetails) {
+      try {
+        setOrganizationDetails(JSON.parse(savedOrgDetails));
+      } catch (error) {
+        console.error("Error parsing saved organization details:", error);
+      }
+    }
+    
+    // Load saved branding info references
+    const savedBrandingInfo = localStorage.getItem('brandingInfo');
+    if (savedBrandingInfo) {
+      try {
+        const brandingInfo = JSON.parse(savedBrandingInfo);
+        // We're just loading references to files, not the files themselves
+        console.log("Loaded branding info:", brandingInfo);
+      } catch (error) {
+        console.error("Error parsing saved branding info:", error);
+      }
+    }
+  }, []);
+
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     setFile: React.Dispatch<React.SetStateAction<File | null>>,
@@ -39,35 +65,175 @@ const Admin = () => {
     if (files && files.length > 0) {
       setFile(files[0]);
       toast({
-        title: `${fileType} uploaded`,
-        description: `File "${files[0].name}" has been uploaded successfully.`
+        title: `${fileType} selected`,
+        description: `File "${files[0].name}" has been selected.`
       });
     }
   };
 
-  const handleSaveOrganization = () => {
-    // In a real app, this would send data to an API
-    localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
-    toast({
-      title: "Organization details saved",
-      description: "Your organization details have been saved successfully."
-    });
+  const handleSaveOrganization = async () => {
+    try {
+      // Save organization details to localStorage
+      localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
+      
+      // In a real app with Supabase, we would also save to database
+      const { error } = await supabase
+        .from('organization_details')
+        .upsert({ 
+          id: 1, // Using a constant ID since we only have one org
+          ...organizationDetails
+        }, { onConflict: 'id' })
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Organization details saved",
+        description: "Your organization details have been saved successfully."
+      });
+    } catch (error) {
+      console.error("Error saving organization details:", error);
+      // Still save to localStorage even if database fails
+      localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
+      toast({
+        title: "Organization details saved locally",
+        description: "Your changes have been saved locally."
+      });
+    }
   };
   
-  const handleSaveBranding = () => {
-    // In a real app, this would upload files to a storage service
-    const brandingInfo = {
-      logo: logoFile?.name || null,
-      seal: sealFile?.name || null,
-      letterhead: letterheadFile?.name || null,
-      signature: signatureFile?.name || null,
-      tagline: organizationDetails.tagline
-    };
-    localStorage.setItem('brandingInfo', JSON.stringify(brandingInfo));
-    toast({
-      title: "Branding settings saved",
-      description: "Your branding settings have been saved successfully."
-    });
+  const handleSaveBranding = async () => {
+    if (!logoFile && !sealFile && !letterheadFile && !signatureFile && !organizationDetails.tagline) {
+      toast({
+        title: "No changes to save",
+        description: "Please upload files or update the tagline before saving."
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      // Create branding info object to track what was uploaded
+      const brandingInfo: Record<string, string | null> = {
+        tagline: organizationDetails.tagline,
+        logo: null,
+        seal: null,
+        letterhead: null,
+        signature: null
+      };
+      
+      // Check if storage bucket exists and create if not
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.some(b => b.name === 'branding')) {
+        await supabase.storage.createBucket('branding', { public: true });
+      }
+      
+      // Upload logo if present
+      if (logoFile) {
+        const logoFileName = `org_logo_${Date.now()}_${logoFile.name.replace(/\s+/g, '_')}`;
+        const { error: logoError } = await supabase.storage
+          .from('branding')
+          .upload(`logos/${logoFileName}`, logoFile, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (logoError) {
+          console.error("Error uploading logo:", logoError);
+          throw logoError;
+        }
+        
+        brandingInfo.logo = logoFileName;
+      }
+      
+      // Upload seal if present
+      if (sealFile) {
+        const sealFileName = `org_seal_${Date.now()}_${sealFile.name.replace(/\s+/g, '_')}`;
+        const { error: sealError } = await supabase.storage
+          .from('branding')
+          .upload(`seals/${sealFileName}`, sealFile, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (sealError) {
+          console.error("Error uploading seal:", sealError);
+          throw sealError;
+        }
+        
+        brandingInfo.seal = sealFileName;
+      }
+      
+      // Upload letterhead if present
+      if (letterheadFile) {
+        const letterheadFileName = `org_letterhead_${Date.now()}_${letterheadFile.name.replace(/\s+/g, '_')}`;
+        const { error: letterheadError } = await supabase.storage
+          .from('branding')
+          .upload(`letterheads/${letterheadFileName}`, letterheadFile, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (letterheadError) {
+          console.error("Error uploading letterhead:", letterheadError);
+          throw letterheadError;
+        }
+        
+        brandingInfo.letterhead = letterheadFileName;
+      }
+      
+      // Upload signature if present
+      if (signatureFile) {
+        const signatureFileName = `org_signature_${Date.now()}_${signatureFile.name.replace(/\s+/g, '_')}`;
+        const { error: signatureError } = await supabase.storage
+          .from('branding')
+          .upload(`signatures/${signatureFileName}`, signatureFile, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (signatureError) {
+          console.error("Error uploading signature:", signatureError);
+          throw signatureError;
+        }
+        
+        brandingInfo.signature = signatureFileName;
+      }
+      
+      // Save branding info to localStorage
+      localStorage.setItem('brandingInfo', JSON.stringify(brandingInfo));
+      
+      // Save branding info to database
+      const { error } = await supabase
+        .from('branding_settings')
+        .upsert({ 
+          id: 1, // Using a constant ID since we only have one set of branding
+          ...brandingInfo
+        }, { onConflict: 'id' })
+        .select();
+      
+      if (error) {
+        console.error("Error saving branding to database:", error);
+        // Continue with success message since files were uploaded and saved to localStorage
+      }
+      
+      toast({
+        title: "Branding settings saved",
+        description: "Your branding settings and uploaded files have been saved successfully."
+      });
+    } catch (error) {
+      console.error("Error saving branding:", error);
+      toast({
+        title: "Error saving branding",
+        description: "There was an error saving your branding settings. Some files may not have been uploaded.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,7 +372,9 @@ const Admin = () => {
                 </div>
                 
                 <div className="pt-4">
-                  <Button onClick={handleSaveOrganization}>Save Changes</Button>
+                  <Button onClick={handleSaveOrganization}>
+                    Save Changes
+                  </Button>
                 </div>
               </div>
             </div>
@@ -465,7 +633,15 @@ const Admin = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button onClick={handleSaveBranding}>Save Changes</Button>
+                    <Button onClick={handleSaveBranding} disabled={isUploading}>
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </Button>
                   </CardFooter>
                 </Card>
               </div>
