@@ -31,8 +31,10 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
-const signupSchema = loginSchema.extend({
+const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   organizationName: z.string().min(2, { message: "Organization name must be at least 2 characters" }),
   organizationType: z.enum(["School", "College", "Company", "Other"], {
     required_error: "Please select an organization type",
@@ -55,6 +57,7 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  // Create separate form instances for login and signup
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
