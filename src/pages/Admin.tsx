@@ -34,26 +34,85 @@ const Admin = () => {
 
   // Load saved organization details on component mount
   useEffect(() => {
-    const savedOrgDetails = localStorage.getItem('organizationDetails');
-    if (savedOrgDetails) {
+    const loadOrgDetails = async () => {
       try {
-        setOrganizationDetails(JSON.parse(savedOrgDetails));
-      } catch (error) {
-        console.error("Error parsing saved organization details:", error);
+        // Try to get from Supabase first
+        const { data: orgData, error } = await supabase
+          .from('organization_details')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (orgData && !error) {
+          console.log("Loaded org details from Supabase:", orgData);
+          setOrganizationDetails({
+            name: orgData.name || "Delhi Public School",
+            type: orgData.type || "School",
+            address: orgData.address || "123 Education Lane, New Delhi, 110001",
+            phone: orgData.phone || "+91 98765 43210",
+            email: orgData.email || "info@dpsdelhi.edu.in",
+            website: orgData.website || "https://dpsdelhi.edu.in",
+            registration: orgData.registration || "CBSE-1049/DL",
+            affiliation: orgData.affiliation || "Central Board of Secondary Education",
+            tagline: orgData.tagline || "Knowledge, Character, Excellence"
+          });
+        } else {
+          // Fall back to localStorage
+          const savedOrgDetails = localStorage.getItem('organizationDetails');
+          if (savedOrgDetails) {
+            try {
+              setOrganizationDetails(JSON.parse(savedOrgDetails));
+            } catch (error) {
+              console.error("Error parsing saved organization details:", error);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading organization details:", err);
+        // Fall back to localStorage
+        const savedOrgDetails = localStorage.getItem('organizationDetails');
+        if (savedOrgDetails) {
+          try {
+            setOrganizationDetails(JSON.parse(savedOrgDetails));
+          } catch (error) {
+            console.error("Error parsing saved organization details:", error);
+          }
+        }
       }
-    }
+    };
     
     // Load saved branding info references
-    const savedBrandingInfo = localStorage.getItem('brandingInfo');
-    if (savedBrandingInfo) {
+    const loadBrandingInfo = async () => {
       try {
-        const brandingInfo = JSON.parse(savedBrandingInfo);
-        // We're just loading references to files, not the files themselves
-        console.log("Loaded branding info:", brandingInfo);
-      } catch (error) {
-        console.error("Error parsing saved branding info:", error);
+        // Try to get from Supabase first
+        const { data: brandingData, error } = await supabase
+          .from('branding_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (brandingData && !error) {
+          console.log("Loaded branding info from Supabase:", brandingData);
+        } else {
+          // Fall back to localStorage
+          const savedBrandingInfo = localStorage.getItem('brandingInfo');
+          if (savedBrandingInfo) {
+            try {
+              const brandingInfo = JSON.parse(savedBrandingInfo);
+              // We're just loading references to files, not the files themselves
+              console.log("Loaded branding info from localStorage:", brandingInfo);
+            } catch (error) {
+              console.error("Error parsing saved branding info:", error);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading branding info:", err);
       }
-    }
+    };
+
+    loadOrgDetails();
+    loadBrandingInfo();
   }, []);
 
   const handleFileUpload = (
@@ -73,16 +132,16 @@ const Admin = () => {
 
   const handleSaveOrganization = async () => {
     try {
-      // Save organization details to localStorage
+      // Save organization details to localStorage for backward compatibility
       localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
       
-      // In a real app with Supabase, we would also save to database
-      const { error } = await supabase
+      // Save to Supabase
+      const { data, error } = await supabase
         .from('organization_details')
         .upsert({ 
-          id: 1, // Using a constant ID since we only have one org
+          id: '1', // Using a constant string ID
           ...organizationDetails
-        }, { onConflict: 'id' })
+        })
         .select();
       
       if (error) {
@@ -95,8 +154,6 @@ const Admin = () => {
       });
     } catch (error) {
       console.error("Error saving organization details:", error);
-      // Still save to localStorage even if database fails
-      localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
       toast({
         title: "Organization details saved locally",
         description: "Your changes have been saved locally."
@@ -203,21 +260,20 @@ const Admin = () => {
         brandingInfo.signature = signatureFileName;
       }
       
-      // Save branding info to localStorage
+      // Save branding info to localStorage for backward compatibility
       localStorage.setItem('brandingInfo', JSON.stringify(brandingInfo));
       
-      // Save branding info to database
+      // Save branding info to Supabase
       const { error } = await supabase
         .from('branding_settings')
         .upsert({ 
-          id: 1, // Using a constant ID since we only have one set of branding
+          id: '1', // Using a constant string ID
           ...brandingInfo
-        }, { onConflict: 'id' })
+        })
         .select();
       
       if (error) {
         console.error("Error saving branding to database:", error);
-        // Continue with success message since files were uploaded and saved to localStorage
       }
       
       toast({

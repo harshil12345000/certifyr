@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -20,17 +19,23 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
     // Load branding settings from localStorage
     const loadBrandingSettings = async () => {
       try {
-        const brandingInfoStr = localStorage.getItem('brandingInfo');
-        if (brandingInfoStr) {
-          const branding = JSON.parse(brandingInfoStr);
-          setBrandingInfo(branding);
+        // Try to get branding info from Supabase first
+        const { data: brandingData, error } = await supabase
+          .from('branding_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (brandingData && !error) {
+          console.log("Loaded branding info from Supabase:", brandingData);
+          setBrandingInfo(brandingData);
           
           // If we have file references, fetch from storage
-          if (branding.logo) {
+          if (brandingData.logo) {
             try {
               const { data: logoData, error: logoError } = await supabase.storage
                 .from('branding')
-                .download(`logos/${branding.logo}`);
+                .download(`logos/${brandingData.logo}`);
               
               if (logoData && !logoError) {
                 setOrganizationLogo(URL.createObjectURL(logoData));
@@ -40,11 +45,11 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             }
           }
           
-          if (branding.seal) {
+          if (brandingData.seal) {
             try {
               const { data: sealData, error: sealError } = await supabase.storage
                 .from('branding')
-                .download(`seals/${branding.seal}`);
+                .download(`seals/${brandingData.seal}`);
               
               if (sealData && !sealError) {
                 setOrganizationSeal(URL.createObjectURL(sealData));
@@ -54,17 +59,67 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             }
           }
 
-          if (branding.signature) {
+          if (brandingData.signature) {
             try {
               const { data: sigData, error: sigError } = await supabase.storage
                 .from('branding')
-                .download(`signatures/${branding.signature}`);
+                .download(`signatures/${brandingData.signature}`);
               
               if (sigData && !sigError) {
                 setSignatureImage(URL.createObjectURL(sigData));
               }
             } catch (err) {
               console.error("Error loading signature:", err);
+            }
+          }
+        } else {
+          // Fall back to localStorage if no data in Supabase
+          const brandingInfoStr = localStorage.getItem('brandingInfo');
+          if (brandingInfoStr) {
+            const branding = JSON.parse(brandingInfoStr);
+            setBrandingInfo(branding);
+            
+            // If we have file references, fetch from storage
+            if (branding.logo) {
+              try {
+                const { data: logoData, error: logoError } = await supabase.storage
+                  .from('branding')
+                  .download(`logos/${branding.logo}`);
+                
+                if (logoData && !logoError) {
+                  setOrganizationLogo(URL.createObjectURL(logoData));
+                }
+              } catch (err) {
+                console.error("Error loading logo:", err);
+              }
+            }
+            
+            if (branding.seal) {
+              try {
+                const { data: sealData, error: sealError } = await supabase.storage
+                  .from('branding')
+                  .download(`seals/${branding.seal}`);
+                
+                if (sealData && !sealError) {
+                  setOrganizationSeal(URL.createObjectURL(sealData));
+                }
+              } catch (err) {
+                console.error("Error loading seal:", err);
+              }
+            }
+
+            if (branding.signature) {
+              try {
+                const { data: sigData, error: sigError } = await supabase.storage
+                  .from('branding')
+                  .download(`signatures/${branding.signature}`);
+                
+                if (sigData && !sigError) {
+                  setSignatureImage(URL.createObjectURL(sigData));
+                }
+              } catch (err) {
+                console.error("Error loading signature:", err);
+              }
             }
           }
         }
@@ -106,20 +161,45 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
     return data.type === "student" ? "enrolled" : "employed";
   };
 
-  // Get organization details from localStorage
-  const getOrgDetails = () => {
-    try {
-      const orgDetailsStr = localStorage.getItem('organizationDetails');
-      if (orgDetailsStr) {
-        return JSON.parse(orgDetailsStr);
+  // Get organization details from Supabase or localStorage
+  const [orgDetails, setOrgDetails] = useState<any>(null);
+  
+  useEffect(() => {
+    const loadOrgDetails = async () => {
+      try {
+        // Try to get organization details from Supabase first
+        const { data: orgData, error } = await supabase
+          .from('organization_details')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (orgData && !error) {
+          console.log("Loaded org details from Supabase:", orgData);
+          setOrgDetails(orgData);
+        } else {
+          // Fall back to localStorage
+          const orgDetailsStr = localStorage.getItem('organizationDetails');
+          if (orgDetailsStr) {
+            setOrgDetails(JSON.parse(orgDetailsStr));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading organization details:", err);
+        // Fall back to localStorage
+        try {
+          const orgDetailsStr = localStorage.getItem('organizationDetails');
+          if (orgDetailsStr) {
+            setOrgDetails(JSON.parse(orgDetailsStr));
+          }
+        } catch (error) {
+          console.error("Error parsing organization details from localStorage:", error);
+        }
       }
-    } catch (err) {
-      console.error("Error parsing organization details:", err);
-    }
-    return null;
-  };
-
-  const orgDetails = getOrgDetails();
+    };
+    
+    loadOrgDetails();
+  }, []);
 
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
@@ -155,7 +235,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           </h2>
         </div>
 
-        {/* Certificate content - Updated to match the requested template */}
+        {/* Certificate content - Matching the template format */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
             This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</strong>.
@@ -181,7 +261,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
               <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
             </p>
             <p>
-              <strong>Place:</strong> {data.place || (orgDetails ? orgDetails.address.split(',').slice(-2).join(', ').trim() : "[City, State]")}
+              <strong>Place:</strong> {data.place || (orgDetails ? orgDetails.address?.split(',').slice(-2).join(', ').trim() : "[City, State]")}
             </p>
           </div>
           

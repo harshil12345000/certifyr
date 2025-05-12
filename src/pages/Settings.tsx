@@ -52,8 +52,98 @@ const Settings = () => {
 
   // Load saved settings when the component mounts
   useEffect(() => {
-    const loadSavedSettings = () => {
-      // Load profile data
+    const loadSavedSettings = async () => {
+      try {
+        // Load profile data from Supabase
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (profileData && !profileError) {
+          setProfileData({
+            firstName: profileData.first_name || "Admin",
+            lastName: profileData.last_name || "User",
+            email: profileData.email || "admin@certifyr.com",
+            jobTitle: profileData.job_title || "Principal",
+            department: profileData.department || "management",
+            phone: profileData.phone || "+91 98765 43210",
+            bio: profileData.bio || ""
+          });
+        } else {
+          // Fall back to localStorage
+          const savedProfileData = localStorage.getItem('profileData');
+          if (savedProfileData) {
+            try {
+              setProfileData(JSON.parse(savedProfileData));
+            } catch (error) {
+              console.error("Error parsing saved profile data:", error);
+            }
+          }
+        }
+        
+        // Load notification settings from Supabase
+        const { data: notificationData, error: notificationError } = await supabase
+          .from('user_notification_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (notificationData && !notificationError) {
+          setNotificationSettings({
+            newDocumentRequests: notificationData.new_document_requests ?? true,
+            documentSigned: notificationData.document_signed ?? true,
+            documentDelivered: notificationData.document_delivered ?? true,
+            newUserRegistrations: notificationData.new_user_registrations ?? true,
+            securityAlerts: notificationData.security_alerts ?? true,
+            productUpdates: notificationData.product_updates ?? false,
+            emailNotifications: notificationData.email_notifications ?? true,
+            inAppNotifications: notificationData.in_app_notifications ?? true
+          });
+        } else {
+          // Fall back to localStorage
+          const savedNotificationSettings = localStorage.getItem('notificationSettings');
+          if (savedNotificationSettings) {
+            try {
+              setNotificationSettings(JSON.parse(savedNotificationSettings));
+            } catch (error) {
+              console.error("Error parsing saved notification settings:", error);
+            }
+          }
+        }
+        
+        // Load appearance settings from Supabase
+        const { data: appearanceData, error: appearanceError } = await supabase
+          .from('user_appearance_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (appearanceData && !appearanceError) {
+          setAppearanceSettings({
+            theme: appearanceData.theme || "light",
+            textSize: appearanceData.text_size || "medium"
+          });
+        } else {
+          // Fall back to localStorage
+          const savedAppearanceSettings = localStorage.getItem('appearanceSettings');
+          if (savedAppearanceSettings) {
+            try {
+              setAppearanceSettings(JSON.parse(savedAppearanceSettings));
+            } catch (error) {
+              console.error("Error parsing saved appearance settings:", error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+        // Still try to load from localStorage as fallback
+        loadFromLocalStorage();
+      }
+    };
+    
+    const loadFromLocalStorage = () => {
       const savedProfileData = localStorage.getItem('profileData');
       if (savedProfileData) {
         try {
@@ -63,7 +153,6 @@ const Settings = () => {
         }
       }
       
-      // Load notification settings
       const savedNotificationSettings = localStorage.getItem('notificationSettings');
       if (savedNotificationSettings) {
         try {
@@ -73,7 +162,6 @@ const Settings = () => {
         }
       }
       
-      // Load appearance settings
       const savedAppearanceSettings = localStorage.getItem('appearanceSettings');
       if (savedAppearanceSettings) {
         try {
@@ -102,16 +190,22 @@ const Settings = () => {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      // Save to localStorage
+      // Save to localStorage for backward compatibility
       localStorage.setItem('profileData', JSON.stringify(profileData));
       
-      // In a real app with Supabase, we would also save to database
+      // Save to Supabase
       const { error } = await supabase
         .from('user_profiles')
         .upsert({ 
-          id: 1, // Using a placeholder ID - in a real app would be auth.uid()
-          ...profileData
-        }, { onConflict: 'id' })
+          id: '1', // Using a constant string ID
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          email: profileData.email,
+          job_title: profileData.jobTitle,
+          department: profileData.department,
+          phone: profileData.phone,
+          bio: profileData.bio
+        })
         .select();
       
       if (error) {
@@ -207,16 +301,23 @@ const Settings = () => {
   const handleSaveNotifications = async () => {
     setIsSaving(true);
     try {
-      // Save to localStorage
+      // Save to localStorage for backward compatibility
       localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
       
-      // In a real app with Supabase, we would also save to database
+      // Save to Supabase
       const { error } = await supabase
         .from('user_notification_settings')
         .upsert({ 
-          id: 1, // Using a placeholder ID - in a real app would be auth.uid()
-          ...notificationSettings
-        }, { onConflict: 'id' })
+          id: '1', // Using a constant string ID
+          new_document_requests: notificationSettings.newDocumentRequests,
+          document_signed: notificationSettings.documentSigned,
+          document_delivered: notificationSettings.documentDelivered,
+          new_user_registrations: notificationSettings.newUserRegistrations,
+          security_alerts: notificationSettings.securityAlerts,
+          product_updates: notificationSettings.productUpdates,
+          email_notifications: notificationSettings.emailNotifications,
+          in_app_notifications: notificationSettings.inAppNotifications
+        })
         .select();
       
       if (error) {
@@ -250,7 +351,7 @@ const Settings = () => {
   const handleSaveAppearance = async () => {
     setIsSaving(true);
     try {
-      // Save to localStorage
+      // Save to localStorage for backward compatibility
       localStorage.setItem('appearanceSettings', JSON.stringify(appearanceSettings));
       
       // Apply theme immediately
@@ -259,13 +360,14 @@ const Settings = () => {
         appearanceSettings.textSize === 'small' ? '14px' : 
         appearanceSettings.textSize === 'large' ? '18px' : '16px';
       
-      // In a real app with Supabase, we would also save to database
+      // Save to Supabase
       const { error } = await supabase
         .from('user_appearance_settings')
         .upsert({ 
-          id: 1, // Using a placeholder ID - in a real app would be auth.uid()
-          ...appearanceSettings
-        }, { onConflict: 'id' })
+          id: '1', // Using a constant string ID
+          theme: appearanceSettings.theme,
+          text_size: appearanceSettings.textSize
+        })
         .select();
       
       if (error) {
