@@ -16,3 +16,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Helper function to get public URL for a file in storage
+export const getPublicUrl = (bucketName: string, filePath: string) => {
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${filePath}`;
+};

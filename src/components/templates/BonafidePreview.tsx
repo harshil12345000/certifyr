@@ -2,7 +2,7 @@ import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getPublicUrl } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
 interface BonafidePreviewProps {
@@ -16,10 +16,10 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
   const [brandingInfo, setBrandingInfo] = useState<any>(null);
 
   useEffect(() => {
-    // Load branding settings from localStorage
+    // Load branding settings
     const loadBrandingSettings = async () => {
       try {
-        // Try to get branding info from Supabase first
+        // Try to get branding info from Supabase
         const { data: brandingData, error } = await supabase
           .from('branding_settings')
           .select('*')
@@ -30,47 +30,23 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           console.log("Loaded branding info from Supabase:", brandingData);
           setBrandingInfo(brandingData);
           
-          // If we have file references, fetch from storage
+          // Use direct public URLs for the assets if they exist
           if (brandingData.logo) {
-            try {
-              const { data: logoData, error: logoError } = await supabase.storage
-                .from('branding')
-                .download(`logos/${brandingData.logo}`);
-              
-              if (logoData && !logoError) {
-                setOrganizationLogo(URL.createObjectURL(logoData));
-              }
-            } catch (err) {
-              console.error("Error loading logo:", err);
-            }
+            const logoUrl = getPublicUrl('branding', `logos/${brandingData.logo}`);
+            setOrganizationLogo(logoUrl);
+            console.log("Logo URL:", logoUrl);
           }
           
           if (brandingData.seal) {
-            try {
-              const { data: sealData, error: sealError } = await supabase.storage
-                .from('branding')
-                .download(`seals/${brandingData.seal}`);
-              
-              if (sealData && !sealError) {
-                setOrganizationSeal(URL.createObjectURL(sealData));
-              }
-            } catch (err) {
-              console.error("Error loading seal:", err);
-            }
+            const sealUrl = getPublicUrl('branding', `seals/${brandingData.seal}`);
+            setOrganizationSeal(sealUrl);
+            console.log("Seal URL:", sealUrl);
           }
 
           if (brandingData.signature) {
-            try {
-              const { data: sigData, error: sigError } = await supabase.storage
-                .from('branding')
-                .download(`signatures/${brandingData.signature}`);
-              
-              if (sigData && !sigError) {
-                setSignatureImage(URL.createObjectURL(sigData));
-              }
-            } catch (err) {
-              console.error("Error loading signature:", err);
-            }
+            const signatureUrl = getPublicUrl('branding', `signatures/${brandingData.signature}`);
+            setSignatureImage(signatureUrl);
+            console.log("Signature URL:", signatureUrl);
           }
         } else {
           // Fall back to localStorage if no data in Supabase
@@ -79,47 +55,23 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             const branding = JSON.parse(brandingInfoStr);
             setBrandingInfo(branding);
             
-            // If we have file references, fetch from storage
+            // If we have file references, fetch from storage using public URLs
             if (branding.logo) {
-              try {
-                const { data: logoData, error: logoError } = await supabase.storage
-                  .from('branding')
-                  .download(`logos/${branding.logo}`);
-                
-                if (logoData && !logoError) {
-                  setOrganizationLogo(URL.createObjectURL(logoData));
-                }
-              } catch (err) {
-                console.error("Error loading logo:", err);
-              }
+              const logoUrl = getPublicUrl('branding', `logos/${branding.logo}`);
+              setOrganizationLogo(logoUrl);
+              console.log("Logo URL from localStorage:", logoUrl);
             }
             
             if (branding.seal) {
-              try {
-                const { data: sealData, error: sealError } = await supabase.storage
-                  .from('branding')
-                  .download(`seals/${branding.seal}`);
-                
-                if (sealData && !sealError) {
-                  setOrganizationSeal(URL.createObjectURL(sealData));
-                }
-              } catch (err) {
-                console.error("Error loading seal:", err);
-              }
+              const sealUrl = getPublicUrl('branding', `seals/${branding.seal}`);
+              setOrganizationSeal(sealUrl);
+              console.log("Seal URL from localStorage:", sealUrl);
             }
 
             if (branding.signature) {
-              try {
-                const { data: sigData, error: sigError } = await supabase.storage
-                  .from('branding')
-                  .download(`signatures/${branding.signature}`);
-                
-                if (sigData && !sigError) {
-                  setSignatureImage(URL.createObjectURL(sigData));
-                }
-              } catch (err) {
-                console.error("Error loading signature:", err);
-              }
+              const signatureUrl = getPublicUrl('branding', `signatures/${branding.signature}`);
+              setSignatureImage(signatureUrl);
+              console.log("Signature URL from localStorage:", signatureUrl);
             }
           }
         }
@@ -212,6 +164,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                 src={organizationLogo} 
                 alt="Organization Logo" 
                 className="h-16 object-contain"
+                onError={(e) => console.error("Error loading logo:", e)}
               />
             </div>
           )}
@@ -235,7 +188,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           </h2>
         </div>
 
-        {/* Certificate content - Matching the template format */}
+        {/* Certificate content */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
             This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</strong>.
@@ -254,7 +207,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           </p>
         </div>
 
-        {/* Date and signature - Updated to match the requested template layout */}
+        {/* Date and signature */}
         <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
           <div>
             <p>
@@ -274,6 +227,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                       src={signatureImage} 
                       alt="Digital Signature" 
                       className="h-12 object-contain"
+                      onError={(e) => console.error("Error loading signature:", e)}
                     />
                   </div>
                 ) : (
@@ -295,7 +249,8 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                 <img 
                   src={organizationSeal} 
                   alt="Official Seal" 
-                  className="h-12 w-12 object-contain"
+                  className="h-12 w-12 object-contain" 
+                  onError={(e) => console.error("Error loading seal:", e)}
                 />
               ) : (
                 <p className="text-xs text-center text-muted-foreground">SEAL/STAMP</p>
