@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -49,6 +50,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             console.log("Signature URL:", signatureUrl);
           }
         } else {
+          console.log("No branding data found in Supabase, falling back to localStorage");
           // Fall back to localStorage if no data in Supabase
           const brandingInfoStr = localStorage.getItem('brandingInfo');
           if (brandingInfoStr) {
@@ -130,6 +132,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           console.log("Loaded org details from Supabase:", orgData);
           setOrgDetails(orgData);
         } else {
+          console.log("No org details found in Supabase, falling back to localStorage");
           // Fall back to localStorage
           const orgDetailsStr = localStorage.getItem('organizationDetails');
           if (orgDetailsStr) {
@@ -164,7 +167,10 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                 src={organizationLogo} 
                 alt="Organization Logo" 
                 className="h-16 object-contain"
-                onError={(e) => console.error("Error loading logo:", e)}
+                onError={(e) => {
+                  console.error("Error loading logo:", e);
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             </div>
           )}
@@ -191,11 +197,11 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
         {/* Certificate content */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
-            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</strong>.
+            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {data.gender === "male" ? "son" : data.gender === "female" ? "daughter" : "child"} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</strong>.
           </p>
 
           <p>
-            {getPronoun()} has been {getPersonType()} in this institution since <strong>{data.startDate ? formatDate(new Date(data.startDate)) : "[Start Date]"}</strong> and is currently {getPosition()} as a <strong>{data.courseOrDesignation || "[Course/Designation]"}</strong> in the <strong>{data.department || "[Department]"}</strong>.
+            {data.gender === "male" ? "He" : data.gender === "female" ? "She" : "They"} has been {data.type === "student" ? "studying" : "working"} in this institution since <strong>{data.startDate ? formatDate(new Date(data.startDate)) : "[Start Date]"}</strong> and is currently {data.type === "student" ? "enrolled" : "employed"} as a <strong>{data.courseOrDesignation || "[Course/Designation]"}</strong> in the <strong>{data.department || "[Department]"}</strong>.
           </p>
 
           <p>
@@ -227,7 +233,10 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                       src={signatureImage} 
                       alt="Digital Signature" 
                       className="h-12 object-contain"
-                      onError={(e) => console.error("Error loading signature:", e)}
+                      onError={(e) => {
+                        console.error("Error loading signature:", e);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   </div>
                 ) : (
@@ -250,7 +259,10 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                   src={organizationSeal} 
                   alt="Official Seal" 
                   className="h-12 w-12 object-contain" 
-                  onError={(e) => console.error("Error loading seal:", e)}
+                  onError={(e) => {
+                    console.error("Error loading seal:", e);
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
                 />
               ) : (
                 <p className="text-xs text-center text-muted-foreground">SEAL/STAMP</p>

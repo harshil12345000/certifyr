@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Settings, Lock, Mail, Building, FileText, Loader2 } from 'lucide-react';
+import { UserPlus, Settings, Loader2, Building, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getPublicUrl } from '@/integrations/supabase/client';
 
 const Admin = () => {
   const { toast } = useToast();
@@ -19,6 +20,10 @@ const Admin = () => {
   const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [sealPreview, setSealPreview] = useState<string | null>(null);
+  const [letterheadPreview, setLetterheadPreview] = useState<string | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   
   const [organizationDetails, setOrganizationDetails] = useState({
     name: "Delhi Public School",
@@ -32,7 +37,7 @@ const Admin = () => {
     tagline: "Knowledge, Character, Excellence"
   });
 
-  // Load saved organization details on component mount
+  // Load saved organization details and branding assets on component mount
   useEffect(() => {
     const loadOrgDetails = async () => {
       try {
@@ -81,7 +86,7 @@ const Admin = () => {
       }
     };
     
-    // Load saved branding info references
+    // Load saved branding info and previews
     const loadBrandingInfo = async () => {
       try {
         // Try to get from Supabase first
@@ -93,14 +98,45 @@ const Admin = () => {
         
         if (brandingData && !error) {
           console.log("Loaded branding info from Supabase:", brandingData);
+          
+          // Set previews for existing branding assets
+          if (brandingData.logo) {
+            setLogoPreview(getPublicUrl('branding', `logos/${brandingData.logo}`));
+          }
+          
+          if (brandingData.seal) {
+            setSealPreview(getPublicUrl('branding', `seals/${brandingData.seal}`));
+          }
+          
+          if (brandingData.letterhead) {
+            setLetterheadPreview(getPublicUrl('branding', `letterheads/${brandingData.letterhead}`));
+          }
+          
+          if (brandingData.signature) {
+            setSignaturePreview(getPublicUrl('branding', `signatures/${brandingData.signature}`));
+          }
         } else {
           // Fall back to localStorage
           const savedBrandingInfo = localStorage.getItem('brandingInfo');
           if (savedBrandingInfo) {
             try {
               const brandingInfo = JSON.parse(savedBrandingInfo);
-              // We're just loading references to files, not the files themselves
-              console.log("Loaded branding info from localStorage:", brandingInfo);
+              
+              if (brandingInfo.logo) {
+                setLogoPreview(getPublicUrl('branding', `logos/${brandingInfo.logo}`));
+              }
+              
+              if (brandingInfo.seal) {
+                setSealPreview(getPublicUrl('branding', `seals/${brandingInfo.seal}`));
+              }
+              
+              if (brandingInfo.letterhead) {
+                setLetterheadPreview(getPublicUrl('branding', `letterheads/${brandingInfo.letterhead}`));
+              }
+              
+              if (brandingInfo.signature) {
+                setSignaturePreview(getPublicUrl('branding', `signatures/${brandingInfo.signature}`));
+              }
             } catch (error) {
               console.error("Error parsing saved branding info:", error);
             }
@@ -118,14 +154,21 @@ const Admin = () => {
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     setFile: React.Dispatch<React.SetStateAction<File | null>>,
+    setPreview: React.Dispatch<React.SetStateAction<string | null>>,
     fileType: string
   ) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      setFile(files[0]);
+      const selectedFile = files[0];
+      setFile(selectedFile);
+      
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(selectedFile);
+      setPreview(previewUrl);
+      
       toast({
         title: `${fileType} selected`,
-        description: `File "${files[0].name}" has been selected.`
+        description: `File "${selectedFile.name}" has been selected.`
       });
     }
   };
@@ -181,11 +224,19 @@ const Admin = () => {
         letterhead: null,
         signature: null
       };
-      
-      // Check if storage bucket exists and create if not
-      const { data: buckets } = await supabase.storage.listBuckets();
-      if (!buckets?.some(b => b.name === 'branding')) {
-        await supabase.storage.createBucket('branding', { public: true });
+
+      // Fetch existing branding settings to preserve values that aren't being updated
+      const { data: existingSettings } = await supabase
+        .from('branding_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (existingSettings) {
+        if (!logoFile) brandingInfo.logo = existingSettings.logo;
+        if (!sealFile) brandingInfo.seal = existingSettings.seal;
+        if (!letterheadFile) brandingInfo.letterhead = existingSettings.letterhead;
+        if (!signatureFile) brandingInfo.signature = existingSettings.signature;
       }
       
       // Upload logo if present
@@ -204,6 +255,7 @@ const Admin = () => {
         }
         
         brandingInfo.logo = logoFileName;
+        console.log("Logo successfully uploaded:", logoFileName);
       }
       
       // Upload seal if present
@@ -222,6 +274,7 @@ const Admin = () => {
         }
         
         brandingInfo.seal = sealFileName;
+        console.log("Seal successfully uploaded:", sealFileName);
       }
       
       // Upload letterhead if present
@@ -240,6 +293,7 @@ const Admin = () => {
         }
         
         brandingInfo.letterhead = letterheadFileName;
+        console.log("Letterhead successfully uploaded:", letterheadFileName);
       }
       
       // Upload signature if present
@@ -258,6 +312,7 @@ const Admin = () => {
         }
         
         brandingInfo.signature = signatureFileName;
+        console.log("Signature successfully uploaded:", signatureFileName);
       }
       
       // Save branding info to localStorage for backward compatibility
@@ -269,22 +324,22 @@ const Admin = () => {
         .upsert({ 
           id: '1', // Using a constant string ID
           ...brandingInfo
-        })
-        .select();
+        });
       
       if (error) {
         console.error("Error saving branding to database:", error);
+        throw error;
       }
       
       toast({
         title: "Branding settings saved",
         description: "Your branding settings and uploaded files have been saved successfully."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving branding:", error);
       toast({
         title: "Error saving branding",
-        description: "There was an error saving your branding settings. Some files may not have been uploaded.",
+        description: error.message || "There was an error saving your branding settings. Some files may not have been uploaded.",
         variant: "destructive"
       });
     } finally {
@@ -554,16 +609,17 @@ const Admin = () => {
                       <div className="space-y-3">
                         <Label>Organization Logo</Label>
                         <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
-                          {logoFile ? (
+                          {logoPreview ? (
                             <div className="flex flex-col items-center">
                               <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
                                 <img 
-                                  src={URL.createObjectURL(logoFile)} 
+                                  src={logoPreview} 
                                   alt="Logo preview" 
                                   className="max-w-full max-h-full object-contain"
+                                  onError={(e) => console.error("Error loading logo preview:", e)}
                                 />
                               </div>
-                              <p className="text-sm font-medium">{logoFile.name}</p>
+                              <p className="text-sm font-medium">{logoFile?.name || "Current logo"}</p>
                             </div>
                           ) : (
                             <>
@@ -576,23 +632,24 @@ const Admin = () => {
                             type="file" 
                             className="absolute inset-0 opacity-0 cursor-pointer" 
                             accept="image/*"
-                            onChange={(e) => handleFileUpload(e, setLogoFile, "Logo")}
+                            onChange={(e) => handleFileUpload(e, setLogoFile, setLogoPreview, "Logo")}
                           />
                         </div>
                       </div>
                       <div className="space-y-3">
                         <Label>Official Seal</Label>
                         <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
-                          {sealFile ? (
+                          {sealPreview ? (
                             <div className="flex flex-col items-center">
                               <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
                                 <img 
-                                  src={URL.createObjectURL(sealFile)} 
+                                  src={sealPreview} 
                                   alt="Seal preview" 
                                   className="max-w-full max-h-full object-contain"
+                                  onError={(e) => console.error("Error loading seal preview:", e)}
                                 />
                               </div>
-                              <p className="text-sm font-medium">{sealFile.name}</p>
+                              <p className="text-sm font-medium">{sealFile?.name || "Current seal"}</p>
                             </div>
                           ) : (
                             <>
@@ -605,7 +662,7 @@ const Admin = () => {
                             type="file" 
                             className="absolute inset-0 opacity-0 cursor-pointer" 
                             accept="image/*"
-                            onChange={(e) => handleFileUpload(e, setSealFile, "Seal")}
+                            onChange={(e) => handleFileUpload(e, setSealFile, setSealPreview, "Seal")}
                           />
                         </div>
                       </div>
@@ -633,16 +690,17 @@ const Admin = () => {
                       <div className="space-y-3">
                         <Label htmlFor="letterhead">Letterhead</Label>
                         <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
-                          {letterheadFile ? (
+                          {letterheadPreview ? (
                             <div className="flex flex-col items-center">
                               <div className="w-32 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
                                 <img 
-                                  src={URL.createObjectURL(letterheadFile)} 
+                                  src={letterheadPreview} 
                                   alt="Letterhead preview" 
                                   className="max-w-full max-h-full object-contain"
+                                  onError={(e) => console.error("Error loading letterhead preview:", e)}
                                 />
                               </div>
-                              <p className="text-sm font-medium">{letterheadFile.name}</p>
+                              <p className="text-sm font-medium">{letterheadFile?.name || "Current letterhead"}</p>
                             </div>
                           ) : (
                             <>
@@ -654,23 +712,24 @@ const Admin = () => {
                             type="file" 
                             className="absolute inset-0 opacity-0 cursor-pointer" 
                             accept="image/*"
-                            onChange={(e) => handleFileUpload(e, setLetterheadFile, "Letterhead")}
+                            onChange={(e) => handleFileUpload(e, setLetterheadFile, setLetterheadPreview, "Letterhead")}
                           />
                         </div>
                       </div>
                       <div className="space-y-3">
                         <Label htmlFor="signature">Digital Signature</Label>
                         <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
-                          {signatureFile ? (
+                          {signaturePreview ? (
                             <div className="flex flex-col items-center">
                               <div className="w-32 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
                                 <img 
-                                  src={URL.createObjectURL(signatureFile)} 
+                                  src={signaturePreview} 
                                   alt="Signature preview" 
                                   className="max-w-full max-h-full object-contain"
+                                  onError={(e) => console.error("Error loading signature preview:", e)}
                                 />
                               </div>
-                              <p className="text-sm font-medium">{signatureFile.name}</p>
+                              <p className="text-sm font-medium">{signatureFile?.name || "Current signature"}</p>
                             </div>
                           ) : (
                             <>
@@ -682,7 +741,7 @@ const Admin = () => {
                             type="file" 
                             className="absolute inset-0 opacity-0 cursor-pointer" 
                             accept="image/*"
-                            onChange={(e) => handleFileUpload(e, setSignatureFile, "Signature")}
+                            onChange={(e) => handleFileUpload(e, setSignatureFile, setSignaturePreview, "Signature")}
                           />
                         </div>
                       </div>
@@ -800,3 +859,4 @@ const Admin = () => {
 };
 
 export default Admin;
+
