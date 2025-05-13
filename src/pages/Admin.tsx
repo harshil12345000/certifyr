@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -229,14 +228,13 @@ const Admin = () => {
       const { data: existingSettings } = await supabase
         .from('branding_settings')
         .select('*')
-        .limit(1)
-        .single();
+        .limit(1);
 
-      if (existingSettings) {
-        if (!logoFile) brandingInfo.logo = existingSettings.logo;
-        if (!sealFile) brandingInfo.seal = existingSettings.seal;
-        if (!letterheadFile) brandingInfo.letterhead = existingSettings.letterhead;
-        if (!signatureFile) brandingInfo.signature = existingSettings.signature;
+      if (existingSettings && existingSettings.length > 0) {
+        if (!logoFile) brandingInfo.logo = existingSettings[0].logo;
+        if (!sealFile) brandingInfo.seal = existingSettings[0].seal;
+        if (!letterheadFile) brandingInfo.letterhead = existingSettings[0].letterhead;
+        if (!signatureFile) brandingInfo.signature = existingSettings[0].signature;
       }
       
       // Upload logo if present
@@ -318,14 +316,11 @@ const Admin = () => {
       // Save branding info to localStorage for backward compatibility
       localStorage.setItem('brandingInfo', JSON.stringify(brandingInfo));
       
-      // Save branding info to Supabase
+      // Save branding info to Supabase using the helper function
       const { error } = await supabase
         .from('branding_settings')
-        .upsert({ 
-          id: '1', // Using a constant string ID
-          ...brandingInfo
-        });
-      
+        .upsert(brandingInfo);
+
       if (error) {
         console.error("Error saving branding to database:", error);
         throw error;
@@ -859,4 +854,3 @@ const Admin = () => {
 };
 
 export default Admin;
-

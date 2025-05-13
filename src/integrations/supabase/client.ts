@@ -90,7 +90,7 @@ export const saveBrandingSettings = async (
       if (error) throw error;
       return data;
     } else {
-      // Insert new settings
+      // Insert new settings - don't specify an ID, let Supabase generate one
       const { data, error } = await supabase
         .from('branding_settings')
         .insert([settings])
