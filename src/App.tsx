@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import AIGenerator from "./pages/AIGenerator";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/ai-generator" element={<AIGenerator />} />
             {/* Add more routes as needed */}
             <Route path="*" element={<NotFound />} />
           </Routes>

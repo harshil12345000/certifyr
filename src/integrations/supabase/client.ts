@@ -22,3 +22,129 @@ export const getPublicUrl = (bucketName: string, filePath: string) => {
   const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
   return data.publicUrl;
 };
+
+// Upload file helper function
+export const uploadFile = async (bucketName: string, filePath: string, file: File) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      });
+      
+    if (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+    
+    return getPublicUrl(bucketName, filePath);
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
+};
+
+// Upload branding asset helper
+export const uploadBrandingAsset = async (file: File, assetType: string) => {
+  if (!file) return null;
+  
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${assetType}_${Date.now()}.${fileExt}`;
+  const filePath = `${assetType}/${fileName}`;
+  
+  try {
+    const publicUrl = await uploadFile('branding', filePath, file);
+    return publicUrl;
+  } catch (error) {
+    console.error(`Error uploading ${assetType}:`, error);
+    return null;
+  }
+};
+
+// Save branding settings to database
+export const saveBrandingSettings = async (
+  settings: { 
+    logo?: string; 
+    seal?: string; 
+    letterhead?: string; 
+    signature?: string;
+    tagline?: string;
+  }
+) => {
+  try {
+    // First check if we have existing settings
+    const { data: existingSettings } = await supabase
+      .from('branding_settings')
+      .select('*')
+      .limit(1);
+      
+    if (existingSettings && existingSettings.length > 0) {
+      // Update existing settings
+      const { data, error } = await supabase
+        .from('branding_settings')
+        .update(settings)
+        .eq('id', existingSettings[0].id)
+        .select();
+        
+      if (error) throw error;
+      return data;
+    } else {
+      // Insert new settings
+      const { data, error } = await supabase
+        .from('branding_settings')
+        .insert([settings])
+        .select();
+        
+      if (error) throw error;
+      return data;
+    }
+  } catch (error) {
+    console.error('Error saving branding settings:', error);
+    throw error;
+  }
+};
+
+// Get branding settings from database
+export const getBrandingSettings = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('branding_settings')
+      .select('*')
+      .limit(1);
+      
+    if (error) throw error;
+    return data && data.length > 0 ? data[0] : null;
+  } catch (error) {
+    console.error('Error getting branding settings:', error);
+    return null;
+  }
+};
+
+// Indian Kanoon API integration
+export const generateDocumentFromLegalAPI = async (prompt: string) => {
+  try {
+    const apiKey = process.env.INDIAN_KANOON_API_KEY;
+    
+    // For frontend security, we'll call this through a Supabase Edge Function
+    // Here, we're just setting up the client-side function that will call the backend
+    
+    const response = await fetch('/api/generate-legal-document', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API error: ${errorText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error generating document:', error);
+    throw error;
+  }
+};

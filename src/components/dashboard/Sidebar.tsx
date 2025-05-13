@@ -9,7 +9,8 @@ import {
   Settings,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  FileImage
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarLogo } from './SidebarLogo';
@@ -23,6 +24,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { name: "Dashboard", path: "/", icon: <Home className="h-5 w-5" /> },
   { name: "Templates", path: "/templates", icon: <FileText className="h-5 w-5" /> },
+  { name: "AI Generator", path: "/ai-generator", icon: <FileImage className="h-5 w-5" /> },
   { name: "Admin", path: "/admin", icon: <Users className="h-5 w-5" /> },
   { name: "Settings", path: "/settings", icon: <Settings className="h-5 w-5" /> }
 ];
