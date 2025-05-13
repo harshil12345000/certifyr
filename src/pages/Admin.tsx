@@ -44,21 +44,20 @@ const Admin = () => {
         const { data: orgData, error } = await supabase
           .from('organization_details')
           .select('*')
-          .limit(1)
-          .single();
+          .limit(1);
         
-        if (orgData && !error) {
-          console.log("Loaded org details from Supabase:", orgData);
+        if (orgData && orgData.length > 0 && !error) {
+          console.log("Loaded org details from Supabase:", orgData[0]);
           setOrganizationDetails({
-            name: orgData.name || "Delhi Public School",
-            type: orgData.type || "School",
-            address: orgData.address || "123 Education Lane, New Delhi, 110001",
-            phone: orgData.phone || "+91 98765 43210",
-            email: orgData.email || "info@dpsdelhi.edu.in",
-            website: orgData.website || "https://dpsdelhi.edu.in",
-            registration: orgData.registration || "CBSE-1049/DL",
-            affiliation: orgData.affiliation || "Central Board of Secondary Education",
-            tagline: orgData.tagline || "Knowledge, Character, Excellence"
+            name: orgData[0].name || "Delhi Public School",
+            type: orgData[0].type || "School",
+            address: orgData[0].address || "123 Education Lane, New Delhi, 110001",
+            phone: orgData[0].phone || "+91 98765 43210",
+            email: orgData[0].email || "info@dpsdelhi.edu.in",
+            website: orgData[0].website || "https://dpsdelhi.edu.in",
+            registration: orgData[0].registration || "CBSE-1049/DL",
+            affiliation: orgData[0].affiliation || "Central Board of Secondary Education",
+            tagline: orgData[0].tagline || "Knowledge, Character, Excellence"
           });
         } else {
           // Fall back to localStorage
@@ -92,27 +91,30 @@ const Admin = () => {
         const { data: brandingData, error } = await supabase
           .from('branding_settings')
           .select('*')
-          .limit(1)
-          .single();
+          .limit(1);
         
-        if (brandingData && !error) {
-          console.log("Loaded branding info from Supabase:", brandingData);
+        if (brandingData && brandingData.length > 0 && !error) {
+          console.log("Loaded branding info from Supabase:", brandingData[0]);
           
           // Set previews for existing branding assets
-          if (brandingData.logo) {
-            setLogoPreview(getPublicUrl('branding', `logos/${brandingData.logo}`));
+          if (brandingData[0].logo) {
+            const { data } = supabase.storage.from('branding').getPublicUrl(`logos/${brandingData[0].logo}`);
+            setLogoPreview(data.publicUrl);
           }
           
-          if (brandingData.seal) {
-            setSealPreview(getPublicUrl('branding', `seals/${brandingData.seal}`));
+          if (brandingData[0].seal) {
+            const { data } = supabase.storage.from('branding').getPublicUrl(`seals/${brandingData[0].seal}`);
+            setSealPreview(data.publicUrl);
           }
           
-          if (brandingData.letterhead) {
-            setLetterheadPreview(getPublicUrl('branding', `letterheads/${brandingData.letterhead}`));
+          if (brandingData[0].letterhead) {
+            const { data } = supabase.storage.from('branding').getPublicUrl(`letterheads/${brandingData[0].letterhead}`);
+            setLetterheadPreview(data.publicUrl);
           }
           
-          if (brandingData.signature) {
-            setSignaturePreview(getPublicUrl('branding', `signatures/${brandingData.signature}`));
+          if (brandingData[0].signature) {
+            const { data } = supabase.storage.from('branding').getPublicUrl(`signatures/${brandingData[0].signature}`);
+            setSignaturePreview(data.publicUrl);
           }
         } else {
           // Fall back to localStorage
@@ -122,19 +124,23 @@ const Admin = () => {
               const brandingInfo = JSON.parse(savedBrandingInfo);
               
               if (brandingInfo.logo) {
-                setLogoPreview(getPublicUrl('branding', `logos/${brandingInfo.logo}`));
+                const { data } = supabase.storage.from('branding').getPublicUrl(`logos/${brandingInfo.logo}`);
+                setLogoPreview(data.publicUrl);
               }
               
               if (brandingInfo.seal) {
-                setSealPreview(getPublicUrl('branding', `seals/${brandingInfo.seal}`));
+                const { data } = supabase.storage.from('branding').getPublicUrl(`seals/${brandingInfo.seal}`);
+                setSealPreview(data.publicUrl);
               }
               
               if (brandingInfo.letterhead) {
-                setLetterheadPreview(getPublicUrl('branding', `letterheads/${brandingInfo.letterhead}`));
+                const { data } = supabase.storage.from('branding').getPublicUrl(`letterheads/${brandingInfo.letterhead}`);
+                setLetterheadPreview(data.publicUrl);
               }
               
               if (brandingInfo.signature) {
-                setSignaturePreview(getPublicUrl('branding', `signatures/${brandingInfo.signature}`));
+                const { data } = supabase.storage.from('branding').getPublicUrl(`signatures/${brandingInfo.signature}`);
+                setSignaturePreview(data.publicUrl);
               }
             } catch (error) {
               console.error("Error parsing saved branding info:", error);
@@ -330,6 +336,10 @@ const Admin = () => {
         title: "Branding settings saved",
         description: "Your branding settings and uploaded files have been saved successfully."
       });
+      
+      // Force reload to show changes immediately
+      window.location.reload();
+      
     } catch (error: any) {
       console.error("Error saving branding:", error);
       toast({
