@@ -62,9 +62,7 @@ export function AIDocumentGenerator() {
   return <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>AI Document Generator</CardTitle>
-        <CardDescription>
-          Generate legal document templates using AI and the Indian Kanoon database
-        </CardDescription>
+        <CardDescription>Generate custom document templates</CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
