@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -20,6 +21,11 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
     // Load branding settings
     const loadBrandingSettings = async () => {
       try {
+        // Clear previous assets to prevent stale data
+        setOrganizationLogo(null);
+        setOrganizationSeal(null);
+        setSignatureImage(null);
+        
         // Try to get branding info from Supabase
         const { data: brandingData, error } = await supabase
           .from('branding_settings')
@@ -115,9 +121,13 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
       }
     };
     
+    // Add a random query parameter to force cache busting on each load
+    const cacheBuster = new Date().getTime();
+    console.log(`Loading branding data with cache buster: ${cacheBuster}`);
+    
     loadBrandingSettings();
     loadOrgDetails();
-  }, []);
+  }, [data]); // Re-fetch when data changes to ensure latest branding
 
   const getRelation = () => {
     switch (data.gender) {
@@ -160,7 +170,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           {organizationLogo && (
             <div className="flex justify-center mb-2">
               <img 
-                src={organizationLogo} 
+                src={`${organizationLogo}?t=${Date.now()}`}
                 alt="Organization Logo" 
                 className="h-16 object-contain"
                 onError={(e) => {
@@ -226,7 +236,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                 {signatureImage ? (
                   <div className="border-b border-gray-800 px-6">
                     <img 
-                      src={signatureImage} 
+                      src={`${signatureImage}?t=${Date.now()}`}
                       alt="Digital Signature" 
                       className="h-12 object-contain"
                       onError={(e) => {
@@ -252,7 +262,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             <div className="mt-2 border border-dashed inline-block p-2">
               {organizationSeal ? (
                 <img 
-                  src={organizationSeal} 
+                  src={`${organizationSeal}?t=${Date.now()}`}
                   alt="Official Seal" 
                   className="h-12 w-12 object-contain" 
                   onError={(e) => {
