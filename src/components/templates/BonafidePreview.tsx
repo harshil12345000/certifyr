@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -150,6 +149,9 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
     return data.type === "student" ? "enrolled" : "employed";
   };
 
+  // Use organization name from orgDetails if available, otherwise use the one from data
+  const institutionName = orgDetails?.name || data.institutionName || "[Institution Name]";
+
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
       <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
@@ -169,7 +171,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             </div>
           )}
           <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
-            {data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}
+            {institutionName}
           </h1>
           <p className="text-muted-foreground">
             {orgDetails ? orgDetails.address : "123 Education Street, Knowledge City, 400001"} • 
@@ -191,7 +193,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
         {/* Certificate content */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
-            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</strong>.
+            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{institutionName}</strong>.
           </p>
 
           <p>
@@ -246,7 +248,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             )}
             <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
             <p>{data.signatoryDesignation || "[Designation]"}</p>
-            <p>{data.institutionName || (orgDetails ? orgDetails.name : "[Institution Name]")}</p>
+            <p>{institutionName}</p>
             <div className="mt-2 border border-dashed inline-block p-2">
               {organizationSeal ? (
                 <img 

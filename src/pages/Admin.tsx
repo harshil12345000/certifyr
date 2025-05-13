@@ -322,7 +322,7 @@ const Admin = () => {
       // Save branding info to localStorage for backward compatibility
       localStorage.setItem('brandingInfo', JSON.stringify(brandingInfo));
       
-      // Save branding info to Supabase using the helper function
+      // Save branding info to Supabase
       const { error } = await supabase
         .from('branding_settings')
         .upsert(brandingInfo);
@@ -337,8 +337,11 @@ const Admin = () => {
         description: "Your branding settings and uploaded files have been saved successfully."
       });
       
-      // Force reload to show changes immediately
-      window.location.reload();
+      // Update previews to show changes immediately instead of forcing reload
+      if (logoFile) setLogoPreview(URL.createObjectURL(logoFile));
+      if (sealFile) setSealPreview(URL.createObjectURL(sealFile));
+      if (letterheadFile) setLetterheadPreview(URL.createObjectURL(letterheadFile));
+      if (signatureFile) setSignaturePreview(URL.createObjectURL(signatureFile));
       
     } catch (error: any) {
       console.error("Error saving branding:", error);
