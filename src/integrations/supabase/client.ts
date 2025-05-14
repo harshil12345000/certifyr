@@ -16,14 +16,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Helper function to get public URL for a file in storage
+// Helper function to get public URL for a file in storage with effective cache busting
 export const getPublicUrl = (bucketName: string, filePath: string) => {
+  if (!filePath) return null;
+  
   const timestamp = new Date().getTime(); // Add timestamp to prevent caching
   const { data } = supabase.storage.from(bucketName).getPublicUrl(`${filePath}?t=${timestamp}`);
   return data.publicUrl;
 };
 
-// Upload file helper function
+// Upload file helper function with improved error handling
 export const uploadFile = async (bucketName: string, filePath: string, file: File) => {
   try {
     const { data, error } = await supabase.storage
@@ -45,13 +47,13 @@ export const uploadFile = async (bucketName: string, filePath: string, file: Fil
   }
 };
 
-// Upload branding asset helper
+// Upload branding asset helper with improved naming
 export const uploadBrandingAsset = async (file: File, assetType: string) => {
   if (!file) return null;
   
   const fileExt = file.name.split('.').pop();
   const fileName = `${assetType}_${Date.now()}.${fileExt}`;
-  const filePath = `${assetType}/${fileName}`;
+  const filePath = `${assetType}s/${fileName}`;
   
   try {
     const publicUrl = await uploadFile('branding', filePath, file);
@@ -62,14 +64,31 @@ export const uploadBrandingAsset = async (file: File, assetType: string) => {
   }
 };
 
-// Save branding settings to database
+// Improved function to get the latest branding settings
+export const getLatestBrandingSettings = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('branding_settings')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+      
+    if (error) throw error;
+    return data && data.length > 0 ? data[0] : null;
+  } catch (error) {
+    console.error('Error getting branding settings:', error);
+    return null;
+  }
+};
+
+// Save branding settings to database with proper updating
 export const saveBrandingSettings = async (
   settings: { 
-    logo?: string; 
-    seal?: string; 
-    letterhead?: string; 
-    signature?: string;
-    tagline?: string;
+    logo?: string | null; 
+    seal?: string | null; 
+    letterhead?: string | null; 
+    signature?: string | null;
+    tagline?: string | null;
   }
 ) => {
   try {
@@ -77,20 +96,29 @@ export const saveBrandingSettings = async (
     const { data: existingSettings } = await supabase
       .from('branding_settings')
       .select('*')
+      .order('created_at', { ascending: false })
       .limit(1);
       
     if (existingSettings && existingSettings.length > 0) {
-      // Update existing settings
+      // Update existing settings - keep existing values if not provided
+      const updatedSettings = {
+        logo: settings.logo !== undefined ? settings.logo : existingSettings[0].logo,
+        seal: settings.seal !== undefined ? settings.seal : existingSettings[0].seal,
+        letterhead: settings.letterhead !== undefined ? settings.letterhead : existingSettings[0].letterhead,
+        signature: settings.signature !== undefined ? settings.signature : existingSettings[0].signature,
+        tagline: settings.tagline !== undefined ? settings.tagline : existingSettings[0].tagline,
+      };
+      
       const { data, error } = await supabase
         .from('branding_settings')
-        .update(settings)
+        .update(updatedSettings)
         .eq('id', existingSettings[0].id)
         .select();
         
       if (error) throw error;
       return data;
     } else {
-      // Insert new settings - don't specify an ID, let Supabase generate one
+      // Insert new settings if none exist
       const { data, error } = await supabase
         .from('branding_settings')
         .insert([settings])
@@ -102,22 +130,6 @@ export const saveBrandingSettings = async (
   } catch (error) {
     console.error('Error saving branding settings:', error);
     throw error;
-  }
-};
-
-// Get branding settings from database
-export const getBrandingSettings = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('branding_settings')
-      .select('*')
-      .limit(1);
-      
-    if (error) throw error;
-    return data && data.length > 0 ? data[0] : null;
-  } catch (error) {
-    console.error('Error getting branding settings:', error);
-    return null;
   }
 };
 

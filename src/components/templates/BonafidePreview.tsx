@@ -3,8 +3,9 @@ import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { supabase, getLatestBrandingSettings } from "@/integrations/supabase/client";
+import { useEffect, useState, useCallback } from "react";
+import { toast } from "@/hooks/use-toast";
 
 interface BonafidePreviewProps {
   data: BonafideData;
@@ -16,91 +17,69 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
   const [brandingInfo, setBrandingInfo] = useState<any>(null);
   const [orgDetails, setOrgDetails] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [refreshKey, setRefreshKey] = useState<number>(Date.now());
   
+  // Function to get a public URL for an asset with cache busting
+  const getAssetUrl = useCallback((bucket: string, path: string | null) => {
+    if (!path) return null;
+    const timestamp = Date.now();
+    const { data } = supabase.storage.from(bucket).getPublicUrl(`${path}?t=${timestamp}`);
+    return data.publicUrl;
+  }, []);
+
+  // Load all branding assets and organization details
   useEffect(() => {
-    // Load branding settings
-    const loadBrandingSettings = async () => {
+    const loadData = async () => {
       try {
+        setIsLoading(true);
+        
         // Clear previous assets to prevent stale data
         setOrganizationLogo(null);
         setOrganizationSeal(null);
         setSignatureImage(null);
         
-        // Try to get branding info from Supabase
-        const { data: brandingData, error } = await supabase
-          .from('branding_settings')
-          .select('*')
-          .limit(1);
+        // Get the latest branding settings
+        const brandingSettings = await getLatestBrandingSettings();
         
-        if (brandingData && brandingData.length > 0 && !error) {
-          console.log("Loaded branding info from Supabase:", brandingData[0]);
-          setBrandingInfo(brandingData[0]);
+        if (brandingSettings) {
+          console.log("Loaded latest branding settings:", brandingSettings);
+          setBrandingInfo(brandingSettings);
           
-          // Use direct public URLs for the assets if they exist
-          if (brandingData[0].logo) {
-            const { data } = supabase.storage.from('branding').getPublicUrl(`logos/${brandingData[0].logo}`);
-            setOrganizationLogo(data.publicUrl);
-            console.log("Logo URL:", data.publicUrl);
+          // Use direct public URLs with cache busting
+          if (brandingSettings.logo) {
+            const logoUrl = getAssetUrl('branding', `logos/${brandingSettings.logo}`);
+            setOrganizationLogo(logoUrl);
+            console.log("Logo URL:", logoUrl);
           }
           
-          if (brandingData[0].seal) {
-            const { data } = supabase.storage.from('branding').getPublicUrl(`seals/${brandingData[0].seal}`);
-            setOrganizationSeal(data.publicUrl);
-            console.log("Seal URL:", data.publicUrl);
+          if (brandingSettings.seal) {
+            const sealUrl = getAssetUrl('branding', `seals/${brandingSettings.seal}`);
+            setOrganizationSeal(sealUrl);
+            console.log("Seal URL:", sealUrl);
           }
 
-          if (brandingData[0].signature) {
-            const { data } = supabase.storage.from('branding').getPublicUrl(`signatures/${brandingData[0].signature}`);
-            setSignatureImage(data.publicUrl);
-            console.log("Signature URL:", data.publicUrl);
+          if (brandingSettings.signature) {
+            const signatureUrl = getAssetUrl('branding', `signatures/${brandingSettings.signature}`);
+            setSignatureImage(signatureUrl);
+            console.log("Signature URL:", signatureUrl);
           }
         } else {
-          console.log("No branding data found in Supabase, falling back to localStorage");
-          // Fall back to localStorage if no data in Supabase
-          const brandingInfoStr = localStorage.getItem('brandingInfo');
-          if (brandingInfoStr) {
-            const branding = JSON.parse(brandingInfoStr);
-            setBrandingInfo(branding);
-            
-            // If we have file references, fetch from storage using public URLs
-            if (branding.logo) {
-              const { data } = supabase.storage.from('branding').getPublicUrl(`logos/${branding.logo}`);
-              setOrganizationLogo(data.publicUrl);
-              console.log("Logo URL from localStorage:", data.publicUrl);
-            }
-            
-            if (branding.seal) {
-              const { data } = supabase.storage.from('branding').getPublicUrl(`seals/${branding.seal}`);
-              setOrganizationSeal(data.publicUrl);
-              console.log("Seal URL from localStorage:", data.publicUrl);
-            }
-
-            if (branding.signature) {
-              const { data } = supabase.storage.from('branding').getPublicUrl(`signatures/${branding.signature}`);
-              setSignatureImage(data.publicUrl);
-              console.log("Signature URL from localStorage:", data.publicUrl);
-            }
-          }
+          console.log("No branding settings found");
         }
-      } catch (err) {
-        console.error("Error loading branding settings:", err);
-      }
-    };
 
-    // Load organization details
-    const loadOrgDetails = async () => {
-      try {
-        // Try to get organization details from Supabase first
-        const { data: orgData, error } = await supabase
+        // Get organization details
+        const { data: orgData, error: orgError } = await supabase
           .from('organization_details')
           .select('*')
+          .order('created_at', { ascending: false })
           .limit(1);
         
-        if (orgData && orgData.length > 0 && !error) {
-          console.log("Loaded org details from Supabase:", orgData[0]);
+        if (orgData && orgData.length > 0 && !orgError) {
+          console.log("Loaded organization details:", orgData[0]);
           setOrgDetails(orgData[0]);
         } else {
-          console.log("No org details found in Supabase, falling back to localStorage");
+          console.log("No organization details found, checking localStorage");
           // Fall back to localStorage
           const orgDetailsStr = localStorage.getItem('organizationDetails');
           if (orgDetailsStr) {
@@ -108,26 +87,27 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
           }
         }
       } catch (err) {
-        console.error("Error loading organization details:", err);
-        // Fall back to localStorage
-        try {
-          const orgDetailsStr = localStorage.getItem('organizationDetails');
-          if (orgDetailsStr) {
-            setOrgDetails(JSON.parse(orgDetailsStr));
-          }
-        } catch (error) {
-          console.error("Error parsing organization details from localStorage:", error);
-        }
+        console.error("Error loading assets:", err);
+        toast({
+          title: "Error loading assets",
+          description: "There was a problem loading your branding assets. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    // Add a random query parameter to force cache busting on each load
-    const cacheBuster = new Date().getTime();
-    console.log(`Loading branding data with cache buster: ${cacheBuster}`);
+    loadData();
     
-    loadBrandingSettings();
-    loadOrgDetails();
-  }, [data]); // Re-fetch when data changes to ensure latest branding
+    // Set up refresh interval (check every 10 seconds in case user updates branding)
+    const refreshInterval = setInterval(() => {
+      setRefreshKey(Date.now());
+    }, 10000);
+    
+    return () => clearInterval(refreshInterval);
+    
+  }, [refreshKey, getAssetUrl, data]); // Re-fetch when data or refreshKey changes
 
   const getRelation = () => {
     switch (data.gender) {
@@ -162,21 +142,38 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
   // Use organization name from orgDetails if available, otherwise use the one from data
   const institutionName = orgDetails?.name || data.institutionName || "[Institution Name]";
 
+  // Function to handle image loading errors
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+    toast({
+      title: `Error loading ${type}`,
+      description: "The image could not be loaded. Try uploading it again.",
+      variant: "destructive"
+    });
+  };
+
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
       <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-2 text-sm text-muted-foreground">Loading assets...</p>
+            </div>
+          </div>
+        )}
+        
         {/* Letterhead */}
         <div className="text-center border-b pb-4 mb-8">
           {organizationLogo && (
             <div className="flex justify-center mb-2">
               <img 
-                src={`${organizationLogo}?t=${Date.now()}`}
+                src={organizationLogo}
                 alt="Organization Logo" 
                 className="h-16 object-contain"
-                onError={(e) => {
-                  console.error("Error loading logo:", e);
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                onError={(e) => handleImageError(e, "logo")}
               />
             </div>
           )}
@@ -236,13 +233,10 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
                 {signatureImage ? (
                   <div className="border-b border-gray-800 px-6">
                     <img 
-                      src={`${signatureImage}?t=${Date.now()}`}
+                      src={signatureImage}
                       alt="Digital Signature" 
                       className="h-12 object-contain"
-                      onError={(e) => {
-                        console.error("Error loading signature:", e);
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
+                      onError={(e) => handleImageError(e, "signature")}
                     />
                   </div>
                 ) : (
@@ -262,13 +256,10 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             <div className="mt-2 border border-dashed inline-block p-2">
               {organizationSeal ? (
                 <img 
-                  src={`${organizationSeal}?t=${Date.now()}`}
+                  src={organizationSeal}
                   alt="Official Seal" 
                   className="h-12 w-12 object-contain" 
-                  onError={(e) => {
-                    console.error("Error loading seal:", e);
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+                  onError={(e) => handleImageError(e, "seal")}
                 />
               ) : (
                 <p className="text-xs text-center text-muted-foreground">SEAL/STAMP</p>
