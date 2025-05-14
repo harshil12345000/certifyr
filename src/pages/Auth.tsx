@@ -44,7 +44,8 @@ const signupSchema = z.object({
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -77,6 +78,19 @@ const Auth = () => {
       phone: "",
     },
   });
+
+  // Reset forms when switching modes
+  const handleModeSwitch = (mode: boolean) => {
+    if (mode !== isLogin) {
+      setIsLogin(mode);
+      // Reset the forms when switching modes
+      loginForm.reset();
+      signupForm.reset();
+      // Reset password visibility
+      setShowLoginPassword(false);
+      setShowSignupPassword(false);
+    }
+  };
 
   const onLoginSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
@@ -154,6 +168,8 @@ const Auth = () => {
       
       // Switch to login form
       setIsLogin(true);
+      // Reset signup form
+      signupForm.reset();
     } catch (error: any) {
       toast({
         title: "Signup failed",
@@ -182,14 +198,14 @@ const Auth = () => {
             <button
               type="button"
               className={`flex-1 py-2 text-center ${isLogin ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
-              onClick={() => setIsLogin(true)}
+              onClick={() => handleModeSwitch(true)}
             >
               Login
             </button>
             <button
               type="button"
               className={`flex-1 py-2 text-center ${!isLogin ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
-              onClick={() => setIsLogin(false)}
+              onClick={() => handleModeSwitch(false)}
             >
               Sign Up
             </button>
@@ -226,16 +242,16 @@ const Auth = () => {
                           <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input 
                             className="pl-9" 
-                            type={showPassword ? 'text' : 'password'} 
+                            type={showLoginPassword ? 'text' : 'password'} 
                             placeholder="••••••••" 
                             {...field} 
                           />
                           <button
                             type="button"
                             className="absolute right-3 top-2.5"
-                            onClick={() => setShowPassword(!showPassword)}
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
                           >
-                            {showPassword ? (
+                            {showLoginPassword ? (
                               <EyeOff className="h-4 w-4 text-muted-foreground" />
                             ) : (
                               <Eye className="h-4 w-4 text-muted-foreground" />
@@ -298,7 +314,7 @@ const Auth = () => {
                       <FormLabel>Organization Type</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -362,16 +378,16 @@ const Auth = () => {
                           <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input 
                             className="pl-9" 
-                            type={showPassword ? 'text' : 'password'} 
+                            type={showSignupPassword ? 'text' : 'password'} 
                             placeholder="••••••••" 
                             {...field} 
                           />
                           <button
                             type="button"
                             className="absolute right-3 top-2.5"
-                            onClick={() => setShowPassword(!showPassword)}
+                            onClick={() => setShowSignupPassword(!showSignupPassword)}
                           >
-                            {showPassword ? (
+                            {showSignupPassword ? (
                               <EyeOff className="h-4 w-4 text-muted-foreground" />
                             ) : (
                               <Eye className="h-4 w-4 text-muted-foreground" />
