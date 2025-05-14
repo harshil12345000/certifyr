@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { TemplateCard } from '@/components/dashboard/TemplateCard';
 import { documentCategories } from '@/data/mockData';
@@ -82,6 +83,7 @@ const allTemplates = [
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   // Filter templates based on search and category filters
   const filteredTemplates = allTemplates.filter(template => {
@@ -106,6 +108,10 @@ const Templates = () => {
 
   const categories = Array.from(new Set(allTemplates.map(t => t.category)));
 
+  const handleCreateTemplate = () => {
+    navigate('/template-builder');
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -115,7 +121,7 @@ const Templates = () => {
             <h1 className="text-2xl font-semibold mb-1">Document Templates</h1>
             <p className="text-muted-foreground">Browse and use our collection of legally compliant templates</p>
           </div>
-          <Button className="gradient-blue md:self-start gap-2">
+          <Button className="gradient-blue md:self-start gap-2" onClick={handleCreateTemplate}>
             <Plus className="h-4 w-4" /> Create Template
           </Button>
         </div>

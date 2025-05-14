@@ -1,4 +1,5 @@
 
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Templates from "./pages/Templates";
 import TemplateDetail from "./pages/TemplateDetail";
+import TemplateBuilder from "./pages/TemplateBuilder";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/templates/:id" element={<TemplateDetail />} />
+            <Route path="/template-builder" element={<TemplateBuilder />} />
+            <Route path="/template-builder/:id" element={<TemplateBuilder />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/auth" element={<Auth />} />
@@ -41,3 +45,4 @@ const App = () => (
 );
 
 export default App;
+
