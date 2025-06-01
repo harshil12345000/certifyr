@@ -5,14 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateElement, ElementType } from '@/types/template-builder';
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  Text, 
+  Type as Text, 
   Heading1, 
-  FormInput, 
+  Type as FormInput, 
   Image, 
   FileSignature, 
   Table, 
   QrCode, 
-  SeparatorHorizontal
+  Minus as SeparatorHorizontal
 } from 'lucide-react';
 
 interface ToolbarPanelProps {

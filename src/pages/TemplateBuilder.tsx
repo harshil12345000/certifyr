@@ -5,6 +5,7 @@ import { TemplateCanvas } from '@/components/template-builder/TemplateCanvas';
 import { ToolbarPanel } from '@/components/template-builder/ToolbarPanel';
 import { MetadataPanel } from '@/components/template-builder/MetadataPanel';
 import { PreviewPanel } from '@/components/template-builder/PreviewPanel';
+import { TemplateElement } from '@/types/template-builder';
 import { Button } from '@/components/ui/button';
 import { Save, Eye, Upload, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
