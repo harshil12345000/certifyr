@@ -82,7 +82,7 @@ const TemplateDetail = () => {
 
   const { title, description, FormComponent, PreviewComponent } = config;
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: BonafideData | ExperienceData | CharacterData) => {
     setFormData(data);
     setActiveTab('preview');
     toast({

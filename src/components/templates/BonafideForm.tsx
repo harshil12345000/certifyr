@@ -11,11 +11,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
-interface BonafideFormProps {
-  data: BonafideData;
-  setData: React.Dispatch<React.SetStateAction<BonafideData>>;
-}
-
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
   gender: z.enum(["male", "female", "other"]),
@@ -33,19 +28,36 @@ const formSchema = z.object({
   includeDigitalSignature: z.boolean().default(false),
 });
 
-export function BonafideForm({ data, setData }: BonafideFormProps) {
+interface BonafideFormProps {
+  onSubmit: (data: BonafideData) => void;
+  initialData?: Partial<BonafideData>;
+}
+
+export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
   const form = useForm<BonafideData>({
     resolver: zodResolver(formSchema),
-    defaultValues: data,
+    defaultValues: {
+      fullName: "",
+      gender: "male",
+      parentName: "",
+      type: "student",
+      institutionName: "",
+      startDate: "",
+      courseOrDesignation: "",
+      department: "",
+      purpose: "",
+      date: new Date().toISOString().split('T')[0],
+      place: "",
+      signatoryName: "",
+      signatoryDesignation: "",
+      includeDigitalSignature: false,
+      ...initialData,
+    },
   });
-
-  const handleFormSubmit = (values: BonafideData) => {
-    setData(values);
-  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Person Details Section */}
           <div className="space-y-4">
@@ -56,12 +68,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Full Name *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, fullName: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter full name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -73,14 +82,8 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="gender"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <Select 
-                    value={field.value} 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setData(prev => ({ ...prev, gender: value as "male" | "female" | "other" }));
-                    }}
-                  >
+                  <FormLabel>Gender *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />
@@ -102,12 +105,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="parentName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parent's Name</FormLabel>
+                  <FormLabel>Parent's Name *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, parentName: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter parent's name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,14 +119,8 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Person Type</FormLabel>
-                  <Select 
-                    value={field.value} 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setData(prev => ({ ...prev, type: value as "student" | "employee" }));
-                    }}
-                  >
+                  <FormLabel>Person Type *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -152,12 +146,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="institutionName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Institution Name</FormLabel>
+                  <FormLabel>Institution Name *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, institutionName: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter institution name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,12 +160,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="startDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start Date</FormLabel>
+                  <FormLabel>Start Date *</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, startDate: e.target.value }));
-                    }} />
+                    <Input type="date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,12 +174,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="courseOrDesignation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{data.type === "student" ? "Course Name" : "Designation"}</FormLabel>
+                  <FormLabel>Course/Designation *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, courseOrDesignation: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter course or designation" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -203,12 +188,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="department"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Department</FormLabel>
+                  <FormLabel>Department *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, department: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter department" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -226,15 +208,12 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
             name="purpose"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Purpose</FormLabel>
+                <FormLabel>Purpose *</FormLabel>
                 <FormControl>
                   <Textarea 
-                    {...field} 
-                    onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, purpose: e.target.value }));
-                    }}
                     placeholder="e.g., passport application, bank account, visa processing"
+                    className="min-h-[80px]"
+                    {...field} 
                   />
                 </FormControl>
                 <FormMessage />
@@ -248,12 +227,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Issue Date</FormLabel>
+                  <FormLabel>Issue Date *</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, date: e.target.value }));
-                    }} />
+                    <Input type="date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -265,12 +241,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="place"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Place</FormLabel>
+                  <FormLabel>Place *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, place: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter place" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -288,12 +261,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="signatoryName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Signatory Name</FormLabel>
+                  <FormLabel>Signatory Name *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, signatoryName: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter signatory name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -305,12 +275,9 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
               name="signatoryDesignation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Designation</FormLabel>
+                  <FormLabel>Designation *</FormLabel>
                   <FormControl>
-                    <Input {...field} onChange={(e) => {
-                      field.onChange(e);
-                      setData(prev => ({ ...prev, signatoryDesignation: e.target.value }));
-                    }} />
+                    <Input placeholder="Enter signatory designation" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -331,20 +298,16 @@ export function BonafideForm({ data, setData }: BonafideFormProps) {
                   </FormDescription>
                 </div>
                 <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked);
-                      setData(prev => ({ ...prev, includeDigitalSignature: checked }));
-                    }}
-                  />
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
               </FormItem>
             )}
           />
         </div>
 
-        <Button type="submit" className="w-full">Update Preview</Button>
+        <Button type="submit" className="w-full">
+          Generate Bonafide Certificate
+        </Button>
       </form>
     </Form>
   );
