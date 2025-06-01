@@ -1,155 +1,92 @@
 
-import { 
-  FileText, 
-  Users, 
-  Clock, 
-  CheckCircle 
-} from 'lucide-react';
-
-export const statsData = [
-  {
-    title: "Total Documents",
-    value: "284",
-    icon: FileText,
-    description: "this month",
-    trend: { value: "12%", positive: true }
-  },
-  {
-    title: "Active Templates",
-    value: "24",
-    icon: FileText,
-    description: "across 6 categories"
-  },
-  {
-    title: "Staff Members",
-    value: "48",
-    icon: Users,
-    description: "with access"
-  },
-  {
-    title: "Avg. Processing Time",
-    value: "2.4h",
-    icon: Clock,
-    trend: { value: "30%", positive: true },
-    description: "faster than last month"
-  }
-];
+import { FileText, GraduationCap, Briefcase, Building2, Wallet, MapPin, Shield, Plane } from "lucide-react";
 
 export const popularTemplates = [
   {
     id: "bonafide-1",
     title: "Bonafide Certificate",
-    description: "Standard certificate confirming student enrollment status",
-    category: "Student",
+    description: "Official certificate for students and employees",
+    category: "Educational",
     usageCount: 156
   },
   {
-    id: "experience-1",
-    title: "Experience Letter",
-    description: "Official document certifying employment period and role",
+    id: "experience-1", 
+    title: "Experience Certificate",
+    description: "Employment verification and experience document",
     category: "Employment",
+    usageCount: 134
+  },
+  {
+    id: "character-1",
+    title: "Character Certificate", 
+    description: "Certificate of good character and conduct",
+    category: "Official",
     usageCount: 89
   },
   {
-    id: "noc-visa-1",
-    title: "NOC for Visa",
-    description: "No objection certificate for visa application purposes",
-    category: "Travel",
-    usageCount: 67
+    id: "leave-application-1",
+    title: "Leave Application",
+    description: "Standard format for leave requests",
+    category: "Employment", 
+    usageCount: 78
   },
   {
-    id: "internship-1",
-    title: "Internship Completion",
-    description: "Certificate verifying successful internship completion",
-    category: "Student",
-    usageCount: 53
-  }
-];
-
-export const recentDocuments = [
-  {
-    id: "doc-001",
-    name: "Bonafide Certificate - Rahul Sharma",
-    type: "Certificate",
-    status: "Signed" as const,
-    date: "Today, 10:45 AM",
-    recipient: "rahul.s@gmail.com"
+    id: "address-proof-1",
+    title: "Address Proof",
+    description: "Verification of residential address",
+    category: "Official",
+    usageCount: 65
   },
   {
-    id: "doc-002",
-    name: "Experience Letter - Priya Patel",
-    type: "Letter",
-    status: "Sent" as const,
-    date: "Today, 09:23 AM",
-    recipient: "priya.p@outlook.com"
-  },
-  {
-    id: "doc-003",
-    name: "NOC for Banking - Amit Kumar",
-    type: "Certificate",
-    status: "Created" as const,
-    date: "Yesterday, 04:17 PM",
-    recipient: ""
-  },
-  {
-    id: "doc-004",
-    name: "Internship Offer - Sneha Gupta",
-    type: "Letter",
-    status: "Signed" as const,
-    date: "Yesterday, 11:30 AM",
-    recipient: "sneha.g22@gmail.com"
-  },
-  {
-    id: "doc-005",
-    name: "Address Verification - Vikram Singh",
-    type: "Certificate",
-    status: "Created" as const,
-    date: "Jun 12, 2025",
-    recipient: ""
+    id: "income-certificate-1",
+    title: "Income Certificate",
+    description: "Official proof of annual income",
+    category: "Financial",
+    usageCount: 52
   }
 ];
 
 export const documentCategories = [
-  { 
-    id: "cat-student", 
-    name: "Student Documents",
-    description: "Certificates and letters for educational purposes",
-    count: 15,
-    icon: CheckCircle
+  {
+    id: "educational",
+    name: "Educational Documents",
+    description: "Academic certificates, transcripts, and school-related documents",
+    icon: GraduationCap,
+    count: 15
   },
-  { 
-    id: "cat-employment", 
-    name: "Employment Records",
-    description: "Employment verification and work experience",
-    count: 12,
-    icon: CheckCircle
+  {
+    id: "employment",
+    name: "Employment Documents", 
+    description: "Job-related certificates, applications, and HR documents",
+    icon: Briefcase,
+    count: 12
   },
-  { 
-    id: "cat-official", 
-    name: "Official Certificates",
-    description: "Government and legally binding documents",
-    count: 8,
-    icon: CheckCircle
+  {
+    id: "official",
+    name: "Official Documents",
+    description: "Government and official institutional documents",
+    icon: Building2,
+    count: 18
   },
-  { 
-    id: "cat-financial", 
+  {
+    id: "financial",
     name: "Financial Documents",
-    description: "Income and financial status verification",
-    count: 6,
-    icon: CheckCircle
+    description: "Income certificates, financial statements, and related documents",
+    icon: Wallet,
+    count: 8
   },
-  { 
-    id: "cat-travel", 
-    name: "Travel & Visa",
-    description: "Documents for travel and visa applications",
-    count: 5,
-    icon: CheckCircle
+  {
+    id: "travel",
+    name: "Travel Documents",
+    description: "Visa applications, embassy letters, and travel-related certificates",
+    icon: Plane,
+    count: 6
   },
-  { 
-    id: "cat-misc", 
-    name: "Miscellaneous",
-    description: "Other institutional documents and letters",
-    count: 4,
-    icon: CheckCircle
+  {
+    id: "legal",
+    name: "Legal Documents",
+    description: "Affidavits, legal certificates, and court-related documents",
+    icon: Shield,
+    count: 10
   }
 ];
