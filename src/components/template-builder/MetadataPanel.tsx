@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +12,8 @@ import {
   CheckSquare, 
   FileText, 
   ListChecks,
-  Trash
+  Trash,
+  Type
 } from 'lucide-react';
 
 interface MetadataPanelProps {
@@ -97,12 +99,12 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({
   
   const getFieldTypeIcon = (fieldType: string) => {
     switch (fieldType) {
-      case 'text': return <InputIcon size={16} />;
+      case 'text': return <Type size={16} />;
       case 'date': return <Calendar size={16} />;
       case 'select': return <ListChecks size={16} />;
       case 'checkbox': return <CheckSquare size={16} />;
       case 'file': return <FileText size={16} />;
-      default: return <InputIcon size={16} />;
+      default: return <Type size={16} />;
     }
   };
   
