@@ -268,7 +268,7 @@ const Homepage = () => {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Certifyr. All rights reserved.</p>
+            <p>© 2025 Certifyr. All rights reserved.</p>
           </div>
         </div>
       </footer>
