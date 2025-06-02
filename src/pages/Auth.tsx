@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -49,14 +48,14 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   // Create separate form instances for login and signup
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -95,6 +94,8 @@ const Auth = () => {
   const onLoginSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
     try {
+      console.log('Attempting login with:', values.email);
+      
       // Clean up existing state
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
@@ -102,11 +103,11 @@ const Auth = () => {
         }
       });
       
-      // Attempt global sign out
+      // Attempt global sign out first
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        // Continue even if this fails
+        console.log('Sign out before login failed:', err);
       }
       
       // Sign in with email/password
@@ -115,16 +116,21 @@ const Auth = () => {
         password: values.password,
       });
       
+      console.log('Login response:', { data, error });
+      
       if (error) throw error;
       
-      toast({
-        title: "Success!",
-        description: "You have been logged in successfully.",
-      });
-      
-      // Navigate to home page
-      navigate("/");
+      if (data.user) {
+        toast({
+          title: "Success!",
+          description: "You have been logged in successfully.",
+        });
+        
+        // Navigate to home page
+        window.location.href = "/";
+      }
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Login failed",
         description: error.message || "An error occurred during login. Please try again.",
@@ -138,6 +144,8 @@ const Auth = () => {
   const onSignupSubmit = async (values: z.infer<typeof signupSchema>) => {
     setIsLoading(true);
     try {
+      console.log('Attempting signup with:', values.email);
+      
       // Clean up existing state
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
@@ -159,6 +167,8 @@ const Auth = () => {
         }
       });
       
+      console.log('Signup response:', { data, error });
+      
       if (error) throw error;
       
       toast({
@@ -171,6 +181,7 @@ const Auth = () => {
       // Reset signup form
       signupForm.reset();
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         title: "Signup failed",
         description: error.message || "An error occurred during signup. Please try again.",
@@ -181,8 +192,21 @@ const Auth = () => {
     }
   };
 
+  // Show loading while checking auth status
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if already logged in
   if (user) {
-    return null; // Don't render anything if already logged in
+    return null;
   }
 
   return (

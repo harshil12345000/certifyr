@@ -43,24 +43,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await supabase.auth.signOut({ scope: 'global' });
       setSession(null);
       setUser(null);
+      
+      // Force page refresh to clear state
+      window.location.href = '/auth';
+      
       toast({
         title: "Signed out",
         description: "You have been signed out successfully."
       });
     } catch (error) {
       console.error("Sign out error:", error);
-      toast({
-        title: "Sign out failed",
-        description: "There was an error signing out.",
-        variant: "destructive"
-      });
+      // Still redirect even if sign out fails
+      window.location.href = '/auth';
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log('Auth state change:', event, currentSession?.user?.email);
+        
+        if (!mounted) return;
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
@@ -68,17 +75,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_OUT') {
           cleanupAuthState();
         }
+        
+        if (event === 'SIGNED_IN' && currentSession) {
+          // Redirect to home page after successful sign in
+          setTimeout(() => {
+            if (window.location.pathname === '/auth') {
+              window.location.href = '/';
+            }
+          }, 100);
+        }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!mounted) return;
+      
+      console.log('Initial session:', currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Bell, LogOut, Search, Settings, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -29,6 +28,7 @@ export function Header() {
   }]);
 
   const handleLoginClick = () => {
+    console.log('Navigating to auth page');
     navigate('/auth');
   };
 
@@ -49,7 +49,8 @@ export function Header() {
     return 'U';
   };
 
-  return <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  return (
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="hidden md:block w-64">
         {/* Empty space to account for sidebar */}
       </div>
@@ -71,13 +72,15 @@ export function Header() {
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifications.map(notification => <DropdownMenuItem key={notification.id} className="cursor-pointer p-3">
+              {notifications.map(notification => (
+                <DropdownMenuItem key={notification.id} className="cursor-pointer p-3">
                   <div>
                     <p className="font-medium">{notification.title}</p>
                     <p className="text-sm text-muted-foreground">{notification.description}</p>
                     <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
                   </div>
-                </DropdownMenuItem>)}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -106,9 +109,12 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button onClick={handleLoginClick}>Log In</Button>
+            <Button onClick={handleLoginClick} className="bg-primary hover:bg-primary/90">
+              Log In
+            </Button>
           )}
         </div>
       </div>
-    </header>;
+    </header>
+  );
 }
