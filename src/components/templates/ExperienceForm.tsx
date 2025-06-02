@@ -1,7 +1,7 @@
+
 import React from "react";
-import { BonafideData } from "@/types/templates";
+import { ExperienceData } from "@/types/templates";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,21 +10,21 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
-interface BonafideFormProps {
-  onSubmit: (data: BonafideData) => void;
-  initialData: BonafideData;
+interface ExperienceFormProps {
+  onSubmit: (data: ExperienceData) => void;
+  initialData: ExperienceData;
 }
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  gender: z.enum(["male", "female", "other"]),
-  parentName: z.string().min(2, { message: "Parent name must be at least 2 characters" }),
-  type: z.enum(["student", "employee"]),
-  institutionName: z.string().min(2, { message: "Institution name is required" }),
-  startDate: z.string().min(1, { message: "Start date is required" }),
-  courseOrDesignation: z.string().min(2, { message: "Course/Designation is required" }),
+  employeeId: z.string().min(1, { message: "Employee ID is required" }),
+  designation: z.string().min(2, { message: "Designation is required" }),
   department: z.string().min(2, { message: "Department is required" }),
-  purpose: z.string().min(2, { message: "Purpose is required" }),
+  joinDate: z.string().min(1, { message: "Join date is required" }),
+  resignationDate: z.string().min(1, { message: "Resignation date is required" }),
+  workDescription: z.string().min(2, { message: "Work description is required" }),
+  salary: z.string().min(1, { message: "Salary is required" }),
+  institutionName: z.string().min(2, { message: "Institution name is required" }),
   date: z.string().min(1, { message: "Date is required" }),
   place: z.string().min(2, { message: "Place is required" }),
   signatoryName: z.string().min(2, { message: "Signatory name is required" }),
@@ -32,13 +32,13 @@ const formSchema = z.object({
   includeDigitalSignature: z.boolean().default(false),
 });
 
-export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
-  const form = useForm<BonafideData>({
+export function ExperienceForm({ onSubmit, initialData }: ExperienceFormProps) {
+  const form = useForm<ExperienceData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
-  const handleFormSubmit = (values: BonafideData) => {
+  const handleFormSubmit = (values: ExperienceData) => {
     onSubmit(values);
   };
 
@@ -46,9 +46,9 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Person Details Section */}
+          {/* Employee Details Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Person Details</h3>
+            <h3 className="text-lg font-medium">Employee Details</h3>
             
             <FormField
               control={form.control}
@@ -66,33 +66,10 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
 
             <FormField
               control={form.control}
-              name="gender"
+              name="employeeId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="parentName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent's Name</FormLabel>
+                  <FormLabel>Employee ID</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -103,65 +80,10 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
 
             <FormField
               control={form.control}
-              name="type"
+              name="designation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Person Type</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Institution & Role Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Institution & Role</h3>
-
-            <FormField
-              control={form.control}
-              name="institutionName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Institution Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Start Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="courseOrDesignation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{initialData.type === "student" ? "Course Name" : "Designation"}</FormLabel>
+                  <FormLabel>Designation</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -184,22 +106,83 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
               )}
             />
           </div>
+
+          {/* Employment Period Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Employment Period</h3>
+
+            <FormField
+              control={form.control}
+              name="joinDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Join Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="resignationDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resignation Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="salary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Salary</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g., ₹50,000 per month" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="institutionName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Institution Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
-        {/* Certificate Details Section */}
+        {/* Work Description Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Certificate Details</h3>
+          <h3 className="text-lg font-medium">Work Description</h3>
 
           <FormField
             control={form.control}
-            name="purpose"
+            name="workDescription"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Purpose</FormLabel>
+                <FormLabel>Work Description</FormLabel>
                 <FormControl>
                   <Textarea 
                     {...field} 
-                    placeholder="e.g., passport application, bank account, visa processing"
+                    placeholder="Describe the employee's work responsibilities and achievements"
                   />
                 </FormControl>
                 <FormMessage />

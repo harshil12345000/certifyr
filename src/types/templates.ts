@@ -15,3 +15,34 @@ export interface BonafideData {
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
 }
+
+export interface ExperienceData {
+  fullName: string;
+  employeeId: string;
+  designation: string;
+  department: string;
+  joinDate: string;
+  resignationDate: string;
+  workDescription: string;
+  salary: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface CharacterData {
+  fullName: string;
+  parentName: string;
+  address: string;
+  duration: string;
+  conduct: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
