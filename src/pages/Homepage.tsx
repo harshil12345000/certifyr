@@ -1,6 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Shield, Zap, Users, CheckCircle, Star, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+
 const Homepage = () => {
   const features = [{
     icon: FileText,
@@ -19,6 +21,7 @@ const Homepage = () => {
     title: "Multi-Institution",
     description: "Perfect for schools, colleges, and corporate organizations"
   }];
+
   const testimonials = [{
     name: "Dr. Priya Sharma",
     role: "Principal, Delhi Public School",
@@ -35,26 +38,34 @@ const Homepage = () => {
     content: "Finally, a solution that understands Indian institutional needs. Highly recommended!",
     rating: 5
   }];
+
   const pricingPlans = [{
     name: "Monthly",
-    price: "₹799",
+    price: "₹999",
     period: "per user/month",
     description: "Perfect for getting started",
     features: ["Unlimited document generation", "All template types", "Digital signatures", "Email support", "Export to PDF"]
   }, {
     name: "Annual",
-    price: "₹7,999",
+    price: "₹9,999",
     period: "per user/year",
     description: "Save 17% with annual billing",
-    features: ["Everything in Monthly", "Priority support", "Custom templates", "Bulk operations", "Advanced analytics", "API access"],
+    features: ["Everything in Monthly", "Priority support", "Custom templates", "Bulk operations", "Advanced analytics"],
     popular: true
   }];
+
   return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-certifyr-blue-light to-certifyr-blue-dark"></div>
+            <div className="w-8 h-8 rounded flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/7a143eed-6a95-4de8-927e-7c3572ae8a12.png" 
+                alt="Certifyr Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
             <span className="text-xl font-bold text-certifyr-blue-dark">Certifyr</span>
           </div>
           <div className="flex items-center gap-4">
@@ -248,7 +259,13 @@ const Homepage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded bg-gradient-to-br from-certifyr-blue-light to-certifyr-blue-dark"></div>
+                <div className="w-8 h-8 rounded flex items-center justify-center">
+                  <img 
+                    src="/lovable-uploads/7a143eed-6a95-4de8-927e-7c3572ae8a12.png" 
+                    alt="Certifyr Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <span className="text-xl font-bold text-certifyr-blue-dark">Certifyr</span>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -279,4 +296,5 @@ const Homepage = () => {
       </footer>
     </div>;
 };
+
 export default Homepage;
