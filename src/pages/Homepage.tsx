@@ -72,7 +72,7 @@ const Homepage = () => {
 
       {/* Animated Hero Section */}
       <section className="py-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-certifyr-blue-light/10 via-transparent to-certifyr-blue/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-certifyr-blue-light/10 via-transparent to-certifyr-blue/10 py-0 my-0"></div>
         <div className="container mx-auto text-center max-w-4xl relative">
           <div className="animate-fade-in">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
@@ -108,24 +108,15 @@ const Homepage = () => {
           </div>
           
           {/* Floating Elements */}
-          <div className="absolute top-20 left-10 w-16 h-16 bg-certifyr-blue-light/20 rounded-full animate-pulse-soft"></div>
-          <div className="absolute top-40 right-20 w-12 h-12 bg-certifyr-blue/20 rounded-full animate-pulse-soft delay-1000"></div>
-          <div className="absolute bottom-20 left-20 w-8 h-8 bg-certifyr-blue-dark/20 rounded-full animate-pulse-soft delay-500"></div>
+          
+          
+          
           
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 animate-fade-in delay-700">
-            <div className="text-center glass-card p-6 hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">1000+</div>
-              <div className="text-muted-foreground">Documents Generated</div>
-            </div>
-            <div className="text-center glass-card p-6 hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">25+</div>
-              <div className="text-muted-foreground">Institutions Trust Us</div>
-            </div>
-            <div className="text-center glass-card p-6 hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">79.98%</div>
-              <div className="text-muted-foreground">Accuracy Rate</div>
-            </div>
+            
+            
+            
           </div>
         </div>
       </section>
