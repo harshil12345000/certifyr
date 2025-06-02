@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -21,7 +22,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", path: "/", icon: <Home className="h-5 w-5" /> },
+  { name: "Dashboard", path: "/dashboard", icon: <Home className="h-5 w-5" /> },
   { name: "Templates", path: "/templates", icon: <FileText className="h-5 w-5" /> },
   { name: "AI Generator", path: "/ai-generator", icon: <FileImage className="h-5 w-5" /> },
   { name: "Admin", path: "/admin", icon: <Users className="h-5 w-5" /> },
