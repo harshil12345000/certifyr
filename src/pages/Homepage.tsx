@@ -113,15 +113,15 @@ const Homepage = () => {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 animate-fade-in delay-700">
             <div className="text-center glass-card p-6 hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">50,000+</div>
+              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">1000+</div>
               <div className="text-muted-foreground">Documents Generated</div>
             </div>
             <div className="text-center glass-card p-6 hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">1,200+</div>
+              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">25+</div>
               <div className="text-muted-foreground">Institutions Trust Us</div>
             </div>
             <div className="text-center glass-card p-6 hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">99.9%</div>
+              <div className="text-3xl font-bold text-certifyr-blue-dark mb-2">79.98%</div>
               <div className="text-muted-foreground">Accuracy Rate</div>
             </div>
           </div>
