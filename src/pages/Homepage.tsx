@@ -1,86 +1,55 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Shield, Zap, Users, CheckCircle, Star, Check } from "lucide-react";
 import { Link } from "react-router-dom";
-
 const Homepage = () => {
-  const features = [
-    {
-      icon: FileText,
-      title: "Smart Templates",
-      description: "Pre-built templates for certificates, applications, and official documents"
-    },
-    {
-      icon: Zap,
-      title: "Lightning Fast",
-      description: "Generate documents instantly with our advanced technology"
-    },
-    {
-      icon: Shield,
-      title: "Legally Compliant",
-      description: "All documents meet legal standards and institutional requirements"
-    },
-    {
-      icon: Users,
-      title: "Multi-Institution",
-      description: "Perfect for schools, colleges, and corporate organizations"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Dr. Priya Sharma",
-      role: "Principal, Delhi Public School",
-      content: "Certifyr has transformed how we handle document generation. What used to take hours now takes minutes.",
-      rating: 5
-    },
-    {
-      name: "Rajesh Kumar",
-      role: "HR Director, Tech Mahindra",
-      content: "The efficiency gains are incredible. Our HR team can now focus on strategic work instead of paperwork.",
-      rating: 5
-    },
-    {
-      name: "Prof. Anita Desai",
-      role: "Registrar, Mumbai University",
-      content: "Finally, a solution that understands Indian institutional needs. Highly recommended!",
-      rating: 5
-    }
-  ];
-
-  const pricingPlans = [
-    {
-      name: "Monthly",
-      price: "₹799",
-      period: "per user/month",
-      description: "Perfect for getting started",
-      features: [
-        "Unlimited document generation",
-        "All template types",
-        "Digital signatures",
-        "Email support",
-        "Export to PDF"
-      ]
-    },
-    {
-      name: "Annual",
-      price: "₹7,999",
-      period: "per user/year",
-      description: "Save 17% with annual billing",
-      features: [
-        "Everything in Monthly",
-        "Priority support",
-        "Custom templates",
-        "Bulk operations",
-        "Advanced analytics",
-        "API access"
-      ],
-      popular: true
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+  const features = [{
+    icon: FileText,
+    title: "Smart Templates",
+    description: "Pre-built templates for certificates, applications, and official documents"
+  }, {
+    icon: Zap,
+    title: "Lightning Fast",
+    description: "Generate documents instantly with our advanced technology"
+  }, {
+    icon: Shield,
+    title: "Legally Compliant",
+    description: "All documents meet legal standards and institutional requirements"
+  }, {
+    icon: Users,
+    title: "Multi-Institution",
+    description: "Perfect for schools, colleges, and corporate organizations"
+  }];
+  const testimonials = [{
+    name: "Dr. Priya Sharma",
+    role: "Principal, Delhi Public School",
+    content: "Certifyr has transformed how we handle document generation. What used to take hours now takes minutes.",
+    rating: 5
+  }, {
+    name: "Rajesh Kumar",
+    role: "HR Director, Tech Mahindra",
+    content: "The efficiency gains are incredible. Our HR team can now focus on strategic work instead of paperwork.",
+    rating: 5
+  }, {
+    name: "Prof. Anita Desai",
+    role: "Registrar, Mumbai University",
+    content: "Finally, a solution that understands Indian institutional needs. Highly recommended!",
+    rating: 5
+  }];
+  const pricingPlans = [{
+    name: "Monthly",
+    price: "₹799",
+    period: "per user/month",
+    description: "Perfect for getting started",
+    features: ["Unlimited document generation", "All template types", "Digital signatures", "Email support", "Export to PDF"]
+  }, {
+    name: "Annual",
+    price: "₹7,999",
+    period: "per user/year",
+    description: "Save 17% with annual billing",
+    features: ["Everything in Monthly", "Priority support", "Custom templates", "Bulk operations", "Advanced analytics", "API access"],
+    popular: true
+  }];
+  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -172,15 +141,13 @@ const Homepage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="glass-card p-6 text-center hover:scale-105 transition-transform">
+            {features.map((feature, index) => <div key={index} className="glass-card p-6 text-center hover:scale-105 transition-transform">
                 <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-certifyr-blue/10 flex items-center justify-center text-certifyr-blue">
                   <feature.icon className="h-6 w-6" />
                 </div>
                 <h3 className="font-semibold mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -198,20 +165,16 @@ const Homepage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="glass-card p-6 hover:scale-105 transition-transform">
+            {testimonials.map((testimonial, index) => <div key={index} className="glass-card p-6 hover:scale-105 transition-transform">
                 <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
+                  {[...Array(testimonial.rating)].map((_, i) => <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />)}
                 </div>
                 <p className="text-muted-foreground mb-4 italic">"{testimonial.content}"</p>
                 <div>
                   <div className="font-semibold">{testimonial.name}</div>
                   <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -229,15 +192,12 @@ const Homepage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <div key={index} className={`glass-card p-8 hover:scale-105 transition-transform relative ${plan.popular ? 'ring-2 ring-certifyr-blue' : ''}`}>
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+            {pricingPlans.map((plan, index) => <div key={index} className={`glass-card p-8 hover:scale-105 transition-transform relative ${plan.popular ? 'ring-2 ring-certifyr-blue' : ''}`}>
+                {plan.popular && <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="bg-gradient-to-r from-certifyr-blue to-certifyr-blue-dark text-white px-4 py-1 rounded-full text-sm font-medium">
                       Most Popular
                     </span>
-                  </div>
-                )}
+                  </div>}
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                   <div className="text-4xl font-bold text-certifyr-blue-dark mb-2">{plan.price}</div>
@@ -246,23 +206,16 @@ const Homepage = () => {
                 </div>
                 
                 <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center gap-3">
+                  {plan.features.map((feature, featureIndex) => <li key={featureIndex} className="flex items-center gap-3">
                       <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
                       <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
+                    </li>)}
                 </ul>
                 
-                <Button 
-                  className={`w-full ${plan.popular ? 'gradient-blue' : 'border border-certifyr-blue text-certifyr-blue hover:bg-certifyr-blue hover:text-white'}`}
-                  variant={plan.popular ? 'default' : 'outline'}
-                  asChild
-                >
+                <Button className={`w-full ${plan.popular ? 'gradient-blue' : 'border border-certifyr-blue text-certifyr-blue hover:bg-certifyr-blue hover:text-white'}`} variant={plan.popular ? 'default' : 'outline'} asChild>
                   <Link to="/auth">Get Started</Link>
                 </Button>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -282,7 +235,7 @@ const Homepage = () => {
                 Go to App <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-certifyr-blue-dark hover:scale-105 transition-all">
+            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-white hover:bg-white hover:scale-105 transition-all text-zinc-900">
               Contact Sales
             </Button>
           </div>
@@ -324,8 +277,6 @@ const Homepage = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Homepage;
