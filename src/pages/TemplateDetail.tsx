@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -15,6 +16,7 @@ import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
+import "./TemplateStyles.css";
 
 const TemplateDetail = () => {
   const { id } = useParams();
@@ -82,11 +84,19 @@ const TemplateDetail = () => {
   };
 
   const handlePrint = () => {
-    window.print();
-    toast({
-      title: "Print dialog opened",
-      description: "Your document is ready to print.",
-    });
+    // Add print class to body to trigger print-specific styles
+    document.body.classList.add('printing');
+    
+    setTimeout(() => {
+      window.print();
+      // Remove print class after printing
+      document.body.classList.remove('printing');
+      
+      toast({
+        title: "Print dialog opened",
+        description: "Your document is ready to print.",
+      });
+    }, 100);
   };
 
   const handleDownloadPDF = async () => {
@@ -106,24 +116,54 @@ const TemplateDetail = () => {
         description: "Please wait while we prepare your document.",
       });
 
+      // Create canvas with high quality settings for A4
       const canvas = await html2canvas(element as HTMLElement, {
-        scale: 2,
+        scale: 3, // Higher scale for better quality
         useCORS: true,
         allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: element.scrollWidth,
+        height: element.scrollHeight,
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      // A4 dimensions in mm
+      const a4Width = 210;
+      const a4Height = 297;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Calculate aspect ratio to fit content properly in A4
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const imgAspectRatio = imgWidth / imgHeight;
+      const a4AspectRatio = a4Width / a4Height;
+      
+      let pdfImgWidth, pdfImgHeight, offsetX = 0, offsetY = 0;
+      
+      if (imgAspectRatio > a4AspectRatio) {
+        // Image is wider than A4 ratio
+        pdfImgWidth = a4Width;
+        pdfImgHeight = a4Width / imgAspectRatio;
+        offsetY = (a4Height - pdfImgHeight) / 2;
+      } else {
+        // Image is taller than A4 ratio
+        pdfImgHeight = a4Height;
+        pdfImgWidth = a4Height * imgAspectRatio;
+        offsetX = (a4Width - pdfImgWidth) / 2;
+      }
+      
+      pdf.addImage(imgData, 'PNG', offsetX, offsetY, pdfImgWidth, pdfImgHeight);
       pdf.save(`${template?.title || 'document'}.pdf`);
 
       toast({
         title: "PDF Downloaded",
-        description: "Your document has been downloaded successfully.",
+        description: "Your document has been downloaded in A4 format.",
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -152,10 +192,18 @@ const TemplateDetail = () => {
         description: "Please wait while we prepare your image.",
       });
 
+      // Create canvas with A4 proportions
+      const a4Ratio = 210 / 297; // A4 width/height ratio
+      const maxWidth = 1654; // A4 width at 200 DPI
+      const maxHeight = 2339; // A4 height at 200 DPI
+
       const canvas = await html2canvas(element as HTMLElement, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: maxWidth,
+        height: maxHeight,
       });
 
       canvas.toBlob((blob) => {
@@ -171,7 +219,7 @@ const TemplateDetail = () => {
 
           toast({
             title: "JPG Downloaded",
-            description: "Your document has been downloaded successfully.",
+            description: "Your document has been downloaded in A4 format.",
           });
         }
       }, 'image/jpeg', 0.95);
