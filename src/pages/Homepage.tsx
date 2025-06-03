@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Shield, Zap, Users, CheckCircle, Star, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FlickeringGrid } from "@/components/ui/flickering-grid";
+
 const Homepage = () => {
   const features = [{
     icon: FileText,
@@ -70,10 +72,24 @@ const Homepage = () => {
         </div>
       </header>
 
-      {/* Animated Hero Section */}
+      {/* Animated Hero Section with Flickering Grid */}
       <section className="py-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-certifyr-blue-light/10 via-transparent to-certifyr-blue/10 py-0 my-0"></div>
-        <div className="container mx-auto text-center max-w-4xl relative">
+        {/* Flickering Grid Background */}
+        <div className="absolute inset-0">
+          <FlickeringGrid
+            className="z-0 absolute inset-0 size-full"
+            squareSize={4}
+            gridGap={6}
+            color="#3a86ff"
+            maxOpacity={0.15}
+            flickerChance={0.1}
+          />
+        </div>
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-certifyr-blue-light/10 via-transparent to-certifyr-blue/10 z-10"></div>
+        
+        <div className="container mx-auto text-center max-w-4xl relative z-20">
           <div className="animate-fade-in">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               <span className="bg-gradient-to-r from-certifyr-blue-dark via-certifyr-blue to-certifyr-blue-light bg-clip-text text-transparent">
@@ -106,11 +122,6 @@ const Homepage = () => {
               Watch Demo
             </Button>
           </div>
-          
-          {/* Floating Elements */}
-          
-          
-          
           
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 animate-fade-in delay-700">
@@ -165,7 +176,7 @@ const Homepage = () => {
                 <p className="text-muted-foreground mb-4 italic">"{testimonial.content}"</p>
                 <div>
                   <div className="font-semibold">{testimonial.name}</div>
-                  
+                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
               </div>)}
           </div>
@@ -274,4 +285,5 @@ const Homepage = () => {
       </footer>
     </div>;
 };
+
 export default Homepage;
