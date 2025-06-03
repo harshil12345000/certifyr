@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { BonafideForm } from "@/components/templates/BonafideForm";
 import { BonafidePreview } from "@/components/templates/BonafidePreview";
@@ -156,22 +157,29 @@ const TemplateDetail = () => {
           </div>
         </div>
 
-        {/* Form and Preview */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Form */}
-          <div className="glass-card p-6">
-            <h2 className="text-lg font-medium mb-4">Document Details</h2>
-            {renderForm()}
-          </div>
-
-          {/* Preview */}
-          <div className="glass-card p-6">
-            <h2 className="text-lg font-medium mb-4">Preview</h2>
-            <div className="border rounded-lg p-4 bg-white min-h-[600px]">
-              {renderPreview()}
+        {/* Tabs for Form and Preview */}
+        <Tabs defaultValue="form" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="form">Document Details</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="form" className="mt-6">
+            <div className="glass-card p-6">
+              <h2 className="text-lg font-medium mb-4">Document Details</h2>
+              {renderForm()}
             </div>
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="preview" className="mt-6">
+            <div className="glass-card p-6">
+              <h2 className="text-lg font-medium mb-4">Preview</h2>
+              <div className="border rounded-lg p-4 bg-white min-h-[600px]">
+                {renderPreview()}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
