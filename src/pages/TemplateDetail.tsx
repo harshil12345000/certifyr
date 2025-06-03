@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, Printer, FileImage } from "lucide-react";
 import { BonafideForm } from "@/components/templates/BonafideForm";
 import { BonafidePreview } from "@/components/templates/BonafidePreview";
 import { ExperienceForm } from "@/components/templates/ExperienceForm";
@@ -13,6 +12,9 @@ import { CharacterForm } from "@/components/templates/CharacterForm";
 import { CharacterPreview } from "@/components/templates/CharacterPreview";
 import { BonafideData, ExperienceData, CharacterData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { toast } from "@/hooks/use-toast";
 
 const TemplateDetail = () => {
   const { id } = useParams();
@@ -77,6 +79,110 @@ const TemplateDetail = () => {
   const handleSubmit = (data: any) => {
     setFormData(data);
     console.log("Form submitted:", data);
+  };
+
+  const handlePrint = () => {
+    window.print();
+    toast({
+      title: "Print dialog opened",
+      description: "Your document is ready to print.",
+    });
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const element = document.querySelector('.a4-document');
+      if (!element) {
+        toast({
+          title: "Error",
+          description: "Document not found for download.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we prepare your document.",
+      });
+
+      const canvas = await html2canvas(element as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${template?.title || 'document'}.pdf`);
+
+      toast({
+        title: "PDF Downloaded",
+        description: "Your document has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadJPG = async () => {
+    try {
+      const element = document.querySelector('.a4-document');
+      if (!element) {
+        toast({
+          title: "Error",
+          description: "Document not found for download.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Generating JPG...",
+        description: "Please wait while we prepare your image.",
+      });
+
+      const canvas = await html2canvas(element as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${template?.title || 'document'}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          toast({
+            title: "JPG Downloaded",
+            description: "Your document has been downloaded successfully.",
+          });
+        }
+      }, 'image/jpeg', 0.95);
+    } catch (error) {
+      console.error('Error generating JPG:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the JPG. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderForm = () => {
@@ -146,13 +252,17 @@ const TemplateDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print
             </Button>
-            <Button>
+            <Button variant="outline" onClick={handleDownloadJPG}>
+              <FileImage className="w-4 h-4 mr-2" />
+              Download JPG
+            </Button>
+            <Button onClick={handleDownloadPDF}>
               <Download className="w-4 h-4 mr-2" />
-              Download
+              Download PDF
             </Button>
           </div>
         </div>
