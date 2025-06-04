@@ -9,7 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      branding_settings: {
+        Row: {
+          created_at: string | null
+          id: number
+          letterhead: string | null
+          logo: string | null
+          seal: string | null
+          signature: string | null
+          tagline: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          letterhead?: string | null
+          logo?: string | null
+          seal?: string | null
+          signature?: string | null
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          letterhead?: string | null
+          logo?: string | null
+          seal?: string | null
+          signature?: string | null
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      organization_details: {
+        Row: {
+          address: string | null
+          affiliation: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          registration: string | null
+          tagline: string | null
+          type: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          affiliation?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          registration?: string | null
+          tagline?: string | null
+          type?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          affiliation?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          registration?: string | null
+          tagline?: string | null
+          type?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
