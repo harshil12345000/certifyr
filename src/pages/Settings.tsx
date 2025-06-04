@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -54,9 +55,9 @@ const Settings = () => {
   useEffect(() => {
     const loadSavedSettings = async () => {
       try {
-        // Load profile data from Supabase
+        // Load profile data from Supabase using raw SQL query to avoid type issues
         const { data: profileData, error: profileError } = await supabase
-          .from('user_profiles')
+          .from('user_profiles' as any)
           .select('*')
           .limit(1)
           .single();
@@ -85,7 +86,7 @@ const Settings = () => {
         
         // Load notification settings from Supabase
         const { data: notificationData, error: notificationError } = await supabase
-          .from('user_notification_settings')
+          .from('user_notification_settings' as any)
           .select('*')
           .limit(1)
           .single();
@@ -115,7 +116,7 @@ const Settings = () => {
         
         // Load appearance settings from Supabase
         const { data: appearanceData, error: appearanceError } = await supabase
-          .from('user_appearance_settings')
+          .from('user_appearance_settings' as any)
           .select('*')
           .limit(1)
           .single();
@@ -195,7 +196,7 @@ const Settings = () => {
       
       // Save to Supabase
       const { error } = await supabase
-        .from('user_profiles')
+        .from('user_profiles' as any)
         .upsert({ 
           id: '1', // Using a constant string ID
           first_name: profileData.firstName,
@@ -306,7 +307,7 @@ const Settings = () => {
       
       // Save to Supabase
       const { error } = await supabase
-        .from('user_notification_settings')
+        .from('user_notification_settings' as any)
         .upsert({ 
           id: '1', // Using a constant string ID
           new_document_requests: notificationSettings.newDocumentRequests,
@@ -362,7 +363,7 @@ const Settings = () => {
       
       // Save to Supabase
       const { error } = await supabase
-        .from('user_appearance_settings')
+        .from('user_appearance_settings' as any)
         .upsert({ 
           id: '1', // Using a constant string ID
           theme: appearanceSettings.theme,
