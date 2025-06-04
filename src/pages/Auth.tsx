@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -305,7 +306,15 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9" placeholder="Your name" {...field} />
+                          <Input 
+                            className="pl-9" 
+                            placeholder="Your name" 
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -322,7 +331,15 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9" placeholder="Your organization name" {...field} />
+                          <Input 
+                            className="pl-9" 
+                            placeholder="Your organization name" 
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -366,7 +383,15 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9" placeholder="Your phone number" {...field} />
+                          <Input 
+                            className="pl-9" 
+                            placeholder="Your phone number" 
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -383,7 +408,16 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9" placeholder="your@email.com" {...field} />
+                          <Input 
+                            className="pl-9" 
+                            placeholder="your@email.com" 
+                            type="email"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -401,10 +435,14 @@ const Auth = () => {
                         <div className="relative">
                           <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input 
-                            className="pl-9" 
+                            className="pl-9 pr-9" 
                             type={showSignupPassword ? 'text' : 'password'} 
                             placeholder="••••••••" 
-                            {...field} 
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
                           />
                           <button
                             type="button"
