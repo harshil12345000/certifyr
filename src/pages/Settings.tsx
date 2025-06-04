@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -55,87 +54,63 @@ const Settings = () => {
   useEffect(() => {
     const loadSavedSettings = async () => {
       try {
-        // Load profile data from Supabase using raw SQL query to avoid type issues
-        const { data: profileData, error: profileError } = await supabase
-          .from('user_profiles' as any)
+        // Load profile data from Supabase
+        const { data: profileDataResult, error: profileError } = await supabase
+          .from('user_profiles')
           .select('*')
-          .limit(1)
-          .single();
+          .eq('id', '1')
+          .maybeSingle();
         
-        if (profileData && !profileError) {
+        if (profileDataResult && !profileError) {
           setProfileData({
-            firstName: profileData.first_name || "Admin",
-            lastName: profileData.last_name || "User",
-            email: profileData.email || "admin@certifyr.com",
-            jobTitle: profileData.job_title || "Principal",
-            department: profileData.department || "management",
-            phone: profileData.phone || "+91 98765 43210",
-            bio: profileData.bio || ""
+            firstName: profileDataResult.first_name || "Admin",
+            lastName: profileDataResult.last_name || "User", 
+            email: profileDataResult.email || "admin@certifyr.com",
+            jobTitle: profileDataResult.job_title || "Principal",
+            department: profileDataResult.department || "management",
+            phone: profileDataResult.phone || "+91 98765 43210",
+            bio: profileDataResult.bio || ""
           });
         } else {
-          // Fall back to localStorage
-          const savedProfileData = localStorage.getItem('profileData');
-          if (savedProfileData) {
-            try {
-              setProfileData(JSON.parse(savedProfileData));
-            } catch (error) {
-              console.error("Error parsing saved profile data:", error);
-            }
-          }
+          console.log("No profile data found, using defaults");
         }
         
         // Load notification settings from Supabase
-        const { data: notificationData, error: notificationError } = await supabase
-          .from('user_notification_settings' as any)
+        const { data: notificationDataResult, error: notificationError } = await supabase
+          .from('user_notification_settings')
           .select('*')
-          .limit(1)
-          .single();
+          .eq('id', '1')
+          .maybeSingle();
         
-        if (notificationData && !notificationError) {
+        if (notificationDataResult && !notificationError) {
           setNotificationSettings({
-            newDocumentRequests: notificationData.new_document_requests ?? true,
-            documentSigned: notificationData.document_signed ?? true,
-            documentDelivered: notificationData.document_delivered ?? true,
-            newUserRegistrations: notificationData.new_user_registrations ?? true,
-            securityAlerts: notificationData.security_alerts ?? true,
-            productUpdates: notificationData.product_updates ?? false,
-            emailNotifications: notificationData.email_notifications ?? true,
-            inAppNotifications: notificationData.in_app_notifications ?? true
+            newDocumentRequests: notificationDataResult.new_document_requests ?? true,
+            documentSigned: notificationDataResult.document_signed ?? true,
+            documentDelivered: notificationDataResult.document_delivered ?? true,
+            newUserRegistrations: notificationDataResult.new_user_registrations ?? true,
+            securityAlerts: notificationDataResult.security_alerts ?? true,
+            productUpdates: notificationDataResult.product_updates ?? false,
+            emailNotifications: notificationDataResult.email_notifications ?? true,
+            inAppNotifications: notificationDataResult.in_app_notifications ?? true
           });
         } else {
-          // Fall back to localStorage
-          const savedNotificationSettings = localStorage.getItem('notificationSettings');
-          if (savedNotificationSettings) {
-            try {
-              setNotificationSettings(JSON.parse(savedNotificationSettings));
-            } catch (error) {
-              console.error("Error parsing saved notification settings:", error);
-            }
-          }
+          console.log("No notification settings found, using defaults");
         }
         
         // Load appearance settings from Supabase
-        const { data: appearanceData, error: appearanceError } = await supabase
-          .from('user_appearance_settings' as any)
+        const { data: appearanceDataResult, error: appearanceError } = await supabase
+          .from('user_appearance_settings')
           .select('*')
-          .limit(1)
-          .single();
+          .eq('id', '1')
+          .maybeSingle();
         
-        if (appearanceData && !appearanceError) {
+        if (appearanceDataResult && !appearanceError) {
           setAppearanceSettings({
-            theme: appearanceData.theme || "light",
-            textSize: appearanceData.text_size || "medium"
+            theme: appearanceDataResult.theme || "light",
+            textSize: appearanceDataResult.text_size || "medium"
           });
         } else {
-          // Fall back to localStorage
-          const savedAppearanceSettings = localStorage.getItem('appearanceSettings');
-          if (savedAppearanceSettings) {
-            try {
-              setAppearanceSettings(JSON.parse(savedAppearanceSettings));
-            } catch (error) {
-              console.error("Error parsing saved appearance settings:", error);
-            }
-          }
+          console.log("No appearance settings found, using defaults");
         }
       } catch (error) {
         console.error("Error loading settings:", error);
@@ -196,9 +171,9 @@ const Settings = () => {
       
       // Save to Supabase
       const { error } = await supabase
-        .from('user_profiles' as any)
+        .from('user_profiles')
         .upsert({ 
-          id: '1', // Using a constant string ID
+          id: '1',
           first_name: profileData.firstName,
           last_name: profileData.lastName,
           email: profileData.email,
@@ -307,9 +282,9 @@ const Settings = () => {
       
       // Save to Supabase
       const { error } = await supabase
-        .from('user_notification_settings' as any)
+        .from('user_notification_settings')
         .upsert({ 
-          id: '1', // Using a constant string ID
+          id: '1',
           new_document_requests: notificationSettings.newDocumentRequests,
           document_signed: notificationSettings.documentSigned,
           document_delivered: notificationSettings.documentDelivered,
@@ -363,9 +338,9 @@ const Settings = () => {
       
       // Save to Supabase
       const { error } = await supabase
-        .from('user_appearance_settings' as any)
+        .from('user_appearance_settings')
         .upsert({ 
-          id: '1', // Using a constant string ID
+          id: '1',
           theme: appearanceSettings.theme,
           text_size: appearanceSettings.textSize
         })
