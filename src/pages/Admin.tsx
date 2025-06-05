@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Settings, Loader2, Building, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase, getPublicUrl } from '@/integrations/supabase/client';
@@ -25,16 +26,44 @@ const Admin = () => {
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   
   const [organizationDetails, setOrganizationDetails] = useState({
-    name: "Delhi Public School",
-    type: "School",
-    address: "123 Education Lane, New Delhi, 110001",
-    phone: "+91 98765 43210",
-    email: "info@dpsdelhi.edu.in",
-    website: "https://dpsdelhi.edu.in",
-    registration: "CBSE-1049/DL",
-    affiliation: "Central Board of Secondary Education",
+    name: "Enter your organization name",
+    type: "Company",
+    address: "Enter your address",
+    countryCode: "+1",
+    phone: "Enter your phone number",
+    email: "Enter official email address",
+    website: "Enter organization website",
+    registration: "Enter registration number",
+    affiliation: "Enter affiliation details",
     tagline: "Knowledge, Character, Excellence"
   });
+
+  const institutionTypes = [
+    "Company",
+    "Startup", 
+    "College",
+    "School",
+    "Other"
+  ];
+
+  const countryCodes = [
+    { code: "+1", country: "US/CA" },
+    { code: "+44", country: "UK" },
+    { code: "+91", country: "India" },
+    { code: "+86", country: "China" },
+    { code: "+81", country: "Japan" },
+    { code: "+49", country: "Germany" },
+    { code: "+33", country: "France" },
+    { code: "+39", country: "Italy" },
+    { code: "+34", country: "Spain" },
+    { code: "+7", country: "Russia" },
+    { code: "+61", country: "Australia" },
+    { code: "+55", country: "Brazil" },
+    { code: "+52", country: "Mexico" },
+    { code: "+27", country: "South Africa" },
+    { code: "+971", country: "UAE" },
+    { code: "+65", country: "Singapore" },
+  ];
 
   // Load saved organization details and branding assets on component mount
   useEffect(() => {
@@ -49,14 +78,15 @@ const Admin = () => {
         if (orgData && orgData.length > 0 && !error) {
           console.log("Loaded org details from Supabase:", orgData[0]);
           setOrganizationDetails({
-            name: orgData[0].name || "Delhi Public School",
-            type: orgData[0].type || "School",
-            address: orgData[0].address || "123 Education Lane, New Delhi, 110001",
-            phone: orgData[0].phone || "+91 98765 43210",
-            email: orgData[0].email || "info@dpsdelhi.edu.in",
-            website: orgData[0].website || "https://dpsdelhi.edu.in",
-            registration: orgData[0].registration || "CBSE-1049/DL",
-            affiliation: orgData[0].affiliation || "Central Board of Secondary Education",
+            name: orgData[0].name || "Enter your organization name",
+            type: orgData[0].type || "Company",
+            address: orgData[0].address || "Enter your address",
+            countryCode: "+1", // Default country code
+            phone: orgData[0].phone || "Enter your phone number",
+            email: orgData[0].email || "Enter official email address",
+            website: orgData[0].website || "Enter organization website",
+            registration: orgData[0].registration || "Enter registration number",
+            affiliation: orgData[0].affiliation || "Enter affiliation details",
             tagline: orgData[0].tagline || "Knowledge, Character, Excellence"
           });
         } else {
@@ -64,7 +94,12 @@ const Admin = () => {
           const savedOrgDetails = localStorage.getItem('organizationDetails');
           if (savedOrgDetails) {
             try {
-              setOrganizationDetails(JSON.parse(savedOrgDetails));
+              const parsed = JSON.parse(savedOrgDetails);
+              setOrganizationDetails({
+                ...organizationDetails,
+                ...parsed,
+                countryCode: parsed.countryCode || "+1"
+              });
             } catch (error) {
               console.error("Error parsing saved organization details:", error);
             }
@@ -76,7 +111,12 @@ const Admin = () => {
         const savedOrgDetails = localStorage.getItem('organizationDetails');
         if (savedOrgDetails) {
           try {
-            setOrganizationDetails(JSON.parse(savedOrgDetails));
+            const parsed = JSON.parse(savedOrgDetails);
+            setOrganizationDetails({
+              ...organizationDetails,
+              ...parsed,
+              countryCode: parsed.countryCode || "+1"
+            });
           } catch (error) {
             console.error("Error parsing saved organization details:", error);
           }
@@ -180,15 +220,22 @@ const Admin = () => {
 
   const handleSaveOrganization = async () => {
     try {
+      // Combine country code and phone number for storage
+      const fullPhone = `${organizationDetails.countryCode} ${organizationDetails.phone}`;
+      const orgDataToSave = {
+        ...organizationDetails,
+        phone: fullPhone
+      };
+      
       // Save organization details to localStorage for backward compatibility
-      localStorage.setItem('organizationDetails', JSON.stringify(organizationDetails));
+      localStorage.setItem('organizationDetails', JSON.stringify(orgDataToSave));
       
       // Save to Supabase
       const { data, error } = await supabase
         .from('organization_details')
         .upsert({ 
           id: '1', // Using a constant string ID
-          ...organizationDetails
+          ...orgDataToSave
         })
         .select();
       
@@ -357,9 +404,17 @@ const Admin = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
+    const fieldName = id.replace('org-', '');
     setOrganizationDetails(prev => ({
       ...prev,
-      [id.replace('org-', '')]: value
+      [fieldName]: value
+    }));
+  };
+
+  const handleSelectChange = (fieldName: string, value: string) => {
+    setOrganizationDetails(prev => ({
+      ...prev,
+      [fieldName]: value
     }));
   };
 
@@ -408,19 +463,28 @@ const Admin = () => {
                       <Label htmlFor="org-name">Organization Name</Label>
                       <Input 
                         id="org-name" 
-                        placeholder="Acme College" 
+                        placeholder="Enter your organization name" 
                         value={organizationDetails.name}
                         onChange={handleInputChange}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="org-type">Institution Type</Label>
-                      <Input 
-                        id="org-type" 
-                        placeholder="School/College/Corporate" 
-                        value={organizationDetails.type}
-                        onChange={handleInputChange}
-                      />
+                      <Select 
+                        value={organizationDetails.type} 
+                        onValueChange={(value) => handleSelectChange('type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select institution type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {institutionTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   
@@ -428,7 +492,7 @@ const Admin = () => {
                     <Label htmlFor="org-address">Address</Label>
                     <Input 
                       id="org-address" 
-                      placeholder="Full address" 
+                      placeholder="Enter your address" 
                       value={organizationDetails.address}
                       onChange={handleInputChange}
                     />
@@ -437,18 +501,36 @@ const Admin = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="org-phone">Phone Number</Label>
-                      <Input 
-                        id="org-phone" 
-                        placeholder="+91 XXXXX XXXXX" 
-                        value={organizationDetails.phone}
-                        onChange={handleInputChange}
-                      />
+                      <div className="flex gap-2">
+                        <Select 
+                          value={organizationDetails.countryCode} 
+                          onValueChange={(value) => handleSelectChange('countryCode', value)}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countryCodes.map((country) => (
+                              <SelectItem key={country.code} value={country.code}>
+                                {country.code} {country.country}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input 
+                          id="org-phone" 
+                          placeholder="Enter your phone number" 
+                          value={organizationDetails.phone}
+                          onChange={handleInputChange}
+                          className="flex-1"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="org-email">Official Email</Label>
                       <Input 
                         id="org-email" 
-                        placeholder="contact@example.com" 
+                        placeholder="Enter official email address" 
                         value={organizationDetails.email}
                         onChange={handleInputChange}
                       />
@@ -459,7 +541,7 @@ const Admin = () => {
                     <Label htmlFor="org-website">Website</Label>
                     <Input 
                       id="org-website" 
-                      placeholder="https://example.com" 
+                      placeholder="Enter organization website" 
                       value={organizationDetails.website}
                       onChange={handleInputChange}
                     />
@@ -467,22 +549,22 @@ const Admin = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  <h3 className="font-medium">Official Details</h3>
+                  <h3 className="font-medium">Optional Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="org-registration">Registration Number</Label>
+                      <Label htmlFor="org-registration">Registration Number (Optional)</Label>
                       <Input 
                         id="org-registration" 
-                        placeholder="REG123456" 
+                        placeholder="Enter registration number" 
                         value={organizationDetails.registration}
                         onChange={handleInputChange}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="org-affiliation">Affiliation</Label>
+                      <Label htmlFor="org-affiliation">Affiliation (Optional)</Label>
                       <Input 
                         id="org-affiliation" 
-                        placeholder="e.g. CBSE, ICSE, etc." 
+                        placeholder="Enter affiliation details" 
                         value={organizationDetails.affiliation}
                         onChange={handleInputChange}
                       />
