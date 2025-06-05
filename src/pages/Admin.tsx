@@ -26,16 +26,16 @@ const Admin = () => {
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   
   const [organizationDetails, setOrganizationDetails] = useState({
-    name: "Enter your organization name",
+    name: "",
     type: "Company",
-    address: "Enter your address",
+    address: "",
     countryCode: "+1",
-    phone: "Enter your phone number",
-    email: "Enter official email address",
-    website: "Enter organization website",
-    registration: "Enter registration number",
-    affiliation: "Enter affiliation details",
-    tagline: "Knowledge, Character, Excellence"
+    phone: "",
+    email: "",
+    website: "",
+    registration: "",
+    affiliation: "",
+    tagline: ""
   });
 
   const institutionTypes = [
@@ -78,16 +78,16 @@ const Admin = () => {
         if (orgData && orgData.length > 0 && !error) {
           console.log("Loaded org details from Supabase:", orgData[0]);
           setOrganizationDetails({
-            name: orgData[0].name || "Enter your organization name",
+            name: orgData[0].name === "Enter your organization name" ? "" : orgData[0].name || "",
             type: orgData[0].type || "Company",
-            address: orgData[0].address || "Enter your address",
+            address: orgData[0].address === "Enter your address" ? "" : orgData[0].address || "",
             countryCode: "+1", // Default country code
-            phone: orgData[0].phone || "Enter your phone number",
-            email: orgData[0].email || "Enter official email address",
-            website: orgData[0].website || "Enter organization website",
-            registration: orgData[0].registration || "Enter registration number",
-            affiliation: orgData[0].affiliation || "Enter affiliation details",
-            tagline: orgData[0].tagline || "Knowledge, Character, Excellence"
+            phone: orgData[0].phone === "Enter your phone number" ? "" : orgData[0].phone || "",
+            email: orgData[0].email === "Enter official email address" ? "" : orgData[0].email || "",
+            website: orgData[0].website === "Enter organization website" ? "" : orgData[0].website || "",
+            registration: orgData[0].registration === "Enter registration number" ? "" : orgData[0].registration || "",
+            affiliation: orgData[0].affiliation === "Enter affiliation details" ? "" : orgData[0].affiliation || "",
+            tagline: orgData[0].tagline === "Knowledge, Character, Excellence" ? "" : orgData[0].tagline || ""
           });
         } else {
           // Fall back to localStorage
