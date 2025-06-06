@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, ExternalLink, MoreHorizontal, Loader2, Trash } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -23,19 +22,12 @@ type DocumentDraft = {
 };
 
 export function SavedDrafts() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [drafts, setDrafts] = useState<DocumentDraft[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDrafts = async () => {
-      if (!user) {
-        setDrafts([]);
-        setLoading(false);
-        return;
-      }
-
       try {
         // For now, we'll use mock data since the table might not exist yet
         const mockDrafts: DocumentDraft[] = [
@@ -58,7 +50,7 @@ export function SavedDrafts() {
     };
 
     fetchDrafts();
-  }, [user]);
+  }, []);
 
   const deleteDraft = async (id: string) => {
     try {
@@ -86,24 +78,6 @@ export function SavedDrafts() {
         </CardHeader>
         <CardContent className="flex justify-center py-6">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Saved Drafts</CardTitle>
-          <CardDescription>Sign in to see your saved drafts</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-6 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
-          <p className="text-muted-foreground mb-4">Sign in to save and access your document drafts from anywhere</p>
-          <Button asChild>
-            <Link to="/auth">Sign In</Link>
-          </Button>
         </CardContent>
       </Card>
     );
