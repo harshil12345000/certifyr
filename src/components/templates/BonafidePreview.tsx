@@ -132,15 +132,34 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
   };
 
   const getPersonType = () => {
-    return data.type === "student" ? "studying" : "working";
+    return data.type === "student" ? "student" : "employee";
   };
 
   const getPosition = () => {
     return data.type === "student" ? "enrolled" : "employed";
   };
 
-  // Use organization name from orgDetails if available, otherwise use the one from data
-  const institutionName = orgDetails?.name || data.institutionName || "[Institution Name]";
+  // Use organization name from orgDetails, fallback to data.institutionName only if orgDetails is empty
+  const institutionName = (orgDetails?.name && orgDetails.name !== "Enter your organization name") 
+    ? orgDetails.name 
+    : (data.institutionName || "[Institution Name]");
+
+  // Use organization contact details from orgDetails
+  const getContactInfo = () => {
+    if (orgDetails) {
+      const address = (orgDetails.address && orgDetails.address !== "Enter your address") ? orgDetails.address : "123 Education Street, Knowledge City, 400001";
+      const phone = (orgDetails.phone && orgDetails.phone !== "Enter your phone number") ? orgDetails.phone : "+91 2222 333333";
+      const email = (orgDetails.email && orgDetails.email !== "Enter official email address") ? orgDetails.email : "info@institution.edu";
+      return { address, phone, email };
+    }
+    return {
+      address: "123 Education Street, Knowledge City, 400001",
+      phone: "+91 2222 333333", 
+      email: "info@institution.edu"
+    };
+  };
+
+  const contactInfo = getContactInfo();
 
   // Function to handle image loading errors
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
@@ -181,9 +200,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             {institutionName}
           </h1>
           <p className="text-muted-foreground">
-            {orgDetails ? orgDetails.address : "123 Education Street, Knowledge City, 400001"} • 
-            {orgDetails ? orgDetails.phone : "+91 2222 333333"} • 
-            {orgDetails ? orgDetails.email : "info@institution.edu"}
+            {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
           </p>
           {brandingInfo && brandingInfo.tagline && (
             <p className="text-sm italic mt-1">{brandingInfo.tagline}</p>
@@ -200,11 +217,11 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
         {/* Certificate content */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p>
-            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {data.type || "student/employee"} of <strong>{institutionName}</strong>.
+            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {getRelation()} of <strong>{data.parentName || "[Parent's Name]"}</strong>, is a bonafide {getPersonType()} of <strong>{institutionName}</strong>.
           </p>
 
           <p>
-            {getPronoun()} has been {getPersonType()} in this institution since <strong>{data.startDate ? formatDate(new Date(data.startDate)) : "[Start Date]"}</strong> and is currently {getPosition()} as a <strong>{data.courseOrDesignation || "[Course/Designation]"}</strong> in the <strong>{data.department || "[Department]"}</strong>.
+            {getPronoun()} has been {data.type === "student" ? "studying" : "working"} in this institution since <strong>{data.startDate ? formatDate(new Date(data.startDate)) : "[Start Date]"}</strong> and is currently {getPosition()} as a <strong>{data.courseOrDesignation || "[Course/Designation]"}</strong> {getPersonType()} in the <strong>{data.department || "[Department]"}</strong> department.
           </p>
 
           <p>
@@ -223,7 +240,7 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
               <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
             </p>
             <p>
-              <strong>Place:</strong> {data.place || (orgDetails ? orgDetails.address?.split(',').slice(-2).join(', ').trim() : "[City, State]")}
+              <strong>Place:</strong> {data.place || (contactInfo.address?.split(',').slice(-2).join(', ').trim() || "[City, State]")}
             </p>
           </div>
           
