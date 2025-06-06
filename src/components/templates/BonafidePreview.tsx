@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BonafideData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -270,18 +269,6 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
             <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
             <p>{data.signatoryDesignation || "[Designation]"}</p>
             <p>{institutionName}</p>
-            <div className="mt-2 border border-dashed inline-block p-2">
-              {organizationSeal ? (
-                <img 
-                  src={organizationSeal}
-                  alt="Official Seal" 
-                  className="h-12 w-12 object-contain" 
-                  onError={(e) => handleImageError(e, "seal")}
-                />
-              ) : (
-                <p className="text-xs text-center text-muted-foreground">SEAL/STAMP</p>
-              )}
-            </div>
           </div>
         </div>
       </div>
