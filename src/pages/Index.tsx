@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -9,6 +10,10 @@ import { SavedDrafts } from "@/components/dashboard/SavedDrafts";
 import { Button } from "@/components/ui/button";
 import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
 import { Document } from "@/types/document";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useOrganizationBranding } from "@/hooks/useOrganizationBranding";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 const mockDocuments = [{
   id: "doc-1",
   name: "Bonafide Certificate - John Smith",
@@ -31,7 +36,10 @@ const mockDocuments = [{
   date: "2023-05-25",
   recipient: null
 }] as Document[];
+
 const Index = () => {
+  const { profile } = useUserProfile();
+  const { branding } = useOrganizationBranding();
   const [stats] = useState([{
     title: "Documents Created",
     value: "128",
@@ -57,23 +65,60 @@ const Index = () => {
     trend: "up",
     icon: BarChart
   }]);
-  return <DashboardLayout>
+
+  const getUserDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    return 'User';
+  };
+
+  const getAvatarInitials = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+    }
+    return 'U';
+  };
+
+  return (
+    <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Header */}
+        {/* Header with User Profile */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold mb-1">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back! Here's your document activity</p>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-12 w-12">
+              {profile?.profile_picture && (
+                <AvatarImage src={profile.profile_picture} alt={getUserDisplayName()} />
+              )}
+              <AvatarFallback className="text-lg">
+                {getAvatarInitials()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-semibold mb-1">
+                Welcome back, {getUserDisplayName()}!
+              </h1>
+              <p className="text-muted-foreground">
+                {branding?.organization_name || 'Your Organization'} • {profile?.job_title || 'Administrator'}
+              </p>
+            </div>
           </div>
-          
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => <StatsCard key={index} title={stat.title} value={stat.value} trend={{
-          value: stat.change,
-          positive: stat.trend === 'up'
-        }} icon={stat.icon} />)}
+          {stats.map((stat, index) => (
+            <StatsCard 
+              key={index} 
+              title={stat.title} 
+              value={stat.value} 
+              trend={{
+                value: stat.change,
+                positive: stat.trend === 'up'
+              }} 
+              icon={stat.icon} 
+            />
+          ))}
         </div>
 
         {/* Saved Drafts */}
@@ -94,7 +139,8 @@ const Index = () => {
               <Button variant="ghost" size="sm" className="text-primary">View All</Button>
             </div>
             <div className="space-y-4">
-              {popularTemplates.slice(0, 3).map(template => <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+              {popularTemplates.slice(0, 3).map(template => (
+                <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
                   <div className="rounded-full w-9 h-9 bg-primary-500/10 text-primary-500 flex items-center justify-center">
                     <FileText className="h-4 w-4" />
                   </div>
@@ -103,7 +149,8 @@ const Index = () => {
                     <p className="text-xs text-muted-foreground">{template.description}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="text-primary">Use</Button>
-                </div>)}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -118,10 +165,21 @@ const Index = () => {
             <Button variant="ghost" size="sm" className="text-primary">View All</Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {popularTemplates.slice(0, 4).map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} usageCount={template.usageCount} />)}
+            {popularTemplates.slice(0, 4).map(template => (
+              <TemplateCard 
+                key={template.id} 
+                id={template.id} 
+                title={template.title} 
+                description={template.description} 
+                category={template.category} 
+                usageCount={template.usageCount} 
+              />
+            ))}
           </div>
         </div>
       </div>
-    </DashboardLayout>;
+    </DashboardLayout>
+  );
 };
+
 export default Index;

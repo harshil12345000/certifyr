@@ -4,12 +4,14 @@ import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export function Header() {
   const { user, signOut } = useAuth();
+  const { profile } = useUserProfile();
   const [notifications] = useState<{
     id: number;
     title: string;
@@ -29,6 +31,20 @@ export function Header() {
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
+  };
+
+  const getUserDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    return user?.email || 'User';
+  };
+
+  const getAvatarInitials = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+    }
+    return user?.email ? getInitials(user.email) : 'U';
   };
 
   const handleSignOut = async () => {
@@ -74,11 +90,14 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 px-3">
                 <Avatar className="h-7 w-7">
+                  {profile?.profile_picture && (
+                    <AvatarImage src={profile.profile_picture} alt={getUserDisplayName()} />
+                  )}
                   <AvatarFallback className="text-xs">
-                    {user?.email ? getInitials(user.email) : 'U'}
+                    {getAvatarInitials()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden md:block text-sm">{user?.email}</span>
+                <span className="hidden md:block text-sm">{getUserDisplayName()}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
