@@ -42,66 +42,6 @@ export type Database = {
         }
         Relationships: []
       }
-      organization_branding: {
-        Row: {
-          address: string | null
-          created_at: string | null
-          custom_css: string | null
-          email: string | null
-          footer_color: string | null
-          header_color: string | null
-          id: string
-          logo_url: string | null
-          organization_name: string | null
-          organization_type: string | null
-          phone: string | null
-          seal_url: string | null
-          signature_url: string | null
-          typography_font: string | null
-          updated_at: string | null
-          user_id: string
-          website: string | null
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string | null
-          custom_css?: string | null
-          email?: string | null
-          footer_color?: string | null
-          header_color?: string | null
-          id?: string
-          logo_url?: string | null
-          organization_name?: string | null
-          organization_type?: string | null
-          phone?: string | null
-          seal_url?: string | null
-          signature_url?: string | null
-          typography_font?: string | null
-          updated_at?: string | null
-          user_id: string
-          website?: string | null
-        }
-        Update: {
-          address?: string | null
-          created_at?: string | null
-          custom_css?: string | null
-          email?: string | null
-          footer_color?: string | null
-          header_color?: string | null
-          id?: string
-          logo_url?: string | null
-          organization_name?: string | null
-          organization_type?: string | null
-          phone?: string | null
-          seal_url?: string | null
-          signature_url?: string | null
-          typography_font?: string | null
-          updated_at?: string | null
-          user_id?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
       organization_details: {
         Row: {
           address: string | null
@@ -254,7 +194,6 @@ export type Database = {
           job_title: string | null
           last_name: string | null
           phone: string | null
-          profile_picture: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -268,7 +207,6 @@ export type Database = {
           job_title?: string | null
           last_name?: string | null
           phone?: string | null
-          profile_picture?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -282,7 +220,6 @@ export type Database = {
           job_title?: string | null
           last_name?: string | null
           phone?: string | null
-          profile_picture?: string | null
           updated_at?: string | null
           user_id?: string | null
         }

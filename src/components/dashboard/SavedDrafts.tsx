@@ -13,7 +13,6 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserProfile } from '@/hooks/useUserProfile';
 
 type DocumentDraft = {
   id: string;
@@ -25,7 +24,6 @@ type DocumentDraft = {
 
 export function SavedDrafts() {
   const { user } = useAuth();
-  const { profile } = useUserProfile();
   const { toast } = useToast();
   const [drafts, setDrafts] = useState<DocumentDraft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +41,7 @@ export function SavedDrafts() {
         const mockDrafts: DocumentDraft[] = [
           {
             id: '1',
-            name: `${profile?.first_name || 'User'}'s Draft Document`,
+            name: 'Sample Draft 1',
             template_id: 'bonafide',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -60,7 +58,7 @@ export function SavedDrafts() {
     };
 
     fetchDrafts();
-  }, [user, profile]);
+  }, [user]);
 
   const deleteDraft = async (id: string) => {
     try {
