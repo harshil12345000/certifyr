@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
 import { Document } from "@/types/document";
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserStats } from '@/hooks/useUserStats';
 
 const mockDocuments = [{
   id: "doc-1",
@@ -37,24 +38,38 @@ const mockDocuments = [{
 
 const Index = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState([
-    { title: "Documents Created", value: "12", change: "+2 from last month", trend: "up" as const, icon: FileText },
-    { title: "Documents Signed", value: "8", change: "+1 from last month", trend: "up" as const, icon: FileSignature },
-    { title: "Pending Documents", value: "4", change: "-1 from last month", trend: "down" as const, icon: FileClock },
-    { title: "Total Templates", value: "6", change: "+1 from last month", trend: "up" as const, icon: BarChart },
-  ]);
+  const { stats, loading: statsLoading, error } = useUserStats();
 
-  useEffect(() => {
-    if (!user) return;
-    
-    // Simulate loading time
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [user]);
+  const statsCards = [
+    { 
+      title: "Documents Created", 
+      value: statsLoading ? "..." : stats.documentsCreated.toString(), 
+      change: stats.documentsCreated > 0 ? `+${stats.documentsCreated} total` : "No documents yet", 
+      trend: "up" as const, 
+      icon: FileText 
+    },
+    { 
+      title: "Documents Signed", 
+      value: statsLoading ? "..." : stats.documentsSigned.toString(), 
+      change: stats.documentsSigned > 0 ? `+${stats.documentsSigned} total` : "No signed documents", 
+      trend: "up" as const, 
+      icon: FileSignature 
+    },
+    { 
+      title: "Pending Documents", 
+      value: statsLoading ? "..." : stats.pendingDocuments.toString(), 
+      change: stats.pendingDocuments > 0 ? `${stats.pendingDocuments} pending` : "No pending documents", 
+      trend: stats.pendingDocuments > 0 ? "up" as const : "down" as const, 
+      icon: FileClock 
+    },
+    { 
+      title: "Total Templates", 
+      value: statsLoading ? "..." : stats.totalTemplates.toString(), 
+      change: stats.totalTemplates > 0 ? `+${stats.totalTemplates} available` : "No custom templates", 
+      trend: "up" as const, 
+      icon: BarChart 
+    },
+  ];
 
   return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -64,15 +79,22 @@ const Index = () => {
             <h1 className="text-2xl font-semibold mb-1">Dashboard</h1>
             <p className="text-muted-foreground">Welcome back! Here's your document activity</p>
           </div>
-          
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => <StatsCard key={index} title={stat.title} value={loading ? "..." : stat.value} trend={{
-          value: stat.change,
-          positive: stat.trend === 'up'
-        }} icon={stat.icon} />)}
+          {statsCards.map((stat, index) => (
+            <StatsCard 
+              key={index} 
+              title={stat.title} 
+              value={stat.value} 
+              trend={{
+                value: stat.change,
+                positive: stat.trend === 'up'
+              }} 
+              icon={stat.icon} 
+            />
+          ))}
         </div>
 
         {/* Saved Drafts */}
