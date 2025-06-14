@@ -271,9 +271,7 @@ const getInitialData = (templateId: string): FormData => {
 };
 
 const TemplateDetail = () => {
-  // Fix: use 'id' param instead of 'templateId'
-  const { id } = useParams<{ id: string }>();
-  const templateId = id;  // maintain variable name for logic below
+  const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -293,31 +291,31 @@ const TemplateDetail = () => {
   const renderForm = () => {
     switch (templateId) {
       case 'bonafide-1':
-        return <BonafideForm initialData={formData as BonafideData} onSubmit={setFormData} />;
+        return <BonafideForm initialData={formData as BonafideData} onDataChange={setFormData} />;
       case 'character-1':
-        return <CharacterForm initialData={formData as CharacterData} onSubmit={setFormData} />;
+        return <CharacterForm initialData={formData as CharacterData} onDataChange={setFormData} />;
       case 'experience-1':
-        return <ExperienceForm initialData={formData as ExperienceData} onSubmit={setFormData} />;
+        return <ExperienceForm initialData={formData as ExperienceData} onDataChange={setFormData} />;
       case 'embassy-attestation-1':
-        return <EmbassyAttestationForm initialData={formData as EmbassyAttestationData} onSubmit={setFormData} />;
+        return <EmbassyAttestationForm initialData={formData as EmbassyAttestationData} onDataChange={setFormData} />;
       case 'completion-certificate-1':
-        return <CompletionCertificateForm initialData={formData as CompletionCertificateData} onSubmit={setFormData} />;
+        return <CompletionCertificateForm initialData={formData as CompletionCertificateData} onDataChange={setFormData} />;
       case 'transfer-certificate-1':
-        return <TransferCertificateForm initialData={formData as TransferCertificateData} onSubmit={setFormData} />;
+        return <TransferCertificateForm initialData={formData as TransferCertificateData} onDataChange={setFormData} />;
       case 'noc-visa-1':
-        return <NocVisaForm initialData={formData as NocVisaData} onSubmit={setFormData} />;
+        return <NocVisaForm initialData={formData as NocVisaData} onDataChange={setFormData} />;
       case 'income-certificate-1':
-        return <IncomeCertificateForm initialData={formData as IncomeCertificateData} onSubmit={setFormData} />;
+        return <IncomeCertificateForm initialData={formData as IncomeCertificateData} onDataChange={setFormData} />;
       case 'maternity-leave-1':
-        return <MaternityLeaveForm initialData={formData as MaternityLeaveData} onSubmit={setFormData} />;
+        return <MaternityLeaveForm initialData={formData as MaternityLeaveData} onDataChange={setFormData} />;
       case 'bank-verification-1':
-        return <BankVerificationForm initialData={formData as BankVerificationData} onSubmit={setFormData} />;
+        return <BankVerificationForm initialData={formData as BankVerificationData} onDataChange={setFormData} />;
       case 'offer-letter-1':
-        return <OfferLetterForm initialData={formData as OfferLetterData} onSubmit={setFormData} />;
+        return <OfferLetterForm initialData={formData as OfferLetterData} onDataChange={setFormData} />;
       case 'address-proof-1':
-        return <AddressProofForm initialData={formData as AddressProofData} onSubmit={setFormData} />;
+        return <AddressProofForm initialData={formData as AddressProofData} onDataChange={setFormData} />;
       default:
-        return <BonafideForm initialData={formData as BonafideData} onSubmit={setFormData} />;
+        return <BonafideForm initialData={formData as BonafideData} onDataChange={setFormData} />;
     }
   };
 
