@@ -6,7 +6,6 @@ import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { RecentDocuments } from "@/components/dashboard/RecentDocuments";
 import { popularTemplates } from "@/data/mockData";
 import { TemplateCard } from "@/components/dashboard/TemplateCard";
-import { SavedDrafts } from "@/components/dashboard/SavedDrafts";
 import { Button } from "@/components/ui/button";
 import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
 import { Document } from "@/types/document";
@@ -96,9 +95,6 @@ const Index = () => {
             />
           ))}
         </div>
-
-        {/* Saved Drafts */}
-        <SavedDrafts />
 
         {/* Charts and tables */}
         <div className="grid lg:grid-cols-7 gap-6">
