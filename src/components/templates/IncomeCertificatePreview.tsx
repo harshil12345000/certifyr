@@ -125,7 +125,7 @@ export const IncomeCertificatePreview: React.FC<IncomeCertificatePreviewProps> =
         {branding.logoUrl && (
           <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
         )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">[{institutionName || 'INSTITUTION NAME'}]</h1>
+        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">{institutionName || '[INSTITUTION NAME]'}</h1>
         {branding.organizationAddress && <p className="text-sm mt-2">{branding.organizationAddress}</p>}
         {(branding.organizationPhone || branding.organizationEmail) && (
           <p className="text-sm">
@@ -138,19 +138,19 @@ export const IncomeCertificatePreview: React.FC<IncomeCertificatePreviewProps> =
 
       {/* Certificate Title */}
       <div className="text-center mb-8">
-        <div className="border border-gray-400 inline-block px-8 py-3">
+        <div className="border-2 border-gray-600 inline-block px-8 py-3">
           <h2 className="text-xl font-bold uppercase tracking-widest">INCOME CERTIFICATE</h2>
         </div>
       </div>
 
       {/* Reference Number */}
-      <div className="mb-6">
+      <div className="flex justify-between mb-6 text-sm">
         <p><strong>Certificate No.:</strong> IC/{new Date().getFullYear()}/______</p>
         <p><strong>Date:</strong> {formattedIssueDate}</p>
       </div>
 
       {/* Certificate Content */}
-      <div className="space-y-4 text-justify leading-7">
+      <div className="space-y-6 text-justify leading-7">
         <p className="text-center font-semibold text-lg mb-6">
           TO WHOM IT MAY CONCERN
         </p>
@@ -161,52 +161,52 @@ export const IncomeCertificatePreview: React.FC<IncomeCertificatePreviewProps> =
           is a regular employee of our organization with Employee ID: <strong>{employeeId || '[Employee ID]'}</strong>.
         </p>
 
-        <div className="my-6">
-          <h3 className="font-bold text-lg mb-3">Employee Details:</h3>
-          <table className="w-full border-collapse border border-gray-400">
-            <tbody>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50 w-1/3">Full Name</td>
-                <td className="border border-gray-400 p-2">{fullName || '[Employee Name]'}</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Father's Name</td>
-                <td className="border border-gray-400 p-2">{fatherName || "[Father's Name]"}</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Designation</td>
-                <td className="border border-gray-400 p-2">{designation || '[Designation]'}</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Employee ID</td>
-                <td className="border border-gray-400 p-2">{employeeId || '[Employee ID]'}</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Department</td>
-                <td className="border border-gray-400 p-2">{department || '[Department]'}</td>
-              </tr>
-            </tbody>
-          </table>
+        {/* Employee Details Section */}
+        <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500">
+          <h3 className="font-bold text-lg mb-4 text-blue-600">Employee Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Full Name</p>
+              <p className="font-semibold">{fullName || '[Employee Name]'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Father's Name</p>
+              <p className="font-semibold">{fatherName || "[Father's Name]"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Designation</p>
+              <p className="font-semibold">{designation || '[Designation]'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Employee ID</p>
+              <p className="font-semibold">{employeeId || '[Employee ID]'}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-600">Department</p>
+              <p className="font-semibold">{department || '[Department]'}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="my-6">
-          <h3 className="font-bold text-lg mb-3">Income Details ({incomeFrequency === 'monthly' ? 'Monthly' : 'Annual'}):</h3>
-          <table className="w-full border-collapse border border-gray-400">
-            <tbody>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50 w-1/3">Basic Salary</td>
-                <td className="border border-gray-400 p-2">₹ {formatCurrency(basicSalary) || '[Basic Salary]'}</td>
-              </tr>
-              <tr>
-                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Allowances</td>
-                <td className="border border-gray-400 p-2">₹ {formatCurrency(allowances) || '[Allowances]'}</td>
-              </tr>
-              <tr className="bg-blue-50">
-                <td className="border border-gray-400 p-2 font-bold">Total Income</td>
-                <td className="border border-gray-400 p-2 font-bold">₹ {formatCurrency(totalIncome) || '[Total Income]'}</td>
-              </tr>
-            </tbody>
-          </table>
+        {/* Income Details Section */}
+        <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-green-500">
+          <h3 className="font-bold text-lg mb-4 text-green-600">
+            Income Details ({incomeFrequency === 'monthly' ? 'Monthly' : 'Annual'})
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-700">Basic Salary:</span>
+              <span className="font-semibold text-lg">₹ {formatCurrency(basicSalary) || '[Basic Salary]'}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-700">Allowances:</span>
+              <span className="font-semibold text-lg">₹ {formatCurrency(allowances) || '[Allowances]'}</span>
+            </div>
+            <div className="flex justify-between items-center py-3 bg-white rounded px-4 border-2 border-green-500">
+              <span className="font-bold text-green-700">Total Income:</span>
+              <span className="font-bold text-xl text-green-700">₹ {formatCurrency(totalIncome) || '[Total Income]'}</span>
+            </div>
+          </div>
         </div>
 
         <p>
@@ -215,29 +215,37 @@ export const IncomeCertificatePreview: React.FC<IncomeCertificatePreviewProps> =
           salaried employee and receives the mentioned income on a regular basis.
         </p>
 
-        <p>
-          <strong>Purpose:</strong> This certificate is being issued for the purpose of 
-          <strong> {purpose || '[Purpose]'}</strong> as requested by the employee.
-        </p>
+        <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-500">
+          <p className="mb-2">
+            <strong className="text-yellow-700">Purpose:</strong>
+          </p>
+          <p className="italic">
+            This certificate is being issued for the purpose of <strong>{purpose || '[Purpose]'}</strong> as requested by the employee.
+          </p>
+        </div>
 
-        <p>
-          This certificate is issued based on the records available with us and is valid as on the date of issue. 
+        <p className="text-sm text-gray-600 bg-gray-50 p-4 rounded">
+          <strong>Disclaimer:</strong> This certificate is issued based on the records available with us and is valid as on the date of issue. 
           The organization does not take any responsibility for any misuse of this certificate.
         </p>
 
-        <p className="mt-6">
-          We wish {fullName || '[Employee Name]'} all the best for future endeavors.
+        <p className="text-center font-medium text-blue-600">
+          We wish <strong>{fullName || '[Employee Name]'}</strong> all the best for future endeavors.
         </p>
       </div>
 
       {/* Date and Place */}
-      <div className="mt-12 mb-16">
-        <p><strong>Date:</strong> {formattedIssueDate}</p>
-        <p><strong>Place:</strong> {place || '[Place]'}</p>
+      <div className="mt-12 mb-8 flex justify-between text-sm">
+        <div>
+          <p><strong>Date:</strong> {formattedIssueDate}</p>
+        </div>
+        <div>
+          <p><strong>Place:</strong> {place || '[Place]'}</p>
+        </div>
       </div>
 
       {/* Signatory Section */}
-      <div className="flex justify-end items-end">
+      <div className="flex justify-end items-end mt-16">
         <div className="text-right">
           {includeDigitalSignature && branding.signatureUrl && (
             <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
@@ -248,9 +256,11 @@ export const IncomeCertificatePreview: React.FC<IncomeCertificatePreviewProps> =
             </div>
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
-          <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
-          <p>{signatoryDesignation || '[Designation]'}</p>
-          <p>{institutionName || '[Institution Name]'}</p>
+          <div className="border-t-2 border-black pt-2 min-w-[200px]">
+            <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
+            <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
+            <p className="text-sm">{institutionName || '[Institution Name]'}</p>
+          </div>
         </div>
       </div>
 
