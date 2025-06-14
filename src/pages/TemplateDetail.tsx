@@ -10,9 +10,7 @@ import { ExperienceForm } from "@/components/templates/ExperienceForm";
 import { ExperiencePreview } from "@/components/templates/ExperiencePreview";
 import { CharacterForm } from "@/components/templates/CharacterForm";
 import { CharacterPreview } from "@/components/templates/CharacterPreview";
-import { NocVisaForm } from "@/components/templates/NocVisaForm";
-import { NocVisaPreview } from "@/components/templates/NocVisaPreview";
-import { BonafideData, ExperienceData, CharacterData, NocVisaData, FormData } from "@/types/templates";
+import { BonafideData, ExperienceData, CharacterData, FormData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -56,20 +54,6 @@ const TemplateDetail = () => {
           conduct: "",
           ...commonFields,
         } as CharacterData;
-      case "noc-visa-1":
-        return {
-          fullName: "",
-          employeeOrStudentId: "",
-          designationOrCourse: "",
-          department: "",
-          passportNumber: "",
-          destinationCountry: "",
-          travelStartDate: "",
-          travelEndDate: "",
-          purposeOfVisit: "",
-          tripFundSource: 'self',
-          ...commonFields,
-        } as NocVisaData;
       default:
         return {
           fullName: "",
@@ -230,8 +214,6 @@ const TemplateDetail = () => {
         return <ExperienceForm onSubmit={handleSubmit} initialData={formData as ExperienceData} />;
       case "character-1":
         return <CharacterForm onSubmit={handleSubmit} initialData={formData as CharacterData} />;
-      case "noc-visa-1":
-        return <NocVisaForm onSubmit={handleSubmit} initialData={formData as NocVisaData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
@@ -243,8 +225,6 @@ const TemplateDetail = () => {
         return <ExperiencePreview data={formData as ExperienceData} />;
       case "character-1":
         return <CharacterPreview data={formData as CharacterData} />;
-      case "noc-visa-1":
-        return <NocVisaPreview data={formData as NocVisaData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }
@@ -320,4 +300,5 @@ const TemplateDetail = () => {
       </div>
     </DashboardLayout>;
 };
+
 export default TemplateDetail;
