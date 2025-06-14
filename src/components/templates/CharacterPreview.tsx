@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { CharacterData } from "@/types/templates";
+import { CharacterData, CharacterPreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
-import { Signature as SignatureIcon } from "lucide-react"; // Renamed to avoid conflict
+import { Signature as SignatureIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -30,14 +30,12 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
     // tagline: null,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { user } = useAuth(); // Get user context
+  const { user } = useAuth();
 
   const getAssetUrlWithCacheBust = useCallback((bucket: string, path: string | null) => {
     if (!path) return null;
-    // Cache busting isn't strictly necessary for getPublicUrl if files are updated with new names/paths
-    // or if appropriate cache headers are set on storage. For simplicity, removing timestamp.
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    return urlData.publicUrl;
   }, []);
 
   useEffect(() => {
@@ -51,16 +49,16 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
         if (data.institutionName) {
           const { data: orgData, error: orgError } = await supabase
             .from('organizations')
-            .select('id, name, address, phone, email') // Add other fields if needed
+            .select('id, name, address, phone, email')
             .eq('name', data.institutionName)
-            .single();
+            .maybeSingle();
 
           if (orgError && orgError.code !== 'PGRST116') {
             console.error("Error fetching organization by name:", orgError.message);
             toast({ title: "Error", description: `Could not fetch details for ${data.institutionName}.`, variant: "destructive" });
           } else if (orgData) {
             orgIdToQuery = orgData.id;
-            fetchedOrgName = orgData.name; // Use fetched name for consistency
+            fetchedOrgName = orgData.name;
             setOrganizationInfo({
               name: orgData.name || data.institutionName || "[Institution Name]",
               address: orgData.address || "123 Default Address",
@@ -69,7 +67,6 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             });
           } else {
              console.warn(`Organization named "${data.institutionName}" not found. Using fallback details.`);
-             // Keep default placeholders if org not found by name
              setOrganizationInfo({
                 name: data.institutionName || "[Institution Name]",
                 address: "123 Education Street, Knowledge City, 400001",
@@ -78,12 +75,37 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
              });
           }
         } else if (user?.id) {
-          // TODO: Implement logic to get organization_id if only user is available
-          // This might involve fetching user's profile which contains organization_id
-          // For now, we'll rely on institutionName being present in `data`
-          console.warn("CharacterPreview: institutionName not provided in data. Cannot fetch specific org details without it.");
+          // Try to get org_id from user if institutionName is not in data
+           const { data: memberData, error: memberError } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (memberError || !memberData?.organization_id) {
+            console.warn("CharacterPreview: Could not determine organization ID from user or data.");
+          } else {
+            orgIdToQuery = memberData.organization_id;
+             const { data: orgData, error: orgError } = await supabase
+              .from('organizations')
+              .select('id, name, address, phone, email')
+              .eq('id', orgIdToQuery)
+              .single();
+            if (orgData) {
+                fetchedOrgName = orgData.name;
+                setOrganizationInfo({
+                    name: orgData.name || "[Institution Name]",
+                    address: orgData.address || "123 Default Address",
+                    phone: orgData.phone || "Default Phone",
+                    email: orgData.email || "default@example.com",
+                });
+            } else {
+                console.warn("CharacterPreview: Organization details not found for user's org ID.");
+            }
+          }
+        } else {
+          console.warn("CharacterPreview: institutionName not provided and no user context. Cannot fetch specific org details.");
         }
-
 
         // 2. Fetch Branding Assets if Organization ID is known
         if (orgIdToQuery) {
@@ -95,14 +117,13 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
           if (filesError) {
             console.error("Error fetching branding files:", filesError.message);
             toast({ title: "Branding Error", description: "Could not load branding assets.", variant: "destructive" });
-            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); // Reset
-          } else if (filesData) {
+            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
+          } else if (filesData && filesData.length > 0) {
             let newLogoUrl: string | null = null;
             let newSealUrl: string | null = null;
             let newSignatureUrl: string | null = null;
 
             filesData.forEach(file => {
-              // Assuming 'branding-assets' is the correct bucket name
               const publicUrl = getAssetUrlWithCacheBust('branding-assets', file.path);
               if (publicUrl) {
                 if (file.name === 'logo') newLogoUrl = publicUrl;
@@ -112,16 +133,14 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             });
             setBrandingAssets({ logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl });
           } else {
-             setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); // No files found
+             setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); 
           }
         } else {
-          // No orgIdToQuery, so reset branding assets
           setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-          if(data.institutionName) { // only warn if name was provided but not found
-             console.warn("CharacterPreview: No organization ID found, cannot fetch branding assets.");
-          }
+           if(data.institutionName || user?.id) { 
+             console.warn("CharacterPreview: No organization ID determined, cannot fetch branding assets.");
+           }
         }
-        // Update institutionName in state to reflect the fetched one if different
         setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
 
       } catch (err) {
@@ -137,9 +156,7 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
     };
     
     loadData();
-    // No need for refreshKey or interval based refresh unless specifically required for live updates
   }, [data.institutionName, user, getAssetUrlWithCacheBust]);
-
 
   const institutionNameToDisplay = organizationInfo.name;
   const contactInfo = {
@@ -148,11 +165,9 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
     email: organizationInfo.email || "info@institution.edu"
   };
 
-  // Function to handle image loading errors
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
-    (e.target as HTMLImageElement).style.display = 'none'; // hide broken image
-    // (e.target as HTMLImageElement).src = 'path/to/placeholder.png'; // Optionally set a placeholder
+    (e.target as HTMLImageElement).style.display = 'none'; 
     toast({
       title: `Error loading ${type}`,
       description: "The image could not be loaded. Try re-uploading it or check the path.",
@@ -190,9 +205,6 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
           <p className="text-muted-foreground">
             {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
           </p>
-          {/* {organizationInfo.tagline && (
-            <p className="text-sm italic mt-1">{organizationInfo.tagline}</p>
-          )} */}
         </div>
 
         {/* Certificate title */}
@@ -245,8 +257,8 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
                     />
                   </div>
                 ) : (
-                  <div className="border-b border-gray-800 px-6 py-3"> {/* Adjusted padding for icon */}
-                    <SignatureIcon className="h-8 w-8 text-primary" /> {/* Adjusted size */}
+                  <div className="border-b border-gray-800 px-6 py-3">
+                    <SignatureIcon className="h-8 w-8 text-primary" />
                   </div>
                 )}
               </div>

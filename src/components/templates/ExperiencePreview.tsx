@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { ExperienceData } from "@/types/templates";
+import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
-import { Signature as SignatureIcon } from "lucide-react"; // Renamed
+import { Signature as SignatureIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -30,12 +30,12 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
     // tagline: null,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { user } = useAuth(); // Get user context
+  const { user } = useAuth();
 
   const getAssetUrlWithCacheBust = useCallback((bucket: string, path: string | null) => {
     if (!path) return null;
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    return urlData.publicUrl;
   }, []);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
             .from('organizations')
             .select('id, name, address, phone, email')
             .eq('name', data.institutionName)
-            .single();
+            .maybeSingle();
 
           if (orgError && orgError.code !== 'PGRST116') {
             console.error("Error fetching organization by name:", orgError.message);
@@ -75,7 +75,35 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
              });
           }
         } else if (user?.id) {
-          console.warn("ExperiencePreview: institutionName not provided in data. Cannot fetch specific org details.");
+           const { data: memberData, error: memberError } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (memberError || !memberData?.organization_id) {
+            console.warn("ExperiencePreview: Could not determine organization ID from user.");
+          } else {
+            orgIdToQuery = memberData.organization_id;
+            const { data: orgData, error: orgError } = await supabase
+              .from('organizations')
+              .select('id, name, address, phone, email')
+              .eq('id', orgIdToQuery)
+              .single();
+            if (orgData) {
+                fetchedOrgName = orgData.name;
+                setOrganizationInfo({
+                    name: orgData.name || "[Institution Name]",
+                    address: orgData.address || "123 Default Address",
+                    phone: orgData.phone || "Default Phone",
+                    email: orgData.email || "default@example.com",
+                });
+            } else {
+                console.warn("ExperiencePreview: Organization details not found for user's org ID.");
+            }
+          }
+        } else {
+           console.warn("ExperiencePreview: institutionName not provided and no user context. Cannot fetch specific org details.");
         }
 
         // 2. Fetch Branding Assets
@@ -89,7 +117,7 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
             console.error("Error fetching branding files:", filesError.message);
             toast({ title: "Branding Error", description: "Could not load branding assets.", variant: "destructive" });
             setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-          } else if (filesData) {
+          } else if (filesData && filesData.length > 0) {
             let newLogoUrl: string | null = null;
             let newSealUrl: string | null = null;
             let newSignatureUrl: string | null = null;
@@ -108,8 +136,8 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
           }
         } else {
           setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-           if(data.institutionName) {
-             console.warn("ExperiencePreview: No organization ID found, cannot fetch branding assets.");
+           if(data.institutionName || user?.id) {
+             console.warn("ExperiencePreview: No organization ID determined, cannot fetch branding assets.");
            }
         }
          setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
@@ -134,7 +162,7 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
     phone: organizationInfo.phone || "+91 4040 505050",
     email: organizationInfo.email || "hr@institution.com"
   };
-  // ... keep existing code (handleImageError and JSX return)
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
     (e.target as HTMLImageElement).style.display = 'none';
@@ -175,9 +203,6 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
           <p className="text-muted-foreground">
             {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
           </p>
-          {/* {organizationInfo.tagline && (
-            <p className="text-sm italic mt-1">{organizationInfo.tagline}</p>
-          )} */}
         </div>
 
         {/* Certificate title */}
@@ -230,8 +255,8 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
                     />
                   </div>
                 ) : (
-                   <div className="border-b border-gray-800 px-6 py-3"> {/* Adjusted padding for icon */}
-                    <SignatureIcon className="h-8 w-8 text-primary" /> {/* Adjusted size */}
+                   <div className="border-b border-gray-800 px-6 py-3">
+                    <SignatureIcon className="h-8 w-8 text-primary" />
                   </div>
                 )}
               </div>

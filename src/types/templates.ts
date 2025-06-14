@@ -77,3 +77,19 @@ export interface NocVisaData {
 }
 
 export type FormData = BonafideData | ExperienceData | CharacterData | NocVisaData;
+
+export interface BonafidePreviewProps {
+  data: BonafideData;
+}
+
+export interface CharacterPreviewProps {
+  data: CharacterData;
+}
+
+export interface ExperiencePreviewProps {
+  data: ExperienceData;
+}
+
+export interface NocVisaPreviewProps {
+  data: NocVisaData;
+}

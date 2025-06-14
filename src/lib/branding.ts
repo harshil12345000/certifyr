@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BrandingFile {
   id: string;
@@ -224,4 +224,4 @@ export async function getBrandingFileUrl(
       'UNKNOWN_ERROR'
     );
   }
-} 
+}

@@ -11,24 +11,10 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Helper function to get the latest branding settings
-export const getLatestBrandingSettings = async () => {
-  const { data, error } = await supabase
-    .from('branding_settings')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-  
-  if (error && error.code !== 'PGRST116') {
-    console.error('Error fetching branding settings:', error);
-    return null;
-  }
-  
-  return data;
+// Helper function to get public URL from storage
+export const getPublicUrl = (bucket: string, path: string | null) => {
+  if (!path) return null;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
 };
 
-// Helper function to get public URL from storage
-export const getPublicUrl = (bucket: string, path: string) => {
-  return supabase.storage.from(bucket).getPublicUrl(path);
-};
