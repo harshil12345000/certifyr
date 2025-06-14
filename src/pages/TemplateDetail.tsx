@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -270,7 +271,9 @@ const getInitialData = (templateId: string): FormData => {
 };
 
 const TemplateDetail = () => {
-  const { templateId } = useParams<{ templateId: string }>();
+  // Fix: use 'id' param instead of 'templateId'
+  const { id } = useParams<{ id: string }>();
+  const templateId = id;  // maintain variable name for logic below
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
