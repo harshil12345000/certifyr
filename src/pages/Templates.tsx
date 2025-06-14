@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -67,6 +68,7 @@ const allTemplates = [...popularTemplates, {
   category: "Legal",
   usageCount: 0 // New template
 }];
+
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -78,17 +80,54 @@ const Templates = () => {
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(template.category);
     return matchesSearch && matchesCategory;
   });
+
   const toggleCategory = (category: string) => {
     setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
+
   const clearFilters = () => {
     setSelectedCategories([]);
     setSearchQuery('');
   };
+
   const categories = Array.from(new Set(allTemplates.map(t => t.category)));
+
   const handleCreateTemplate = () => {
     navigate('/template-builder');
   };
+
+  // Function to handle category card clicks
+  const handleCategoryClick = (categoryName: string) => {
+    // Map display names to actual category names used in templates
+    const categoryMapping: { [key: string]: string } = {
+      'Student Documents': 'Academic',
+      'Employment Records': 'Employment', 
+      'Official Certificates': 'General',
+      'Financial Documents': 'Financial',
+      'Travel & Visa': 'Travel',
+      'Miscellaneous': 'Legal'
+    };
+
+    const actualCategory = categoryMapping[categoryName] || categoryName;
+    setSelectedCategories([actualCategory]);
+    setSearchQuery('');
+  };
+
+  // Calculate real template counts for each category
+  const getCategoryCount = (categoryName: string) => {
+    const categoryMapping: { [key: string]: string } = {
+      'Student Documents': 'Academic',
+      'Employment Records': 'Employment', 
+      'Official Certificates': 'General',
+      'Financial Documents': 'Financial',
+      'Travel & Visa': 'Travel',
+      'Miscellaneous': 'Legal'
+    };
+
+    const actualCategory = categoryMapping[categoryName] || categoryName;
+    return allTemplates.filter(template => template.category === actualCategory).length;
+  };
+
   return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
@@ -187,10 +226,15 @@ const Templates = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {documentCategories.map(category => {
           const Icon = category.icon;
-          return <div key={category.id} className="glass-card p-5 flex flex-col">
+          const realCount = getCategoryCount(category.name);
+          return <div 
+                key={category.id} 
+                className="glass-card p-5 flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleCategoryClick(category.name)}
+              >
                 <div className="mb-2">
                   <Badge variant="outline" className="bg-primary-50 border-primary-200 text-primary-700">
-                    {category.count} Templates
+                    {realCount} Templates
                   </Badge>
                 </div>
                 <h3 className="font-medium text-lg mb-1">{category.name}</h3>
