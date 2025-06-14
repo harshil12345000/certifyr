@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BonafidePreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,8 +29,6 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
     signatoryName,
     signatoryDesignation,
     includeDigitalSignature,
-    fontFamily = "Arial",
-    fontSize = 12,
   } = data;
 
   const [branding, setBranding] = useState<BrandingAssets>({ 
@@ -126,25 +125,17 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
   const formattedStartDate = startDate ? new Date(startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Start Date]';
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
-  const documentStyle = {
-    fontFamily: fontFamily,
-    fontSize: `${fontSize}px`,
-    lineHeight: `${fontSize * 1.6}px`,
-  };
-
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed" style={documentStyle}>
+    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
       {/* Letterhead Section */}
       <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
         {branding.logoUrl && (
           <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
         )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide" style={{ fontSize: `${fontSize * 2.5}px` }}>
-          [{institutionName || 'INSTITUTION NAME'}]
-        </h1>
-        {branding.organizationAddress && <p className="mt-2" style={{ fontSize: `${fontSize * 0.9}px` }}>{branding.organizationAddress}</p>}
+        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">[{institutionName || 'INSTITUTION NAME'}]</h1>
+        {branding.organizationAddress && <p className="text-sm mt-2">{branding.organizationAddress}</p>}
         {(branding.organizationPhone || branding.organizationEmail) && (
-          <p style={{ fontSize: `${fontSize * 0.9}px` }}>
+          <p className="text-sm">
             {branding.organizationPhone && `• ${branding.organizationPhone}`}
             {branding.organizationPhone && branding.organizationEmail && ' '}
             {branding.organizationEmail && `• ${branding.organizationEmail}`}
@@ -155,32 +146,26 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
       {/* Certificate Title */}
       <div className="text-center mb-8">
         <div className="border border-gray-400 inline-block px-8 py-3">
-          <h2 className="font-bold uppercase tracking-widest" style={{ fontSize: `${fontSize * 1.5}px` }}>BONAFIDE CERTIFICATE</h2>
+          <h2 className="text-lg font-bold uppercase tracking-widest">BONAFIDE CERTIFICATE</h2>
         </div>
       </div>
 
       {/* Certificate Content */}
-      <div className="space-y-4 text-justify" style={{ lineHeight: `${fontSize * 1.8}px` }}>
+      <div className="space-y-4 text-justify leading-7">
         <p>
-          This is to certify that <strong>{fullName || '[Full Name]'}</strong>, {childPronoun} of <strong>{parentName || "[Parent's Name]"}</strong>, is a bonafide {type === 'student' ? 'student' : 'employee'} of <strong>[{institutionName || 'Institution Name'}]</strong>.
-        </p>
-
-        {type === 'student' ? (
-          <p>
-            {pronoun} has been studying in this institution since <strong>{formattedStartDate}</strong> and is currently enrolled as a <strong>[{courseOrDesignation || 'Course'}]</strong> student in the <strong>[{department || 'Department'}]</strong> department.
-          </p>
-        ) : (
-          <p>
-            {pronoun} has been working in this institution since <strong>{formattedStartDate}</strong> as a <strong>[{courseOrDesignation || 'Designation'}]</strong> in the <strong>[{department || 'Department'}]</strong> department.
-          </p>
-        )}
-
-        <p>
-          This certificate is issued upon the request of the individual for the purpose of <strong>[{purpose || 'Purpose'}]</strong>.
+          This is to certify that <strong>{fullName || '[Full Name]'}</strong> (Employee ID: <strong>{data.type === 'employee' ? '[Employee ID]' : 'N/A'}</strong>) was employed with <strong>[{institutionName || 'Institution Name'}]</strong> as a <strong>[{courseOrDesignation || 'Designation'}]</strong> in the <strong>[{department || 'Department'}]</strong> department.
         </p>
 
         <p>
-          We confirm that the above information is true and correct to the best of our knowledge and records.
+          [{pronoun}/Her] period of employment was from <strong>{formattedStartDate}</strong> to <strong>[Resignation Date]</strong>.
+        </p>
+
+        <p>
+          During the tenure, [he/she] was responsible for <strong>[{purpose || 'Work Description'}]</strong>. [{pronoun}/Her] last drawn salary was <strong>[Salary]</strong> per month.
+        </p>
+
+        <p>
+          We found [him/her] to be hardworking, sincere, and dedicated to duties. We wish [him/her] all the best for future endeavors.
         </p>
       </div>
 

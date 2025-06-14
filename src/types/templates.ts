@@ -1,4 +1,3 @@
-
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -14,8 +13,6 @@ export interface BonafideData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface ExperienceData {
@@ -33,8 +30,6 @@ export interface ExperienceData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface CharacterData {
@@ -49,31 +44,36 @@ export interface CharacterData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface NocVisaData {
+  // Applicant Details
   fullName: string;
-  employeeOrStudentId: string;
-  designationOrCourse: string;
+  employeeOrStudentId: string; // Can be Employee ID or Student ID
+  designationOrCourse: string; // Designation if employee, Course & Year if student
   department: string;
   passportNumber: string;
+
+  // Travel Details
   destinationCountry: string;
   travelStartDate: string;
   travelEndDate: string;
-  purposeOfVisit: string;
+  purposeOfVisit: string; // e.g., Tourism, Conference, Family Visit
+  
+  // Optional details
   contactPersonInDestination?: string;
   accommodationDetails?: string;
-  tripFundSource?: 'self' | 'company';
-  institutionName: string;
-  date: string;
-  place: string;
+  tripFundSource?: 'self' | 'company'; // Who is funding the trip
+
+  // Issuing Authority Details (often pre-filled or from context)
+  institutionName: string; // Could be company or educational institution
+  date: string; // Issue date, typically today
+  place: string; // Place of issue
+
+  // Signatory Details
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export type FormData = BonafideData | ExperienceData | CharacterData | NocVisaData;
@@ -82,12 +82,12 @@ export interface BonafidePreviewProps {
   data: BonafideData;
 }
 
-export interface ExperiencePreviewProps {
-  data: ExperienceData;
-}
-
 export interface CharacterPreviewProps {
   data: CharacterData;
+}
+
+export interface ExperiencePreviewProps {
+  data: ExperienceData;
 }
 
 export interface NocVisaPreviewProps {

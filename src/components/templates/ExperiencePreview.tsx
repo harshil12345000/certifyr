@@ -1,84 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { ExperiencePreviewProps } from '@/types/templates';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+
+import React, { useEffect, useState, useCallback } from "react";
+import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
+import { formatDate } from "@/lib/utils";
+import { Signature as SignatureIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BrandingAssets {
   logoUrl: string | null;
   sealUrl: string | null;
   signatureUrl: string | null;
-  organizationAddress: string | null;
-  organizationPhone: string | null;
-  organizationEmail: string | null;
 }
 
-export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) => {
-  const {
-    fullName,
-    employeeId,
-    designation,
-    department,
-    joinDate,
-    resignationDate,
-    workDescription,
-    salary,
-    institutionName,
-    date: issueDate,
-    place,
-    signatoryName,
-    signatoryDesignation,
-    includeDigitalSignature,
-    fontFamily = "Arial",
-    fontSize = 12,
-  } = data;
+interface OrganizationInfo {
+  name: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+}
 
-  const [branding, setBranding] = useState<BrandingAssets>({ 
-    logoUrl: null, 
-    sealUrl: null, 
-    signatureUrl: null,
-    organizationAddress: null,
-    organizationPhone: null,
-    organizationEmail: null
+export function ExperiencePreview({ data }: ExperiencePreviewProps) {
+  const [brandingAssets, setBrandingAssets] = useState<BrandingAssets>({ logoUrl: null, sealUrl: null, signatureUrl: null });
+  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo>({
+    name: data.institutionName || "[Institution Name]",
+    address: null,
+    phone: null,
+    email: null,
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchBranding = async () => {
-      if (!institutionName && !user?.id) {
-        console.warn("Experience Preview: Institution name or user context not available for fetching branding.");
-        return;
-      }
-      try {
-        let orgIdToQuery: string | null = null;
+  const getAssetUrlWithCacheBust = useCallback((bucket: string, path: string | null) => {
+    if (!path) return null;
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    return urlData.publicUrl;
+  }, []);
 
-        if (institutionName) {
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      let orgIdToQuery: string | null = null;
+      let fetchedOrgName: string | null = data.institutionName;
+
+      try {
+        // 1. Fetch Organization Details
+        if (data.institutionName) {
           const { data: orgData, error: orgError } = await supabase
             .from('organizations')
-            .select('id, address, phone, email')
-            .eq('name', institutionName)
-            .single();
+            .select('id, name, address, phone, email')
+            .eq('name', data.institutionName)
+            .maybeSingle();
 
           if (orgError && orgError.code !== 'PGRST116') {
             console.error("Error fetching organization by name:", orgError.message);
-          } else if (orgError?.code === 'PGRST116') {
-            console.warn(`Organization named "${institutionName}" not found.`);
-          }
-          
-          if (orgData) {
+            toast({ title: "Error", description: `Could not fetch details for ${data.institutionName}.`, variant: "destructive" });
+          } else if (orgData) {
             orgIdToQuery = orgData.id;
-            setBranding(prev => ({
-              ...prev,
-              organizationAddress: orgData.address,
-              organizationPhone: orgData.phone,
-              organizationEmail: orgData.email,
-            }));
+            fetchedOrgName = orgData.name;
+            setOrganizationInfo({
+              name: orgData.name || data.institutionName || "[Institution Name]",
+              address: orgData.address,
+              phone: orgData.phone,
+              email: orgData.email,
+            });
+          } else {
+            console.warn(`Organization named "${data.institutionName}" not found.`);
+            setOrganizationInfo({
+              name: data.institutionName || "[Institution Name]",
+              address: null,
+              phone: null,
+              email: null,
+            });
           }
+        } else if (user?.id) {
+          const { data: memberData, error: memberError } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (memberError || !memberData?.organization_id) {
+            console.warn("ExperiencePreview: Could not determine organization ID from user.");
+          } else {
+            orgIdToQuery = memberData.organization_id;
+            const { data: orgData, error: orgError } = await supabase
+              .from('organizations')
+              .select('id, name, address, phone, email')
+              .eq('id', orgIdToQuery)
+              .single();
+            if (orgData) {
+              fetchedOrgName = orgData.name;
+              setOrganizationInfo({
+                name: orgData.name || "[Institution Name]",
+                address: orgData.address,
+                phone: orgData.phone,
+                email: orgData.email,
+              });
+            } else {
+              console.warn("ExperiencePreview: Organization details not found for user's org ID.");
+            }
+          }
+        } else {
+          console.warn("ExperiencePreview: institutionName not provided and no user context. Cannot fetch specific org details.");
         }
 
-        if (!orgIdToQuery) {
-          console.warn("Experience Preview: Could not determine organization ID for branding assets.");
-        }
-
+        // 2. Fetch Branding Assets
         if (orgIdToQuery) {
           const { data: filesData, error: filesError } = await supabase
             .from('branding_files')
@@ -86,126 +113,173 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
             .eq('organization_id', orgIdToQuery);
 
           if (filesError) {
-            console.error("Error fetching branding files:", filesError);
-          } else if (filesData) {
+            console.error("Error fetching branding files:", filesError.message);
+            toast({ title: "Branding Error", description: "Could not load branding assets.", variant: "destructive" });
+            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
+          } else if (filesData && filesData.length > 0) {
             let newLogoUrl: string | null = null;
             let newSealUrl: string | null = null;
             let newSignatureUrl: string | null = null;
 
             filesData.forEach(file => {
-              const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-              const publicUrl = publicUrlRes.data?.publicUrl;
+              const publicUrl = getAssetUrlWithCacheBust('branding-assets', file.path);
               if (publicUrl) {
                 if (file.name === 'logo') newLogoUrl = publicUrl;
                 if (file.name === 'seal') newSealUrl = publicUrl;
                 if (file.name === 'signature') newSignatureUrl = publicUrl;
               }
             });
-            
-            setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
+            setBrandingAssets({ logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl });
+          } else {
+            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); 
           }
         } else {
-          setBranding(prev => ({ 
-            ...prev, 
-            logoUrl: null,
-            sealUrl: null,
-            signatureUrl: null
-          }));
+          setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
+          if(data.institutionName || user?.id) {
+            console.warn("ExperiencePreview: No organization ID determined, cannot fetch branding assets.");
+          }
         }
-
-      } catch (error) {
-        console.error("Unexpected error fetching branding:", error);
+        setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
+      } catch (err) {
+        console.error("Unexpected error loading assets for ExperiencePreview:", err);
+        toast({
+          title: "Error loading assets",
+          description: "There was a problem loading your branding assets. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchBranding();
-  }, [institutionName, user]);
+    
+    loadData();
+  }, [data.institutionName, user, getAssetUrlWithCacheBust]);
 
-  const formattedJoinDate = joinDate ? new Date(joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Join Date]';
-  const formattedResignationDate = resignationDate ? new Date(resignationDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Resignation Date]';
-  const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
+  const institutionNameToDisplay = organizationInfo.name;
+  const contactInfo = {
+    address: organizationInfo.address || "[Institution Address]",
+    phone: organizationInfo.phone || "[Phone Number]",
+    email: organizationInfo.email || "[Email Address]"
+  };
 
-  const documentStyle = {
-    fontFamily: fontFamily,
-    fontSize: `${fontSize}px`,
-    lineHeight: `${fontSize * 1.6}px`,
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+    toast({
+      title: `Error loading ${type}`,
+      description: "The image could not be loaded. Try re-uploading it or check the path.",
+      variant: "destructive"
+    });
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed" style={documentStyle}>
-      {/* Letterhead Section */}
-      <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
-        {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
+    <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
+      <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-2 text-sm text-muted-foreground">Loading assets...</p>
+            </div>
+          </div>
         )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide" style={{ fontSize: `${fontSize * 2.5}px` }}>
-          [{institutionName || 'INSTITUTION NAME'}]
-        </h1>
-        {branding.organizationAddress && <p className="mt-2" style={{ fontSize: `${fontSize * 0.9}px` }}>{branding.organizationAddress}</p>}
-        {(branding.organizationPhone || branding.organizationEmail) && (
-          <p style={{ fontSize: `${fontSize * 0.9}px` }}>
-            {branding.organizationPhone && `• ${branding.organizationPhone}`}
-            {branding.organizationPhone && branding.organizationEmail && ' '}
-            {branding.organizationEmail && `• ${branding.organizationEmail}`}
-          </p>
-        )}
-      </div>
-
-      {/* Certificate Title */}
-      <div className="text-center mb-8">
-        <div className="border border-gray-400 inline-block px-8 py-3">
-          <h2 className="font-bold uppercase tracking-widest" style={{ fontSize: `${fontSize * 1.5}px` }}>EXPERIENCE CERTIFICATE</h2>
-        </div>
-      </div>
-
-      {/* Certificate Content */}
-      <div className="space-y-4 text-justify" style={{ lineHeight: `${fontSize * 1.8}px` }}>
-        <p>
-          This is to certify that <strong>{fullName || '[Full Name]'}</strong> (Employee ID: <strong>{employeeId || '[Employee ID]'}</strong>) was employed with <strong>[{institutionName || 'Institution Name'}]</strong> as a <strong>[{designation || 'Designation'}]</strong> in the <strong>[{department || 'Department'}]</strong> department.
-        </p>
-
-        <p>
-          [His/Her] period of employment was from <strong>{formattedJoinDate}</strong> to <strong>{formattedResignationDate}</strong>.
-        </p>
-
-        <p>
-          During the tenure, [he/she] was responsible for <strong>[{workDescription || 'Work Description'}]</strong>. [His/Her] last drawn salary was <strong>[{salary || 'Salary'}]</strong> per month.
-        </p>
-
-        <p>
-          We found [him/her] to be hardworking, sincere, and dedicated to duties. We wish [him/her] all the best for future endeavors.
-        </p>
-      </div>
-
-      {/* Date and Place */}
-      <div className="mt-12 mb-16">
-        <p><strong>Date:</strong> {formattedIssueDate}</p>
-        <p><strong>Place:</strong> [{place || 'Place'}]</p>
-      </div>
-
-      {/* Signatory Section */}
-      <div className="flex justify-end items-end">
-        <div className="text-right">
-          {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !branding.signatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
+        
+        {/* Letterhead */}
+        <div className="text-center border-b pb-4 mb-8">
+          {brandingAssets.logoUrl && (
+            <div className="flex justify-center mb-2">
+              <img 
+                src={brandingAssets.logoUrl}
+                alt="Organization Logo" 
+                className="h-16 object-contain"
+                onError={(e) => handleImageError(e, "logo")}
+              />
             </div>
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>}
-          <p className="font-semibold">[{signatoryName || 'Authorized Signatory Name'}]</p>
-          <p>[{signatoryDesignation || 'Designation'}]</p>
-          <p>[{institutionName || 'Institution Name'}]</p>
+          <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
+            {institutionNameToDisplay}
+          </h1>
+          <p className="text-muted-foreground">
+            {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
+          </p>
         </div>
-      </div>
 
-      {/* Seal */}
-      {branding.sealUrl && (
-        <div className="absolute bottom-32 left-16">
-          <img src={branding.sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
+        {/* Certificate title */}
+        <div className="text-center mb-8">
+          <h2 className="text-xl md:text-2xl font-bold border-2 border-gray-300 inline-block px-4 py-2">
+            EXPERIENCE CERTIFICATE
+          </h2>
         </div>
-      )}
+
+        {/* Certificate content */}
+        <div className="space-y-6 text-base md:text-lg leading-relaxed">
+          <p className="text-justify">
+            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong> (Employee ID: <strong>{data.employeeId || "[Employee ID]"}</strong>) was employed with <strong>{institutionNameToDisplay}</strong> as a <strong>{data.designation || "[Designation]"}</strong> in the <strong>{data.department || "[Department]"}</strong> department.
+          </p>
+
+          <p className="text-justify">
+            {data.fullName ? "His/Her" : "[His/Her]"} period of employment was from <strong>{data.joinDate ? formatDate(new Date(data.joinDate)) : "[Join Date]"}</strong> to <strong>{data.resignationDate ? formatDate(new Date(data.resignationDate)) : "[Resignation Date]"}</strong>.
+          </p>
+
+          <p className="text-justify">
+            During the tenure, {data.fullName ? "he/she" : "[he/she]"} was responsible for <strong>{data.workDescription || "[Work Description]"}</strong>. {data.fullName ? "His/Her" : "[His/Her]"} last drawn salary was <strong>{data.salary || "[Salary]"}</strong> per month.
+          </p>
+
+          <p className="text-justify">
+            We found {data.fullName ? "him/her" : "[him/her]"} to be hardworking, sincere, and dedicated to duties. We wish {data.fullName ? "him/her" : "[him/her]"} all the best for future endeavors.
+          </p>
+        </div>
+
+        {/* Date and signature */}
+        <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
+          <div>
+            <p>
+              <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
+            </p>
+            <p>
+              <strong>Place:</strong> {data.place || "[Place]"}
+            </p>
+          </div>
+          
+          <div className="text-right mt-8 md:mt-0">
+            {data.includeDigitalSignature ? (
+              <div className="h-16 mb-4 flex justify-end">
+                {brandingAssets.signatureUrl ? (
+                  <div className="border-b border-gray-800 px-6">
+                    <img 
+                      src={brandingAssets.signatureUrl}
+                      alt="Digital Signature" 
+                      className="h-12 object-contain"
+                      onError={(e) => handleImageError(e, "signature")}
+                    />
+                  </div>
+                ) : (
+                  <div className="border-b border-gray-800 px-6 py-3">
+                    <SignatureIcon className="h-8 w-8 text-primary" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-16 mb-4">
+                {/* Space for manual signature */}
+              </div>
+            )}
+            <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
+            <p>{data.signatoryDesignation || "[Designation]"}</p>
+            <p>{institutionNameToDisplay}</p>
+          </div>
+        </div>
+        {brandingAssets.sealUrl && (
+          <div className="absolute bottom-8 left-8">
+            <img 
+              src={brandingAssets.sealUrl}
+              alt="Organization Seal" 
+              className="h-20 w-20 object-contain opacity-75"
+              onError={(e) => handleImageError(e, "seal")}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
