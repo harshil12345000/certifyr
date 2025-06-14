@@ -10,22 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
   const { user, signOut } = useAuth();
-  const [notifications] = useState<{
-    id: number;
-    title: string;
-    description: string;
-    time: string;
-  }[]>([{
-    id: 1,
-    title: 'Document Signed',
-    description: 'Principal signed 5 NOC certificates',
-    time: 'Just now'
-  }, {
-    id: 2,
-    title: 'New Template Added',
-    description: 'Embassy Attestation template is now available',
-    time: '2 hours ago'
-  }]);
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -52,21 +36,14 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                {notifications.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifications.map(notification => (
-                <DropdownMenuItem key={notification.id} className="cursor-pointer p-3">
-                  <div>
-                    <p className="font-medium">{notification.title}</p>
-                    <p className="text-sm text-muted-foreground">{notification.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-                  </div>
-                </DropdownMenuItem>
-              ))}
+              <div className="py-12 text-center">
+                <p className="text-sm text-muted-foreground">No notifications yet</p>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
