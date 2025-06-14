@@ -45,6 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth event:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // When user signs in, check if they need to be added to an organization
+        if (event === 'SIGNED_IN' && session?.user) {
+          await ensureUserHasOrganization(session.user);
+        }
+        
         setLoading(false);
       }
     );
@@ -53,11 +59,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        ensureUserHasOrganization(session.user);
+      }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const ensureUserHasOrganization = async (user: User) => {
+    try {
+      // Check if user is already in an organization
+      const { data: existingMembership } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingMembership) {
+        console.log('User already has organization membership');
+        return;
+      }
+
+      // Get user profile to check for organization data
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('organization_name, organization_type, organization_location, email, phone_number')
+        .eq('user_id', user.id)
+        .single();
+
+      if (userProfile?.organization_name) {
+        console.log('Creating organization for user:', userProfile.organization_name);
+        
+        // Create organization
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert([{
+            name: userProfile.organization_name,
+            email: userProfile.email,
+            phone: userProfile.phone_number,
+            address: userProfile.organization_location
+          }])
+          .select()
+          .single();
+
+        if (orgError) {
+          console.error('Error creating organization:', orgError);
+          return;
+        }
+
+        // Add user as admin to the organization
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert([{
+            organization_id: newOrg.id,
+            user_id: user.id,
+            role: 'admin',
+            status: 'active'
+          }]);
+
+        if (memberError) {
+          console.error('Error adding user to organization:', memberError);
+        } else {
+          console.log('User successfully added as admin to organization');
+        }
+      }
+    } catch (error) {
+      console.error('Error in ensureUserHasOrganization:', error);
+    }
+  };
 
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
@@ -124,26 +195,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (signUpData?.user) {
         console.log('User created successfully:', signUpData.user.id);
         console.log('User metadata sent:', signUpData.user.user_metadata);
-        
-        // Give the trigger a moment to complete
-        setTimeout(async () => {
-          try {
-            // Verify the user profile was created
-            const { data: profile, error: profileError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('user_id', signUpData.user.id)
-              .single();
-            
-            if (profileError) {
-              console.error('Profile creation verification failed:', profileError);
-            } else {
-              console.log('User profile created successfully:', profile);
-            }
-          } catch (verificationError) {
-            console.error('Profile verification error:', verificationError);
-          }
-        }, 2000); // Increased timeout to 2 seconds
       }
       
       return { error: null };

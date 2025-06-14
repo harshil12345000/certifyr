@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ export function AnnouncementAdminPanel() {
   });
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isCreatingOrganization, setIsCreatingOrganization] = useState(false);
 
   // Fetch user's organization and announcements
   useEffect(() => {
@@ -42,33 +42,50 @@ export function AnnouncementAdminPanel() {
       
       setLoading(true);
       
-      // Get user's organization ID
-      const { data: memberData } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .single();
+      try {
+        // Get user's organization ID
+        const { data: memberData, error: memberError } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (memberData?.organization_id) {
-        setOrganizationId(memberData.organization_id);
-        
-        // Fetch announcements for this organization
-        const { data, error } = await supabase
-          .from("announcements")
-          .select("id, title, content, is_global, is_active, created_at, expires_at, organization_id")
-          .eq('organization_id', memberData.organization_id)
-          .order('created_at', { ascending: false });
-          
-        if (!error && data) {
-          setAnnouncements(data);
-        } else if (error) {
-          console.error('Error fetching announcements:', error);
-          toast({ title: "Error", description: "Failed to load announcements", variant: "destructive" });
+        if (memberError && memberError.code !== 'PGRST116') {
+          console.error('Error fetching organization membership:', memberError);
+          toast({ 
+            title: "Error", 
+            description: "Failed to check organization membership", 
+            variant: "destructive" 
+          });
+          setLoading(false);
+          return;
         }
-      } else {
+
+        if (memberData?.organization_id) {
+          setOrganizationId(memberData.organization_id);
+          
+          // Fetch announcements for this organization
+          const { data, error } = await supabase
+            .from("announcements")
+            .select("id, title, content, is_global, is_active, created_at, expires_at, organization_id")
+            .eq('organization_id', memberData.organization_id)
+            .order('created_at', { ascending: false });
+            
+          if (!error && data) {
+            setAnnouncements(data);
+          } else if (error) {
+            console.error('Error fetching announcements:', error);
+            toast({ title: "Error", description: "Failed to load announcements", variant: "destructive" });
+          }
+        } else {
+          // User doesn't have organization membership, try to create one
+          await createOrganizationFromProfile();
+        }
+      } catch (error) {
+        console.error('Error in fetchData:', error);
         toast({ 
-          title: "No Organization", 
-          description: "You need to be part of an organization to manage announcements", 
+          title: "Error", 
+          description: "Failed to load organization data", 
           variant: "destructive" 
         });
       }
@@ -78,6 +95,67 @@ export function AnnouncementAdminPanel() {
     
     fetchData();
   }, [user]);
+
+  const createOrganizationFromProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Get user profile to check for organization data
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('organization_name, organization_type, organization_location, email, phone_number')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return;
+      }
+
+      if (userProfile?.organization_name) {
+        setIsCreatingOrganization(true);
+        
+        // Create organization
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert([{
+            name: userProfile.organization_name,
+            email: userProfile.email,
+            phone: userProfile.phone_number,
+            address: userProfile.organization_location
+          }])
+          .select()
+          .single();
+
+        if (orgError) {
+          console.error('Error creating organization:', orgError);
+          return;
+        }
+
+        // Add user as admin to the organization
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert([{
+            organization_id: newOrg.id,
+            user_id: user.id,
+            role: 'admin',
+            status: 'active'
+          }]);
+
+        if (memberError) {
+          console.error('Error adding user to organization:', memberError);
+        } else {
+          setOrganizationId(newOrg.id);
+          toast({ title: "Organization created successfully!" });
+        }
+        
+        setIsCreatingOrganization(false);
+      }
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      setIsCreatingOrganization(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(f => ({
@@ -133,18 +211,36 @@ export function AnnouncementAdminPanel() {
     setIsCreating(false);
   };
 
+  if (loading || isCreatingOrganization) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Announcements</CardTitle>
+          <CardDescription>
+            {isCreatingOrganization ? "Setting up your organization..." : "Loading..."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            {isCreatingOrganization ? "Creating your organization and setting up admin access..." : "Please wait while we load your organization data."}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!organizationId) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Announcements</CardTitle>
           <CardDescription>
-            You need to be part of an organization to manage announcements.
+            Complete your organization setup to manage announcements.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Please contact your administrator to be added to an organization.
+            Please complete your organization information in the Organization tab to enable announcement features.
           </p>
         </CardContent>
       </Card>
@@ -184,31 +280,27 @@ export function AnnouncementAdminPanel() {
 
         <div>
           <h3 className="font-medium mb-4">Organization Announcements</h3>
-          {loading ? (
-            <div>Loading...</div>
-          ) : (
-            <ul className="space-y-4">
-              {announcements.length === 0
-                ? <li className="text-muted-foreground text-sm">No announcements yet.</li>
-                : announcements.map(a =>
-                  <li key={a.id} className="border bg-muted rounded-lg px-3 py-2">
-                    <div className="flex justify-between">
-                      <p className="font-semibold">{a.title}</p>
-                      <span className="text-xs">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</span>
-                    </div>
-                    <div className="text-sm mt-1">{a.content}</div>
-                    <div className="flex gap-3 mt-2 text-xs">
-                      <span className={a.is_active ? "text-green-700" : "text-muted-foreground"}>
-                        {a.is_active ? "Active" : "Inactive"}
-                      </span>
-                      <span className="text-blue-700">Organization</span>
-                      {a.expires_at && <span className="text-muted-foreground">Expires: {dayjs(a.expires_at).format("MMM D, YYYY HH:mm")}</span>}
-                    </div>
-                  </li>
-                )
-              }
-            </ul>
-          )}
+          <ul className="space-y-4">
+            {announcements.length === 0
+              ? <li className="text-muted-foreground text-sm">No announcements yet.</li>
+              : announcements.map(a =>
+                <li key={a.id} className="border bg-muted rounded-lg px-3 py-2">
+                  <div className="flex justify-between">
+                    <p className="font-semibold">{a.title}</p>
+                    <span className="text-xs">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</span>
+                  </div>
+                  <div className="text-sm mt-1">{a.content}</div>
+                  <div className="flex gap-3 mt-2 text-xs">
+                    <span className={a.is_active ? "text-green-700" : "text-muted-foreground"}>
+                      {a.is_active ? "Active" : "Inactive"}
+                    </span>
+                    <span className="text-blue-700">Organization</span>
+                    {a.expires_at && <span className="text-muted-foreground">Expires: {dayjs(a.expires_at).format("MMM D, YYYY HH:mm")}</span>}
+                  </div>
+                </li>
+              )
+            }
+          </ul>
         </div>
       </CardContent>
     </Card>

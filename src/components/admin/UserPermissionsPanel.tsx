@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -43,6 +42,7 @@ export function UserPermissionsPanel() {
     role: "member"
   });
   const [isInviting, setIsInviting] = useState(false);
+  const [isCreatingOrganization, setIsCreatingOrganization] = useState(false);
 
   // Check if user is admin and get organization
   useEffect(() => {
@@ -51,21 +51,44 @@ export function UserPermissionsPanel() {
       
       setLoading(true);
       
-      // Get user's organization and role
-      const { data: memberData } = await supabase
-        .from('organization_members')
-        .select('organization_id, role')
-        .eq('user_id', user.id)
-        .single();
+      try {
+        // Get user's organization and role
+        const { data: memberData, error: memberError } = await supabase
+          .from('organization_members')
+          .select('organization_id, role')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (memberData?.organization_id) {
-        setOrganizationId(memberData.organization_id);
-        setIsAdmin(memberData.role === 'admin');
-        
-        if (memberData.role === 'admin') {
-          await fetchMembers(memberData.organization_id);
-          await fetchInvites(memberData.organization_id);
+        if (memberError && memberError.code !== 'PGRST116') {
+          console.error('Error fetching organization membership:', memberError);
+          toast({ 
+            title: "Error", 
+            description: "Failed to check organization membership", 
+            variant: "destructive" 
+          });
+          setLoading(false);
+          return;
         }
+
+        if (memberData?.organization_id) {
+          setOrganizationId(memberData.organization_id);
+          setIsAdmin(memberData.role === 'admin');
+          
+          if (memberData.role === 'admin') {
+            await fetchMembers(memberData.organization_id);
+            await fetchInvites(memberData.organization_id);
+          }
+        } else {
+          // User doesn't have organization membership, try to create one
+          await createOrganizationFromProfile();
+        }
+      } catch (error) {
+        console.error('Error in checkAdminStatus:', error);
+        toast({ 
+          title: "Error", 
+          description: "Failed to load organization data", 
+          variant: "destructive" 
+        });
       }
       
       setLoading(false);
@@ -73,6 +96,70 @@ export function UserPermissionsPanel() {
     
     checkAdminStatus();
   }, [user]);
+
+  const createOrganizationFromProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Get user profile to check for organization data
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('organization_name, organization_type, organization_location, email, phone_number')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return;
+      }
+
+      if (userProfile?.organization_name) {
+        setIsCreatingOrganization(true);
+        
+        // Create organization
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert([{
+            name: userProfile.organization_name,
+            email: userProfile.email,
+            phone: userProfile.phone_number,
+            address: userProfile.organization_location
+          }])
+          .select()
+          .single();
+
+        if (orgError) {
+          console.error('Error creating organization:', orgError);
+          return;
+        }
+
+        // Add user as admin to the organization
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert([{
+            organization_id: newOrg.id,
+            user_id: user.id,
+            role: 'admin',
+            status: 'active'
+          }]);
+
+        if (memberError) {
+          console.error('Error adding user to organization:', memberError);
+        } else {
+          setOrganizationId(newOrg.id);
+          setIsAdmin(true);
+          await fetchMembers(newOrg.id);
+          await fetchInvites(newOrg.id);
+          toast({ title: "Organization created successfully!" });
+        }
+        
+        setIsCreatingOrganization(false);
+      }
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      setIsCreatingOrganization(false);
+    }
+  };
 
   const fetchMembers = async (orgId: string) => {
     const { data, error } = await supabase
@@ -171,6 +258,27 @@ export function UserPermissionsPanel() {
     );
   };
 
+  if (loading || isCreatingOrganization) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Users & Permissions
+          </CardTitle>
+          <CardDescription>
+            {isCreatingOrganization ? "Setting up your organization..." : "Loading..."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            {isCreatingOrganization ? "Creating your organization and setting up admin access..." : "Please wait while we load your organization data."}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!organizationId) {
     return (
       <Card>
@@ -180,12 +288,12 @@ export function UserPermissionsPanel() {
             Users & Permissions
           </CardTitle>
           <CardDescription>
-            You need to be part of an organization to manage users and permissions.
+            Complete your organization setup to manage users and permissions.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Please contact your administrator to be added to an organization.
+            Please complete your organization information in the Organization tab to enable user management features.
           </p>
         </CardContent>
       </Card>
@@ -272,9 +380,7 @@ export function UserPermissionsPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div>Loading...</div>
-          ) : invites.length === 0 ? (
+          {invites.length === 0 ? (
             <p className="text-muted-foreground text-sm">No pending invitations.</p>
           ) : (
             <div className="space-y-3">
@@ -318,9 +424,7 @@ export function UserPermissionsPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div>Loading...</div>
-          ) : members.length === 0 ? (
+          {members.length === 0 ? (
             <p className="text-muted-foreground text-sm">No members found.</p>
           ) : (
             <div className="space-y-3">
