@@ -122,7 +122,46 @@ export interface TransferCertificateData {
   includeDigitalSignature: boolean;
 }
 
-export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData;
+export interface NocVisaData {
+  fullName: string;
+  designation: string;
+  employeeId: string;
+  department: string;
+  passportNumber: string;
+  visaType: string;
+  destinationCountry: string;
+  travelPurpose: string;
+  travelDates: string;
+  returnDate: string;
+  sponsorDetails: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface IncomeCertificateData {
+  fullName: string;
+  fatherName: string;
+  designation: string;
+  employeeId: string;
+  department: string;
+  basicSalary: string;
+  allowances: string;
+  totalIncome: string;
+  incomeFrequency: "monthly" | "yearly";
+  purpose: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData;
 
 export interface BonafidePreviewProps {
   data: BonafideData;
@@ -146,4 +185,12 @@ export interface CompletionCertificatePreviewProps {
 
 export interface TransferCertificatePreviewProps {
   data: TransferCertificateData;
+}
+
+export interface NocVisaPreviewProps {
+  data: NocVisaData;
+}
+
+export interface IncomeCertificatePreviewProps {
+  data: IncomeCertificateData;
 }

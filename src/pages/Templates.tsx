@@ -44,6 +44,20 @@ const allTemplates = [
     usageCount: 25
   },
   {
+    id: "noc-visa-1",
+    title: "NOC for Visa Application",
+    description: "No Objection Certificate for visa applications",
+    category: "Travel",
+    usageCount: 24
+  },
+  {
+    id: "income-certificate-1",
+    title: "Income Certificate",
+    description: "Certificate stating employee income details",
+    category: "Employment",
+    usageCount: 23
+  },
+  {
     id: "maternity-leave-1",
     title: "Maternity Leave Application",
     description: "Application for maternity leave benefits",

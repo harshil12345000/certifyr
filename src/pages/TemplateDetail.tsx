@@ -16,7 +16,11 @@ import { CompletionCertificateForm } from "@/components/templates/CompletionCert
 import { CompletionCertificatePreview } from "@/components/templates/CompletionCertificatePreview";
 import { TransferCertificateForm } from "@/components/templates/TransferCertificateForm";
 import { TransferCertificatePreview } from "@/components/templates/TransferCertificatePreview";
-import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, CompletionCertificateData, TransferCertificateData, FormData } from "@/types/templates";
+import { NocVisaForm } from "@/components/templates/NocVisaForm";
+import { NocVisaPreview } from "@/components/templates/NocVisaPreview";
+import { IncomeCertificateForm } from "@/components/templates/IncomeCertificateForm";
+import { IncomeCertificatePreview } from "@/components/templates/IncomeCertificatePreview";
+import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, CompletionCertificateData, TransferCertificateData, NocVisaData, IncomeCertificateData, FormData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -37,6 +41,8 @@ const TemplateDetail = () => {
       case "embassy-attestation-1": return "Embassy Attestation Letter";
       case "completion-certificate-1": return "Completion Certificate";
       case "transfer-certificate-1": return "Transfer Certificate";
+      case "noc-visa-1": return "NOC for Visa Application";
+      case "income-certificate-1": return "Income Certificate";
       default: return "Unknown Template";
     }
   }
@@ -46,6 +52,8 @@ const TemplateDetail = () => {
       case "embassy-attestation-1": return "Letter for document attestation at embassies";
       case "completion-certificate-1": return "Certificate for courses, training programs, internships";
       case "transfer-certificate-1": return "Certificate for students moving between institutions";
+      case "noc-visa-1": return "No Objection Certificate for visa applications";
+      case "income-certificate-1": return "Certificate stating employee income details";
       default: return "Template description";
     }
   }
@@ -55,6 +63,8 @@ const TemplateDetail = () => {
       case "embassy-attestation-1": return "Travel";
       case "completion-certificate-1": return "Educational";
       case "transfer-certificate-1": return "Educational";
+      case "noc-visa-1": return "Travel";
+      case "income-certificate-1": return "Employment";
       default: return "General";
     }
   }
@@ -143,6 +153,35 @@ const TemplateDetail = () => {
           subjects: "",
           ...commonFields,
         } as TransferCertificateData;
+      case "noc-visa-1":
+        return {
+          fullName: "",
+          designation: "",
+          employeeId: "",
+          department: "",
+          passportNumber: "",
+          visaType: "",
+          destinationCountry: "",
+          travelPurpose: "",
+          travelDates: "",
+          returnDate: "",
+          sponsorDetails: "",
+          ...commonFields,
+        } as NocVisaData;
+      case "income-certificate-1":
+        return {
+          fullName: "",
+          fatherName: "",
+          designation: "",
+          employeeId: "",
+          department: "",
+          basicSalary: "",
+          allowances: "",
+          totalIncome: "",
+          incomeFrequency: "monthly" as const,
+          purpose: "",
+          ...commonFields,
+        } as IncomeCertificateData;
       default:
         return {
           fullName: "",
@@ -309,6 +348,10 @@ const TemplateDetail = () => {
         return <CompletionCertificateForm onSubmit={handleSubmit} initialData={formData as CompletionCertificateData} />;
       case "transfer-certificate-1":
         return <TransferCertificateForm onSubmit={handleSubmit} initialData={formData as TransferCertificateData} />;
+      case "noc-visa-1":
+        return <NocVisaForm onSubmit={handleSubmit} initialData={formData as NocVisaData} />;
+      case "income-certificate-1":
+        return <IncomeCertificateForm onSubmit={handleSubmit} initialData={formData as IncomeCertificateData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
@@ -326,6 +369,10 @@ const TemplateDetail = () => {
         return <CompletionCertificatePreview data={formData as CompletionCertificateData} />;
       case "transfer-certificate-1":
         return <TransferCertificatePreview data={formData as TransferCertificateData} />;
+      case "noc-visa-1":
+        return <NocVisaPreview data={formData as NocVisaData} />;
+      case "income-certificate-1":
+        return <IncomeCertificatePreview data={formData as IncomeCertificateData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }
