@@ -1,3 +1,4 @@
+
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -71,7 +72,6 @@ const AdminPage = () => {
           toast({ title: 'Error', description: 'Could not find your organization.', variant: 'destructive' });
           console.error("Error fetching org membership or no org_id:", memberError?.message);
           setIsLoading(false);
-          // Potentially allow creating an organization if one doesn't exist or redirect
           return;
         }
         setOrganizationId(memberData.organization_id);
@@ -94,7 +94,7 @@ const AdminPage = () => {
         // Fetch organization details
         const { data: orgData, error: orgError } = await supabase
           .from('organizations')
-          .select('name, address, phone, email') // Removed 'type' as it's not in the provided schema
+          .select('name, address, phone, email')
           .eq('id', organizationId)
           .single();
 
@@ -137,7 +137,6 @@ const AdminPage = () => {
     };
     fetchData();
   }, [organizationId]);
-
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -187,7 +186,6 @@ const AdminPage = () => {
 
           if (fetchExistingError) {
             console.warn(`Could not check for existing ${key} file:`, fetchExistingError.message);
-            // Continue with upload, might create duplicate entries if not handled by RLS/unique constraints
           }
           
           // If existing files found, remove them from storage first
@@ -199,7 +197,6 @@ const AdminPage = () => {
                     .remove(pathsToRemove);
                 if (removeStorageError) {
                     console.error(`Error removing old ${key} from storage:`, removeStorageError.message);
-                    // Decide if this should block the upload or just warn
                 }
                 // Also delete from branding_files table
                 const { error: removeDbError } = await supabase
@@ -213,11 +210,10 @@ const AdminPage = () => {
             }
           }
 
-
           const filePath = `${organizationId}/${key}-${Date.now()}.${file.name.split('.').pop()}`;
           const { error: uploadError } = await supabase.storage
             .from('branding-assets')
-            .upload(filePath, file, { upsert: true }); // Use upsert true to overwrite if somehow exists with same path
+            .upload(filePath, file, { upsert: true });
 
           if (uploadError) throw new Error(`Failed to upload ${key}: ${uploadError.message}`);
 
@@ -231,7 +227,7 @@ const AdminPage = () => {
                 path: filePath,
                 uploaded_by: user?.id,
               },
-              { onConflict: 'organization_id,name' } // Upsert based on org_id and file name (logo, seal, signature)
+              { onConflict: 'organization_id,name' }
             );
           if (dbError) throw new Error(`Failed to save ${key} metadata: ${dbError.message}`);
         }
@@ -254,7 +250,7 @@ const AdminPage = () => {
           }
         });
         setBrandingPreviews(newPreviews);
-        setBrandingFiles({ logo: null, seal: null, signature: null }); // Clear staging files
+        setBrandingFiles({ logo: null, seal: null, signature: null });
       }
 
     } catch (error) {
@@ -278,15 +274,15 @@ const AdminPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-8 px-4 md:px-6">
-        <h1 className="text-3xl font-bold mb-8">Admin Settings</h1>
+      <div className="container mx-auto py-4 px-4 md:py-8 md:px-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Settings</h1>
         
         <Tabs defaultValue="organization" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="organization">Organization</TabsTrigger>
-            <TabsTrigger value="users">Users & Permissions</TabsTrigger>
-            <TabsTrigger value="branding">Branding</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
+            <TabsTrigger value="organization" className="text-xs md:text-sm">Organization</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs md:text-sm">Users & Permissions</TabsTrigger>
+            <TabsTrigger value="branding" className="text-xs md:text-sm">Branding</TabsTrigger>
+            <TabsTrigger value="security" className="text-xs md:text-sm">Security</TabsTrigger>
           </TabsList>
           
           <TabsContent value="organization" className="space-y-6">
