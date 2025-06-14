@@ -298,7 +298,7 @@ const AdminPage = () => {
             <TabsTrigger value="organization" className="text-xs md:text-sm">Organization</TabsTrigger>
             <TabsTrigger value="users" className="text-xs md:text-sm">Users & Permissions</TabsTrigger>
             <TabsTrigger value="branding" className="text-xs md:text-sm">Branding</TabsTrigger>
-            <TabsTrigger value="security" className="text-xs md:text-sm">Security</TabsTrigger>
+            <TabsTrigger value="announcements" className="text-xs md:text-sm">Announcements</TabsTrigger>
           </TabsList>
           
           <TabsContent value="organization" className="space-y-6">
@@ -399,7 +399,6 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <AnnouncementAdminPanel />
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
@@ -466,16 +465,8 @@ const AdminPage = () => {
             </form>
           </TabsContent>
 
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>Manage security and access controls.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Security settings coming soon...</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="announcements" className="space-y-6">
+            <AnnouncementAdminPanel />
           </TabsContent>
         </Tabs>
       </div>
