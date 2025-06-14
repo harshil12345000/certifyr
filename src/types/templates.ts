@@ -48,7 +48,6 @@ export interface CharacterData {
 }
 
 export interface EmbassyAttestationData {
-  // Applicant Details
   fullName: string;
   passportNumber: string;
   nationality: string;
@@ -56,24 +55,16 @@ export interface EmbassyAttestationData {
   placeOfBirth: string;
   fatherName: string;
   motherName: string;
-  
-  // Document Details
-  documentType: string; // e.g., Educational Certificate, Birth Certificate, etc.
+  documentType: string;
   documentNumber: string;
   issuingAuthority: string;
   documentIssueDate: string;
-  
-  // Purpose and Destination
   purposeOfAttestation: string;
   destinationCountry: string;
   embassyName: string;
-  
-  // Contact Information
   applicantAddress: string;
   phoneNumber: string;
   emailAddress: string;
-  
-  // Institution/Authority Details
   institutionName: string;
   date: string;
   place: string;
@@ -161,7 +152,52 @@ export interface IncomeCertificateData {
   includeDigitalSignature: boolean;
 }
 
-export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData;
+export interface MaternityLeaveData {
+  fullName: string;
+  employeeId: string;
+  designation: string;
+  department: string;
+  expectedDeliveryDate: string;
+  leaveStartDate: string;
+  leaveEndDate: string;
+  totalLeaveDays: string;
+  medicalCertificateNumber: string;
+  doctorName: string;
+  hospitalName: string;
+  emergencyContact: string;
+  emergencyContactPhone: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface BankVerificationData {
+  fullName: string;
+  employeeId: string;
+  designation: string;
+  department: string;
+  bankName: string;
+  accountNumber: string;
+  accountType: "savings" | "current" | "salary";
+  ifscCode: string;
+  branchName: string;
+  branchAddress: string;
+  accountHolderName: string;
+  joinDate: string;
+  currentSalary: string;
+  purpose: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData | MaternityLeaveData | BankVerificationData;
 
 export interface BonafidePreviewProps {
   data: BonafideData;
@@ -193,4 +229,12 @@ export interface NocVisaPreviewProps {
 
 export interface IncomeCertificatePreviewProps {
   data: IncomeCertificateData;
+}
+
+export interface MaternityLeavePreviewProps {
+  data: MaternityLeaveData;
+}
+
+export interface BankVerificationPreviewProps {
+  data: BankVerificationData;
 }

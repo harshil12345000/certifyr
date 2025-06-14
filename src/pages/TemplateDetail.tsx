@@ -20,7 +20,11 @@ import { NocVisaForm } from "@/components/templates/NocVisaForm";
 import { NocVisaPreview } from "@/components/templates/NocVisaPreview";
 import { IncomeCertificateForm } from "@/components/templates/IncomeCertificateForm";
 import { IncomeCertificatePreview } from "@/components/templates/IncomeCertificatePreview";
-import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, CompletionCertificateData, TransferCertificateData, NocVisaData, IncomeCertificateData, FormData } from "@/types/templates";
+import { MaternityLeaveForm } from "@/components/templates/MaternityLeaveForm";
+import { MaternityLeavePreview } from "@/components/templates/MaternityLeavePreview";
+import { BankVerificationForm } from "@/components/templates/BankVerificationForm";
+import { BankVerificationPreview } from "@/components/templates/BankVerificationPreview";
+import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, CompletionCertificateData, TransferCertificateData, NocVisaData, IncomeCertificateData, MaternityLeaveData, BankVerificationData, FormData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -43,6 +47,8 @@ const TemplateDetail = () => {
       case "transfer-certificate-1": return "Transfer Certificate";
       case "noc-visa-1": return "NOC for Visa Application";
       case "income-certificate-1": return "Income Certificate";
+      case "maternity-leave-1": return "Maternity Leave Application";
+      case "bank-verification-1": return "Bank Account Verification";
       default: return "Unknown Template";
     }
   }
@@ -54,6 +60,8 @@ const TemplateDetail = () => {
       case "transfer-certificate-1": return "Certificate for students moving between institutions";
       case "noc-visa-1": return "No Objection Certificate for visa applications";
       case "income-certificate-1": return "Certificate stating employee income details";
+      case "maternity-leave-1": return "Application for maternity leave benefits";
+      case "bank-verification-1": return "Letter confirming account details for banks";
       default: return "Template description";
     }
   }
@@ -65,6 +73,8 @@ const TemplateDetail = () => {
       case "transfer-certificate-1": return "Educational";
       case "noc-visa-1": return "Travel";
       case "income-certificate-1": return "Employment";
+      case "maternity-leave-1": return "Employment";
+      case "bank-verification-1": return "Financial";
       default: return "General";
     }
   }
@@ -182,6 +192,41 @@ const TemplateDetail = () => {
           purpose: "",
           ...commonFields,
         } as IncomeCertificateData;
+      case "maternity-leave-1":
+        return {
+          fullName: "",
+          employeeId: "",
+          designation: "",
+          department: "",
+          expectedDeliveryDate: "",
+          leaveStartDate: "",
+          leaveEndDate: "",
+          totalLeaveDays: "",
+          medicalCertificateNumber: "",
+          doctorName: "",
+          hospitalName: "",
+          emergencyContact: "",
+          emergencyContactPhone: "",
+          ...commonFields,
+        } as MaternityLeaveData;
+      case "bank-verification-1":
+        return {
+          fullName: "",
+          employeeId: "",
+          designation: "",
+          department: "",
+          bankName: "",
+          accountNumber: "",
+          accountType: "savings" as const,
+          ifscCode: "",
+          branchName: "",
+          branchAddress: "",
+          accountHolderName: "",
+          joinDate: "",
+          currentSalary: "",
+          purpose: "",
+          ...commonFields,
+        } as BankVerificationData;
       default:
         return {
           fullName: "",
@@ -352,6 +397,10 @@ const TemplateDetail = () => {
         return <NocVisaForm onSubmit={handleSubmit} initialData={formData as NocVisaData} />;
       case "income-certificate-1":
         return <IncomeCertificateForm onSubmit={handleSubmit} initialData={formData as IncomeCertificateData} />;
+      case "maternity-leave-1":
+        return <MaternityLeaveForm onSubmit={handleSubmit} initialData={formData as MaternityLeaveData} />;
+      case "bank-verification-1":
+        return <BankVerificationForm onSubmit={handleSubmit} initialData={formData as BankVerificationData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
@@ -373,6 +422,10 @@ const TemplateDetail = () => {
         return <NocVisaPreview data={formData as NocVisaData} />;
       case "income-certificate-1":
         return <IncomeCertificatePreview data={formData as IncomeCertificateData} />;
+      case "maternity-leave-1":
+        return <MaternityLeavePreview data={formData as MaternityLeaveData} />;
+      case "bank-verification-1":
+        return <BankVerificationPreview data={formData as BankVerificationData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }

@@ -70,13 +70,6 @@ const allTemplates = [
     description: "Letter confirming account details for banks",
     category: "Financial",
     usageCount: 19
-  },
-  {
-    id: "sick-leave-1",
-    title: "Medical Leave Application",
-    description: "Application for health-related leave",
-    category: "Employment",
-    usageCount: 17
   }
 ];
 
