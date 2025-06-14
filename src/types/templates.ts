@@ -14,8 +14,6 @@ export interface BonafideData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface ExperienceData {
@@ -33,8 +31,6 @@ export interface ExperienceData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface CharacterData {
@@ -49,8 +45,6 @@ export interface CharacterData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface EmbassyAttestationData {
@@ -86,8 +80,6 @@ export interface EmbassyAttestationData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface CompletionCertificateData {
@@ -106,8 +98,6 @@ export interface CompletionCertificateData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export interface TransferCertificateData {
@@ -130,8 +120,6 @@ export interface TransferCertificateData {
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
-  fontFamily?: string;
-  fontSize?: number;
 }
 
 export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData;

@@ -68,8 +68,6 @@ const TemplateDetail = () => {
       signatoryName: "",
       signatoryDesignation: "",
       includeDigitalSignature: false,
-      fontFamily: "Times New Roman",
-      fontSize: 12,
     };
 
     switch (id) {
