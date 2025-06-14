@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileUp, ImagePlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { ImagePlus } from 'lucide-react';
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 
 interface OrganizationFormState {
@@ -15,7 +16,6 @@ interface OrganizationFormState {
   address: string;
   phone: string;
   email: string;
-  // type: string; // If 'type' is a field in your organizations table
 }
 
 interface BrandingFileState {
@@ -38,7 +38,6 @@ const AdminPage = () => {
     address: '',
     phone: '',
     email: '',
-    // type: 'Institution',
   });
   const [brandingFiles, setBrandingFiles] = useState<BrandingFileState>({
     logo: null,
@@ -106,7 +105,6 @@ const AdminPage = () => {
             address: orgData.address || '',
             phone: orgData.phone || '',
             email: orgData.email || '',
-            // type: orgData.type || 'Institution',
           });
         }
 
@@ -171,7 +169,6 @@ const AdminPage = () => {
           address: formState.address,
           phone: formState.phone,
           email: formState.email,
-          // type: formState.type,
         })
         .eq('id', organizationId);
 
@@ -279,85 +276,122 @@ const AdminPage = () => {
      return <DashboardLayout><div className="p-6 text-center">No organization found for your account. Please contact support or ensure your account is linked to an organization.</div></DashboardLayout>;
   }
 
-
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8 px-4 md:px-6">
         <h1 className="text-3xl font-bold mb-8">Admin Settings</h1>
-        {/* Add Announcements Panel for admins */}
-        <div className="mb-8">
-          <AnnouncementAdminPanel />
-        </div>
-        <form onSubmit={handleSubmit}>
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Organization Details</CardTitle>
-              <CardDescription>Update your organization's information.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="name">Organization Name</Label>
-                <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
-              </div>
-              {/* <div> // Removed 'type' as it's not in the current schema
-                <Label htmlFor="type">Organization Type</Label>
-                <Input id="type" name="type" value={formState.type} onChange={handleInputChange} />
-              </div> */}
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input id="address" name="address" value={formState.address} onChange={handleInputChange} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" name="phone" type="tel" value={formState.phone} onChange={handleInputChange} />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" value={formState.email} onChange={handleInputChange} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Branding Assets</CardTitle>
-              <CardDescription>Upload your organization's logo, seal, and digital signature.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {(['logo', 'seal', 'signature'] as Array<keyof BrandingFileState>).map((type) => (
-                <div key={type} className="space-y-2">
-                  <Label htmlFor={type} className="capitalize flex items-center">
-                    <ImagePlus className="w-5 h-5 mr-2" />
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Label>
-                  <Input id={type} type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => handleFileChange(e, type)} />
-                  {brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && (
-                    <div className="mt-2 p-2 border rounded-md inline-block">
-                      <img 
-                        src={brandingPreviews[`${type}Url` as keyof BrandingFilePreview]!} 
-                        alt={`${type} preview`} 
-                        className="h-20 object-contain" 
-                      />
+        
+        <Tabs defaultValue="organization" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="organization">Organization</TabsTrigger>
+            <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="organization" className="space-y-6">
+            <form onSubmit={handleSubmit}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Organization Details</CardTitle>
+                  <CardDescription>Update your organization's information.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Organization Name</Label>
+                    <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input id="address" name="address" value={formState.address} onChange={handleInputChange} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input id="phone" name="phone" type="tel" value={formState.phone} onChange={handleInputChange} />
                     </div>
-                  )}
-                  {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && brandingFiles[type] && (
-                    <p className="text-sm text-muted-foreground italic">New file selected, pending save.</p>
-                  )}
-                   {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && !brandingFiles[type] && (
-                    <p className="text-sm text-muted-foreground italic">No {type} uploaded.</p>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </CardFooter>
-          </Card>
-        </form>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" name="email" type="email" value={formState.email} onChange={handleInputChange} />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <AnnouncementAdminPanel />
+            <Card>
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage users and their permissions.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">User management features coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="branding" className="space-y-6">
+            <form onSubmit={handleSubmit}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Branding Assets</CardTitle>
+                  <CardDescription>Upload your organization's logo, seal, and digital signature.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {(['logo', 'seal', 'signature'] as Array<keyof BrandingFileState>).map((type) => (
+                    <div key={type} className="space-y-2">
+                      <Label htmlFor={type} className="capitalize flex items-center">
+                        <ImagePlus className="w-5 h-5 mr-2" />
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </Label>
+                      <Input id={type} type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => handleFileChange(e, type)} />
+                      {brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && (
+                        <div className="mt-2 p-2 border rounded-md inline-block">
+                          <img 
+                            src={brandingPreviews[`${type}Url` as keyof BrandingFilePreview]!} 
+                            alt={`${type} preview`} 
+                            className="h-20 object-contain" 
+                          />
+                        </div>
+                      )}
+                      {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && brandingFiles[type] && (
+                        <p className="text-sm text-muted-foreground italic">New file selected, pending save.</p>
+                      )}
+                      {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && !brandingFiles[type] && (
+                        <p className="text-sm text-muted-foreground italic">No {type} uploaded.</p>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Security Settings</CardTitle>
+                <CardDescription>Manage security and access controls.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Security settings coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
