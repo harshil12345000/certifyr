@@ -450,15 +450,22 @@ const TemplateDetail = () => {
           </Button>
         </div>
         <Separator />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-secondary rounded-md p-4">
-            <h2 className="text-lg font-semibold mb-4">Form</h2>
-            {renderForm()}
-          </div>
-          <div className="bg-secondary rounded-md p-4">
-            <h2 className="text-lg font-semibold mb-4">Preview</h2>
-            {renderPreview()}
-          </div>
+        <div>
+          {/* Tabs for Form and Preview */}
+          <Tabs defaultValue="form" className="w-full">
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="form" className="w-1/2">Form</TabsTrigger>
+              <TabsTrigger value="preview" className="w-1/2">Preview</TabsTrigger>
+            </TabsList>
+            <TabsContent value="form" className="bg-secondary rounded-md p-4">
+              <h2 className="text-lg font-semibold mb-4">Form</h2>
+              {renderForm()}
+            </TabsContent>
+            <TabsContent value="preview" className="bg-secondary rounded-md p-4">
+              <h2 className="text-lg font-semibold mb-4">Preview</h2>
+              {renderPreview()}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </DashboardLayout>
