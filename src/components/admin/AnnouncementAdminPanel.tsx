@@ -77,14 +77,17 @@ export function AnnouncementAdminPanel() {
         is_global: form.is_global,
         is_active: form.is_active,
         expires_at: form.expires_at ? form.expires_at : null,
-        created_by: user.id,
+        created_by: user?.id,
         // organization_id can be added for org-specific targeting
-      }]);
+      }])
+      .select();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Announcement created!" });
-      setAnnouncements(a => [{ ...data[0] }, ...a]);
+      if (data && data[0]) {
+        setAnnouncements(a => [data[0], ...a]);
+      }
       setForm({ title: "", content: "", is_global: true, is_active: true, expires_at: "" });
     }
     setIsCreating(false);
@@ -119,7 +122,9 @@ export function AnnouncementAdminPanel() {
             <Label htmlFor="expires_at" className="mr-2">Expires at (optional)</Label>
             <Input type="datetime-local" name="expires_at" id="expires_at" value={form.expires_at} onChange={handleChange} className="max-w-[200px]" />
           </div>
-          <Button type="submit" loading={isCreating}>Create Announcement</Button>
+          <Button type="submit" disabled={isCreating}>
+            {isCreating ? "Creating..." : "Create Announcement"}
+          </Button>
         </form>
 
         <div>
