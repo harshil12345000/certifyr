@@ -62,11 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
       console.log('Starting signup process for:', email);
-      console.log('Signup data:', data);
+      console.log('Signup data received:', data);
       
       const redirectUrl = `${window.location.origin}/dashboard`;
       
-      // Create a clean metadata object
+      // Create a clean metadata object - ensure we're using the exact field names the database expects
       const metaData: Record<string, any> = {
         full_name: data.fullName.trim(),
       };
@@ -74,28 +74,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Only add optional fields if they have non-empty values
       if (data.phoneNumber?.trim()) {
         metaData.phone_number = data.phoneNumber.trim();
+        console.log('Adding phone_number to metadata:', metaData.phone_number);
       }
       if (data.organizationName?.trim()) {
         metaData.organization_name = data.organizationName.trim();
+        console.log('Adding organization_name to metadata:', metaData.organization_name);
       }
       if (data.organizationType?.trim()) {
         metaData.organization_type = data.organizationType.trim();
+        console.log('Adding organization_type to metadata:', metaData.organization_type);
       }
       if (data.organizationSize?.trim()) {
         metaData.organization_size = data.organizationSize.trim();
+        console.log('Adding organization_size to metadata:', metaData.organization_size);
       }
       if (data.organizationWebsite?.trim()) {
         metaData.organization_website = data.organizationWebsite.trim();
+        console.log('Adding organization_website to metadata:', metaData.organization_website);
       }
       if (data.organizationLocation?.trim()) {
         metaData.organization_location = data.organizationLocation.trim();
+        console.log('Adding organization_location to metadata:', metaData.organization_location);
       }
 
+      // Handle the "Other" organization type case
       if (data.organizationType === 'Other' && data.organizationTypeOther?.trim()) {
         metaData.organization_type_other = data.organizationTypeOther.trim();
+        console.log('Adding organization_type_other to metadata:', metaData.organization_type_other);
       }
 
-      console.log('Prepared metadata:', metaData);
+      console.log('Final metadata object being sent to Supabase:', metaData);
       
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -115,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (signUpData?.user) {
         console.log('User created successfully:', signUpData.user.id);
+        console.log('User metadata sent:', signUpData.user.user_metadata);
         
         // Give the trigger a moment to complete
         setTimeout(async () => {
@@ -134,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (verificationError) {
             console.error('Profile verification error:', verificationError);
           }
-        }, 1000);
+        }, 2000); // Increased timeout to 2 seconds
       }
       
       return { error: null };
