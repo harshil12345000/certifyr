@@ -19,43 +19,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
 
-// Generate more templates based on existing ones
+// Updated templates with removed ones and added Embassy Attestation Letter
 const allTemplates = [
   ...popularTemplates,
-  {
-    id: "leave-application-1",
-    title: "Casual Leave Application",
-    description: "Standard format for casual leave requests",
-    category: "Employment",
-    usageCount: 48
-  },
-  {
-    id: "address-proof-1",
-    title: "Address Proof",
-    description: "Verification of residential address",
-    category: "Official",
-    usageCount: 42
-  },
-  {
-    id: "income-certificate-1",
-    title: "Income Certificate",
-    description: "Official proof of annual income",
-    category: "Financial",
-    usageCount: 37
-  },
   {
     id: "embassy-attestation-1",
     title: "Embassy Attestation Letter",
     description: "Letter for document attestation at embassies",
     category: "Travel",
     usageCount: 31
-  },
-  {
-    id: "relieving-letter-1",
-    title: "Relieving Letter",
-    description: "Official employment termination document",
-    category: "Employment",
-    usageCount: 29
   },
   {
     id: "maternity-leave-1",

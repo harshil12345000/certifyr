@@ -10,7 +10,9 @@ import { ExperienceForm } from "@/components/templates/ExperienceForm";
 import { ExperiencePreview } from "@/components/templates/ExperiencePreview";
 import { CharacterForm } from "@/components/templates/CharacterForm";
 import { CharacterPreview } from "@/components/templates/CharacterPreview";
-import { BonafideData, ExperienceData, CharacterData, FormData } from "@/types/templates";
+import { EmbassyAttestationForm } from "@/components/templates/EmbassyAttestationForm";
+import { EmbassyAttestationPreview } from "@/components/templates/EmbassyAttestationPreview";
+import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, FormData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -19,7 +21,12 @@ import "./TemplateStyles.css";
 
 const TemplateDetail = () => {
   const { id } = useParams();
-  const template = popularTemplates.find(t => t.id === id);
+  const template = popularTemplates.find(t => t.id === id) || {
+    id: "embassy-attestation-1",
+    title: "Embassy Attestation Letter",
+    description: "Letter for document attestation at embassies",
+    category: "Travel"
+  };
 
   // Initialize form data based on template type
   const getInitialData = (): FormData => {
@@ -54,6 +61,27 @@ const TemplateDetail = () => {
           conduct: "",
           ...commonFields,
         } as CharacterData;
+      case "embassy-attestation-1":
+        return {
+          fullName: "",
+          passportNumber: "",
+          nationality: "",
+          dateOfBirth: "",
+          placeOfBirth: "",
+          fatherName: "",
+          motherName: "",
+          documentType: "",
+          documentNumber: "",
+          issuingAuthority: "",
+          documentIssueDate: "",
+          purposeOfAttestation: "",
+          destinationCountry: "",
+          embassyName: "",
+          applicantAddress: "",
+          phoneNumber: "",
+          emailAddress: "",
+          ...commonFields,
+        } as EmbassyAttestationData;
       default:
         return {
           fullName: "",
@@ -214,6 +242,8 @@ const TemplateDetail = () => {
         return <ExperienceForm onSubmit={handleSubmit} initialData={formData as ExperienceData} />;
       case "character-1":
         return <CharacterForm onSubmit={handleSubmit} initialData={formData as CharacterData} />;
+      case "embassy-attestation-1":
+        return <EmbassyAttestationForm onSubmit={handleSubmit} initialData={formData as EmbassyAttestationData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
@@ -225,6 +255,8 @@ const TemplateDetail = () => {
         return <ExperiencePreview data={formData as ExperienceData} />;
       case "character-1":
         return <CharacterPreview data={formData as CharacterData} />;
+      case "embassy-attestation-1":
+        return <EmbassyAttestationPreview data={formData as EmbassyAttestationData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }
