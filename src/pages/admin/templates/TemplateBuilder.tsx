@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragOverlay, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import { TemplateCanvas } from '@/components/template-builder/TemplateCanvas';
@@ -135,9 +134,19 @@ const TemplateBuilder = () => {
 
   // Callback for TemplateCanvas to signal changes, e.g. for auto-save or "hasChanges"
   const handleCanvasChange = () => {
-    // setHasChanges(true); // This would be for manual save indication
     console.log("Canvas changed, sections state:", sections); 
-    // Auto-save logic could go here
+  };
+
+  const handleUpdateSection = (sectionId: string, updates: Partial<Section>) => {
+    setSections(prev => prev.map(s => s.id === sectionId ? { ...s, ...updates } : s));
+  };
+
+  const handleUpdateField = (sectionId: string, columnId: string, fieldId: string, updates: Partial<Field>) => {
+    setSections(prev => prev.map(s =>
+      s.id === sectionId
+        ? { ...s, columns: s.columns.map(c => c.id === columnId ? { ...c, fields: c.fields.map(f => f.id === fieldId ? { ...f, ...updates } : f) } : c) }
+        : s
+    ));
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -272,6 +281,8 @@ const TemplateBuilder = () => {
                   onSelectField={handleSelectField} // For potential future use by Builder for global state
                   onDeleteField={handleDeleteField}
                   onDeleteSection={handleDeleteSection}
+                  onUpdateSection={handleUpdateSection}
+                  onUpdateField={handleUpdateField}
                   onChange={handleCanvasChange} // To inform builder of changes
                 />
               </section>

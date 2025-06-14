@@ -1,5 +1,5 @@
+
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,31 @@ interface Template {
   fields: any[];
   created_at: string;
 }
+
+// Mock templates data since templates table doesn't exist
+const mockTemplates: Template[] = [
+  {
+    id: '1',
+    title: 'Bonafide Certificate',
+    description: 'Official bonafide certificate template',
+    fields: [],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Character Certificate',
+    description: 'Character certificate template',
+    fields: [],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Experience Certificate',
+    description: 'Experience certificate template',
+    fields: [],
+    created_at: new Date().toISOString(),
+  },
+];
 
 export default function TemplatesDashboard() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -22,12 +47,11 @@ export default function TemplatesDashboard() {
 
   const fetchTemplates = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('templates')
-      .select('id, title, description, fields, created_at')
-      .order('created_at', { ascending: false });
-    if (!error && data) setTemplates(data);
-    setLoading(false);
+    // Simulate API call
+    setTimeout(() => {
+      setTemplates(mockTemplates);
+      setLoading(false);
+    }, 500);
   };
 
   const handleCreate = () => {
@@ -40,8 +64,8 @@ export default function TemplatesDashboard() {
 
   const handleDelete = async (tpl: Template) => {
     if (!window.confirm('Delete this template?')) return;
-    await supabase.from('templates').delete().eq('id', tpl.id);
-    fetchTemplates();
+    // Remove from mock data
+    setTemplates(prev => prev.filter(t => t.id !== tpl.id));
   };
 
   // Pseudo-auth: Only show if user is admin (replace with real auth check)
