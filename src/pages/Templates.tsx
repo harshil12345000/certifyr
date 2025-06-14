@@ -19,7 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
 
-// Updated templates with removed ones and added Embassy Attestation Letter
+// Updated templates with removed ones and added new templates
 const allTemplates = [
   ...popularTemplates,
   {
@@ -28,6 +28,20 @@ const allTemplates = [
     description: "Letter for document attestation at embassies",
     category: "Travel",
     usageCount: 31
+  },
+  {
+    id: "completion-certificate-1",
+    title: "Completion Certificate",
+    description: "Certificate for courses, training programs, internships",
+    category: "Educational",
+    usageCount: 28
+  },
+  {
+    id: "transfer-certificate-1",
+    title: "Transfer Certificate",
+    description: "Certificate for students moving between institutions",
+    category: "Educational",
+    usageCount: 25
   },
   {
     id: "maternity-leave-1",

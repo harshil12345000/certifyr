@@ -12,7 +12,11 @@ import { CharacterForm } from "@/components/templates/CharacterForm";
 import { CharacterPreview } from "@/components/templates/CharacterPreview";
 import { EmbassyAttestationForm } from "@/components/templates/EmbassyAttestationForm";
 import { EmbassyAttestationPreview } from "@/components/templates/EmbassyAttestationPreview";
-import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, FormData } from "@/types/templates";
+import { CompletionCertificateForm } from "@/components/templates/CompletionCertificateForm";
+import { CompletionCertificatePreview } from "@/components/templates/CompletionCertificatePreview";
+import { TransferCertificateForm } from "@/components/templates/TransferCertificateForm";
+import { TransferCertificatePreview } from "@/components/templates/TransferCertificatePreview";
+import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, CompletionCertificateData, TransferCertificateData, FormData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -22,11 +26,38 @@ import "./TemplateStyles.css";
 const TemplateDetail = () => {
   const { id } = useParams();
   const template = popularTemplates.find(t => t.id === id) || {
-    id: "embassy-attestation-1",
-    title: "Embassy Attestation Letter",
-    description: "Letter for document attestation at embassies",
-    category: "Travel"
+    id: id || "unknown",
+    title: getTemplateTitle(id),
+    description: getTemplateDescription(id),
+    category: getTemplateCategory(id)
   };
+
+  function getTemplateTitle(id: string | undefined): string {
+    switch (id) {
+      case "embassy-attestation-1": return "Embassy Attestation Letter";
+      case "completion-certificate-1": return "Completion Certificate";
+      case "transfer-certificate-1": return "Transfer Certificate";
+      default: return "Unknown Template";
+    }
+  }
+
+  function getTemplateDescription(id: string | undefined): string {
+    switch (id) {
+      case "embassy-attestation-1": return "Letter for document attestation at embassies";
+      case "completion-certificate-1": return "Certificate for courses, training programs, internships";
+      case "transfer-certificate-1": return "Certificate for students moving between institutions";
+      default: return "Template description";
+    }
+  }
+
+  function getTemplateCategory(id: string | undefined): string {
+    switch (id) {
+      case "embassy-attestation-1": return "Travel";
+      case "completion-certificate-1": return "Educational";
+      case "transfer-certificate-1": return "Educational";
+      default: return "General";
+    }
+  }
 
   // Initialize form data based on template type
   const getInitialData = (): FormData => {
@@ -37,6 +68,8 @@ const TemplateDetail = () => {
       signatoryName: "",
       signatoryDesignation: "",
       includeDigitalSignature: false,
+      fontFamily: "Times New Roman",
+      fontSize: 12,
     };
 
     switch (id) {
@@ -82,6 +115,36 @@ const TemplateDetail = () => {
           emailAddress: "",
           ...commonFields,
         } as EmbassyAttestationData;
+      case "completion-certificate-1":
+        return {
+          fullName: "",
+          fatherName: "",
+          registrationNumber: "",
+          courseTitle: "",
+          courseDuration: "",
+          completionDate: "",
+          grade: "",
+          percentage: "",
+          programType: "course" as const,
+          ...commonFields,
+        } as CompletionCertificateData;
+      case "transfer-certificate-1":
+        return {
+          fullName: "",
+          fatherName: "",
+          motherName: "",
+          dateOfBirth: "",
+          admissionNumber: "",
+          class: "",
+          section: "",
+          academicYear: "",
+          dateOfAdmission: "",
+          dateOfLeaving: "",
+          reasonForLeaving: "",
+          conduct: "",
+          subjects: "",
+          ...commonFields,
+        } as TransferCertificateData;
       default:
         return {
           fullName: "",
@@ -244,6 +307,10 @@ const TemplateDetail = () => {
         return <CharacterForm onSubmit={handleSubmit} initialData={formData as CharacterData} />;
       case "embassy-attestation-1":
         return <EmbassyAttestationForm onSubmit={handleSubmit} initialData={formData as EmbassyAttestationData} />;
+      case "completion-certificate-1":
+        return <CompletionCertificateForm onSubmit={handleSubmit} initialData={formData as CompletionCertificateData} />;
+      case "transfer-certificate-1":
+        return <TransferCertificateForm onSubmit={handleSubmit} initialData={formData as TransferCertificateData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
@@ -257,6 +324,10 @@ const TemplateDetail = () => {
         return <CharacterPreview data={formData as CharacterData} />;
       case "embassy-attestation-1":
         return <EmbassyAttestationPreview data={formData as EmbassyAttestationData} />;
+      case "completion-certificate-1":
+        return <CompletionCertificatePreview data={formData as CompletionCertificateData} />;
+      case "transfer-certificate-1":
+        return <TransferCertificatePreview data={formData as TransferCertificateData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }
