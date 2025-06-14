@@ -1,92 +1,131 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { CharacterData } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
-import { Signature } from "lucide-react";
-import { supabase, getLatestBrandingSettings } from "@/integrations/supabase/client";
-import { useEffect, useState, useCallback } from "react";
+import { Signature as SignatureIcon } from "lucide-react"; // Renamed to avoid conflict
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
 
-interface CharacterPreviewProps {
-  data: CharacterData;
+interface BrandingAssets {
+  logoUrl: string | null;
+  sealUrl: string | null;
+  signatureUrl: string | null;
+}
+
+interface OrganizationInfo {
+  name: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  // tagline: string | null; // If tagline is needed, it should be part of organizations table
 }
 
 export function CharacterPreview({ data }: CharacterPreviewProps) {
-  const [organizationLogo, setOrganizationLogo] = useState<string | null>(null);
-  const [organizationSeal, setOrganizationSeal] = useState<string | null>(null);
-  const [signatureImage, setSignatureImage] = useState<string | null>(null);
-  const [brandingInfo, setBrandingInfo] = useState<any>(null);
-  const [orgDetails, setOrgDetails] = useState<any>(null);
+  const [brandingAssets, setBrandingAssets] = useState<BrandingAssets>({ logoUrl: null, sealUrl: null, signatureUrl: null });
+  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo>({
+    name: data.institutionName || "[Institution Name]",
+    address: "123 Education Street, Knowledge City, 400001",
+    phone: "+91 2222 333333",
+    email: "info@institution.edu",
+    // tagline: null,
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [refreshKey, setRefreshKey] = useState<number>(Date.now());
-  
-  // Function to get a public URL for an asset with cache busting
-  const getAssetUrl = useCallback((bucket: string, path: string | null) => {
+  const { user } = useAuth(); // Get user context
+
+  const getAssetUrlWithCacheBust = useCallback((bucket: string, path: string | null) => {
     if (!path) return null;
-    const timestamp = Date.now();
-    const { data } = supabase.storage.from(bucket).getPublicUrl(`${path}?t=${timestamp}`);
+    // Cache busting isn't strictly necessary for getPublicUrl if files are updated with new names/paths
+    // or if appropriate cache headers are set on storage. For simplicity, removing timestamp.
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return data.publicUrl;
   }, []);
 
-  // Load all branding assets and organization details
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true);
+      let orgIdToQuery: string | null = null;
+      let fetchedOrgName: string | null = data.institutionName;
+
       try {
-        setIsLoading(true);
-        
-        // Clear previous assets to prevent stale data
-        setOrganizationLogo(null);
-        setOrganizationSeal(null);
-        setSignatureImage(null);
-        
-        // Get the latest branding settings
-        const brandingSettings = await getLatestBrandingSettings();
-        
-        if (brandingSettings) {
-          console.log("Loaded latest branding settings:", brandingSettings);
-          setBrandingInfo(brandingSettings);
-          
-          // Use direct public URLs with cache busting
-          if (brandingSettings.logo) {
-            const logoUrl = getAssetUrl('branding', `logos/${brandingSettings.logo}`);
-            setOrganizationLogo(logoUrl);
-            console.log("Logo URL:", logoUrl);
-          }
-          
-          if (brandingSettings.seal) {
-            const sealUrl = getAssetUrl('branding', `seals/${brandingSettings.seal}`);
-            setOrganizationSeal(sealUrl);
-            console.log("Seal URL:", sealUrl);
-          }
+        // 1. Fetch Organization Details (including ID)
+        if (data.institutionName) {
+          const { data: orgData, error: orgError } = await supabase
+            .from('organizations')
+            .select('id, name, address, phone, email') // Add other fields if needed
+            .eq('name', data.institutionName)
+            .single();
 
-          if (brandingSettings.signature) {
-            const signatureUrl = getAssetUrl('branding', `signatures/${brandingSettings.signature}`);
-            setSignatureImage(signatureUrl);
-            console.log("Signature URL:", signatureUrl);
+          if (orgError && orgError.code !== 'PGRST116') {
+            console.error("Error fetching organization by name:", orgError.message);
+            toast({ title: "Error", description: `Could not fetch details for ${data.institutionName}.`, variant: "destructive" });
+          } else if (orgData) {
+            orgIdToQuery = orgData.id;
+            fetchedOrgName = orgData.name; // Use fetched name for consistency
+            setOrganizationInfo({
+              name: orgData.name || data.institutionName || "[Institution Name]",
+              address: orgData.address || "123 Default Address",
+              phone: orgData.phone || "Default Phone",
+              email: orgData.email || "default@example.com",
+            });
+          } else {
+             console.warn(`Organization named "${data.institutionName}" not found. Using fallback details.`);
+             // Keep default placeholders if org not found by name
+             setOrganizationInfo({
+                name: data.institutionName || "[Institution Name]",
+                address: "123 Education Street, Knowledge City, 400001",
+                phone: "+91 2222 333333",
+                email: "info@institution.edu",
+             });
           }
-        } else {
-          console.log("No branding settings found");
+        } else if (user?.id) {
+          // TODO: Implement logic to get organization_id if only user is available
+          // This might involve fetching user's profile which contains organization_id
+          // For now, we'll rely on institutionName being present in `data`
+          console.warn("CharacterPreview: institutionName not provided in data. Cannot fetch specific org details without it.");
         }
 
-        // Get organization details
-        const { data: orgData, error: orgError } = await supabase
-          .from('organization_details')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        if (orgData && orgData.length > 0 && !orgError) {
-          console.log("Loaded organization details:", orgData[0]);
-          setOrgDetails(orgData[0]);
+
+        // 2. Fetch Branding Assets if Organization ID is known
+        if (orgIdToQuery) {
+          const { data: filesData, error: filesError } = await supabase
+            .from('branding_files')
+            .select('name, path')
+            .eq('organization_id', orgIdToQuery);
+
+          if (filesError) {
+            console.error("Error fetching branding files:", filesError.message);
+            toast({ title: "Branding Error", description: "Could not load branding assets.", variant: "destructive" });
+            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); // Reset
+          } else if (filesData) {
+            let newLogoUrl: string | null = null;
+            let newSealUrl: string | null = null;
+            let newSignatureUrl: string | null = null;
+
+            filesData.forEach(file => {
+              // Assuming 'branding-assets' is the correct bucket name
+              const publicUrl = getAssetUrlWithCacheBust('branding-assets', file.path);
+              if (publicUrl) {
+                if (file.name === 'logo') newLogoUrl = publicUrl;
+                if (file.name === 'seal') newSealUrl = publicUrl;
+                if (file.name === 'signature') newSignatureUrl = publicUrl;
+              }
+            });
+            setBrandingAssets({ logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl });
+          } else {
+             setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); // No files found
+          }
         } else {
-          console.log("No organization details found, checking localStorage");
-          // Fall back to localStorage
-          const orgDetailsStr = localStorage.getItem('organizationDetails');
-          if (orgDetailsStr) {
-            setOrgDetails(JSON.parse(orgDetailsStr));
+          // No orgIdToQuery, so reset branding assets
+          setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
+          if(data.institutionName) { // only warn if name was provided but not found
+             console.warn("CharacterPreview: No organization ID found, cannot fetch branding assets.");
           }
         }
+        // Update institutionName in state to reflect the fetched one if different
+        setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
+
       } catch (err) {
-        console.error("Error loading assets:", err);
+        console.error("Unexpected error loading assets for CharacterPreview:", err);
         toast({
           title: "Error loading assets",
           description: "There was a problem loading your branding assets. Please try again.",
@@ -98,45 +137,25 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
     };
     
     loadData();
-    
-    // Set up refresh interval (check every 10 seconds in case user updates branding)
-    const refreshInterval = setInterval(() => {
-      setRefreshKey(Date.now());
-    }, 10000);
-    
-    return () => clearInterval(refreshInterval);
-    
-  }, [refreshKey, getAssetUrl, data]); // Re-fetch when data or refreshKey changes
+    // No need for refreshKey or interval based refresh unless specifically required for live updates
+  }, [data.institutionName, user, getAssetUrlWithCacheBust]);
 
-  // Use organization name from orgDetails, fallback to data.institutionName only if orgDetails is empty
-  const institutionName = (orgDetails?.name && orgDetails.name !== "Enter your organization name") 
-    ? orgDetails.name 
-    : (data.institutionName || "[Institution Name]");
 
-  // Use organization contact details from orgDetails
-  const getContactInfo = () => {
-    if (orgDetails) {
-      const address = (orgDetails.address && orgDetails.address !== "Enter your address") ? orgDetails.address : "123 Education Street, Knowledge City, 400001";
-      const phone = (orgDetails.phone && orgDetails.phone !== "Enter your phone number") ? orgDetails.phone : "+91 2222 333333";
-      const email = (orgDetails.email && orgDetails.email !== "Enter official email address") ? orgDetails.email : "info@institution.edu";
-      return { address, phone, email };
-    }
-    return {
-      address: "123 Education Street, Knowledge City, 400001",
-      phone: "+91 2222 333333", 
-      email: "info@institution.edu"
-    };
+  const institutionNameToDisplay = organizationInfo.name;
+  const contactInfo = {
+    address: organizationInfo.address || "123 Education Street, Knowledge City, 400001",
+    phone: organizationInfo.phone || "+91 2222 333333",
+    email: organizationInfo.email || "info@institution.edu"
   };
-
-  const contactInfo = getContactInfo();
 
   // Function to handle image loading errors
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
-    (e.target as HTMLImageElement).style.display = 'none';
+    (e.target as HTMLImageElement).style.display = 'none'; // hide broken image
+    // (e.target as HTMLImageElement).src = 'path/to/placeholder.png'; // Optionally set a placeholder
     toast({
       title: `Error loading ${type}`,
-      description: "The image could not be loaded. Try uploading it again.",
+      description: "The image could not be loaded. Try re-uploading it or check the path.",
       variant: "destructive"
     });
   };
@@ -155,10 +174,10 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
         
         {/* Letterhead */}
         <div className="text-center border-b pb-4 mb-8">
-          {organizationLogo && (
+          {brandingAssets.logoUrl && (
             <div className="flex justify-center mb-2">
               <img 
-                src={organizationLogo}
+                src={brandingAssets.logoUrl}
                 alt="Organization Logo" 
                 className="h-16 object-contain"
                 onError={(e) => handleImageError(e, "logo")}
@@ -166,14 +185,14 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             </div>
           )}
           <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
-            {institutionName}
+            {institutionNameToDisplay}
           </h1>
           <p className="text-muted-foreground">
             {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
           </p>
-          {brandingInfo && brandingInfo.tagline && (
-            <p className="text-sm italic mt-1">{brandingInfo.tagline}</p>
-          )}
+          {/* {organizationInfo.tagline && (
+            <p className="text-sm italic mt-1">{organizationInfo.tagline}</p>
+          )} */}
         </div>
 
         {/* Certificate title */}
@@ -216,18 +235,18 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
           <div className="text-right mt-8 md:mt-0">
             {data.includeDigitalSignature ? (
               <div className="h-16 mb-4 flex justify-end">
-                {signatureImage ? (
+                {brandingAssets.signatureUrl ? (
                   <div className="border-b border-gray-800 px-6">
                     <img 
-                      src={signatureImage}
+                      src={brandingAssets.signatureUrl}
                       alt="Digital Signature" 
                       className="h-12 object-contain"
                       onError={(e) => handleImageError(e, "signature")}
                     />
                   </div>
                 ) : (
-                  <div className="border-b border-gray-800 px-6">
-                    <Signature className="h-12 w-12 text-primary" />
+                  <div className="border-b border-gray-800 px-6 py-3"> {/* Adjusted padding for icon */}
+                    <SignatureIcon className="h-8 w-8 text-primary" /> {/* Adjusted size */}
                   </div>
                 )}
               </div>
@@ -238,9 +257,19 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             )}
             <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
             <p>{data.signatoryDesignation || "[Designation]"}</p>
-            <p>{institutionName}</p>
+            <p>{institutionNameToDisplay}</p>
           </div>
         </div>
+         {brandingAssets.sealUrl && (
+            <div className="absolute bottom-8 left-8">
+                 <img 
+                    src={brandingAssets.sealUrl}
+                    alt="Organization Seal" 
+                    className="h-20 w-20 object-contain opacity-75"
+                    onError={(e) => handleImageError(e, "seal")}
+                />
+            </div>
+        )}
       </div>
     </div>
   );

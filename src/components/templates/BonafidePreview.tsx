@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BonafideData } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,14 @@ interface BrandingAssets {
   organizationAddress: string | null;
   organizationPhone: string | null;
   organizationEmail: string | null;
+}
+
+interface OrganizationDetails {
+  id: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  // Add other fields from organizations table if needed
 }
 
 export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
@@ -49,23 +56,29 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
       }
       try {
         let orgIdToQuery: string | null = null;
+        let orgDetails: OrganizationDetails | null = null;
+
         if (institutionName) {
             const { data: orgData, error: orgError } = await supabase
             .from('organizations')
-            .select('id, address, phone, email') // Assuming these columns exist in 'organizations' table
+            .select('id, address, phone, email')
             .eq('name', institutionName)
             .single();
 
-            if (orgError && orgError.code !== 'PGRST116') {
-                console.error("Error fetching organization by name:", orgError);
+            if (orgError && orgError.code !== 'PGRST116') { // PGRST116: 0 rows, still an error for .single() but we can ignore
+                console.error("Error fetching organization by name:", orgError.message);
+            } else if (orgError?.code === 'PGRST116') {
+                console.warn(`Organization named "${institutionName}" not found.`);
             }
+            
             if (orgData) {
-                orgIdToQuery = orgData.id;
+                orgDetails = orgData as OrganizationDetails; // Cast to known type
+                orgIdToQuery = orgDetails.id;
                  setBranding(prev => ({
                     ...prev,
-                    organizationAddress: orgData.address || prev.organizationAddress,
-                    organizationPhone: orgData.phone || prev.organizationPhone,
-                    organizationEmail: orgData.email || prev.organizationEmail,
+                    organizationAddress: orgDetails?.address || prev.organizationAddress,
+                    organizationPhone: orgDetails?.phone || prev.organizationPhone,
+                    organizationEmail: orgDetails?.email || prev.organizationEmail,
                 }));
             }
         }
@@ -74,35 +87,46 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
         // if (!orgIdToQuery && userOrgId) orgIdToQuery = userOrgId;
 
         if (!orgIdToQuery) {
-          console.warn("Bonafide Preview: Could not determine organization ID for branding.");
-          return;
+          console.warn("Bonafide Preview: Could not determine organization ID for branding assets.");
+          // Optionally, still try to fetch user-specific branding if user context is primary
         }
 
-        const { data: filesData, error: filesError } = await supabase
-          .from('branding_files')
-          .select('name, path')
-          .eq('organization_id', orgIdToQuery);
+        // Fetch branding files only if orgIdToQuery is resolved
+        if (orgIdToQuery) {
+            const { data: filesData, error: filesError } = await supabase
+              .from('branding_files')
+              .select('name, path')
+              .eq('organization_id', orgIdToQuery);
 
-        if (filesError) {
-          console.error("Error fetching branding files:", filesError);
-          return;
+            if (filesError) {
+              console.error("Error fetching branding files:", filesError);
+              // Potentially return or set branding to defaults
+            } else if (filesData) {
+                let newLogoUrl: string | null = null;
+                let newSealUrl: string | null = null;
+                let newSignatureUrl: string | null = null;
+
+                filesData.forEach(file => {
+                  const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+                  const publicUrl = publicUrlRes.data?.publicUrl;
+                  if (publicUrl) {
+                    if (file.name === 'logo') newLogoUrl = publicUrl;
+                    if (file.name === 'seal') newSealUrl = publicUrl;
+                    if (file.name === 'signature') newSignatureUrl = publicUrl;
+                  }
+                });
+                
+                setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
+            }
+        } else {
+            // Reset or keep default branding assets if no org ID
+             setBranding(prev => ({ 
+                ...prev, 
+                logoUrl: null, // Or some default logo
+                sealUrl: null, // Or some default seal
+                signatureUrl: null // Or some default signature
+            }));
         }
-
-        let newLogoUrl: string | null = null;
-        let newSealUrl: string | null = null;
-        let newSignatureUrl: string | null = null;
-
-        filesData?.forEach(file => {
-          const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-          const publicUrl = publicUrlRes.data?.publicUrl;
-          if (publicUrl) {
-            if (file.name === 'logo') newLogoUrl = publicUrl;
-            if (file.name === 'seal') newSealUrl = publicUrl;
-            if (file.name === 'signature') newSignatureUrl = publicUrl;
-          }
-        });
-        
-        setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
 
       } catch (error) {
         console.error("Unexpected error fetching branding:", error);

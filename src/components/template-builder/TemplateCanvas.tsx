@@ -102,7 +102,7 @@ const FieldPropertyPanel: React.FC<FieldPropertyPanelProps> = ({ sections, selec
         <Input id="fieldPlaceholder" name="placeholder" value={localFieldData.placeholder || ''} onChange={handleInputChange} />
       </div>
       
-      {(localFieldData.type === 'dropdown' || localFieldData.type === 'radio' || localFieldData.type === 'checkbox_group') && (
+      {(localFieldData.type === 'dropdown' || localFieldData.type === 'radio') && (
         <div className="space-y-2">
           <Label htmlFor="fieldOptions">Options (comma-separated)</Label>
           <Input id="fieldOptions" name="options" value={optionsString} onChange={handleOptionsChange} />
