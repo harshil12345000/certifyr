@@ -10,11 +10,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+  is_global: boolean;
+  created_at: string;
+}
+
 export function Header() {
   const { user, signOut } = useAuth();
 
   // Announcements state
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [unread, setUnread] = useState<string[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
 
@@ -27,7 +36,7 @@ export function Header() {
     if (!user) return;
     setLoadingAnnouncements(true);
     const fetchAnnouncements = async () => {
-      // Get all relevant, active announcements
+      // Get all relevant, active announcements for the user's organization
       const { data, error } = await supabase
         .from("announcements")
         .select("id, title, content, is_active, is_global, created_at")
@@ -35,6 +44,7 @@ export function Header() {
         .order("created_at", { ascending: false });
 
       if (error) {
+        console.error('Error fetching announcements:', error);
         setAnnouncements([]);
         setUnread([]);
         setLoadingAnnouncements(false);

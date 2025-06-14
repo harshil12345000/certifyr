@@ -19,34 +19,65 @@ interface Announcement {
   is_active: boolean;
   created_at: string;
   expires_at?: string | null;
+  organization_id?: string | null;
 }
 
 export function AnnouncementAdminPanel() {
   const { user } = useAuth();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     content: "",
-    is_global: true,
     is_active: true,
     expires_at: "",
   });
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch announcements created by this user (admin)
+  // Fetch user's organization and announcements
   useEffect(() => {
-    const fetchAnnouncements = async () => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+      
       setLoading(true);
-      const { data, error } = await supabase
-        .from("announcements")
-        .select("id, title, content, is_global, is_active, created_at, expires_at")
-        .order('created_at', { ascending: false });
-      if (!error && data) setAnnouncements(data);
+      
+      // Get user's organization ID
+      const { data: memberData } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (memberData?.organization_id) {
+        setOrganizationId(memberData.organization_id);
+        
+        // Fetch announcements for this organization
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("id, title, content, is_global, is_active, created_at, expires_at, organization_id")
+          .eq('organization_id', memberData.organization_id)
+          .order('created_at', { ascending: false });
+          
+        if (!error && data) {
+          setAnnouncements(data);
+        } else if (error) {
+          console.error('Error fetching announcements:', error);
+          toast({ title: "Error", description: "Failed to load announcements", variant: "destructive" });
+        }
+      } else {
+        toast({ 
+          title: "No Organization", 
+          description: "You need to be part of an organization to manage announcements", 
+          variant: "destructive" 
+        });
+      }
+      
       setLoading(false);
     };
-    fetchAnnouncements();
-  }, []);
+    
+    fetchData();
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(f => ({
@@ -68,41 +99,68 @@ export function AnnouncementAdminPanel() {
       toast({ title: "Title and content are required", variant: "destructive" });
       return;
     }
+    
+    if (!organizationId) {
+      toast({ title: "No organization found", description: "You must be part of an organization to create announcements", variant: "destructive" });
+      return;
+    }
+    
     setIsCreating(true);
+    
     const { error, data } = await supabase
       .from("announcements")
       .insert([{
         title: form.title,
         content: form.content,
-        is_global: form.is_global,
+        is_global: false, // Always false for organization-specific announcements
         is_active: form.is_active,
         expires_at: form.expires_at ? form.expires_at : null,
         created_by: user?.id,
-        // organization_id can be added for org-specific targeting
+        organization_id: organizationId,
       }])
       .select();
+      
     if (error) {
+      console.error('Error creating announcement:', error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Announcement created!" });
       if (data && data[0]) {
         setAnnouncements(a => [data[0], ...a]);
       }
-      setForm({ title: "", content: "", is_global: true, is_active: true, expires_at: "" });
+      setForm({ title: "", content: "", is_active: true, expires_at: "" });
     }
     setIsCreating(false);
   };
 
+  if (!organizationId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Announcements</CardTitle>
+          <CardDescription>
+            You need to be part of an organization to manage announcements.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Please contact your administrator to be added to an organization.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Announcements</CardTitle>
+        <CardTitle>Organization Announcements</CardTitle>
         <CardDescription>
-          Post important announcements for all users. Only admins can post announcements.
+          Post important announcements for your organization members. Only admins can post announcements.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-2 mb-8" onSubmit={handleSubmit}>
+        <form className="space-y-4 mb-8" onSubmit={handleSubmit}>
           <div>
             <Label>Title</Label>
             <Input name="title" value={form.title} onChange={handleChange} required maxLength={100} />
@@ -111,11 +169,8 @@ export function AnnouncementAdminPanel() {
             <Label>Content</Label>
             <Textarea name="content" rows={3} value={form.content} onChange={handleChange} required maxLength={500} />
           </div>
-          <div className="flex gap-4 mt-2 items-center">
-            <Label htmlFor="is_global" className="mr-2">Global</Label>
-            <Switch id="is_global" checked={form.is_global} onCheckedChange={(v: boolean) => handleSwitch("is_global", v)} />
-            {/* For simplicity, org targeting not implemented here, but can be added */}
-            <Label htmlFor="is_active" className="ml-4 mr-2">Active</Label>
+          <div className="flex gap-4 items-center">
+            <Label htmlFor="is_active" className="mr-2">Active</Label>
             <Switch id="is_active" checked={form.is_active} onCheckedChange={(v: boolean) => handleSwitch("is_active", v)} />
           </div>
           <div>
@@ -128,7 +183,7 @@ export function AnnouncementAdminPanel() {
         </form>
 
         <div>
-          <h3 className="font-medium mb-2">All Announcements</h3>
+          <h3 className="font-medium mb-4">Organization Announcements</h3>
           {loading ? (
             <div>Loading...</div>
           ) : (
@@ -141,12 +196,12 @@ export function AnnouncementAdminPanel() {
                       <p className="font-semibold">{a.title}</p>
                       <span className="text-xs">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</span>
                     </div>
-                    <div className="text-sm">{a.content}</div>
-                    <div className="flex gap-3 mt-1 text-xs">
+                    <div className="text-sm mt-1">{a.content}</div>
+                    <div className="flex gap-3 mt-2 text-xs">
                       <span className={a.is_active ? "text-green-700" : "text-muted-foreground"}>
                         {a.is_active ? "Active" : "Inactive"}
                       </span>
-                      {a.is_global && <span className="text-blue-700">Global</span>}
+                      <span className="text-blue-700">Organization</span>
                       {a.expires_at && <span className="text-muted-foreground">Expires: {dayjs(a.expires_at).format("MMM D, YYYY HH:mm")}</span>}
                     </div>
                   </li>
