@@ -36,17 +36,43 @@ export async function getOrganizationId(): Promise<string> {
   return orgMember.organization_id;
 }
 
-export async function uploadBrandingFile(
-  file: File
-): Promise<BrandingFile> {
+export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
   try {
     const organizationId = await getOrganizationId();
-    const filePath = `${organizationId}/${file.name}`;
+    const fileExtension = file.name.split('.').pop();
+    const fileName = file.name.replace(`.${fileExtension}`, '');
+    const timestamp = Date.now();
+    const filePath = `${organizationId}/${fileName}-${timestamp}.${fileExtension}`;
     
-    // Upload file to storage
+    // Check if file with same name exists and delete it first
+    const { data: existingFiles } = await supabase
+      .from('branding_files')
+      .select('id, path')
+      .eq('organization_id', organizationId)
+      .eq('name', fileName);
+
+    if (existingFiles && existingFiles.length > 0) {
+      // Delete old files from storage
+      const pathsToDelete = existingFiles.map(f => f.path);
+      await supabase.storage
+        .from('branding-assets')
+        .remove(pathsToDelete);
+
+      // Delete old records from database
+      await supabase
+        .from('branding_files')
+        .delete()
+        .eq('organization_id', organizationId)
+        .eq('name', fileName);
+    }
+    
+    // Upload new file to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('branding-assets')
-      .upload(filePath, file);
+      .upload(filePath, file, { 
+        cacheControl: '3600',
+        upsert: false 
+      });
 
     if (uploadError) {
       if (uploadError.message.includes('policy')) {
@@ -66,7 +92,7 @@ export async function uploadBrandingFile(
       .from('branding_files')
       .insert([
         {
-          name: file.name,
+          name: fileName,
           path: uploadData.path,
           organization_id: organizationId,
           uploaded_by: (await supabase.auth.getUser()).data.user?.id
@@ -97,7 +123,7 @@ export async function uploadBrandingFile(
       throw error;
     }
     throw new BrandingError(
-      `Unexpected error: ${error.message}`,
+      `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'UNKNOWN_ERROR'
     );
   }
@@ -133,15 +159,13 @@ export async function getBrandingFiles(): Promise<BrandingFile[]> {
       throw error;
     }
     throw new BrandingError(
-      `Unexpected error: ${error.message}`,
+      `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'UNKNOWN_ERROR'
     );
   }
 }
 
-export async function deleteBrandingFile(
-  fileId: string
-): Promise<void> {
+export async function deleteBrandingFile(fileId: string): Promise<void> {
   try {
     const organizationId = await getOrganizationId();
 
@@ -166,10 +190,8 @@ export async function deleteBrandingFile(
       .remove([file.path]);
 
     if (storageError) {
-      throw new BrandingError(
-        `Failed to delete file from storage: ${storageError.message}`,
-        'STORAGE_ERROR'
-      );
+      console.warn('Storage deletion warning:', storageError.message);
+      // Continue with database deletion even if storage fails
     }
 
     // Delete from database
@@ -190,15 +212,13 @@ export async function deleteBrandingFile(
       throw error;
     }
     throw new BrandingError(
-      `Unexpected error: ${error.message}`,
+      `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'UNKNOWN_ERROR'
     );
   }
 }
 
-export async function getBrandingFileUrl(
-  filePath: string
-): Promise<string> {
+export async function getBrandingFileUrl(filePath: string): Promise<string> {
   try {
     const organizationId = await getOrganizationId();
     
@@ -234,8 +254,35 @@ export async function getBrandingFileUrl(
       throw error;
     }
     throw new BrandingError(
-      `Unexpected error: ${error.message}`,
+      `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'UNKNOWN_ERROR'
     );
+  }
+}
+
+// Helper function to get organization branding for templates/documents
+export async function getOrganizationBranding() {
+  try {
+    const files = await getBrandingFiles();
+    const branding = {
+      logo: null as string | null,
+      seal: null as string | null,
+      signature: null as string | null,
+    };
+
+    for (const file of files) {
+      if (file.name === 'logo') {
+        branding.logo = await getBrandingFileUrl(file.path);
+      } else if (file.name === 'seal') {
+        branding.seal = await getBrandingFileUrl(file.path);
+      } else if (file.name === 'signature') {
+        branding.signature = await getBrandingFileUrl(file.path);
+      }
+    }
+
+    return branding;
+  } catch (error) {
+    console.error('Failed to get organization branding:', error);
+    return { logo: null, seal: null, signature: null };
   }
 }
