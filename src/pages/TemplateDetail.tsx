@@ -26,11 +26,11 @@ const TemplateDetail = () => {
   // Initialize form data based on template type
   const getInitialData = (): FormData => {
     const commonFields = {
-      institutionName: "Global Tech Solutions",
+      institutionName: "",
       date: new Date().toLocaleDateString('en-CA'),
-      place: "Metropolis",
-      signatoryName: "Dr. Evelyn Reed",
-      signatoryDesignation: "Head of Department",
+      place: "",
+      signatoryName: "",
+      signatoryDesignation: "",
       includeDigitalSignature: false,
     };
 
