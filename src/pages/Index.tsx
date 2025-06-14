@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -11,6 +10,7 @@ import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
 import { Document } from "@/types/document";
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
+import { useUserActivity } from '@/hooks/useUserActivity';
 
 const mockDocuments = [{
   id: "doc-1",
@@ -38,6 +38,7 @@ const mockDocuments = [{
 const Index = () => {
   const { user } = useAuth();
   const { stats, loading: statsLoading, error } = useUserStats();
+  const { activityData, loading: activityLoading } = useUserActivity();
 
   const statsCards = [
     { 
@@ -101,7 +102,13 @@ const Index = () => {
           {/* Activity Chart - 4/7 width */}
           <div className="glass-card p-6 lg:col-span-4">
             <h2 className="text-lg font-medium mb-4">Activity Overview</h2>
-            <ActivityChart />
+            {activityLoading ? (
+              <div className="h-64 flex items-center justify-center">
+                <p className="text-muted-foreground">Loading activity data...</p>
+              </div>
+            ) : (
+              <ActivityChart data={activityData} />
+            )}
           </div>
 
           {/* Popular Templates - 3/7 width */}
