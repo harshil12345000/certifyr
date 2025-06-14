@@ -24,16 +24,40 @@ import { MaternityLeaveForm } from "@/components/templates/MaternityLeaveForm";
 import { MaternityLeavePreview } from "@/components/templates/MaternityLeavePreview";
 import { BankVerificationForm } from "@/components/templates/BankVerificationForm";
 import { BankVerificationPreview } from "@/components/templates/BankVerificationPreview";
-import { BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, CompletionCertificateData, TransferCertificateData, NocVisaData, IncomeCertificateData, MaternityLeaveData, BankVerificationData, FormData } from "@/types/templates";
+import { OfferLetterForm } from "@/components/templates/OfferLetterForm";
+import { OfferLetterPreview } from "@/components/templates/OfferLetterPreview";
+import { 
+  BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, 
+  CompletionCertificateData, TransferCertificateData, NocVisaData, 
+  IncomeCertificateData, MaternityLeaveData, BankVerificationData, 
+  OfferLetterData, FormData 
+} from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
 import "./TemplateStyles.css";
 
+// It's better to use the `allTemplates` from Templates.tsx or a shared source
+// For now, I'll use a temporary extended list or rely on the helper functions
+const allTemplatesExtended = [
+  ...popularTemplates,
+  { id: "embassy-attestation-1", title: "Embassy Attestation Letter", description: "Letter for document attestation at embassies", category: "Travel" },
+  { id: "completion-certificate-1", title: "Completion Certificate", description: "Certificate for courses, training programs, internships", category: "Educational" },
+  { id: "transfer-certificate-1", title: "Transfer Certificate", description: "Certificate for students moving between institutions", category: "Educational" },
+  { id: "noc-visa-1", title: "NOC for Visa Application", description: "No Objection Certificate for visa applications", category: "Travel" },
+  { id: "income-certificate-1", title: "Income Certificate", description: "Certificate stating employee income details", category: "Employment" },
+  { id: "maternity-leave-1", title: "Maternity Leave Application", description: "Application for maternity leave benefits", category: "Employment" },
+  { id: "bank-verification-1", title: "Bank Account Verification", description: "Letter confirming account details for banks", category: "Financial" },
+  { id: "offer-letter-1", title: "Offer Letter", description: "Formal job offer letter to candidates", category: "Employment" }
+];
+
 const TemplateDetail = () => {
   const { id } = useParams();
-  const template = popularTemplates.find(t => t.id === id) || {
+  // Try to find from extended list, then fallback to getTemplateTitle logic
+  const currentTemplateInfo = allTemplatesExtended.find(t => t.id === id);
+
+  const template = currentTemplateInfo || {
     id: id || "unknown",
     title: getTemplateTitle(id),
     description: getTemplateDescription(id),
@@ -41,6 +65,9 @@ const TemplateDetail = () => {
   };
 
   function getTemplateTitle(id: string | undefined): string {
+    const t = allTemplatesExtended.find(tpl => tpl.id === id);
+    if (t) return t.title;
+    // Fallback, though ideally allTemplatesExtended should be comprehensive
     switch (id) {
       case "embassy-attestation-1": return "Embassy Attestation Letter";
       case "completion-certificate-1": return "Completion Certificate";
@@ -49,11 +76,15 @@ const TemplateDetail = () => {
       case "income-certificate-1": return "Income Certificate";
       case "maternity-leave-1": return "Maternity Leave Application";
       case "bank-verification-1": return "Bank Account Verification";
+      case "offer-letter-1": return "Offer Letter";
       default: return "Unknown Template";
     }
   }
 
   function getTemplateDescription(id: string | undefined): string {
+    const t = allTemplatesExtended.find(tpl => tpl.id === id);
+    if (t) return t.description;
+    // Fallback
     switch (id) {
       case "embassy-attestation-1": return "Letter for document attestation at embassies";
       case "completion-certificate-1": return "Certificate for courses, training programs, internships";
@@ -62,11 +93,15 @@ const TemplateDetail = () => {
       case "income-certificate-1": return "Certificate stating employee income details";
       case "maternity-leave-1": return "Application for maternity leave benefits";
       case "bank-verification-1": return "Letter confirming account details for banks";
+      case "offer-letter-1": return "Formal job offer letter to candidates";
       default: return "Template description";
     }
   }
 
   function getTemplateCategory(id: string | undefined): string {
+    const t = allTemplatesExtended.find(tpl => tpl.id === id);
+    if (t) return t.category;
+    // Fallback
     switch (id) {
       case "embassy-attestation-1": return "Travel";
       case "completion-certificate-1": return "Educational";
@@ -75,6 +110,7 @@ const TemplateDetail = () => {
       case "income-certificate-1": return "Employment";
       case "maternity-leave-1": return "Employment";
       case "bank-verification-1": return "Financial";
+      case "offer-letter-1": return "Employment";
       default: return "General";
     }
   }
@@ -83,7 +119,7 @@ const TemplateDetail = () => {
   const getInitialData = (): FormData => {
     const commonFields = {
       institutionName: "",
-      date: new Date().toLocaleDateString('en-CA'),
+      date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD for date inputs
       place: "",
       signatoryName: "",
       signatoryDesignation: "",
@@ -227,6 +263,25 @@ const TemplateDetail = () => {
           purpose: "",
           ...commonFields,
         } as BankVerificationData;
+      case "offer-letter-1":
+        return {
+          candidateName: "",
+          candidateAddress: "",
+          dateOfOffer: new Date().toLocaleDateString('en-CA'),
+          jobTitle: "",
+          department: "",
+          reportingManager: "",
+          startDate: "",
+          probationPeriod: "3 months",
+          salaryAmount: "",
+          salaryCurrency: "INR",
+          salaryFrequency: "monthly" as const,
+          benefits: "",
+          workHours: "9 AM to 6 PM, Monday to Friday",
+          workLocation: "",
+          acceptanceDeadline: "",
+          ...commonFields,
+        } as OfferLetterData;
       default:
         return {
           fullName: "",
@@ -401,6 +456,8 @@ const TemplateDetail = () => {
         return <MaternityLeaveForm onSubmit={handleSubmit} initialData={formData as MaternityLeaveData} />;
       case "bank-verification-1":
         return <BankVerificationForm onSubmit={handleSubmit} initialData={formData as BankVerificationData} />;
+      case "offer-letter-1":
+        return <OfferLetterForm onSubmit={handleSubmit} initialData={formData as OfferLetterData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
@@ -426,6 +483,8 @@ const TemplateDetail = () => {
         return <MaternityLeavePreview data={formData as MaternityLeaveData} />;
       case "bank-verification-1":
         return <BankVerificationPreview data={formData as BankVerificationData} />;
+      case "offer-letter-1":
+        return <OfferLetterPreview data={formData as OfferLetterData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }

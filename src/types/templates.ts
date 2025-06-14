@@ -1,4 +1,3 @@
-
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -197,7 +196,32 @@ export interface BankVerificationData {
   includeDigitalSignature: boolean;
 }
 
-export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData | MaternityLeaveData | BankVerificationData;
+export interface OfferLetterData {
+  candidateName: string;
+  candidateAddress: string;
+  dateOfOffer: string; // Date of issuing the offer
+  jobTitle: string;
+  department: string;
+  reportingManager: string;
+  startDate: string; // Employment start date
+  probationPeriod: string; // e.g., "3 months", "None"
+  salaryAmount: string;
+  salaryCurrency: string; // e.g., "INR", "USD"
+  salaryFrequency: "monthly" | "annually";
+  benefits: string; // Text area for detailed benefits
+  workHours: string; // e.g., "9 AM to 6 PM, Monday to Friday"
+  workLocation: string;
+  acceptanceDeadline: string; // Date by which offer must be accepted
+  // Common fields
+  institutionName: string;
+  date: string; // Issue date of the document (can be same as dateOfOffer or different)
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData | MaternityLeaveData | BankVerificationData | OfferLetterData;
 
 export interface BonafidePreviewProps {
   data: BonafideData;
@@ -237,4 +261,8 @@ export interface MaternityLeavePreviewProps {
 
 export interface BankVerificationPreviewProps {
   data: BankVerificationData;
+}
+
+export interface OfferLetterPreviewProps {
+  data: OfferLetterData;
 }

@@ -70,6 +70,13 @@ const allTemplates = [
     description: "Letter confirming account details for banks",
     category: "Financial",
     usageCount: 19
+  },
+  {
+    id: "offer-letter-1",
+    title: "Offer Letter",
+    description: "Formal job offer letter to candidates",
+    category: "Employment",
+    usageCount: 0 // New template
   }
 ];
 
