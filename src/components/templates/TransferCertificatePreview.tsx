@@ -34,8 +34,6 @@ export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProp
     signatoryName,
     signatoryDesignation,
     includeDigitalSignature,
-    fontFamily = 'Times New Roman',
-    fontSize = 12,
   } = data;
 
   const [branding, setBranding] = useState<BrandingAssets>({ 
@@ -120,13 +118,8 @@ export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProp
   const formattedDateOfLeaving = dateOfLeaving ? new Date(dateOfLeaving).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Date of Leaving]';
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
-  const documentStyle = {
-    fontFamily: fontFamily,
-    fontSize: `${fontSize}px`,
-  };
-
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed" style={documentStyle}>
+    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
       {/* Header */}
       <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
         {branding.logoUrl && (
