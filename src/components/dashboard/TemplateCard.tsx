@@ -19,7 +19,6 @@ export function TemplateCard({
   title,
   description,
   category,
-  usageCount = 0,
   className
 }: TemplateCardProps) {
   return (
@@ -34,10 +33,7 @@ export function TemplateCard({
       </div>
       <h3 className="font-medium text-lg mb-1">{title}</h3>
       <p className="text-sm text-muted-foreground mb-4">{description}</p>
-      <div className="mt-auto flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {usageCount} uses
-        </span>
+      <div className="mt-auto flex items-center justify-end">
         <Button variant="ghost" size="sm" className="gap-1" asChild>
           <Link to={`/templates/${id}`}>
             Use <ArrowRight className="h-4 w-4" />

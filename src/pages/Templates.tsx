@@ -164,7 +164,7 @@ const Templates = () => {
                   <h3 className="text-lg font-medium">No templates found</h3>
                   <p className="text-muted-foreground mt-1">Try adjusting your search or filter criteria</p>
                 </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} usageCount={template.usageCount} />)}
+                  {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} />)}
                 </div>}
             </TabsContent>
             <TabsContent value="recent" className="mt-0">
