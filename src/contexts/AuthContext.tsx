@@ -1,13 +1,24 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define an interface for the additional sign-up data
+export interface SignUpData {
+  fullName: string;
+  phoneNumber?: string;
+  organizationName?: string;
+  organizationType?: string;
+  organizationTypeOther?: string; // For when "Other" is selected
+  organizationSize?: string;
+  organizationWebsite?: string;
+  organizationLocation?: string;
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, data: SignUpData) => Promise<{ error: any }>;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -48,18 +59,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/dashboard`;
+      
+      const metaData: Record<string, any> = {
+        full_name: data.fullName,
+        phone_number: data.phoneNumber,
+        organization_name: data.organizationName,
+        organization_type: data.organizationType,
+        organization_size: data.organizationSize,
+        organization_website: data.organizationWebsite,
+        organization_location: data.organizationLocation,
+      };
+
+      if (data.organizationType === 'Other' && data.organizationTypeOther) {
+        metaData.organization_type_other = data.organizationTypeOther;
+      }
       
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName
-          }
+          data: metaData
         }
       });
       

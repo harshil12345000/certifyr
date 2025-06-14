@@ -9,81 +9,80 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      branding_settings: {
+      branding_files: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: number
-          letterhead: string | null
-          logo: string | null
-          seal: string | null
-          signature: string | null
-          tagline: string | null
-          updated_at: string | null
+          name: string | null
+          organization_id: string | null
+          path: string | null
+          uploaded_by: string | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: number
-          letterhead?: string | null
-          logo?: string | null
-          seal?: string | null
-          signature?: string | null
-          tagline?: string | null
-          updated_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          path?: string | null
+          uploaded_by?: string | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: number
-          letterhead?: string | null
-          logo?: string | null
-          seal?: string | null
-          signature?: string | null
-          tagline?: string | null
-          updated_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          path?: string | null
+          uploaded_by?: string | null
         }
         Relationships: []
       }
-      organization_details: {
+      organization_members: {
         Row: {
-          address: string | null
-          affiliation: string | null
           created_at: string | null
-          email: string | null
           id: string
-          name: string
-          phone: string | null
-          registration: string | null
-          tagline: string | null
-          type: string | null
-          updated_at: string | null
-          website: string | null
+          organization_id: string | null
+          role: string
+          user_id: string | null
         }
         Insert: {
-          address?: string | null
-          affiliation?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
-          name?: string
-          phone?: string | null
-          registration?: string | null
-          tagline?: string | null
-          type?: string | null
-          updated_at?: string | null
-          website?: string | null
+          organization_id?: string | null
+          role: string
+          user_id?: string | null
         }
         Update: {
-          address?: string | null
-          affiliation?: string | null
           created_at?: string | null
-          email?: string | null
+          id?: string
+          organization_id?: string | null
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
           id?: string
           name?: string
-          phone?: string | null
-          registration?: string | null
-          tagline?: string | null
-          type?: string | null
-          updated_at?: string | null
-          website?: string | null
         }
         Relationships: []
       }
@@ -133,93 +132,6 @@ export type Database = {
           id?: string
           text_size?: string | null
           theme?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      user_notification_settings: {
-        Row: {
-          created_at: string | null
-          document_delivered: boolean | null
-          document_signed: boolean | null
-          email_notifications: boolean | null
-          id: string
-          in_app_notifications: boolean | null
-          new_document_requests: boolean | null
-          new_user_registrations: boolean | null
-          product_updates: boolean | null
-          security_alerts: boolean | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          document_delivered?: boolean | null
-          document_signed?: boolean | null
-          email_notifications?: boolean | null
-          id?: string
-          in_app_notifications?: boolean | null
-          new_document_requests?: boolean | null
-          new_user_registrations?: boolean | null
-          product_updates?: boolean | null
-          security_alerts?: boolean | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          document_delivered?: boolean | null
-          document_signed?: boolean | null
-          email_notifications?: boolean | null
-          id?: string
-          in_app_notifications?: boolean | null
-          new_document_requests?: boolean | null
-          new_user_registrations?: boolean | null
-          product_updates?: boolean | null
-          security_alerts?: boolean | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      user_profiles: {
-        Row: {
-          bio: string | null
-          created_at: string | null
-          department: string | null
-          email: string | null
-          first_name: string | null
-          id: string
-          job_title: string | null
-          last_name: string | null
-          phone: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          bio?: string | null
-          created_at?: string | null
-          department?: string | null
-          email?: string | null
-          first_name?: string | null
-          id?: string
-          job_title?: string | null
-          last_name?: string | null
-          phone?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          bio?: string | null
-          created_at?: string | null
-          department?: string | null
-          email?: string | null
-          first_name?: string | null
-          id?: string
-          job_title?: string | null
-          last_name?: string | null
-          phone?: string | null
           updated_at?: string | null
           user_id?: string | null
         }

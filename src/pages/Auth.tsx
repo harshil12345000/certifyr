@@ -6,9 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth } from '@/contexts/AuthContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth, SignUpData } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+const organizationTypes = ["Corporate", "Startup", "College", "School", "Other"];
+const organizationSizes = ["1-10", "10-50", "50-100", "100-1000", "1000-10000", "10000+"];
+const countries = ["United States", "Canada", "United Kingdom", "Germany", "France", "India", "Australia"];
+
 const Auth = () => {
   const {
     user,
@@ -27,9 +33,16 @@ const Auth = () => {
   const [signInPassword, setSignInPassword] = useState('');
 
   // Sign Up Form State
-  const [signUpEmail, setSignUpEmail] = useState('');
-  const [signUpPassword, setSignUpPassword] = useState('');
   const [signUpFullName, setSignUpFullName] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpPhoneNumber, setSignUpPhoneNumber] = useState('');
+  const [signUpOrganizationName, setSignUpOrganizationName] = useState('');
+  const [signUpOrganizationType, setSignUpOrganizationType] = useState('');
+  const [signUpOrganizationTypeOther, setSignUpOrganizationTypeOther] = useState('');
+  const [signUpOrganizationSize, setSignUpOrganizationSize] = useState('');
+  const [signUpOrganizationWebsite, setSignUpOrganizationWebsite] = useState('');
+  const [signUpOrganizationLocation, setSignUpOrganizationLocation] = useState('');
+  const [signUpPassword, setSignUpPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Redirect if already authenticated
@@ -96,11 +109,32 @@ const Auth = () => {
       });
       return;
     }
+    if (signUpOrganizationType === 'Other' && !signUpOrganizationTypeOther) {
+      toast({
+        title: "Organization Type Required",
+        description: "Please specify your organization type if 'Other' is selected.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
+
+    const signUpData: SignUpData = {
+      fullName: signUpFullName,
+      phoneNumber: signUpPhoneNumber,
+      organizationName: signUpOrganizationName,
+      organizationType: signUpOrganizationType,
+      organizationTypeOther: signUpOrganizationType === 'Other' ? signUpOrganizationTypeOther : undefined,
+      organizationSize: signUpOrganizationSize,
+      organizationWebsite: signUpOrganizationWebsite,
+      organizationLocation: signUpOrganizationLocation,
+    };
+
     try {
       const {
         error
-      } = await signUp(signUpEmail, signUpPassword, signUpFullName);
+      } = await signUp(signUpEmail, signUpPassword, signUpData);
       if (error) {
         let errorMessage = 'An error occurred during sign up';
         if (error.message?.includes('User already registered')) {
@@ -124,9 +158,16 @@ const Auth = () => {
         });
 
         // Clear form
-        setSignUpEmail('');
-        setSignUpPassword('');
         setSignUpFullName('');
+        setSignUpEmail('');
+        setSignUpPhoneNumber('');
+        setSignUpOrganizationName('');
+        setSignUpOrganizationType('');
+        setSignUpOrganizationTypeOther('');
+        setSignUpOrganizationSize('');
+        setSignUpOrganizationWebsite('');
+        setSignUpOrganizationLocation('');
+        setSignUpPassword('');
         setConfirmPassword('');
       }
     } catch (error) {
@@ -172,7 +213,12 @@ const Auth = () => {
                     <Input id="signin-password" type="password" placeholder="Enter your password" value={signInPassword} onChange={e => setSignInPassword(e.target.value)} required disabled={isLoading} />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={setRememberMe} disabled={isLoading} />
+                    <Checkbox 
+                      id="remember-me" 
+                      checked={rememberMe} 
+                      onCheckedChange={(checkedState) => setRememberMe(checkedState === true)} 
+                      disabled={isLoading} 
+                    />
                     <Label htmlFor="remember-me" className="text-sm">
                       Remember me
                     </Label>
@@ -187,7 +233,7 @@ const Auth = () => {
               </TabsContent>
               
               <TabsContent value="signup" className="mt-6">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <Input id="signup-name" type="text" placeholder="Enter your full name" value={signUpFullName} onChange={e => setSignUpFullName(e.target.value)} required disabled={isLoading} />
@@ -196,6 +242,71 @@ const Auth = () => {
                     <Label htmlFor="signup-email">Email</Label>
                     <Input id="signup-email" type="email" placeholder="Enter your email" value={signUpEmail} onChange={e => setSignUpEmail(e.target.value)} required disabled={isLoading} />
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Phone Number</Label>
+                    <Input id="signup-phone" type="tel" placeholder="Enter your phone number" value={signUpPhoneNumber} onChange={e => setSignUpPhoneNumber(e.target.value)} disabled={isLoading} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-org-name">Organization Name</Label>
+                    <Input id="signup-org-name" type="text" placeholder="Enter your organization's name" value={signUpOrganizationName} onChange={e => setSignUpOrganizationName(e.target.value)} disabled={isLoading} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-org-type">Organization Type</Label>
+                    <Select value={signUpOrganizationType} onValueChange={setSignUpOrganizationType} disabled={isLoading}>
+                      <SelectTrigger id="signup-org-type">
+                        <SelectValue placeholder="Select organization type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {organizationTypes.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {signUpOrganizationType === 'Other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-org-type-other">Specify Organization Type</Label>
+                      <Input id="signup-org-type-other" type="text" placeholder="Please specify" value={signUpOrganizationTypeOther} onChange={e => setSignUpOrganizationTypeOther(e.target.value)} required disabled={isLoading} />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-org-size">Organization Size</Label>
+                    <Select value={signUpOrganizationSize} onValueChange={setSignUpOrganizationSize} disabled={isLoading}>
+                      <SelectTrigger id="signup-org-size">
+                        <SelectValue placeholder="Select organization size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {organizationSizes.map(size => (
+                          <SelectItem key={size} value={size}>{size}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-org-website">Organization Website</Label>
+                    <Input id="signup-org-website" type="url" placeholder="e.g., https://example.com" value={signUpOrganizationWebsite} onChange={e => setSignUpOrganizationWebsite(e.target.value)} disabled={isLoading} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-org-location">Organization Location (Country)</Label>
+                     <Select value={signUpOrganizationLocation} onValueChange={setSignUpOrganizationLocation} disabled={isLoading}>
+                      <SelectTrigger id="signup-org-location">
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map(country => (
+                          <SelectItem key={country} value={country}>{country}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <Input id="signup-password" type="password" placeholder="Create a password (min. 6 characters)" value={signUpPassword} onChange={e => setSignUpPassword(e.target.value)} required disabled={isLoading} minLength={6} />
