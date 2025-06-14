@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BankVerificationPreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
@@ -135,25 +134,24 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
   return (
     <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
       {/* Header */}
-      <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
+      <div className="text-center mb-8">
         {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
+          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-16 mx-auto mb-4 object-contain" />
         )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">{institutionName || '[INSTITUTION NAME]'}</h1>
-        {branding.organizationAddress && <p className="text-sm mt-2">{branding.organizationAddress}</p>}
-        {(branding.organizationPhone || branding.organizationEmail) && (
-          <p className="text-sm">
-            {branding.organizationPhone && `Tel: ${branding.organizationPhone}`}
-            {branding.organizationPhone && branding.organizationEmail && ' | '}
-            {branding.organizationEmail && `Email: ${branding.organizationEmail}`}
-          </p>
-        )}
+        <h1 className="text-2xl font-bold text-blue-600 uppercase tracking-wide mb-2">
+          {institutionName || '[INSTITUTION NAME]'}
+        </h1>
+        <p className="text-sm text-gray-600">
+          {branding.organizationAddress && `${branding.organizationAddress} • `}
+          {branding.organizationPhone && `${branding.organizationPhone} • `}
+          {branding.organizationEmail && branding.organizationEmail}
+        </p>
       </div>
 
       {/* Certificate Title */}
       <div className="text-center mb-8">
-        <div className="border-2 border-gray-600 inline-block px-8 py-3">
-          <h2 className="text-xl font-bold uppercase tracking-widest">BANK ACCOUNT VERIFICATION LETTER</h2>
+        <div className="border-2 border-gray-600 inline-block px-6 py-2">
+          <h2 className="text-lg font-bold uppercase tracking-widest">BANK ACCOUNT VERIFICATION LETTER</h2>
         </div>
       </div>
 
@@ -164,135 +162,65 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
       </div>
 
       {/* Letter Content */}
-      <div className="space-y-6 text-justify leading-7">
+      <div className="space-y-6 text-base leading-7">
         <p className="text-center font-semibold text-lg mb-6">
           TO WHOM IT MAY CONCERN
         </p>
 
-        <p>
-          This is to certify that <strong>{fullName || '[Employee Name]'}</strong>, 
-          Employee ID: <strong>{employeeId || '[Employee ID]'}</strong>, is a regular employee of our organization 
-          working as <strong>{designation || '[Designation]'}</strong> in the <strong>{department || '[Department]'}</strong> department 
-          since <strong>{formattedJoinDate}</strong>.
+        <p className="text-justify">
+          This is to certify that <strong>{fullName || '[Employee Name]'}</strong> (Employee ID: <strong>{employeeId || '[Employee ID]'}</strong>) 
+          is a regular employee of our organization working as <strong>{designation || '[Designation]'}</strong> 
+          in the <strong>{department || '[Department]'}</strong> department since <strong>{formattedJoinDate}</strong>.
         </p>
 
-        {/* Employee Details Section */}
-        <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-blue-500">
-          <h3 className="font-bold text-lg mb-4 text-blue-600">Employee Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Full Name</p>
-              <p className="font-semibold">{fullName || '[Employee Name]'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Employee ID</p>
-              <p className="font-semibold">{employeeId || '[Employee ID]'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Designation</p>
-              <p className="font-semibold">{designation || '[Designation]'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Department</p>
-              <p className="font-semibold">{department || '[Department]'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Date of Joining</p>
-              <p className="font-semibold">{formattedJoinDate}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Current Salary</p>
-              <p className="font-semibold">₹ {formatCurrency(currentSalary) || '[Current Salary]'}</p>
-            </div>
-          </div>
+        <p className="text-justify">
+          The employee's current salary is <strong>₹ {formatCurrency(currentSalary) || '[Current Salary]'}</strong> per month, 
+          which is directly credited to the following bank account:
+        </p>
+
+        <div className="ml-8 space-y-2">
+          <p><strong>Account Holder Name:</strong> {accountHolderName || '[Account Holder Name]'}</p>
+          <p><strong>Bank Name:</strong> {bankName || '[Bank Name]'}</p>
+          <p><strong>Account Number:</strong> {accountNumber || '[Account Number]'}</p>
+          <p><strong>Account Type:</strong> {getAccountTypeText(accountType || 'savings')}</p>
+          <p><strong>IFSC Code:</strong> {ifscCode || '[IFSC Code]'}</p>
+          <p><strong>Branch Name:</strong> {branchName || '[Branch Name]'}</p>
+          <p><strong>Branch Address:</strong> {branchAddress || '[Branch Address]'}</p>
         </div>
 
-        {/* Bank Account Details Section */}
-        <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-green-500">
-          <h3 className="font-bold text-lg mb-4 text-green-600">Bank Account Details</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-700">Account Holder Name:</span>
-              <span className="font-semibold">{accountHolderName || '[Account Holder Name]'}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-700">Bank Name:</span>
-              <span className="font-semibold">{bankName || '[Bank Name]'}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-700">Account Number:</span>
-              <span className="font-semibold">{accountNumber || '[Account Number]'}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-700">Account Type:</span>
-              <span className="font-semibold">{getAccountTypeText(accountType || 'savings')}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-700">IFSC Code:</span>
-              <span className="font-semibold">{ifscCode || '[IFSC Code]'}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-700">Branch Name:</span>
-              <span className="font-semibold">{branchName || '[Branch Name]'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Branch Address Section */}
-        <div className="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-500">
-          <h3 className="font-bold text-lg mb-4 text-yellow-600">Branch Address</h3>
-          <p className="text-gray-700 leading-relaxed">
-            {branchAddress || '[Branch Address]'}
-          </p>
-        </div>
-
-        <p>
+        <p className="text-justify">
           We hereby confirm that the above-mentioned bank account details are authentic and belong to our employee. 
           The salary of the employee is directly credited to this account on a monthly basis.
         </p>
 
-        <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-          <p className="mb-2">
-            <strong className="text-green-700">Purpose:</strong>
-          </p>
-          <p className="italic text-gray-700">
-            {purpose || '[Purpose for bank account verification]'}
-          </p>
-        </div>
+        <p className="text-justify">
+          This letter is being issued for <strong>{purpose || '[Purpose for bank account verification]'}</strong>.
+        </p>
 
-        <p className="text-sm text-gray-600 bg-gray-50 p-4 rounded">
+        <p className="text-justify text-sm">
           <strong>Disclaimer:</strong> This letter is issued based on the records available with us and is valid as on the date of issue. 
           The organization does not take any responsibility for any financial transactions or commitments made by the employee.
         </p>
 
-        <p className="text-center font-medium text-blue-600">
+        <p className="text-center font-medium">
           This letter is issued upon the request of the employee for official purposes only.
         </p>
       </div>
 
       {/* Date and Place */}
-      <div className="mt-12 mb-8 flex justify-between text-sm">
-        <div>
-          <p><strong>Date:</strong> {formattedIssueDate}</p>
-        </div>
-        <div>
-          <p><strong>Place:</strong> {place || '[Place]'}</p>
-        </div>
+      <div className="mt-16 mb-8">
+        <p><strong>Date:</strong> {formattedIssueDate}</p>
+        <p><strong>Place:</strong> {place || '[Place]'}</p>
       </div>
 
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
-        <div className="text-right">
+        <div className="text-center">
           {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !branding.signatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
-            </div>
+            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
-          <div className="border-t-2 border-black pt-2 min-w-[200px]">
+          <div className="border-t border-black pt-2 min-w-[200px]">
             <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
             <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
             <p className="text-sm">{institutionName || '[Institution Name]'}</p>
@@ -303,7 +231,7 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
       {/* Seal */}
       {branding.sealUrl && (
         <div className="absolute bottom-32 left-16">
-          <img src={branding.sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
+          <img src={branding.sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
         </div>
       )}
     </div>
