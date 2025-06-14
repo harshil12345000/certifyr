@@ -12,10 +12,10 @@ import { useBranding } from '@/contexts/BrandingContext';
 
 interface AddressProofFormProps {
   initialData: AddressProofData;
-  onDataChange: (data: AddressProofData) => void;
+  onSubmit: (data: AddressProofData) => void;
 }
 
-export const AddressProofForm = ({ initialData, onDataChange }: AddressProofFormProps) => {
+export const AddressProofForm = ({ initialData, onSubmit }: AddressProofFormProps) => {
   const [formData, setFormData] = useState<AddressProofData>(initialData);
   const { user } = useAuth();
   const { organizationDetails } = useBranding();
@@ -24,14 +24,14 @@ export const AddressProofForm = ({ initialData, onDataChange }: AddressProofForm
     if (organizationDetails?.name && !formData.institutionName) {
       const updatedData = { ...formData, institutionName: organizationDetails.name };
       setFormData(updatedData);
-      onDataChange(updatedData);
+      onSubmit(updatedData);
     }
-  }, [organizationDetails, formData, onDataChange]);
+  }, [organizationDetails, formData, onSubmit]);
 
   const handleInputChange = (field: keyof AddressProofData, value: string | boolean) => {
     const updatedData = { ...formData, [field]: value };
     setFormData(updatedData);
-    onDataChange(updatedData);
+    onSubmit(updatedData);
   };
 
   return (
