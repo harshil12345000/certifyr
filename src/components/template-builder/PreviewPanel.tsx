@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TemplateElement } from '@/types/template-builder';
 import { Button } from '@/components/ui/button';
 import { 
@@ -12,44 +11,52 @@ import {
 
 interface PreviewPanelProps {
   elements: TemplateElement[];
+  templateName?: string;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements }) => {
+const DEFAULT_BODY = `This is to certify that [Full Name], son of [Parent's Name], is a bonafide student of [Institution Name].<br><br>He has been studying in this institution since [Start Date] and is currently enrolled as a [Course/Designation] student in the [Department] department.<br><br>This certificate is issued upon the request of the individual for the purpose of [Purpose].<br><br>We confirm that the above information is true and correct to the best of our knowledge and records.`;
+
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateName = 'Document Title' }) => {
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
+  const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
+  const [isEditingBody, setIsEditingBody] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
   
   // Generate sample data for placeholders
   useEffect(() => {
-    const data: Record<string, any> = {};
-    
+    const data: Record<string, any> = {
+      'Full Name': 'John Doe',
+      "Parent's Name": 'Richard Roe',
+      'Institution Name': 'Knowledge Institute',
+      'Start Date': '01/01/2020',
+      'Course/Designation': 'B.Sc. Computer Science',
+      'Department': 'Computer Science',
+      'Purpose': 'Higher Studies',
+      'Date': new Date().toLocaleDateString(),
+      'Place': 'Knowledge City, 400001',
+      'Authorized Signatory Name': 'Dr. Jane Smith',
+      'Designation': 'Principal',
+    };
     elements.forEach(element => {
       if (element.type === 'placeholder') {
         const fieldName = element.metadata?.fieldName || element.content;
-        
-        // Generate appropriate sample data based on field type
-        switch (element.metadata?.fieldType) {
-          case 'date':
-            data[fieldName] = new Date().toLocaleDateString();
-            break;
-          case 'number':
-            data[fieldName] = '42';
-            break;
-          case 'select':
-            data[fieldName] = element.metadata.options?.[0] || 'Option 1';
-            break;
-          case 'checkbox':
-            data[fieldName] = true;
-            break;
-          case 'file':
-            data[fieldName] = 'document.pdf';
-            break;
-          default:
             data[fieldName] = `Sample ${fieldName}`;
-        }
       }
     });
-    
     setSampleData(data);
   }, [elements]);
+  
+  // Toolbar actions
+  const format = (command: string) => {
+    document.execCommand(command, false);
+  };
+
+  // Replace [Field Name] with sampleData or fallback, preserving HTML formatting
+  function renderProcessedBody(html: string) {
+    // Replace [Field Name] with <span> containing the value
+    const replaced = html.replace(/\[(.+?)\]/g, (match, p1) => `<span class="font-semibold">${sampleData[p1.trim()] || `[${p1}]`}</span>`);
+    return <div dangerouslySetInnerHTML={{ __html: replaced }} />;
+  }
   
   return (
     <div className="flex flex-col w-full h-full">
@@ -78,59 +85,66 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements }) => {
       </div>
       
       <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-4">
-        <div className="w-[21cm] h-[29.7cm] bg-white border border-gray-200 shadow-lg relative overflow-hidden">
-          {elements.map(element => {
-            let content = element.content;
-            
-            // Replace placeholders with sample data
-            if (element.type === 'placeholder') {
-              const fieldName = element.metadata?.fieldName || element.content;
-              content = sampleData[fieldName] || `{{${fieldName}}}`;
-            }
-            
-            return (
+        <div className="w-[21cm] min-h-[29.7cm] bg-white border border-gray-200 shadow-lg relative overflow-hidden flex flex-col">
+          {/* Letterhead */}
+          <div className="pt-10 pb-2 text-center border-b border-gray-200">
+            <div className="text-2xl font-bold text-blue-600 tracking-wide">[INSTITUTION NAME]</div>
+            <div className="text-sm text-gray-500 mt-1">123 Education Street, Knowledge City, 400001 &bull; +1 - info@institution.edu</div>
+          </div>
+          {/* Template Name in grey box */}
+          <div className="flex justify-center mt-8">
+            <div className="bg-gray-100 border border-gray-300 rounded px-6 py-2 text-xl font-bold shadow-sm">
+              {templateName}
+            </div>
+          </div>
+          {/* Editable Document Body */}
+          <div className="mt-8 px-8">
+            <div className="flex gap-2 mb-2">
+              <Button size="sm" variant="outline" type="button" onClick={() => format('bold')}><b>B</b></Button>
+              <Button size="sm" variant="outline" type="button" onClick={() => format('italic')}><i>I</i></Button>
+              <Button size="sm" variant="outline" type="button" onClick={() => format('underline')}><u>U</u></Button>
+            </div>
+            {isEditingBody ? (
               <div
-                key={element.id}
-                className="absolute"
-                style={{
-                  left: `${element.style.x}px`,
-                  top: `${element.style.y}px`,
-                  width: `${element.style.width}px`,
-                  height: `${element.style.height}px`,
-                  fontSize: element.style.fontSize ? `${element.style.fontSize}px` : undefined,
-                  fontFamily: element.style.fontFamily,
-                  color: element.style.color,
-                  backgroundColor: element.style.backgroundColor,
-                  borderWidth: element.style.borderWidth,
-                  borderStyle: element.style.borderStyle,
-                  borderColor: element.style.borderColor,
-                  padding: element.style.padding ? `${element.style.padding}px` : undefined,
-                  textAlign: element.style.alignment,
-                  opacity: element.style.opacity,
+                ref={editorRef}
+                className="w-full min-h-[200px] border rounded p-2 text-base mb-2 focus:outline-none bg-white"
+                contentEditable
+                suppressContentEditableWarning
+                dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                onBlur={e => {
+                  setBodyHtml(e.currentTarget.innerHTML);
+                  setIsEditingBody(false);
                 }}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') {
+                    setIsEditingBody(false);
+                  }
+                }}
+                style={{ whiteSpace: 'pre-wrap' }}
+                autoFocus
+              />
+            ) : (
+              <div
+                className="text-base leading-relaxed cursor-pointer min-h-[100px]"
+                onClick={() => setIsEditingBody(true)}
               >
-                {element.type === 'heading' ? (
-                  <h2 className="font-bold">{content}</h2>
-                ) : element.type === 'image' ? (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    {content ? (
-                      <img src={content} alt="Template element" className="max-w-full max-h-full object-contain" />
-                    ) : (
-                      <span className="text-gray-400">Image</span>
-                    )}
-                  </div>
-                ) : element.type === 'signature' ? (
-                  <div className="w-full h-full border border-dashed border-gray-400 flex items-center justify-center">
-                    <span className="text-gray-400">Signature Area</span>
-                  </div>
-                ) : element.type === 'divider' ? (
-                  <hr className="w-full border-t border-gray-300" />
-                ) : (
-                  <div>{content}</div>
-                )}
+                {renderProcessedBody(bodyHtml)}
               </div>
-            );
-          })}
+            )}
+            <div className="text-xs text-gray-400 mt-2">Click to edit. Use [Field Name] to insert fields. Use toolbar for formatting.</div>
+          </div>
+          {/* Date, Place, Signatory */}
+          <div className="flex justify-between items-end px-8 mt-16 mb-8">
+            <div>
+              <div className="font-bold">Date: <span className="font-normal">{sampleData['Date'] || '[Date]'}</span></div>
+              <div className="font-bold">Place: <span className="font-normal">{sampleData['Place'] || '[Place]'}</span></div>
+            </div>
+            <div className="text-right">
+              <div className="font-bold">{sampleData['Authorized Signatory Name'] || '[Authorized Signatory Name]'}</div>
+              <div>{sampleData['Designation'] || '[Designation]'}</div>
+              <div>{sampleData['Institution Name'] || '[Institution Name]'}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

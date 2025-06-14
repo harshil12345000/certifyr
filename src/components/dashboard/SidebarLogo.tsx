@@ -1,7 +1,5 @@
-
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
-import { supabase, getLatestBrandingSettings } from '@/integrations/supabase/client';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface SidebarLogoProps {
   collapsed?: boolean;
@@ -10,31 +8,7 @@ interface SidebarLogoProps {
 export function SidebarLogo({
   collapsed = false
 }: SidebarLogoProps) {
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const loadBrandingLogo = async () => {
-      try {
-        setIsLoading(true);
-        // Get the latest branding settings
-        const brandingSettings = await getLatestBrandingSettings();
-        
-        if (brandingSettings?.logo) {
-          const timestamp = new Date().getTime(); // Add timestamp to prevent caching
-          const { data } = supabase.storage.from('branding').getPublicUrl(`logos/${brandingSettings.logo}?t=${timestamp}`);
-          setLogoUrl(data.publicUrl);
-          console.log("Sidebar Logo URL:", data.publicUrl);
-        }
-      } catch (err) {
-        console.error("Error loading branding logo:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadBrandingLogo();
-  }, []);
+  const { logoUrl, isLoading } = useBranding();
 
   return (
     <div className={cn("flex items-center", collapsed ? "justify-center" : "")}>

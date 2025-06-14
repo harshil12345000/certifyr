@@ -1,4 +1,3 @@
-
 // Element Types
 export type ElementType = 
   | 'text' 
@@ -35,22 +34,50 @@ export interface ValidationRule {
   message: string;
 }
 
-// Template Element
-export interface TemplateElement {
+export type FieldType =
+  | 'text'
+  | 'number'
+  | 'email'
+  | 'phone'
+  | 'date'
+  | 'dropdown'
+  | 'checkbox'
+  | 'radio'
+  | 'textarea'
+  | 'file'
+  | 'image'
+  | 'signature'
+  | 'table'
+  | 'qr'
+  | 'barcode'
+  | 'richtext'
+  | 'institution'
+  | 'userprofile'
+  | 'calculated'
+  | 'dynamiclist';
+
+export interface Field {
   id: string;
-  type: ElementType;
-  content: string;
-  style: ElementStyle;
-  metadata?: {
-    fieldName?: string;
-    fieldType?: 'text' | 'number' | 'date' | 'select' | 'file' | 'checkbox';
-    placeholder?: string;
-    options?: string[];
-    validation?: ValidationRule[];
-    description?: string;
-    isRequired?: boolean;
-  };
+  type: FieldType;
+  label: string;
+  required?: boolean;
+  options?: string[];
+  [key: string]: any;
 }
+
+export interface Column {
+  id: string;
+  fields: Field[];
+}
+
+export interface Section {
+  id: string;
+  title: string;
+  description?: string;
+  columns: Column[]; // Usually 2 columns
+}
+
+export type TemplateElement = Section;
 
 // Template Document
 export interface TemplateDocument {

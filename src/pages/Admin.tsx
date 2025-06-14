@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UserPlus, Settings, Loader2, Building, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase, getPublicUrl } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Admin = () => {
   const { toast } = useToast();
@@ -64,6 +66,19 @@ const Admin = () => {
     { code: "+971", country: "UAE" },
     { code: "+65", country: "Singapore" },
   ];
+
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('member');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [editRole, setEditRole] = useState('member');
+  const [editLoading, setEditLoading] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
 
   // Load saved organization details and branding assets on component mount
   useEffect(() => {
@@ -195,6 +210,21 @@ const Admin = () => {
     loadOrgDetails();
     loadBrandingInfo();
   }, []);
+
+  // Fetch organization members
+  useEffect(() => {
+    const fetchMembers = async () => {
+      setMembersLoading(true);
+      const organizationId = await getOrganizationId();
+      const { data, error } = await supabase
+        .from('organization_members')
+        .select('user_id, role, status, invited_email, profiles:profiles!organization_members_user_id_fkey(full_name, email), user_profiles:profiles!inner(email, full_name), department')
+        .eq('organization_id', organizationId);
+      if (!error && data) setMembers(data);
+      setMembersLoading(false);
+    };
+    if (user) fetchMembers();
+  }, [user, inviteModalOpen, editModalOpen]);
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -418,8 +448,118 @@ const Admin = () => {
     }));
   };
 
+  // Get current organization ID for the admin
+  const getOrganizationId = async () => {
+    const { data: orgMember } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+    return orgMember?.organization_id;
+  };
+
+  // Real Invite User logic (Edge Function)
+  const handleInviteUserSubmit = async () => {
+    setInviteLoading(true);
+    try {
+      const organizationId = await getOrganizationId();
+      // Call the Supabase Edge Function
+      const res = await fetch('/functions/v1/invite-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole, organization_id: organizationId })
+      });
+      let result;
+      const text = await res.text();
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error(text || 'Unknown error');
+      }
+      if (!res.ok) throw new Error(result.error || 'Unknown error');
+      toast({ title: 'Invite Sent', description: `Invitation sent to ${inviteEmail}` });
+      setInviteModalOpen(false);
+      setInviteEmail('');
+      setInviteRole('member');
+    } catch (error) {
+      toast({ title: 'Invite Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  // Real Edit User logic
+  const handleEditUserSave = async () => {
+    setEditLoading(true);
+    try {
+      const organizationId = await getOrganizationId();
+      await supabase.from('organization_members')
+        .update({ role: editRole })
+        .eq('organization_id', organizationId)
+        .eq('user_id', editUser.user_id);
+      toast({ title: 'User Updated', description: 'User role updated.' });
+      setEditModalOpen(false);
+    } catch (error) {
+      toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Placeholder: Search
+  const handleSearch = () => {
+    toast({ title: 'Search', description: `Searching for "${searchTerm}" (not yet implemented)` });
+  };
+  // Placeholder: Setup/Configure/Change/Export
+  const handlePlaceholder = (action: string) => {
+    toast({ title: action, description: `${action} action not yet implemented.` });
+  };
+
   return (
     <DashboardLayout>
+      {/* Invite User Modal */}
+      <Dialog open={inviteModalOpen} onOpenChange={setInviteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="User email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
+            <Select value={inviteRole} onValueChange={setInviteRole}>
+              <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="w-full" onClick={handleInviteUserSubmit} disabled={inviteLoading || !inviteEmail}>
+              {inviteLoading ? 'Inviting...' : 'Send Invite'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Edit User Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="User name" defaultValue={editUser?.name || ''} disabled />
+            <Input placeholder="User email" defaultValue={editUser?.email || ''} disabled />
+            <Select value={editRole} onValueChange={setEditRole}>
+              <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="w-full" onClick={handleEditUserSave} disabled={editLoading}>
+              {editLoading ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -427,7 +567,7 @@ const Admin = () => {
             <h1 className="text-2xl font-semibold mb-1">Admin Settings</h1>
             <p className="text-muted-foreground">Manage your organization and user permissions</p>
           </div>
-          <Button className="gradient-blue md:self-start gap-2">
+          <Button className="gradient-blue md:self-start gap-2" onClick={() => setInviteModalOpen(true)}>
             <UserPlus className="h-4 w-4" /> Invite User
           </Button>
         </div>
@@ -586,8 +726,8 @@ const Admin = () => {
               <div className="flex flex-col md:flex-row justify-between md:items-center mb-6">
                 <h2 className="text-lg font-medium">Users & Permissions</h2>
                 <div className="flex space-x-2 mt-2 md:mt-0">
-                  <Input placeholder="Search users..." className="w-full md:w-56" />
-                  <Button>Search</Button>
+                  <Input placeholder="Search users..." className="w-full md:w-56" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  <Button onClick={handleSearch}>Search</Button>
                 </div>
               </div>
               
@@ -604,72 +744,40 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="" alt="Rajesh Khanna" />
-                            <AvatarFallback>RK</AvatarFallback>
-                          </Avatar>
-                          <span>Rajesh Khanna</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>principal@dpsdelhi.edu.in</TableCell>
-                      <TableCell>Administrator</TableCell>
-                      <TableCell>Management</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
-                          Active
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="" alt="Priya Sharma" />
-                            <AvatarFallback>PS</AvatarFallback>
-                          </Avatar>
-                          <span>Priya Sharma</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>registrar@dpsdelhi.edu.in</TableCell>
-                      <TableCell>Manager</TableCell>
-                      <TableCell>Administration</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700">
-                          Active
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="" alt="Amit Kumar" />
-                            <AvatarFallback>AK</AvatarFallback>
-                          </Avatar>
-                          <span>Amit Kumar</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>accounts@dpsdelhi.edu.in</TableCell>
-                      <TableCell>Staff</TableCell>
-                      <TableCell>Finance</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-700">
-                          Pending
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </TableCell>
-                    </TableRow>
+                    {membersLoading ? (
+                      <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
+                    ) : members.length === 0 ? (
+                      <TableRow><TableCell colSpan={6}>No users found.</TableCell></TableRow>
+                    ) : (
+                      members.map(member => {
+                        const name = member.profiles?.full_name || member.user_profiles?.full_name || member.invited_email || 'Unknown';
+                        const email = member.profiles?.email || member.user_profiles?.email || member.invited_email || 'Unknown';
+                        const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                        return (
+                          <TableRow key={member.user_id || member.invited_email}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback>{initials}</AvatarFallback>
+                                </Avatar>
+                                <span>{name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{email}</TableCell>
+                            <TableCell>{member.role}</TableCell>
+                            <TableCell>{member.department || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={member.status === 'active' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-yellow-50 border-yellow-200 text-yellow-700'}>
+                                {member.status === 'active' ? 'Active' : 'Pending'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="outline" size="sm" onClick={() => { setEditUser(member); setEditModalOpen(true); }}>Edit</Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -868,7 +976,7 @@ const Admin = () => {
                       <h4 className="font-medium">Two-factor authentication</h4>
                       <p className="text-sm text-muted-foreground">Secure your account with 2FA</p>
                     </div>
-                    <Button variant="outline" size="sm">Setup</Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePlaceholder('Setup 2FA')}>Setup</Button>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -876,7 +984,7 @@ const Admin = () => {
                       <h4 className="font-medium">Password policy</h4>
                       <p className="text-sm text-muted-foreground">Require strong passwords</p>
                     </div>
-                    <Button variant="outline" size="sm">Configure</Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePlaceholder('Configure Password Policy')}>Configure</Button>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -884,7 +992,7 @@ const Admin = () => {
                       <h4 className="font-medium">Session timeout</h4>
                       <p className="text-sm text-muted-foreground">Currently set to 30 minutes</p>
                     </div>
-                    <Button variant="outline" size="sm">Change</Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePlaceholder('Change Session Timeout')}>Change</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -900,9 +1008,7 @@ const Admin = () => {
                       <h4 className="font-medium">QR Code Verification</h4>
                       <p className="text-sm text-muted-foreground">Add QR codes to verify document authenticity</p>
                     </div>
-                    <Button variant="outline" size="sm" className="bg-primary-50 border-primary-100 text-primary-700">
-                      Enabled
-                    </Button>
+                    <Button variant="outline" size="sm" className="bg-primary-50 border-primary-100 text-primary-700" onClick={() => handlePlaceholder('Toggle QR Code Verification')}>Enabled</Button>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -910,7 +1016,7 @@ const Admin = () => {
                       <h4 className="font-medium">Watermarking</h4>
                       <p className="text-sm text-muted-foreground">Add watermarks to printed documents</p>
                     </div>
-                    <Button variant="outline" size="sm">Configure</Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePlaceholder('Configure Watermarking')}>Configure</Button>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -918,7 +1024,7 @@ const Admin = () => {
                       <h4 className="font-medium">Document Expiry</h4>
                       <p className="text-sm text-muted-foreground">Set expiration dates for documents</p>
                     </div>
-                    <Button variant="outline" size="sm">Configure</Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePlaceholder('Configure Document Expiry')}>Configure</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -934,7 +1040,7 @@ const Admin = () => {
                       <h4 className="font-medium">Export audit logs</h4>
                       <p className="text-sm text-muted-foreground">Download a record of all system activities</p>
                     </div>
-                    <Button variant="outline" size="sm" className="mt-2 md:mt-0">
+                    <Button variant="outline" size="sm" className="mt-2 md:mt-0" onClick={() => handlePlaceholder('Export Audit Logs')}>
                       Export
                     </Button>
                   </div>

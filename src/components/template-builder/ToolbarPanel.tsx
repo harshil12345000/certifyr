@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateElement, ElementType } from '@/types/template-builder';
@@ -17,10 +17,56 @@ import {
 
 interface ToolbarPanelProps {
   onAddElement: (element: TemplateElement) => void;
+  draggable: boolean;
+  onDragStartSidebar: (type: ElementType) => void;
 }
 
-export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({ onAddElement }) => {
-  const [activeTab, setActiveTab] = useState<string>('elements');
+const FIELD_CATEGORIES = [
+  {
+    name: 'Basic',
+    fields: [
+      { type: 'text', label: 'Text' },
+      { type: 'number', label: 'Number' },
+      { type: 'email', label: 'Email' },
+      { type: 'phone', label: 'Phone' },
+      { type: 'date', label: 'Date' },
+      { type: 'dropdown', label: 'Dropdown' },
+      { type: 'checkbox', label: 'Checkbox' },
+      { type: 'radio', label: 'Radio' },
+      { type: 'textarea', label: 'Textarea' },
+    ],
+  },
+  {
+    name: 'Advanced',
+    fields: [
+      { type: 'file', label: 'File Upload' },
+      { type: 'image', label: 'Image' },
+      { type: 'signature', label: 'Signature Pad' },
+      { type: 'table', label: 'Table' },
+      { type: 'qr', label: 'QR Code' },
+      { type: 'barcode', label: 'Barcode' },
+      { type: 'richtext', label: 'Rich Text' },
+    ],
+  },
+  {
+    name: 'Special',
+    fields: [
+      { type: 'institution', label: 'Institution Name' },
+      { type: 'userprofile', label: 'User Profile Field' },
+      { type: 'calculated', label: 'Calculated Field' },
+      { type: 'dynamiclist', label: 'Dynamic List' },
+    ],
+  },
+];
+
+const PRESETS = [
+  { name: 'Employee Details', fields: ['text', 'email', 'phone', 'date'] },
+  { name: 'Signatory Block', fields: ['signature', 'text'] },
+];
+
+export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({ onAddElement, draggable, onDragStartSidebar }) => {
+  const [activeTab, setActiveTab] = useState<'elements' | 'presets'>('elements');
+  const [search, setSearch] = useState('');
   
   const createBaseElement = (type: ElementType, content: string): TemplateElement => {
     return {
@@ -57,49 +103,59 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({ onAddElement }) => {
   
   return (
     <div className="p-4 h-full flex flex-col">
-      <h2 className="font-semibold mb-4">Elements</h2>
-      
-      <Tabs defaultValue="elements" onValueChange={setActiveTab} className="flex-1">
-        <TabsList className="w-full">
-          <TabsTrigger value="elements" className="flex-1">Elements</TabsTrigger>
-          <TabsTrigger value="presets" className="flex-1">Presets</TabsTrigger>
-        </TabsList>
-        <TabsContent value="elements" className="flex-1">
-          <div className="grid gap-2 mt-4 pb-4">
-            {elementTypes.map((element) => (
-              <Button
-                key={element.id}
-                variant="outline"
-                className="justify-start h-auto py-2 hover:bg-blue-50"
-                onClick={() => handleAddElement({ type: element.type, content: element.content })}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-blue-100 text-blue-600">
-                    {element.icon}
-                  </div>
-                  <span>{element.name}</span>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="presets" className="flex-1">
-          <div className="mt-4 space-y-4">
-            <p className="text-sm text-muted-foreground">Saved section presets will appear here.</p>
-            
-            {/* Placeholder for presets */}
-            <div className="border border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center text-center">
-              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2">
-                <Text size={20} />
+      <div className="flex gap-2 mb-4">
+        <Button size="sm" variant={activeTab === 'elements' ? 'default' : 'outline'} onClick={() => setActiveTab('elements')}>Elements</Button>
+        <Button size="sm" variant={activeTab === 'presets' ? 'default' : 'outline'} onClick={() => setActiveTab('presets')}>Presets</Button>
+      </div>
+      {activeTab === 'elements' ? (
+        <>
+          <input
+            className="w-full mb-3 px-2 py-1 border rounded"
+            placeholder="Search elements..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {FIELD_CATEGORIES.map(cat => (
+            <div key={cat.name} className="mb-4">
+              <div className="font-semibold text-sm mb-2 text-gray-700">{cat.name}</div>
+              <div className="flex flex-col gap-2">
+                {cat.fields.filter(f => f.label.toLowerCase().includes(search.toLowerCase())).map(f => (
+                  <DraggableField key={f.type} field={f} draggable={draggable} onDragStartSidebar={onDragStartSidebar} onAddElement={onAddElement} />
+                ))}
               </div>
-              <h3 className="font-medium">No presets yet</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Save sections to reuse them across templates
-              </p>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          ))}
+        </>
+      ) : (
+        <div>
+          {PRESETS.map(preset => (
+            <div key={preset.name} className="mb-3 p-2 border rounded bg-gray-50 cursor-pointer hover:bg-primary-50" onClick={() => onAddElement({ id: Date.now().toString(), type: 'preset', label: preset.name, fields: preset.fields })}>
+              {preset.name}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
+function DraggableField({ field, draggable, onDragStartSidebar, onAddElement }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: field.type,
+    data: { fromSidebar: true },
+    disabled: !draggable,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`flex items-center gap-2 px-2 py-2 rounded border cursor-pointer bg-white hover:bg-primary-50 transition ${isDragging ? 'opacity-50' : ''}`}
+      onClick={() => !draggable && onAddElement({ id: Date.now().toString(), type: field.type, label: field.label })}
+      onMouseDown={() => draggable && onDragStartSidebar && onDragStartSidebar(field.type)}
+    >
+      <span className="font-bold text-primary-500">{field.label[0]}</span>
+      <span>{field.label}</span>
+    </div>
+  );
+}

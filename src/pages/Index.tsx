@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
@@ -9,6 +9,9 @@ import { SavedDrafts } from "@/components/dashboard/SavedDrafts";
 import { Button } from "@/components/ui/button";
 import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
 import { Document } from "@/types/document";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
 const mockDocuments = [{
   id: "doc-1",
   name: "Bonafide Certificate - John Smith",
@@ -31,32 +34,58 @@ const mockDocuments = [{
   date: "2023-05-25",
   recipient: null
 }] as Document[];
+
 const Index = () => {
-  const [stats] = useState([{
-    title: "Documents Created",
-    value: "128",
-    change: "+12.3%",
-    trend: "up",
-    icon: FileText
-  }, {
-    title: "Documents Signed",
-    value: "89",
-    change: "+18.7%",
-    trend: "up",
-    icon: FileSignature
-  }, {
-    title: "Pending Documents",
-    value: "12",
-    change: "-4.3%",
-    trend: "down",
-    icon: FileClock
-  }, {
-    title: "Total Templates",
-    value: "23",
-    change: "+3.2%",
-    trend: "up",
-    icon: BarChart
-  }]);
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([
+    { title: "Documents Created", value: "-", change: "", trend: "up", icon: FileText },
+    { title: "Documents Signed", value: "-", change: "", trend: "up", icon: FileSignature },
+    { title: "Pending Documents", value: "-", change: "", trend: "down", icon: FileClock },
+    { title: "Total Templates", value: "-", change: "", trend: "up", icon: BarChart },
+  ]);
+
+  useEffect(() => {
+    if (!user) return;
+    let mounted = true;
+    setLoading(true);
+    async function fetchStats() {
+      // Documents Created
+      const { count: createdCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('created_by', user.id);
+      // Documents Signed
+      const { count: signedCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('signed_by', user.id)
+        .eq('status', 'Signed');
+      // Pending Documents
+      const { count: pendingCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('created_by', user.id)
+        .neq('status', 'Signed');
+      // Total Templates
+      const { count: templateCount } = await supabase
+        .from('templates')
+        .select('*', { count: 'exact', head: true })
+        .eq('created_by', user.id);
+      if (!mounted) return;
+      setStats([
+        { title: "Documents Created", value: createdCount?.toString() ?? "0", change: "", trend: "up", icon: FileText },
+        { title: "Documents Signed", value: signedCount?.toString() ?? "0", change: "", trend: "up", icon: FileSignature },
+        { title: "Pending Documents", value: pendingCount?.toString() ?? "0", change: "", trend: "down", icon: FileClock },
+        { title: "Total Templates", value: templateCount?.toString() ?? "0", change: "", trend: "up", icon: BarChart },
+      ]);
+      setLoading(false);
+    }
+    fetchStats();
+    // Optionally, set up polling or Supabase real-time here
+    return () => { mounted = false; };
+  }, [user]);
+
   return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
@@ -70,7 +99,7 @@ const Index = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => <StatsCard key={index} title={stat.title} value={stat.value} trend={{
+          {stats.map((stat, index) => <StatsCard key={index} title={stat.title} value={loading ? <span className="animate-pulse">...</span> : stat.value} trend={{
           value: stat.change,
           positive: stat.trend === 'up'
         }} icon={stat.icon} />)}

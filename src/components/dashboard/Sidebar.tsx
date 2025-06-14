@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarLogo } from './SidebarLogo';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 type NavItem = {
   name: string;
@@ -30,7 +32,16 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
   
+  // Get name and avatar from user metadata if available
+  const name = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'User';
+  const email = user?.email || '';
+  const avatarUrl = user?.user_metadata?.avatar_url || '';
+  const initials = name
+    ? name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : (email ? email.slice(0, 2).toUpperCase() : 'U');
+
   return (
     <>
       {/* Mobile Sidebar Toggle */}
@@ -85,21 +96,22 @@ export function Sidebar() {
           </nav>
         </div>
         
-        <div className="p-4 border-t border-border/50">
-          <div className={cn(
-            "flex items-center",
-            isCollapsed ? "justify-center" : "justify-start"
-          )}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-certifyr-blue-light to-certifyr-blue-dark flex items-center justify-center text-white font-medium text-sm">
-              AI
+        <div className={cn(
+          "flex items-center p-4 border-t border-border/30",
+          isCollapsed ? "justify-center" : "justify-start"
+        )}>
+          <Avatar className="h-8 w-8">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt={name} />
+            ) : null}
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          {!isCollapsed && (
+            <div className="ml-3">
+              <p className="text-sm font-medium">{name}</p>
+              <p className="text-xs text-muted-foreground">{email}</p>
             </div>
-            {!isCollapsed && (
-              <div className="ml-3">
-                <p className="text-sm font-medium">Admin User</p>
-                <p className="text-xs text-muted-foreground">admin@certifyr.com</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </aside>
       
