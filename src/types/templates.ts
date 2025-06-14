@@ -1,4 +1,5 @@
 
+
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
