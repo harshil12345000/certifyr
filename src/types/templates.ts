@@ -1,3 +1,4 @@
+
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -238,7 +239,7 @@ export interface AddressProofData {
   includeDigitalSignature: boolean;
 }
 
-// Import corporate template types
+// Import and re-export corporate template types
 export type {
   ArticlesOfIncorporationData,
   CorporateBylawsData,
