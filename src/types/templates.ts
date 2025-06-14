@@ -199,29 +199,46 @@ export interface BankVerificationData {
 export interface OfferLetterData {
   candidateName: string;
   candidateAddress: string;
-  dateOfOffer: string; // Date of issuing the offer
+  dateOfOffer: string;
   jobTitle: string;
   department: string;
   reportingManager: string;
-  startDate: string; // Employment start date
-  probationPeriod: string; // e.g., "3 months", "None"
+  startDate: string;
+  probationPeriod: string;
   salaryAmount: string;
-  salaryCurrency: string; // e.g., "INR", "USD"
+  salaryCurrency: string;
   salaryFrequency: "monthly" | "annually";
-  benefits: string; // Text area for detailed benefits
-  workHours: string; // e.g., "9 AM to 6 PM, Monday to Friday"
+  benefits: string;
+  workHours: string;
   workLocation: string;
-  acceptanceDeadline: string; // Date by which offer must be accepted
-  // Common fields
+  acceptanceDeadline: string;
   institutionName: string;
-  date: string; // Issue date of the document (can be same as dateOfOffer or different)
+  date: string;
   place: string;
   signatoryName: string;
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
 }
 
-export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData | MaternityLeaveData | BankVerificationData | OfferLetterData;
+export interface AddressProofData {
+  fullName: string;
+  fatherName: string;
+  currentAddress: string;
+  permanentAddress: string;
+  residenceDuration: string;
+  relationshipWithApplicant: "self" | "father" | "mother" | "guardian" | "spouse" | "other";
+  idProofType: "aadhar" | "passport" | "voter_id" | "driving_license" | "other";
+  idProofNumber: string;
+  purpose: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData | MaternityLeaveData | BankVerificationData | OfferLetterData | AddressProofData;
 
 export interface BonafidePreviewProps {
   data: BonafideData;
@@ -265,4 +282,8 @@ export interface BankVerificationPreviewProps {
 
 export interface OfferLetterPreviewProps {
   data: OfferLetterData;
+}
+
+export interface AddressProofPreviewProps {
+  data: AddressProofData;
 }

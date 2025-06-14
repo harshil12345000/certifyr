@@ -76,6 +76,13 @@ const allTemplates = [
     title: "Offer Letter",
     description: "Formal job offer letter to candidates",
     category: "Employment",
+    usageCount: 18
+  },
+  {
+    id: "address-proof-1",
+    title: "Address Proof Certificate",
+    description: "Certificate verifying residential address",
+    category: "Legal",
     usageCount: 0 // New template
   }
 ];

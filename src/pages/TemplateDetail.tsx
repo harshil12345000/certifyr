@@ -1,564 +1,407 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Download, Share2, Printer, FileImage } from "lucide-react";
-import { BonafideForm } from "@/components/templates/BonafideForm";
-import { BonafidePreview } from "@/components/templates/BonafidePreview";
-import { ExperienceForm } from "@/components/templates/ExperienceForm";
-import { ExperiencePreview } from "@/components/templates/ExperiencePreview";
-import { CharacterForm } from "@/components/templates/CharacterForm";
-import { CharacterPreview } from "@/components/templates/CharacterPreview";
-import { EmbassyAttestationForm } from "@/components/templates/EmbassyAttestationForm";
-import { EmbassyAttestationPreview } from "@/components/templates/EmbassyAttestationPreview";
-import { CompletionCertificateForm } from "@/components/templates/CompletionCertificateForm";
-import { CompletionCertificatePreview } from "@/components/templates/CompletionCertificatePreview";
-import { TransferCertificateForm } from "@/components/templates/TransferCertificateForm";
-import { TransferCertificatePreview } from "@/components/templates/TransferCertificatePreview";
-import { NocVisaForm } from "@/components/templates/NocVisaForm";
-import { NocVisaPreview } from "@/components/templates/NocVisaPreview";
-import { IncomeCertificateForm } from "@/components/templates/IncomeCertificateForm";
-import { IncomeCertificatePreview } from "@/components/templates/IncomeCertificatePreview";
-import { MaternityLeaveForm } from "@/components/templates/MaternityLeaveForm";
-import { MaternityLeavePreview } from "@/components/templates/MaternityLeavePreview";
-import { BankVerificationForm } from "@/components/templates/BankVerificationForm";
-import { BankVerificationPreview } from "@/components/templates/BankVerificationPreview";
-import { OfferLetterForm } from "@/components/templates/OfferLetterForm";
-import { OfferLetterPreview } from "@/components/templates/OfferLetterPreview";
-import { 
-  BonafideData, ExperienceData, CharacterData, EmbassyAttestationData, 
-  CompletionCertificateData, TransferCertificateData, NocVisaData, 
-  IncomeCertificateData, MaternityLeaveData, BankVerificationData, 
-  OfferLetterData, FormData 
-} from "@/types/templates";
-import { popularTemplates } from "@/data/mockData";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import { toast } from "@/hooks/use-toast";
-import "./TemplateStyles.css";
-
-// It's better to use the `allTemplates` from Templates.tsx or a shared source
-// For now, I'll use a temporary extended list or rely on the helper functions
-const allTemplatesExtended = [
-  ...popularTemplates,
-  { id: "embassy-attestation-1", title: "Embassy Attestation Letter", description: "Letter for document attestation at embassies", category: "Travel" },
-  { id: "completion-certificate-1", title: "Completion Certificate", description: "Certificate for courses, training programs, internships", category: "Educational" },
-  { id: "transfer-certificate-1", title: "Transfer Certificate", description: "Certificate for students moving between institutions", category: "Educational" },
-  { id: "noc-visa-1", title: "NOC for Visa Application", description: "No Objection Certificate for visa applications", category: "Travel" },
-  { id: "income-certificate-1", title: "Income Certificate", description: "Certificate stating employee income details", category: "Employment" },
-  { id: "maternity-leave-1", title: "Maternity Leave Application", description: "Application for maternity leave benefits", category: "Employment" },
-  { id: "bank-verification-1", title: "Bank Account Verification", description: "Letter confirming account details for banks", category: "Financial" },
-  { id: "offer-letter-1", title: "Offer Letter", description: "Formal job offer letter to candidates", category: "Employment" }
-];
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import {
+  BonafideForm,
+  CharacterForm,
+  ExperienceForm,
+  EmbassyAttestationForm,
+  CompletionCertificateForm,
+  TransferCertificateForm,
+  NocVisaForm,
+  IncomeCertificateForm,
+  MaternityLeaveForm,
+  BankVerificationForm,
+  OfferLetterForm,
+} from '@/components/templates/forms';
+import {
+  BonafidePreview,
+  CharacterPreview,
+  ExperiencePreview,
+  EmbassyAttestationPreview,
+  CompletionCertificatePreview,
+  TransferCertificatePreview,
+  NocVisaPreview,
+  IncomeCertificatePreview,
+  MaternityLeavePreview,
+  BankVerificationPreview,
+  OfferLetterPreview,
+} from '@/components/templates';
+import {
+  BonafideData,
+  CharacterData,
+  ExperienceData,
+  EmbassyAttestationData,
+  CompletionCertificateData,
+  TransferCertificateData,
+  NocVisaData,
+  IncomeCertificateData,
+  MaternityLeaveData,
+  BankVerificationData,
+  OfferLetterData,
+  FormData,
+} from '@/types/templates';
+import { Download } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { generateAndDownloadPdf } from '@/lib/pdf-utils';
+import { AddressProofForm } from '@/components/templates/AddressProofForm';
+import { AddressProofPreview } from '@/components/templates/AddressProofPreview';
+import { AddressProofData } from '@/types/templates';
 
 const TemplateDetail = () => {
-  const { id } = useParams();
-  // Try to find from extended list, then fallback to getTemplateTitle logic
-  const currentTemplateInfo = allTemplatesExtended.find(t => t.id === id);
+  const { templateId } = useParams<{ templateId: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [formData, setFormData] = useState<FormData>(getInitialData);
 
-  const template = currentTemplateInfo || {
-    id: id || "unknown",
-    title: getTemplateTitle(id),
-    description: getTemplateDescription(id),
-    category: getTemplateCategory(id)
-  };
-
-  function getTemplateTitle(id: string | undefined): string {
-    const t = allTemplatesExtended.find(tpl => tpl.id === id);
-    if (t) return t.title;
-    // Fallback, though ideally allTemplatesExtended should be comprehensive
-    switch (id) {
-      case "embassy-attestation-1": return "Embassy Attestation Letter";
-      case "completion-certificate-1": return "Completion Certificate";
-      case "transfer-certificate-1": return "Transfer Certificate";
-      case "noc-visa-1": return "NOC for Visa Application";
-      case "income-certificate-1": return "Income Certificate";
-      case "maternity-leave-1": return "Maternity Leave Application";
-      case "bank-verification-1": return "Bank Account Verification";
-      case "offer-letter-1": return "Offer Letter";
-      default: return "Unknown Template";
+  useEffect(() => {
+    if (!templateId) {
+      toast({
+        title: 'Error',
+        description: 'Template ID is missing.',
+        variant: 'destructive',
+      });
+      navigate('/templates');
     }
-  }
+  }, [templateId, navigate, toast]);
 
-  function getTemplateDescription(id: string | undefined): string {
-    const t = allTemplatesExtended.find(tpl => tpl.id === id);
-    if (t) return t.description;
-    // Fallback
-    switch (id) {
-      case "embassy-attestation-1": return "Letter for document attestation at embassies";
-      case "completion-certificate-1": return "Certificate for courses, training programs, internships";
-      case "transfer-certificate-1": return "Certificate for students moving between institutions";
-      case "noc-visa-1": return "No Objection Certificate for visa applications";
-      case "income-certificate-1": return "Certificate stating employee income details";
-      case "maternity-leave-1": return "Application for maternity leave benefits";
-      case "bank-verification-1": return "Letter confirming account details for banks";
-      case "offer-letter-1": return "Formal job offer letter to candidates";
-      default: return "Template description";
-    }
-  }
-
-  function getTemplateCategory(id: string | undefined): string {
-    const t = allTemplatesExtended.find(tpl => tpl.id === id);
-    if (t) return t.category;
-    // Fallback
-    switch (id) {
-      case "embassy-attestation-1": return "Travel";
-      case "completion-certificate-1": return "Educational";
-      case "transfer-certificate-1": return "Educational";
-      case "noc-visa-1": return "Travel";
-      case "income-certificate-1": return "Employment";
-      case "maternity-leave-1": return "Employment";
-      case "bank-verification-1": return "Financial";
-      case "offer-letter-1": return "Employment";
-      default: return "General";
-    }
-  }
-
-  // Initialize form data based on template type
   const getInitialData = (): FormData => {
     const commonFields = {
-      institutionName: "",
-      date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD for date inputs
-      place: "",
-      signatoryName: "",
-      signatoryDesignation: "",
+      institutionName: '',
+      date: new Date().toISOString().split('T')[0],
+      place: '',
+      signatoryName: '',
+      signatoryDesignation: '',
       includeDigitalSignature: false,
     };
 
-    switch (id) {
-      case "experience-1":
+    switch (templateId) {
+      case 'bonafide-1':
         return {
-          fullName: "",
-          employeeId: "",
-          designation: "",
-          department: "",
-          joinDate: "",
-          resignationDate: "",
-          workDescription: "",
-          salary: "",
+          fullName: '',
+          gender: 'male' as const,
+          parentName: '',
+          type: 'student' as const,
+          startDate: '',
+          courseOrDesignation: '',
+          department: '',
+          purpose: '',
           ...commonFields,
-        } as ExperienceData;
-      case "character-1":
+        } as BonafideData;
+
+      case 'character-1':
         return {
-          fullName: "",
-          parentName: "",
-          address: "",
-          duration: "",
-          conduct: "",
+          fullName: '',
+          parentName: '',
+          address: '',
+          duration: '',
+          conduct: '',
           ...commonFields,
         } as CharacterData;
-      case "embassy-attestation-1":
+
+      case 'experience-1':
         return {
-          fullName: "",
-          passportNumber: "",
-          nationality: "",
-          dateOfBirth: "",
-          placeOfBirth: "",
-          fatherName: "",
-          motherName: "",
-          documentType: "",
-          documentNumber: "",
-          issuingAuthority: "",
-          documentIssueDate: "",
-          purposeOfAttestation: "",
-          destinationCountry: "",
-          embassyName: "",
-          applicantAddress: "",
-          phoneNumber: "",
-          emailAddress: "",
+          fullName: '',
+          employeeId: '',
+          designation: '',
+          department: '',
+          joinDate: '',
+          resignationDate: '',
+          workDescription: '',
+          salary: '',
+          ...commonFields,
+        } as ExperienceData;
+
+      case 'embassy-attestation-1':
+        return {
+          fullName: '',
+          passportNumber: '',
+          nationality: '',
+          dateOfBirth: '',
+          placeOfBirth: '',
+          fatherName: '',
+          motherName: '',
+          documentType: '',
+          documentNumber: '',
+          issuingAuthority: '',
+          documentIssueDate: '',
+          purposeOfAttestation: '',
+          destinationCountry: '',
+          embassyName: '',
+          applicantAddress: '',
+          phoneNumber: '',
+          emailAddress: '',
           ...commonFields,
         } as EmbassyAttestationData;
-      case "completion-certificate-1":
+
+      case 'completion-certificate-1':
         return {
-          fullName: "",
-          fatherName: "",
-          registrationNumber: "",
-          courseTitle: "",
-          courseDuration: "",
-          completionDate: "",
-          grade: "",
-          percentage: "",
-          programType: "course" as const,
+          fullName: '',
+          fatherName: '',
+          registrationNumber: '',
+          courseTitle: '',
+          courseDuration: '',
+          completionDate: '',
+          grade: '',
+          percentage: '',
+          programType: 'course' as const,
           ...commonFields,
         } as CompletionCertificateData;
-      case "transfer-certificate-1":
+
+      case 'transfer-certificate-1':
         return {
-          fullName: "",
-          fatherName: "",
-          motherName: "",
-          dateOfBirth: "",
-          admissionNumber: "",
-          class: "",
-          section: "",
-          academicYear: "",
-          dateOfAdmission: "",
-          dateOfLeaving: "",
-          reasonForLeaving: "",
-          conduct: "",
-          subjects: "",
+          fullName: '',
+          fatherName: '',
+          motherName: '',
+          dateOfBirth: '',
+          admissionNumber: '',
+          class: '',
+          section: '',
+          academicYear: '',
+          dateOfAdmission: '',
+          dateOfLeaving: '',
+          reasonForLeaving: '',
+          conduct: '',
+          subjects: '',
           ...commonFields,
         } as TransferCertificateData;
-      case "noc-visa-1":
+
+      case 'noc-visa-1':
         return {
-          fullName: "",
-          designation: "",
-          employeeId: "",
-          department: "",
-          passportNumber: "",
-          visaType: "",
-          destinationCountry: "",
-          travelPurpose: "",
-          travelDates: "",
-          returnDate: "",
-          sponsorDetails: "",
+          fullName: '',
+          designation: '',
+          employeeId: '',
+          department: '',
+          passportNumber: '',
+          visaType: '',
+          destinationCountry: '',
+          travelPurpose: '',
+          travelDates: '',
+          returnDate: '',
+          sponsorDetails: '',
           ...commonFields,
         } as NocVisaData;
-      case "income-certificate-1":
+
+      case 'income-certificate-1':
         return {
-          fullName: "",
-          fatherName: "",
-          designation: "",
-          employeeId: "",
-          department: "",
-          basicSalary: "",
-          allowances: "",
-          totalIncome: "",
-          incomeFrequency: "monthly" as const,
-          purpose: "",
+          fullName: '',
+          fatherName: '',
+          designation: '',
+          employeeId: '',
+          department: '',
+          basicSalary: '',
+          allowances: '',
+          totalIncome: '',
+          incomeFrequency: 'monthly' as const,
+          purpose: '',
           ...commonFields,
         } as IncomeCertificateData;
-      case "maternity-leave-1":
+
+      case 'maternity-leave-1':
         return {
-          fullName: "",
-          employeeId: "",
-          designation: "",
-          department: "",
-          expectedDeliveryDate: "",
-          leaveStartDate: "",
-          leaveEndDate: "",
-          totalLeaveDays: "",
-          medicalCertificateNumber: "",
-          doctorName: "",
-          hospitalName: "",
-          emergencyContact: "",
-          emergencyContactPhone: "",
+          fullName: '',
+          employeeId: '',
+          designation: '',
+          department: '',
+          expectedDeliveryDate: '',
+          leaveStartDate: '',
+          leaveEndDate: '',
+          totalLeaveDays: '',
+          medicalCertificateNumber: '',
+          doctorName: '',
+          hospitalName: '',
+          emergencyContact: '',
+          emergencyContactPhone: '',
           ...commonFields,
         } as MaternityLeaveData;
-      case "bank-verification-1":
+
+      case 'bank-verification-1':
         return {
-          fullName: "",
-          employeeId: "",
-          designation: "",
-          department: "",
-          bankName: "",
-          accountNumber: "",
-          accountType: "savings" as const,
-          ifscCode: "",
-          branchName: "",
-          branchAddress: "",
-          accountHolderName: "",
-          joinDate: "",
-          currentSalary: "",
-          purpose: "",
+          fullName: '',
+          employeeId: '',
+          designation: '',
+          department: '',
+          bankName: '',
+          accountNumber: '',
+          accountType: 'savings' as const,
+          ifscCode: '',
+          branchName: '',
+          branchAddress: '',
+          accountHolderName: '',
+          joinDate: '',
+          currentSalary: '',
+          purpose: '',
           ...commonFields,
         } as BankVerificationData;
-      case "offer-letter-1":
+
+      case 'offer-letter-1':
         return {
-          candidateName: "",
-          candidateAddress: "",
-          dateOfOffer: new Date().toLocaleDateString('en-CA'),
-          jobTitle: "",
-          department: "",
-          reportingManager: "",
-          startDate: "",
-          probationPeriod: "3 months",
-          salaryAmount: "",
-          salaryCurrency: "INR",
-          salaryFrequency: "monthly" as const,
-          benefits: "",
-          workHours: "9 AM to 6 PM, Monday to Friday",
-          workLocation: "",
-          acceptanceDeadline: "",
+          candidateName: '',
+          candidateAddress: '',
+          dateOfOffer: new Date().toISOString().split('T')[0],
+          jobTitle: '',
+          department: '',
+          reportingManager: '',
+          startDate: '',
+          probationPeriod: '',
+          salaryAmount: '',
+          salaryCurrency: 'INR',
+          salaryFrequency: 'monthly' as const,
+          benefits: '',
+          workHours: '',
+          workLocation: '',
+          acceptanceDeadline: '',
           ...commonFields,
         } as OfferLetterData;
+
+      case 'address-proof-1':
+        return {
+          fullName: '',
+          fatherName: '',
+          currentAddress: '',
+          permanentAddress: '',
+          residenceDuration: '',
+          relationshipWithApplicant: 'self' as const,
+          idProofType: 'aadhar' as const,
+          idProofNumber: '',
+          purpose: '',
+          ...commonFields,
+        } as AddressProofData;
+
       default:
         return {
-          fullName: "",
-          gender: "male" as const,
-          parentName: "",
-          type: "student" as const,
-          startDate: "",
-          courseOrDesignation: "",
-          department: "",
-          purpose: "",
+          fullName: '',
+          gender: 'male' as const,
+          parentName: '',
+          type: 'student' as const,
+          startDate: '',
+          courseOrDesignation: '',
+          department: '',
+          purpose: '',
           ...commonFields,
         } as BonafideData;
     }
   };
-  const [formData, setFormData] = useState<FormData>(getInitialData());
-
-  const handleSubmit = (data: FormData) => {
-    setFormData(data);
-    console.log("Form submitted:", data);
-    toast({
-      title: "Form Data Updated",
-      description: "Preview is now reflecting the new data.",
-    });
-  };
-
-  const handlePrint = () => {
-    document.body.classList.add('printing');
-    setTimeout(() => {
-      window.print();
-      document.body.classList.remove('printing');
-      toast({
-        title: "Print dialog opened",
-        description: "Your document is ready to print."
-      });
-    }, 100);
-  };
-
-  const handleDownloadPDF = async () => {
-    try {
-      const element = document.querySelector('.a4-document');
-      if (!element) {
-        toast({
-          title: "Error",
-          description: "Document not found for download.",
-          variant: "destructive"
-        });
-        return;
-      }
-      toast({
-        title: "Generating PDF...",
-        description: "Please wait while we prepare your document."
-      });
-
-      const canvas = await html2canvas(element as HTMLElement, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight
-      });
-      const imgData = canvas.toDataURL('image/png', 1.0);
-
-      const a4Width = 210;
-      const a4Height = 297;
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const imgAspectRatio = imgWidth / imgHeight;
-      const a4AspectRatio = a4Width / a4Height;
-      let pdfImgWidth,
-        pdfImgHeight,
-        offsetX = 0,
-        offsetY = 0;
-      if (imgAspectRatio > a4AspectRatio) {
-        pdfImgWidth = a4Width;
-        pdfImgHeight = a4Width / imgAspectRatio;
-        offsetY = (a4Height - pdfImgHeight) / 2;
-      } else {
-        pdfImgHeight = a4Height;
-        pdfImgWidth = a4Height * imgAspectRatio;
-        offsetX = (a4Width - pdfImgWidth) / 2;
-      }
-      pdf.addImage(imgData, 'PNG', offsetX, offsetY, pdfImgWidth, pdfImgHeight);
-      pdf.save(`${template?.title || 'document'}.pdf`);
-      toast({
-        title: "PDF Downloaded",
-        description: "Your document has been downloaded in A4 format."
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: "Download Failed",
-        description: "There was an error generating the PDF. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDownloadJPG = async () => {
-    try {
-      const element = document.querySelector('.a4-document');
-      if (!element) {
-        toast({
-          title: "Error",
-          description: "Document not found for download.",
-          variant: "destructive"
-        });
-        return;
-      }
-      toast({
-        title: "Generating JPG...",
-        description: "Please wait while we prepare your image."
-      });
-
-      const canvas = await html2canvas(element as HTMLElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: Math.min(element.scrollWidth, 1654),
-        height: Math.min(element.scrollHeight, 2339)
-      });
-      canvas.toBlob(blob => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${template?.title || 'document'}.jpg`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          toast({
-            title: "JPG Downloaded",
-            description: "Your document has been downloaded."
-          });
-        }
-      }, 'image/jpeg', 0.95);
-    } catch (error) {
-      console.error('Error generating JPG:', error);
-      toast({
-        title: "Download Failed",
-        description: "There was an error generating the JPG. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const renderForm = () => {
-    switch (id) {
-      case "experience-1":
-        return <ExperienceForm onSubmit={handleSubmit} initialData={formData as ExperienceData} />;
-      case "character-1":
-        return <CharacterForm onSubmit={handleSubmit} initialData={formData as CharacterData} />;
-      case "embassy-attestation-1":
-        return <EmbassyAttestationForm onSubmit={handleSubmit} initialData={formData as EmbassyAttestationData} />;
-      case "completion-certificate-1":
-        return <CompletionCertificateForm onSubmit={handleSubmit} initialData={formData as CompletionCertificateData} />;
-      case "transfer-certificate-1":
-        return <TransferCertificateForm onSubmit={handleSubmit} initialData={formData as TransferCertificateData} />;
-      case "noc-visa-1":
-        return <NocVisaForm onSubmit={handleSubmit} initialData={formData as NocVisaData} />;
-      case "income-certificate-1":
-        return <IncomeCertificateForm onSubmit={handleSubmit} initialData={formData as IncomeCertificateData} />;
-      case "maternity-leave-1":
-        return <MaternityLeaveForm onSubmit={handleSubmit} initialData={formData as MaternityLeaveData} />;
-      case "bank-verification-1":
-        return <BankVerificationForm onSubmit={handleSubmit} initialData={formData as BankVerificationData} />;
-      case "offer-letter-1":
-        return <OfferLetterForm onSubmit={handleSubmit} initialData={formData as OfferLetterData} />;
+    switch (templateId) {
+      case 'bonafide-1':
+        return <BonafideForm initialData={formData as BonafideData} onDataChange={setFormData} />;
+      case 'character-1':
+        return <CharacterForm initialData={formData as CharacterData} onDataChange={setFormData} />;
+      case 'experience-1':
+        return <ExperienceForm initialData={formData as ExperienceData} onDataChange={setFormData} />;
+      case 'embassy-attestation-1':
+        return <EmbassyAttestationForm initialData={formData as EmbassyAttestationData} onDataChange={setFormData} />;
+      case 'completion-certificate-1':
+        return <CompletionCertificateForm initialData={formData as CompletionCertificateData} onDataChange={setFormData} />;
+      case 'transfer-certificate-1':
+        return <TransferCertificateForm initialData={formData as TransferCertificateData} onDataChange={setFormData} />;
+      case 'noc-visa-1':
+        return <NocVisaForm initialData={formData as NocVisaData} onDataChange={setFormData} />;
+      case 'income-certificate-1':
+        return <IncomeCertificateForm initialData={formData as IncomeCertificateData} onDataChange={setFormData} />;
+      case 'maternity-leave-1':
+        return <MaternityLeaveForm initialData={formData as MaternityLeaveData} onDataChange={setFormData} />;
+      case 'bank-verification-1':
+        return <BankVerificationForm initialData={formData as BankVerificationData} onDataChange={setFormData} />;
+      case 'offer-letter-1':
+        return <OfferLetterForm initialData={formData as OfferLetterData} onDataChange={setFormData} />;
+      case 'address-proof-1':
+        return <AddressProofForm initialData={formData as AddressProofData} onDataChange={setFormData} />;
       default:
-        return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
+        return <BonafideForm initialData={formData as BonafideData} onDataChange={setFormData} />;
     }
   };
 
   const renderPreview = () => {
-    switch (id) {
-      case "experience-1":
-        return <ExperiencePreview data={formData as ExperienceData} />;
-      case "character-1":
+    switch (templateId) {
+      case 'bonafide-1':
+        return <BonafidePreview data={formData as BonafideData} />;
+      case 'character-1':
         return <CharacterPreview data={formData as CharacterData} />;
-      case "embassy-attestation-1":
+      case 'experience-1':
+        return <ExperiencePreview data={formData as ExperienceData} />;
+      case 'embassy-attestation-1':
         return <EmbassyAttestationPreview data={formData as EmbassyAttestationData} />;
-      case "completion-certificate-1":
+      case 'completion-certificate-1':
         return <CompletionCertificatePreview data={formData as CompletionCertificateData} />;
-      case "transfer-certificate-1":
+      case 'transfer-certificate-1':
         return <TransferCertificatePreview data={formData as TransferCertificateData} />;
-      case "noc-visa-1":
+      case 'noc-visa-1':
         return <NocVisaPreview data={formData as NocVisaData} />;
-      case "income-certificate-1":
+      case 'income-certificate-1':
         return <IncomeCertificatePreview data={formData as IncomeCertificateData} />;
-      case "maternity-leave-1":
+      case 'maternity-leave-1':
         return <MaternityLeavePreview data={formData as MaternityLeaveData} />;
-      case "bank-verification-1":
+      case 'bank-verification-1':
         return <BankVerificationPreview data={formData as BankVerificationData} />;
-      case "offer-letter-1":
+      case 'offer-letter-1':
         return <OfferLetterPreview data={formData as OfferLetterData} />;
+      case 'address-proof-1':
+        return <AddressProofPreview data={formData as AddressProofData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }
   };
 
-  if (!template) {
-    return <DashboardLayout>
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-semibold mb-4">Template not found</h1>
-          <Button onClick={() => window.history.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
+  const handleDownload = async () => {
+    if (!templateId) {
+      toast({
+        title: 'Error',
+        description: 'Template ID is missing.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      if (templateId) {
+        await generateAndDownloadPdf(renderPreview(), `${templateId}.pdf`);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to generate PDF: Template ID is missing.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF. Please check the console for details.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="container space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold">Template Details</h1>
+          <Button onClick={handleDownload} className="gradient-blue gap-2">
+            Download <Download className="h-4 w-4" />
           </Button>
         </div>
-      </DashboardLayout>;
-  }
-  return <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => window.history.back()}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-semibold">{template.title}</h1>
-              <p className="text-muted-foreground">{template.description}</p>
-            </div>
+        <Separator />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-secondary rounded-md p-4">
+            <h2 className="text-lg font-semibold mb-4">Form</h2>
+            {renderForm()}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="w-4 h-4 mr-2" />
-              Print
-            </Button>
-            <Button variant="outline" onClick={handleDownloadJPG}>
-              <FileImage className="w-4 h-4 mr-2" />
-              Download JPG
-            </Button>
-            <Button onClick={handleDownloadPDF}>
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
+          <div className="bg-secondary rounded-md p-4">
+            <h2 className="text-lg font-semibold mb-4">Preview</h2>
+            {renderPreview()}
           </div>
         </div>
-
-        {/* Tabs for Form and Preview */}
-        <Tabs defaultValue="form" className="w-full" onValueChange={() => { /* Reset scroll or any state if needed */ }}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="form">Document Details</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="form" className="mt-6">
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-medium mb-4">Fill in the details for your {template.title}</h2>
-              {renderForm()}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="preview" className="mt-6">
-            <div className="glass-card p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium">Preview your {template.title}</h2>
-                 {/* Could add zoom controls or other preview options here */}
-              </div>
-              <div className="border rounded-lg p-4 bg-gray-50 min-h-[600px] overflow-auto">
-                {renderPreview()}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
-    </DashboardLayout>;
+    </DashboardLayout>
+  );
 };
 
 export default TemplateDetail;
