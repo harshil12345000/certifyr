@@ -50,6 +50,12 @@ import {
 import { Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateAndDownloadPdf } from '@/lib/pdf-utils';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@/components/ui/tabs';
 
 const getInitialData = (templateId: string): FormData => {
   const commonFields = {
