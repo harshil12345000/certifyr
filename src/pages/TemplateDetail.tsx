@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -271,7 +270,7 @@ const getInitialData = (templateId: string): FormData => {
 };
 
 const TemplateDetail = () => {
-  const { templateId } = useParams<{ templateId: string }>();
+  const { id: templateId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -288,34 +287,103 @@ const TemplateDetail = () => {
     }
   }, [templateId, navigate, toast]);
 
+  const handleFormSubmit = (data: FormData) => {
+    setFormData(data);
+  };
+
   const renderForm = () => {
     switch (templateId) {
       case 'bonafide-1':
-        return <BonafideForm initialData={formData as BonafideData} onDataChange={setFormData} />;
+        return (
+          <BonafideForm
+            initialData={formData as BonafideData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'character-1':
-        return <CharacterForm initialData={formData as CharacterData} onDataChange={setFormData} />;
+        return (
+          <CharacterForm
+            initialData={formData as CharacterData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'experience-1':
-        return <ExperienceForm initialData={formData as ExperienceData} onDataChange={setFormData} />;
+        return (
+          <ExperienceForm
+            initialData={formData as ExperienceData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'embassy-attestation-1':
-        return <EmbassyAttestationForm initialData={formData as EmbassyAttestationData} onDataChange={setFormData} />;
+        return (
+          <EmbassyAttestationForm
+            initialData={formData as EmbassyAttestationData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'completion-certificate-1':
-        return <CompletionCertificateForm initialData={formData as CompletionCertificateData} onDataChange={setFormData} />;
+        return (
+          <CompletionCertificateForm
+            initialData={formData as CompletionCertificateData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'transfer-certificate-1':
-        return <TransferCertificateForm initialData={formData as TransferCertificateData} onDataChange={setFormData} />;
+        return (
+          <TransferCertificateForm
+            initialData={formData as TransferCertificateData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'noc-visa-1':
-        return <NocVisaForm initialData={formData as NocVisaData} onDataChange={setFormData} />;
+        return (
+          <NocVisaForm
+            initialData={formData as NocVisaData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'income-certificate-1':
-        return <IncomeCertificateForm initialData={formData as IncomeCertificateData} onDataChange={setFormData} />;
+        return (
+          <IncomeCertificateForm
+            initialData={formData as IncomeCertificateData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'maternity-leave-1':
-        return <MaternityLeaveForm initialData={formData as MaternityLeaveData} onDataChange={setFormData} />;
+        return (
+          <MaternityLeaveForm
+            initialData={formData as MaternityLeaveData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'bank-verification-1':
-        return <BankVerificationForm initialData={formData as BankVerificationData} onDataChange={setFormData} />;
+        return (
+          <BankVerificationForm
+            initialData={formData as BankVerificationData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'offer-letter-1':
-        return <OfferLetterForm initialData={formData as OfferLetterData} onDataChange={setFormData} />;
+        return (
+          <OfferLetterForm
+            initialData={formData as OfferLetterData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'address-proof-1':
-        return <AddressProofForm initialData={formData as AddressProofData} onDataChange={setFormData} />;
+        return (
+          <AddressProofForm
+            initialData={formData as AddressProofData}
+            onDataChange={setFormData} // this one uses onDataChange
+          />
+        );
       default:
-        return <BonafideForm initialData={formData as BonafideData} onDataChange={setFormData} />;
+        return (
+          <BonafideForm
+            initialData={formData as BonafideData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
     }
   };
 
