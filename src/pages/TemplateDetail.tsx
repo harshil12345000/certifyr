@@ -10,20 +10,30 @@ import { ExperienceForm } from "@/components/templates/ExperienceForm";
 import { ExperiencePreview } from "@/components/templates/ExperiencePreview";
 import { CharacterForm } from "@/components/templates/CharacterForm";
 import { CharacterPreview } from "@/components/templates/CharacterPreview";
-import { BonafideData, ExperienceData, CharacterData } from "@/types/templates";
+import { NocVisaForm } from "@/components/templates/NocVisaForm";
+import { NocVisaPreview } from "@/components/templates/NocVisaPreview";
+import { BonafideData, ExperienceData, CharacterData, NocVisaData, FormData } from "@/types/templates";
 import { popularTemplates } from "@/data/mockData";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
 import "./TemplateStyles.css";
+
 const TemplateDetail = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const template = popularTemplates.find(t => t.id === id);
 
   // Initialize form data based on template type
-  const getInitialData = () => {
+  const getInitialData = (): FormData => {
+    const commonFields = {
+      institutionName: "Global Tech Solutions",
+      date: new Date().toLocaleDateString('en-CA'),
+      place: "Metropolis",
+      signatoryName: "Dr. Evelyn Reed",
+      signatoryDesignation: "Head of Department",
+      includeDigitalSignature: false,
+    };
+
     switch (id) {
       case "experience-1":
         return {
@@ -35,12 +45,7 @@ const TemplateDetail = () => {
           resignationDate: "",
           workDescription: "",
           salary: "",
-          institutionName: "",
-          date: "",
-          place: "",
-          signatoryName: "",
-          signatoryDesignation: "",
-          includeDigitalSignature: false
+          ...commonFields,
         } as ExperienceData;
       case "character-1":
         return {
@@ -49,43 +54,51 @@ const TemplateDetail = () => {
           address: "",
           duration: "",
           conduct: "",
-          institutionName: "",
-          date: "",
-          place: "",
-          signatoryName: "",
-          signatoryDesignation: "",
-          includeDigitalSignature: false
+          ...commonFields,
         } as CharacterData;
+      case "noc-visa-1":
+        return {
+          fullName: "",
+          employeeOrStudentId: "",
+          designationOrCourse: "",
+          department: "",
+          passportNumber: "",
+          destinationCountry: "",
+          travelStartDate: "",
+          travelEndDate: "",
+          purposeOfVisit: "",
+          tripFundSource: 'self',
+          ...commonFields,
+        } as NocVisaData;
       default:
         return {
           fullName: "",
           gender: "male" as const,
           parentName: "",
           type: "student" as const,
-          institutionName: "",
           startDate: "",
           courseOrDesignation: "",
           department: "",
           purpose: "",
-          date: "",
-          place: "",
-          signatoryName: "",
-          signatoryDesignation: "",
-          includeDigitalSignature: false
+          ...commonFields,
         } as BonafideData;
     }
   };
-  const [formData, setFormData] = useState(getInitialData());
-  const handleSubmit = (data: any) => {
+  const [formData, setFormData] = useState<FormData>(getInitialData());
+
+  const handleSubmit = (data: FormData) => {
     setFormData(data);
     console.log("Form submitted:", data);
+    toast({
+      title: "Form Data Updated",
+      description: "Preview is now reflecting the new data.",
+    });
   };
+
   const handlePrint = () => {
-    // Add print class to body to trigger print-specific styles
     document.body.classList.add('printing');
     setTimeout(() => {
       window.print();
-      // Remove print class after printing
       document.body.classList.remove('printing');
       toast({
         title: "Print dialog opened",
@@ -93,6 +106,7 @@ const TemplateDetail = () => {
       });
     }, 100);
   };
+
   const handleDownloadPDF = async () => {
     try {
       const element = document.querySelector('.a4-document');
@@ -109,10 +123,8 @@ const TemplateDetail = () => {
         description: "Please wait while we prepare your document."
       });
 
-      // Create canvas with high quality settings for A4
       const canvas = await html2canvas(element as HTMLElement, {
         scale: 3,
-        // Higher scale for better quality
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -121,7 +133,6 @@ const TemplateDetail = () => {
       });
       const imgData = canvas.toDataURL('image/png', 1.0);
 
-      // A4 dimensions in mm
       const a4Width = 210;
       const a4Height = 297;
       const pdf = new jsPDF({
@@ -130,7 +141,6 @@ const TemplateDetail = () => {
         format: 'a4'
       });
 
-      // Calculate aspect ratio to fit content properly in A4
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       const imgAspectRatio = imgWidth / imgHeight;
@@ -140,12 +150,10 @@ const TemplateDetail = () => {
         offsetX = 0,
         offsetY = 0;
       if (imgAspectRatio > a4AspectRatio) {
-        // Image is wider than A4 ratio
         pdfImgWidth = a4Width;
         pdfImgHeight = a4Width / imgAspectRatio;
         offsetY = (a4Height - pdfImgHeight) / 2;
       } else {
-        // Image is taller than A4 ratio
         pdfImgHeight = a4Height;
         pdfImgWidth = a4Height * imgAspectRatio;
         offsetX = (a4Width - pdfImgWidth) / 2;
@@ -165,6 +173,7 @@ const TemplateDetail = () => {
       });
     }
   };
+
   const handleDownloadJPG = async () => {
     try {
       const element = document.querySelector('.a4-document');
@@ -181,18 +190,13 @@ const TemplateDetail = () => {
         description: "Please wait while we prepare your image."
       });
 
-      // Create canvas with A4 proportions
-      const a4Ratio = 210 / 297; // A4 width/height ratio
-      const maxWidth = 1654; // A4 width at 200 DPI
-      const maxHeight = 2339; // A4 height at 200 DPI
-
       const canvas = await html2canvas(element as HTMLElement, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: maxWidth,
-        height: maxHeight
+        width: Math.min(element.scrollWidth, 1654),
+        height: Math.min(element.scrollHeight, 2339)
       });
       canvas.toBlob(blob => {
         if (blob) {
@@ -206,7 +210,7 @@ const TemplateDetail = () => {
           URL.revokeObjectURL(url);
           toast({
             title: "JPG Downloaded",
-            description: "Your document has been downloaded in A4 format."
+            description: "Your document has been downloaded."
           });
         }
       }, 'image/jpeg', 0.95);
@@ -219,26 +223,33 @@ const TemplateDetail = () => {
       });
     }
   };
+
   const renderForm = () => {
     switch (id) {
       case "experience-1":
         return <ExperienceForm onSubmit={handleSubmit} initialData={formData as ExperienceData} />;
       case "character-1":
         return <CharacterForm onSubmit={handleSubmit} initialData={formData as CharacterData} />;
+      case "noc-visa-1":
+        return <NocVisaForm onSubmit={handleSubmit} initialData={formData as NocVisaData} />;
       default:
         return <BonafideForm onSubmit={handleSubmit} initialData={formData as BonafideData} />;
     }
   };
+
   const renderPreview = () => {
     switch (id) {
       case "experience-1":
         return <ExperiencePreview data={formData as ExperienceData} />;
       case "character-1":
         return <CharacterPreview data={formData as CharacterData} />;
+      case "noc-visa-1":
+        return <NocVisaPreview data={formData as NocVisaData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
     }
   };
+
   if (!template) {
     return <DashboardLayout>
         <div className="text-center py-12">
@@ -269,7 +280,10 @@ const TemplateDetail = () => {
               <Printer className="w-4 h-4 mr-2" />
               Print
             </Button>
-            
+            <Button variant="outline" onClick={handleDownloadJPG}>
+              <FileImage className="w-4 h-4 mr-2" />
+              Download JPG
+            </Button>
             <Button onClick={handleDownloadPDF}>
               <Download className="w-4 h-4 mr-2" />
               Download PDF
@@ -278,7 +292,7 @@ const TemplateDetail = () => {
         </div>
 
         {/* Tabs for Form and Preview */}
-        <Tabs defaultValue="form" className="w-full">
+        <Tabs defaultValue="form" className="w-full" onValueChange={() => { /* Reset scroll or any state if needed */ }}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="form">Document Details</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -286,15 +300,18 @@ const TemplateDetail = () => {
           
           <TabsContent value="form" className="mt-6">
             <div className="glass-card p-6">
-              <h2 className="text-lg font-medium mb-4">Document Details</h2>
+              <h2 className="text-lg font-medium mb-4">Fill in the details for your {template.title}</h2>
               {renderForm()}
             </div>
           </TabsContent>
           
           <TabsContent value="preview" className="mt-6">
             <div className="glass-card p-6">
-              <h2 className="text-lg font-medium mb-4">Preview</h2>
-              <div className="border rounded-lg p-4 bg-white min-h-[600px]">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium">Preview your {template.title}</h2>
+                 {/* Could add zoom controls or other preview options here */}
+              </div>
+              <div className="border rounded-lg p-4 bg-gray-50 min-h-[600px] overflow-auto">
                 {renderPreview()}
               </div>
             </div>

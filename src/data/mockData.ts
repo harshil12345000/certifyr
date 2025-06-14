@@ -1,4 +1,3 @@
-
 import { 
   FileText, 
   Users, 
@@ -37,32 +36,32 @@ export const statsData = [
 
 export const popularTemplates = [
   {
-    id: "bonafide-1",
-    title: "Bonafide Certificate",
-    description: "Standard certificate confirming student enrollment status",
-    category: "Student",
-    usageCount: 156
+    id: 'bonafide-1',
+    title: 'Bonafide Certificate',
+    description: 'Standard bonafide certificate for students or employees.',
+    category: 'Academic',
+    usageCount: 1250,
   },
   {
-    id: "experience-1",
-    title: "Experience Letter",
-    description: "Official document certifying employment period and role",
-    category: "Employment",
-    usageCount: 89
+    id: 'experience-1',
+    title: 'Experience Letter',
+    description: 'Formal letter confirming an individual\'s work experience.',
+    category: 'Professional',
+    usageCount: 980,
   },
   {
-    id: "noc-visa-1",
-    title: "NOC for Visa",
-    description: "No objection certificate for visa application purposes",
-    category: "Travel",
-    usageCount: 67
+    id: 'character-1',
+    title: 'Character Certificate',
+    description: 'Certificate attesting to an individual\'s moral character.',
+    category: 'General',
+    usageCount: 750,
   },
   {
-    id: "internship-1",
-    title: "Internship Completion",
-    description: "Certificate verifying successful internship completion",
-    category: "Student",
-    usageCount: 53
+    id: 'noc-visa-1',
+    title: 'NOC for Visa Application',
+    description: 'No Objection Certificate for employees/students applying for a visa.',
+    category: 'Travel',
+    usageCount: 620,
   }
 ];
 
