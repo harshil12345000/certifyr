@@ -238,7 +238,42 @@ export interface AddressProofData {
   includeDigitalSignature: boolean;
 }
 
-export type FormData = BonafideData | ExperienceData | CharacterData | EmbassyAttestationData | CompletionCertificateData | TransferCertificateData | NocVisaData | IncomeCertificateData | MaternityLeaveData | BankVerificationData | OfferLetterData | AddressProofData;
+// Import corporate template types
+export type {
+  ArticlesOfIncorporationData,
+  CorporateBylawsData,
+  FoundersAgreementData,
+  StockPurchaseAgreementData,
+  EmploymentAgreementData,
+  IPAssignmentAgreementData,
+  NDAData,
+} from './corporate-templates';
+
+// Extend FormData union type to include corporate templates
+export type CorporateFormData = 
+  | ArticlesOfIncorporationData
+  | CorporateBylawsData
+  | FoundersAgreementData
+  | StockPurchaseAgreementData
+  | EmploymentAgreementData
+  | IPAssignmentAgreementData
+  | NDAData;
+
+// Update the main FormData type to include corporate templates
+export type FormData = 
+  | BonafideData
+  | CharacterData
+  | ExperienceData
+  | EmbassyAttestationData
+  | CompletionCertificateData
+  | TransferCertificateData
+  | NocVisaData
+  | IncomeCertificateData
+  | MaternityLeaveData
+  | BankVerificationData
+  | OfferLetterData
+  | AddressProofData
+  | CorporateFormData;
 
 export interface BonafidePreviewProps {
   data: BonafideData;
