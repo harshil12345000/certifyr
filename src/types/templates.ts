@@ -53,7 +53,30 @@ export interface CharacterData {
   fontSize?: number;
 }
 
-export type FormData = BonafideData | ExperienceData | CharacterData;
+export interface NocVisaData {
+  fullName: string;
+  employeeOrStudentId: string;
+  designationOrCourse: string;
+  department: string;
+  passportNumber: string;
+  destinationCountry: string;
+  travelStartDate: string;
+  travelEndDate: string;
+  purposeOfVisit: string;
+  contactPersonInDestination?: string;
+  accommodationDetails?: string;
+  tripFundSource?: 'self' | 'company';
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+  fontFamily?: string;
+  fontSize?: number;
+}
+
+export type FormData = BonafideData | ExperienceData | CharacterData | NocVisaData;
 
 export interface BonafidePreviewProps {
   data: BonafideData;
@@ -65,4 +88,8 @@ export interface ExperiencePreviewProps {
 
 export interface CharacterPreviewProps {
   data: CharacterData;
+}
+
+export interface NocVisaPreviewProps {
+  data: NocVisaData;
 }
