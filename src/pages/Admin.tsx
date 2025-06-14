@@ -11,11 +11,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ImagePlus } from 'lucide-react';
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 
-interface OrganizationFormState {
-  name: string;
-  address: string;
-  phone: string;
+interface UserProfileFormState {
+  organizationName: string;
+  organizationLocation: string;
+  phoneNumber: string;
   email: string;
+  organizationType: string;
+  organizationSize: string;
+  organizationWebsite: string;
 }
 
 interface BrandingFileState {
@@ -34,11 +37,14 @@ const AdminPage = () => {
   const { user } = useAuth();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [hasOrganization, setHasOrganization] = useState<boolean>(false);
-  const [formState, setFormState] = useState<OrganizationFormState>({
-    name: '',
-    address: '',
-    phone: '',
+  const [formState, setFormState] = useState<UserProfileFormState>({
+    organizationName: '',
+    organizationLocation: '',
+    phoneNumber: '',
     email: '',
+    organizationType: '',
+    organizationSize: '',
+    organizationWebsite: '',
   });
   const [brandingFiles, setBrandingFiles] = useState<BrandingFileState>({
     logo: null,
@@ -53,91 +59,94 @@ const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch organization ID and then details and branding
+  // Fetch user profile data
   useEffect(() => {
-    const fetchUserOrganization = async () => {
+    const fetchUserProfile = async () => {
       if (!user?.id) {
         setIsLoading(false);
         return;
       }
       setIsLoading(true);
       try {
-        const { data: memberData, error: memberError } = await supabase
-          .from('organization_members')
-          .select('organization_id')
+        // Fetch user profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
           .eq('user_id', user.id)
           .single();
 
-        if (memberError || !memberData?.organization_id) {
-          console.log("No organization found for user, showing admin interface anyway");
+        if (profileError) {
+          console.log("No user profile found:", profileError);
           setHasOrganization(false);
           setIsLoading(false);
           return;
         }
-        setOrganizationId(memberData.organization_id);
-        setHasOrganization(true);
-      } catch (error) {
-        console.error("Error fetching user organization:", error);
-        setHasOrganization(false);
-        setIsLoading(false);
-      }
-    };
-    fetchUserOrganization();
-  }, [user]);
 
-  // Fetch organization details and branding files once organizationId is set
-  useEffect(() => {
-    if (!organizationId) return;
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch organization details
-        const { data: orgData, error: orgError } = await supabase
-          .from('organizations')
-          .select('name, address, phone, email')
-          .eq('id', organizationId)
-          .single();
-
-        if (orgError) throw orgError;
-        if (orgData) {
+        if (profileData) {
+          // Check if user has organization data
+          const hasOrgData = profileData.organization_name || 
+                           profileData.organization_location || 
+                           profileData.organization_type;
+          
+          setHasOrganization(!!hasOrgData);
+          
           setFormState({
-            name: orgData.name || '',
-            address: orgData.address || '',
-            phone: orgData.phone || '',
-            email: orgData.email || '',
+            organizationName: profileData.organization_name || '',
+            organizationLocation: profileData.organization_location || '',
+            phoneNumber: profileData.phone_number || '',
+            email: profileData.email || '',
+            organizationType: profileData.organization_type || '',
+            organizationSize: profileData.organization_size || '',
+            organizationWebsite: profileData.organization_website || '',
           });
-        }
 
-        // Fetch branding files
-        const { data: filesData, error: filesError } = await supabase
-          .from('branding_files')
-          .select('name, path')
-          .eq('organization_id', organizationId);
+          // Check for organization membership to get organization ID for branding
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .single();
 
-        if (filesError) throw filesError;
-        if (filesData) {
-          const previews: BrandingFilePreview = { logoUrl: null, sealUrl: null, signatureUrl: null };
-          filesData.forEach(file => {
-            const publicUrlResult = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-            if (publicUrlResult.data?.publicUrl) {
-              if (file.name === 'logo') previews.logoUrl = publicUrlResult.data.publicUrl;
-              if (file.name === 'seal') previews.sealUrl = publicUrlResult.data.publicUrl;
-              if (file.name === 'signature') previews.signatureUrl = publicUrlResult.data.publicUrl;
-            }
-          });
-          setBrandingPreviews(previews);
+          if (memberData?.organization_id) {
+            setOrganizationId(memberData.organization_id);
+            // Fetch branding files if user is part of an organization
+            await fetchBrandingFiles(memberData.organization_id);
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch admin data:', error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        toast({ title: 'Error Loading Data', description: errorMessage, variant: 'destructive' });
+        console.error("Error fetching user profile:", error);
+        setHasOrganization(false);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, [organizationId]);
+    fetchUserProfile();
+  }, [user]);
+
+  const fetchBrandingFiles = async (orgId: string) => {
+    try {
+      const { data: filesData, error: filesError } = await supabase
+        .from('branding_files')
+        .select('name, path')
+        .eq('organization_id', orgId);
+
+      if (filesError) throw filesError;
+      if (filesData) {
+        const previews: BrandingFilePreview = { logoUrl: null, sealUrl: null, signatureUrl: null };
+        filesData.forEach(file => {
+          const publicUrlResult = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+          if (publicUrlResult.data?.publicUrl) {
+            if (file.name === 'logo') previews.logoUrl = publicUrlResult.data.publicUrl;
+            if (file.name === 'seal') previews.sealUrl = publicUrlResult.data.publicUrl;
+            if (file.name === 'signature') previews.signatureUrl = publicUrlResult.data.publicUrl;
+          }
+        });
+        setBrandingPreviews(previews);
+      }
+    } catch (error) {
+      console.error('Failed to fetch branding files:', error);
+    }
+  };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -154,112 +163,108 @@ const AdminPage = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!hasOrganization) {
-      toast({ title: 'Error', description: 'Please create or join an organization first.', variant: 'destructive' });
-      return;
-    }
-    if (!organizationId) {
-      toast({ title: 'Error', description: 'Organization ID not found.', variant: 'destructive' });
+    if (!user?.id) {
+      toast({ title: 'Error', description: 'User not found.', variant: 'destructive' });
       return;
     }
     setIsSaving(true);
 
     try {
-      // Update organization details
-      const { error: orgUpdateError } = await supabase
-        .from('organizations')
+      // Update user profile
+      const { error: profileUpdateError } = await supabase
+        .from('user_profiles')
         .update({
-          name: formState.name,
-          address: formState.address,
-          phone: formState.phone,
+          organization_name: formState.organizationName,
+          organization_location: formState.organizationLocation,
+          phone_number: formState.phoneNumber,
           email: formState.email,
+          organization_type: formState.organizationType,
+          organization_size: formState.organizationSize,
+          organization_website: formState.organizationWebsite,
         })
-        .eq('id', organizationId);
+        .eq('user_id', user.id);
 
-      if (orgUpdateError) throw orgUpdateError;
+      if (profileUpdateError) throw profileUpdateError;
 
-      // Upload/Update branding files
-      for (const key of Object.keys(brandingFiles) as Array<keyof BrandingFileState>) {
-        const file = brandingFiles[key];
-        if (file) {
-          // Check if a file with the same name (logo, seal, signature) already exists for this org
-          const { data: existingFiles, error: fetchExistingError } = await supabase
-            .from('branding_files')
-            .select('path')
-            .eq('organization_id', organizationId)
-            .eq('name', key);
+      // Handle branding files if user has organization
+      if (organizationId) {
+        // ... keep existing code (branding file upload logic)
+        for (const key of Object.keys(brandingFiles) as Array<keyof BrandingFileState>) {
+          const file = brandingFiles[key];
+          if (file) {
+            // Check if a file with the same name (logo, seal, signature) already exists for this org
+            const { data: existingFiles, error: fetchExistingError } = await supabase
+              .from('branding_files')
+              .select('path')
+              .eq('organization_id', organizationId)
+              .eq('name', key);
 
-          if (fetchExistingError) {
-            console.warn(`Could not check for existing ${key} file:`, fetchExistingError.message);
-          }
-          
-          // If existing files found, remove them from storage first
-          if (existingFiles && existingFiles.length > 0) {
-            const pathsToRemove = existingFiles.map(f => f.path).filter(p => p !== null) as string[];
-            if (pathsToRemove.length > 0) {
-                const { error: removeStorageError } = await supabase.storage
-                    .from('branding-assets')
-                    .remove(pathsToRemove);
-                if (removeStorageError) {
-                    console.error(`Error removing old ${key} from storage:`, removeStorageError.message);
-                }
-                // Also delete from branding_files table
-                const { error: removeDbError } = await supabase
-                    .from('branding_files')
-                    .delete()
-                    .eq('organization_id', organizationId)
-                    .eq('name', key);
-                 if (removeDbError) {
-                    console.error(`Error removing old ${key} record from DB:`, removeDbError.message);
-                }
+            if (fetchExistingError) {
+              console.warn(`Could not check for existing ${key} file:`, fetchExistingError.message);
             }
+            
+            // If existing files found, remove them from storage first
+            if (existingFiles && existingFiles.length > 0) {
+              const pathsToRemove = existingFiles.map(f => f.path).filter(p => p !== null) as string[];
+              if (pathsToRemove.length > 0) {
+                  const { error: removeStorageError } = await supabase.storage
+                      .from('branding-assets')
+                      .remove(pathsToRemove);
+                  if (removeStorageError) {
+                      console.error(`Error removing old ${key} from storage:`, removeStorageError.message);
+                  }
+                  // Also delete from branding_files table
+                  const { error: removeDbError } = await supabase
+                      .from('branding_files')
+                      .delete()
+                      .eq('organization_id', organizationId)
+                      .eq('name', key);
+                   if (removeDbError) {
+                      console.error(`Error removing old ${key} record from DB:`, removeDbError.message);
+                  }
+              }
+            }
+
+            const filePath = `${organizationId}/${key}-${Date.now()}.${file.name.split('.').pop()}`;
+            const { error: uploadError } = await supabase.storage
+              .from('branding-assets')
+              .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw new Error(`Failed to upload ${key}: ${uploadError.message}`);
+
+            // Update or insert file record in branding_files
+            const { error: dbError } = await supabase
+              .from('branding_files')
+              .upsert(
+                {
+                  organization_id: organizationId,
+                  name: key,
+                  path: filePath,
+                  uploaded_by: user?.id,
+                },
+                { onConflict: 'organization_id,name' }
+              );
+            if (dbError) throw new Error(`Failed to save ${key} metadata: ${dbError.message}`);
           }
-
-          const filePath = `${organizationId}/${key}-${Date.now()}.${file.name.split('.').pop()}`;
-          const { error: uploadError } = await supabase.storage
-            .from('branding-assets')
-            .upload(filePath, file, { upsert: true });
-
-          if (uploadError) throw new Error(`Failed to upload ${key}: ${uploadError.message}`);
-
-          // Update or insert file record in branding_files
-          const { error: dbError } = await supabase
-            .from('branding_files')
-            .upsert(
-              {
-                organization_id: organizationId,
-                name: key,
-                path: filePath,
-                uploaded_by: user?.id,
-              },
-              { onConflict: 'organization_id,name' }
-            );
-          if (dbError) throw new Error(`Failed to save ${key} metadata: ${dbError.message}`);
         }
       }
 
-      toast({ title: 'Success', description: 'Organization details and branding updated.' });
-      // Optionally re-fetch previews from storage to get permanent URLs
-      const { data: filesData } = await supabase
-        .from('branding_files')
-        .select('name, path')
-        .eq('organization_id', organizationId);
-      if (filesData) {
-        const newPreviews: BrandingFilePreview = { logoUrl: null, sealUrl: null, signatureUrl: null };
-        filesData.forEach(fileEntry => {
-          const publicUrlResult = supabase.storage.from('branding-assets').getPublicUrl(fileEntry.path);
-          if (publicUrlResult.data?.publicUrl) {
-            if (fileEntry.name === 'logo') newPreviews.logoUrl = publicUrlResult.data.publicUrl;
-            if (fileEntry.name === 'seal') newPreviews.sealUrl = publicUrlResult.data.publicUrl;
-            if (fileEntry.name === 'signature') newPreviews.signatureUrl = publicUrlResult.data.publicUrl;
-          }
-        });
-        setBrandingPreviews(newPreviews);
+      toast({ title: 'Success', description: 'Profile updated successfully.' });
+      
+      // Update hasOrganization status
+      const hasOrgData = formState.organizationName || 
+                        formState.organizationLocation || 
+                        formState.organizationType;
+      setHasOrganization(!!hasOrgData);
+
+      // Refresh branding previews if organization exists
+      if (organizationId) {
+        await fetchBrandingFiles(organizationId);
         setBrandingFiles({ logo: null, seal: null, signature: null });
       }
 
     } catch (error) {
-      console.error('Failed to save admin data:', error);
+      console.error('Failed to save profile data:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({ title: 'Save Failed', description: errorMessage, variant: 'destructive' });
     } finally {
@@ -283,7 +288,7 @@ const AdminPage = () => {
         {!hasOrganization && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800">
-              You are not currently part of an organization. Some features may be limited until you create or join an organization.
+              You haven't provided organization details yet. Complete your organization information below to unlock all features.
             </p>
           </div>
         )}
@@ -302,46 +307,40 @@ const AdminPage = () => {
                 <CardHeader>
                   <CardTitle>Organization Details</CardTitle>
                   <CardDescription>
-                    {hasOrganization 
-                      ? "Update your organization's information." 
-                      : "Organization details will be available once you create or join an organization."
-                    }
+                    Update your organization information from your profile.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Organization Name</Label>
+                    <Label htmlFor="organizationName">Organization Name</Label>
                     <Input 
-                      id="name" 
-                      name="name" 
-                      value={formState.name} 
+                      id="organizationName" 
+                      name="organizationName" 
+                      value={formState.organizationName} 
                       onChange={handleInputChange} 
-                      disabled={!hasOrganization}
-                      placeholder={!hasOrganization ? "No organization found" : ""}
+                      placeholder="Enter organization name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="address">Address</Label>
+                    <Label htmlFor="organizationLocation">Address/Location</Label>
                     <Input 
-                      id="address" 
-                      name="address" 
-                      value={formState.address} 
+                      id="organizationLocation" 
+                      name="organizationLocation" 
+                      value={formState.organizationLocation} 
                       onChange={handleInputChange} 
-                      disabled={!hasOrganization}
-                      placeholder={!hasOrganization ? "No organization found" : ""}
+                      placeholder="Enter organization address or location"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="phoneNumber">Phone</Label>
                       <Input 
-                        id="phone" 
-                        name="phone" 
+                        id="phoneNumber" 
+                        name="phoneNumber" 
                         type="tel" 
-                        value={formState.phone} 
+                        value={formState.phoneNumber} 
                         onChange={handleInputChange} 
-                        disabled={!hasOrganization}
-                        placeholder={!hasOrganization ? "No organization found" : ""}
+                        placeholder="Enter phone number"
                       />
                     </div>
                     <div>
@@ -352,14 +351,46 @@ const AdminPage = () => {
                         type="email" 
                         value={formState.email} 
                         onChange={handleInputChange} 
-                        disabled={!hasOrganization}
-                        placeholder={!hasOrganization ? "No organization found" : ""}
+                        placeholder="Enter email address"
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="organizationType">Organization Type</Label>
+                      <Input 
+                        id="organizationType" 
+                        name="organizationType" 
+                        value={formState.organizationType} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g., Educational Institution, Government"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="organizationSize">Organization Size</Label>
+                      <Input 
+                        id="organizationSize" 
+                        name="organizationSize" 
+                        value={formState.organizationSize} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g., 1-50 employees"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="organizationWebsite">Website</Label>
+                    <Input 
+                      id="organizationWebsite" 
+                      name="organizationWebsite" 
+                      type="url" 
+                      value={formState.organizationWebsite} 
+                      onChange={handleInputChange} 
+                      placeholder="https://example.com"
+                    />
+                  </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isSaving || !hasOrganization}>
+                  <Button type="submit" disabled={isSaving}>
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </CardFooter>
@@ -386,9 +417,9 @@ const AdminPage = () => {
                 <CardHeader>
                   <CardTitle>Branding Assets</CardTitle>
                   <CardDescription>
-                    {hasOrganization 
+                    {organizationId 
                       ? "Upload your organization's logo, seal, and digital signature." 
-                      : "Branding features will be available once you create or join an organization."
+                      : "Branding features require organization membership. Contact your admin to join an organization."
                     }
                   </CardDescription>
                 </CardHeader>
@@ -404,7 +435,7 @@ const AdminPage = () => {
                         type="file" 
                         accept="image/png, image/jpeg, image/svg+xml" 
                         onChange={(e) => handleFileChange(e, type)} 
-                        disabled={!hasOrganization}
+                        disabled={!organizationId}
                       />
                       {brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && (
                         <div className="mt-2 p-2 border rounded-md inline-block">
@@ -420,14 +451,14 @@ const AdminPage = () => {
                       )}
                       {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && !brandingFiles[type] && (
                         <p className="text-sm text-muted-foreground italic">
-                          {hasOrganization ? `No ${type} uploaded.` : `${type.charAt(0).toUpperCase() + type.slice(1)} upload requires an organization.`}
+                          {organizationId ? `No ${type} uploaded.` : `${type.charAt(0).toUpperCase() + type.slice(1)} upload requires organization membership.`}
                         </p>
                       )}
                     </div>
                   ))}
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isSaving || !hasOrganization}>
+                  <Button type="submit" disabled={isSaving || !organizationId}>
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </CardFooter>
