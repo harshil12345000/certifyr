@@ -54,6 +54,7 @@ const Auth = () => {
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>;
   }
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -91,8 +92,11 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
     if (signUpPassword !== confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -109,7 +113,15 @@ const Auth = () => {
       });
       return;
     }
-    if (signUpOrganizationType === 'Other' && !signUpOrganizationTypeOther) {
+    if (!signUpFullName.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your full name.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (signUpOrganizationType === 'Other' && !signUpOrganizationTypeOther.trim()) {
       toast({
         title: "Organization Type Required",
         description: "Please specify your organization type if 'Other' is selected.",
@@ -131,21 +143,27 @@ const Auth = () => {
       organizationLocation: signUpOrganizationLocation,
     };
 
+    console.log('Submitting signup with data:', signUpData);
+
     try {
-      const {
-        error
-      } = await signUp(signUpEmail, signUpPassword, signUpData);
+      const { error } = await signUp(signUpEmail, signUpPassword, signUpData);
+      
       if (error) {
+        console.error('Signup error received:', error);
         let errorMessage = 'An error occurred during sign up';
-        if (error.message?.includes('User already registered')) {
+        
+        if (error.message?.includes('User already registered') || error.message?.includes('already registered')) {
           errorMessage = 'An account with this email already exists. Please sign in instead.';
         } else if (error.message?.includes('Password should be at least 6 characters')) {
           errorMessage = 'Password must be at least 6 characters long.';
         } else if (error.message?.includes('Invalid email')) {
           errorMessage = 'Please enter a valid email address.';
+        } else if (error.message?.includes('Database error')) {
+          errorMessage = 'A database error occurred while creating your account. Please try again or contact support.';
         } else if (error.message) {
           errorMessage = error.message;
         }
+        
         toast({
           title: "Sign Up Failed",
           description: errorMessage,
@@ -171,6 +189,7 @@ const Auth = () => {
         setConfirmPassword('');
       }
     } catch (error) {
+      console.error('Unexpected signup error:', error);
       toast({
         title: "Sign Up Failed",
         description: "An unexpected error occurred. Please try again.",
@@ -180,6 +199,7 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">

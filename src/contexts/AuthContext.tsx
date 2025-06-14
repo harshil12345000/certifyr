@@ -61,39 +61,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
+      console.log('Starting signup process for:', email);
+      console.log('Signup data:', data);
+      
       const redirectUrl = `${window.location.origin}/dashboard`;
       
-      // Simplify metadata to avoid database constraints
+      // Create a clean metadata object
       const metaData: Record<string, any> = {
-        full_name: data.fullName,
+        full_name: data.fullName.trim(),
       };
 
-      // Only add optional fields if they have values
-      if (data.phoneNumber) {
-        metaData.phone_number = data.phoneNumber;
+      // Only add optional fields if they have non-empty values
+      if (data.phoneNumber?.trim()) {
+        metaData.phone_number = data.phoneNumber.trim();
       }
-      if (data.organizationName) {
-        metaData.organization_name = data.organizationName;
+      if (data.organizationName?.trim()) {
+        metaData.organization_name = data.organizationName.trim();
       }
-      if (data.organizationType) {
-        metaData.organization_type = data.organizationType;
+      if (data.organizationType?.trim()) {
+        metaData.organization_type = data.organizationType.trim();
       }
-      if (data.organizationSize) {
-        metaData.organization_size = data.organizationSize;
+      if (data.organizationSize?.trim()) {
+        metaData.organization_size = data.organizationSize.trim();
       }
-      if (data.organizationWebsite) {
-        metaData.organization_website = data.organizationWebsite;
+      if (data.organizationWebsite?.trim()) {
+        metaData.organization_website = data.organizationWebsite.trim();
       }
-      if (data.organizationLocation) {
-        metaData.organization_location = data.organizationLocation;
+      if (data.organizationLocation?.trim()) {
+        metaData.organization_location = data.organizationLocation.trim();
       }
 
-      if (data.organizationType === 'Other' && data.organizationTypeOther) {
-        metaData.organization_type_other = data.organizationTypeOther;
+      if (data.organizationType === 'Other' && data.organizationTypeOther?.trim()) {
+        metaData.organization_type_other = data.organizationTypeOther.trim();
       }
+
+      console.log('Prepared metadata:', metaData);
       
-      const { error } = await supabase.auth.signUp({
-        email,
+      const { data: signUpData, error } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
         options: {
           emailRedirectTo: redirectUrl,
@@ -101,9 +106,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      return { error };
+      console.log('Supabase signup response:', { signUpData, error });
+      
+      if (error) {
+        console.error('Supabase signup error:', error);
+        return { error };
+      }
+
+      if (signUpData?.user) {
+        console.log('User created successfully:', signUpData.user.id);
+        
+        // Give the trigger a moment to complete
+        setTimeout(async () => {
+          try {
+            // Verify the user profile was created
+            const { data: profile, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('user_id', signUpData.user.id)
+              .single();
+            
+            if (profileError) {
+              console.error('Profile creation verification failed:', profileError);
+            } else {
+              console.log('User profile created successfully:', profile);
+            }
+          } catch (verificationError) {
+            console.error('Profile verification error:', verificationError);
+          }
+        }, 1000);
+      }
+      
+      return { error: null };
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('Unexpected signup error:', error);
       return { error };
     }
   };
