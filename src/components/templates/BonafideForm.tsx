@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 
 interface BonafideFormProps {
   onSubmit: (data: BonafideData) => void;
@@ -30,12 +31,28 @@ const formSchema = z.object({
   signatoryName: z.string().min(2, { message: "Signatory name is required" }),
   signatoryDesignation: z.string().min(2, { message: "Designation is required" }),
   includeDigitalSignature: z.boolean().default(false),
+  fontFamily: z.string().default("Arial"),
+  fontSize: z.number().min(8).max(24).default(12),
 });
+
+const fontOptions = [
+  { value: "Arial", label: "Arial" },
+  { value: "Times New Roman", label: "Times New Roman" },
+  { value: "Helvetica", label: "Helvetica" },
+  { value: "Georgia", label: "Georgia" },
+  { value: "Verdana", label: "Verdana" },
+  { value: "Trebuchet MS", label: "Trebuchet MS" },
+  { value: "Courier New", label: "Courier New" },
+];
 
 export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
   const form = useForm<BonafideData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      ...initialData,
+      fontFamily: initialData.fontFamily || "Arial",
+      fontSize: initialData.fontSize || 12,
+    },
   });
 
   const handleFormSubmit = (values: BonafideData) => {
@@ -231,6 +248,59 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Font Customization Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Font Customization</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="fontFamily"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Font Family</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select font" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {fontOptions.map((font) => (
+                        <SelectItem key={font.value} value={font.value}>
+                          <span style={{ fontFamily: font.value }}>{font.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="fontSize"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Font Size: {field.value}px</FormLabel>
+                  <FormControl>
+                    <Slider
+                      min={8}
+                      max={24}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormDescription>Adjust the font size (8px - 24px)</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

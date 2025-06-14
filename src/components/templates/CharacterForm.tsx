@@ -1,7 +1,7 @@
-
 import React from "react";
 import { CharacterData } from "@/types/templates";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 
 interface CharacterFormProps {
   onSubmit: (data: CharacterData) => void;
@@ -18,7 +19,7 @@ interface CharacterFormProps {
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
   parentName: z.string().min(2, { message: "Parent name must be at least 2 characters" }),
-  address: z.string().min(5, { message: "Address is required" }),
+  address: z.string().min(5, { message: "Address must be at least 5 characters" }),
   duration: z.string().min(1, { message: "Duration is required" }),
   conduct: z.string().min(2, { message: "Conduct description is required" }),
   institutionName: z.string().min(2, { message: "Institution name is required" }),
@@ -27,12 +28,28 @@ const formSchema = z.object({
   signatoryName: z.string().min(2, { message: "Signatory name is required" }),
   signatoryDesignation: z.string().min(2, { message: "Designation is required" }),
   includeDigitalSignature: z.boolean().default(false),
+  fontFamily: z.string().default("Arial"),
+  fontSize: z.number().min(8).max(24).default(12),
 });
+
+const fontOptions = [
+  { value: "Arial", label: "Arial" },
+  { value: "Times New Roman", label: "Times New Roman" },
+  { value: "Helvetica", label: "Helvetica" },
+  { value: "Georgia", label: "Georgia" },
+  { value: "Verdana", label: "Verdana" },
+  { value: "Trebuchet MS", label: "Trebuchet MS" },
+  { value: "Courier New", label: "Courier New" },
+];
 
 export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
   const form = useForm<CharacterData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      ...initialData,
+      fontFamily: initialData.fontFamily || "Arial",
+      fontSize: initialData.fontSize || 12,
+    },
   });
 
   const handleFormSubmit = (values: CharacterData) => {
@@ -82,43 +99,7 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Complete residential address" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Character Details Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Character Details</h3>
-
-            <FormField
-              control={form.control}
-              name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Duration Known</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g., 5 years, Since 2020" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="conduct"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Character & Conduct</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      {...field} 
-                      placeholder="Describe the person's character, behavior, and moral conduct"
-                    />
+                    <Textarea {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,21 +120,19 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
               )}
             />
           </div>
-        </div>
 
-        {/* Certificate Details Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Certificate Details</h3>
+          {/* Character Details Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Character Details</h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
-              name="date"
+              name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Issue Date</FormLabel>
+                  <FormLabel>Duration Known</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input {...field} placeholder="e.g., 3 years" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,13 +141,99 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
 
             <FormField
               control={form.control}
-              name="place"
+              name="conduct"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Place</FormLabel>
+                  <FormLabel>Character & Conduct</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Textarea 
+                      {...field} 
+                      placeholder="Describe the person's character and conduct"
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Issue Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="place"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Place</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Font Customization Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Font Customization</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="fontFamily"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Font Family</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select font" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {fontOptions.map((font) => (
+                        <SelectItem key={font.value} value={font.value}>
+                          <span style={{ fontFamily: font.value }}>{font.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="fontSize"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Font Size: {field.value}px</FormLabel>
+                  <FormControl>
+                    <Slider
+                      min={8}
+                      max={24}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormDescription>Adjust the font size (8px - 24px)</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -209,7 +274,6 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
             />
           </div>
           
-          {/* Digital Signature Toggle */}
           <FormField
             control={form.control}
             name="includeDigitalSignature"
