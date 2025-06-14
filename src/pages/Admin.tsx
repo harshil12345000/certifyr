@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileUp, ImagePlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 
 interface OrganizationFormState {
   name: string;
@@ -284,6 +284,10 @@ const AdminPage = () => {
     <DashboardLayout>
       <div className="container mx-auto py-8 px-4 md:px-6">
         <h1 className="text-3xl font-bold mb-8">Admin Settings</h1>
+        {/* Add Announcements Panel for admins */}
+        <div className="mb-8">
+          <AnnouncementAdminPanel />
+        </div>
         <form onSubmit={handleSubmit}>
           <Card className="mb-8">
             <CardHeader>
