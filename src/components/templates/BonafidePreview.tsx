@@ -157,7 +157,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
       <h2 className="text-center font-bold text-lg mb-6 underline uppercase">{title}</h2>
 
       <p className="mb-4 text-justify">
-        This is to certify that Mr./Ms. <strong>{fullName || '[Full Name]'}</strong>, {childPronoun} of Mr./Mrs. <strong>{parentName || "[Parent's Name]"}</strong>, is a bonafide {type} of <strong>{institutionName || '[Institution Name]'}</strong>.
+        This is to certify that Mr./Ms. <strong>{fullName || '[Full Name]'}</strong>, {childPronoun} of Mr./Mrs. <strong>{parentName || "[Parent's Name]"}</strong>, is a bonafide {type || '[Type]'} of <strong>{institutionName || '[Institution Name]'}</strong>.
       </p>
       <p className="mb-4 text-justify">
         {pronoun} has been {type === 'student' ? 'studying in' : 'working with'} this institution since <strong>{formattedStartDate}</strong> and is currently {type === 'student' ? 'enrolled as a' : 'designated as'} <strong>{courseOrDesignation || '[Course/Designation]'}</strong> {type === 'student' ? 'student' : ''} in the <strong>{department || '[Department]'}</strong> department.

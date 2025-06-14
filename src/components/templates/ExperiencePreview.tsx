@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -17,17 +18,15 @@ interface OrganizationInfo {
   address: string | null;
   phone: string | null;
   email: string | null;
-  // tagline: string | null;
 }
 
 export function ExperiencePreview({ data }: ExperiencePreviewProps) {
   const [brandingAssets, setBrandingAssets] = useState<BrandingAssets>({ logoUrl: null, sealUrl: null, signatureUrl: null });
   const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo>({
     name: data.institutionName || "[Institution Name]",
-    address: "123 Business Park, Suite 100, Corporate City, 500001",
-    phone: "+91 4040 505050",
-    email: "hr@institution.com",
-    // tagline: null,
+    address: null,
+    phone: null,
+    email: null,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
@@ -61,21 +60,21 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
             fetchedOrgName = orgData.name;
             setOrganizationInfo({
               name: orgData.name || data.institutionName || "[Institution Name]",
-              address: orgData.address || "123 Default Address",
-              phone: orgData.phone || "Default Phone",
-              email: orgData.email || "default@example.com",
+              address: orgData.address,
+              phone: orgData.phone,
+              email: orgData.email,
             });
-          }  else {
-             console.warn(`Organization named "${data.institutionName}" not found. Using fallback details.`);
-             setOrganizationInfo({
-                name: data.institutionName || "[Institution Name]",
-                address: "123 Business Park, Suite 100, Corporate City, 500001",
-                phone: "+91 4040 505050",
-                email: "hr@institution.com",
-             });
+          } else {
+            console.warn(`Organization named "${data.institutionName}" not found.`);
+            setOrganizationInfo({
+              name: data.institutionName || "[Institution Name]",
+              address: null,
+              phone: null,
+              email: null,
+            });
           }
         } else if (user?.id) {
-           const { data: memberData, error: memberError } = await supabase
+          const { data: memberData, error: memberError } = await supabase
             .from('organization_members')
             .select('organization_id')
             .eq('user_id', user.id)
@@ -91,19 +90,19 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
               .eq('id', orgIdToQuery)
               .single();
             if (orgData) {
-                fetchedOrgName = orgData.name;
-                setOrganizationInfo({
-                    name: orgData.name || "[Institution Name]",
-                    address: orgData.address || "123 Default Address",
-                    phone: orgData.phone || "Default Phone",
-                    email: orgData.email || "default@example.com",
-                });
+              fetchedOrgName = orgData.name;
+              setOrganizationInfo({
+                name: orgData.name || "[Institution Name]",
+                address: orgData.address,
+                phone: orgData.phone,
+                email: orgData.email,
+              });
             } else {
-                console.warn("ExperiencePreview: Organization details not found for user's org ID.");
+              console.warn("ExperiencePreview: Organization details not found for user's org ID.");
             }
           }
         } else {
-           console.warn("ExperiencePreview: institutionName not provided and no user context. Cannot fetch specific org details.");
+          console.warn("ExperiencePreview: institutionName not provided and no user context. Cannot fetch specific org details.");
         }
 
         // 2. Fetch Branding Assets
@@ -136,11 +135,11 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
           }
         } else {
           setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-           if(data.institutionName || user?.id) {
-             console.warn("ExperiencePreview: No organization ID determined, cannot fetch branding assets.");
-           }
+          if(data.institutionName || user?.id) {
+            console.warn("ExperiencePreview: No organization ID determined, cannot fetch branding assets.");
+          }
         }
-         setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
+        setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
       } catch (err) {
         console.error("Unexpected error loading assets for ExperiencePreview:", err);
         toast({
@@ -158,9 +157,9 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
 
   const institutionNameToDisplay = organizationInfo.name;
   const contactInfo = {
-    address: organizationInfo.address || "123 Business Park, Suite 100, Corporate City, 500001",
-    phone: organizationInfo.phone || "+91 4040 505050",
-    email: organizationInfo.email || "hr@institution.com"
+    address: organizationInfo.address || "[Institution Address]",
+    phone: organizationInfo.phone || "[Phone Number]",
+    email: organizationInfo.email || "[Email Address]"
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
@@ -238,7 +237,7 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
               <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
             </p>
             <p>
-              <strong>Place:</strong> {data.place || (contactInfo.address?.split(',').slice(-2).join(', ').trim() || "[City, State]")}
+              <strong>Place:</strong> {data.place || "[Place]"}
             </p>
           </div>
           
@@ -255,7 +254,7 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
                     />
                   </div>
                 ) : (
-                   <div className="border-b border-gray-800 px-6 py-3">
+                  <div className="border-b border-gray-800 px-6 py-3">
                     <SignatureIcon className="h-8 w-8 text-primary" />
                   </div>
                 )}
@@ -270,15 +269,15 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
             <p>{institutionNameToDisplay}</p>
           </div>
         </div>
-         {brandingAssets.sealUrl && (
-            <div className="absolute bottom-8 left-8">
-                 <img 
-                    src={brandingAssets.sealUrl}
-                    alt="Organization Seal" 
-                    className="h-20 w-20 object-contain opacity-75"
-                    onError={(e) => handleImageError(e, "seal")}
-                />
-            </div>
+        {brandingAssets.sealUrl && (
+          <div className="absolute bottom-8 left-8">
+            <img 
+              src={brandingAssets.sealUrl}
+              alt="Organization Seal" 
+              className="h-20 w-20 object-contain opacity-75"
+              onError={(e) => handleImageError(e, "seal")}
+            />
+          </div>
         )}
       </div>
     </div>

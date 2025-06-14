@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { NocVisaData, NocVisaPreviewProps } from '@/types/templates'; // Ensure NocVisaPreviewProps is imported
+import { NocVisaData, NocVisaPreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,7 +13,6 @@ interface BrandingAssets {
   organizationEmail: string | null;
 }
 
-// Interface for organization details fetched from Supabase
 interface OrganizationDetailsFromDB {
   id: string;
   name: string | null;
@@ -21,7 +21,7 @@ interface OrganizationDetailsFromDB {
   email: string | null;
 }
 
-export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // Use NocVisaPreviewProps
+export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => {
   const {
     fullName,
     employeeOrStudentId,
@@ -33,7 +33,7 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
     travelEndDate,
     purposeOfVisit,
     tripFundSource,
-    institutionName: institutionNameFromData, // Rename to avoid conflict with state
+    institutionName: institutionNameFromData,
     date: issueDate,
     place,
     signatoryName,
@@ -45,26 +45,24 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
     logoUrl: null, 
     sealUrl: null, 
     signatureUrl: null,
-    organizationAddress: '123 Institution Address, City, State, ZIP',
-    organizationPhone: '(123) 456-7890',
-    organizationEmail: 'info@institution.example.com'
+    organizationAddress: null,
+    organizationPhone: null,
+    organizationEmail: null
   });
   const [currentInstitutionName, setCurrentInstitutionName] = useState<string | null>(institutionNameFromData || '[Institution Name]');
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchBrandingAndOrgDetails = async () => {
-      // Determine the institution name to use for fetching
       const effectiveInstitutionName = institutionNameFromData || currentInstitutionName;
       if (!effectiveInstitutionName && !user?.id) {
         console.warn("NOC Preview: Institution name or user context not available.");
-        // Set to placeholders or defaults if no info
         setBranding(prev => ({
-            ...prev,
-            logoUrl: null, sealUrl: null, signatureUrl: null,
-            organizationAddress: '123 Institution Address, City, State, ZIP',
-            organizationPhone: '(123) 456-7890',
-            organizationEmail: 'info@institution.example.com'
+          ...prev,
+          logoUrl: null, sealUrl: null, signatureUrl: null,
+          organizationAddress: null,
+          organizationPhone: null,
+          organizationEmail: null
         }));
         setCurrentInstitutionName('[Institution Name]');
         return;
@@ -74,66 +72,65 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
         let orgIdToQuery: string | null = null;
         let orgDetailsFromDB: OrganizationDetailsFromDB | null = null;
 
-        // Try fetching organization by name if provided
         if (effectiveInstitutionName && effectiveInstitutionName !== '[Institution Name]') {
-            const { data: orgData, error: orgError } = await supabase
+          const { data: orgData, error: orgError } = await supabase
             .from('organizations')
             .select('id, name, address, phone, email')
             .eq('name', effectiveInstitutionName)
-            .maybeSingle(); // Use maybeSingle
+            .maybeSingle();
 
-            if (orgError && orgError.code !== 'PGRST116') { 
-                console.error("Error fetching organization by name:", orgError.message);
-            } else if (orgData) {
-                orgDetailsFromDB = orgData;
-                orgIdToQuery = orgData.id;
-            } else {
-                console.warn(`Organization named "${effectiveInstitutionName}" not found.`);
-            }
+          if (orgError && orgError.code !== 'PGRST116') { 
+            console.error("Error fetching organization by name:", orgError.message);
+          } else if (orgData) {
+            orgDetailsFromDB = orgData;
+            orgIdToQuery = orgData.id;
+          } else {
+            console.warn(`Organization named "${effectiveInstitutionName}" not found.`);
+          }
         }
         
-        // If orgId not found by name, try using user's organization_id (if user exists)
         if (!orgIdToQuery && user?.id) {
-            const { data: memberData, error: memberError } = await supabase
-                .from('organization_members')
-                .select('organization_id')
-                .eq('user_id', user.id)
+          const { data: memberData, error: memberError } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (memberError || !memberData?.organization_id) {
+            console.warn("NOC Preview: Could not get org_id from user member data.");
+          } else {
+            orgIdToQuery = memberData.organization_id;
+            if (!orgDetailsFromDB) {
+              const { data: orgDataUser, error: orgErrorUser } = await supabase
+                .from('organizations')
+                .select('id, name, address, phone, email')
+                .eq('id', orgIdToQuery)
                 .single();
-            
-            if (memberError || !memberData?.organization_id) {
-                console.warn("NOC Preview: Could not get org_id from user member data.");
-            } else {
-                orgIdToQuery = memberData.organization_id;
-                // Fetch org details if we got ID from user context and didn't have them
-                if (!orgDetailsFromDB) {
-                    const { data: orgDataUser, error: orgErrorUser } = await supabase
-                        .from('organizations')
-                        .select('id, name, address, phone, email')
-                        .eq('id', orgIdToQuery)
-                        .single();
-                    if (orgDataUser) {
-                        orgDetailsFromDB = orgDataUser;
-                    } else if (orgErrorUser) {
-                        console.error("Error fetching user's organization details:", orgErrorUser.message);
-                    }
-                }
+              if (orgDataUser) {
+                orgDetailsFromDB = orgDataUser;
+              } else if (orgErrorUser) {
+                console.error("Error fetching user's organization details:", orgErrorUser.message);
+              }
             }
+          }
         }
 
-        // Update state with fetched organization details or fallbacks
         if (orgDetailsFromDB) {
-            setCurrentInstitutionName(orgDetailsFromDB.name || '[Institution Name]');
-            setBranding(prev => ({
-                ...prev,
-                organizationAddress: orgDetailsFromDB.address || prev.organizationAddress,
-                organizationPhone: orgDetailsFromDB.phone || prev.organizationPhone,
-                organizationEmail: orgDetailsFromDB.email || prev.organizationEmail,
-            }));
+          setCurrentInstitutionName(orgDetailsFromDB.name || '[Institution Name]');
+          setBranding(prev => ({
+            ...prev,
+            organizationAddress: orgDetailsFromDB.address,
+            organizationPhone: orgDetailsFromDB.phone,
+            organizationEmail: orgDetailsFromDB.email,
+          }));
         } else {
-            // If still no org details (e.g. only institutionName from data which was not found)
-            // and no user context or user's org not found
-             setCurrentInstitutionName(institutionNameFromData || '[Institution Name]'); // Revert to data or placeholder
-             // Keep existing placeholder branding address/phone/email or reset them
+          setCurrentInstitutionName(institutionNameFromData || '[Institution Name]');
+          setBranding(prev => ({
+            ...prev,
+            organizationAddress: null,
+            organizationPhone: null,
+            organizationEmail: null,
+          }));
         }
 
         if (!orgIdToQuery) {
@@ -142,7 +139,6 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
           return;
         }
 
-        // Fetch branding files using organization_id
         const { data: filesData, error: filesError } = await supabase
           .from('branding_files')
           .select('name, path')
@@ -159,28 +155,27 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
         let newSignatureUrl: string | null = null;
 
         if (filesData) {
-            filesData.forEach(file => {
-              const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-              const publicUrl = publicUrlRes.data?.publicUrl;
-              if (publicUrl) {
-                if (file.name === 'logo') newLogoUrl = publicUrl;
-                if (file.name === 'seal') newSealUrl = publicUrl;
-                if (file.name === 'signature') newSignatureUrl = publicUrl;
-              }
-            });
+          filesData.forEach(file => {
+            const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+            const publicUrl = publicUrlRes.data?.publicUrl;
+            if (publicUrl) {
+              if (file.name === 'logo') newLogoUrl = publicUrl;
+              if (file.name === 'seal') newSealUrl = publicUrl;
+              if (file.name === 'signature') newSignatureUrl = publicUrl;
+            }
+          });
         }
         setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
 
       } catch (error) {
         console.error("Unexpected error fetching branding/org details:", error);
         setBranding(prev => ({ ...prev, logoUrl: null, sealUrl: null, signatureUrl: null }));
-        setCurrentInstitutionName(institutionNameFromData || '[Institution Name]'); // Fallback
+        setCurrentInstitutionName(institutionNameFromData || '[Institution Name]');
       }
     };
 
     fetchBrandingAndOrgDetails();
-  }, [institutionNameFromData, user]); // Rerun if institutionName in data changes or user changes
-
+  }, [institutionNameFromData, user]);
 
   const formattedTravelStartDate = travelStartDate ? new Date(travelStartDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Start Date]';
   const formattedTravelEndDate = travelEndDate ? new Date(travelEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[End Date]';
@@ -194,8 +189,14 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
           <img src={branding.logoUrl} alt={`${currentInstitutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-2 object-contain" />
         )}
         <h1 className="text-2xl font-bold text-blue-700">{currentInstitutionName}</h1>
-        <p className="text-xs">{branding.organizationAddress}</p>
-        <p className="text-xs">Phone: {branding.organizationPhone} | Email: {branding.organizationEmail}</p>
+        {branding.organizationAddress && <p className="text-xs">{branding.organizationAddress}</p>}
+        {(branding.organizationPhone || branding.organizationEmail) && (
+          <p className="text-xs">
+            {branding.organizationPhone && `Phone: ${branding.organizationPhone}`}
+            {branding.organizationPhone && branding.organizationEmail && ' | '}
+            {branding.organizationEmail && `Email: ${branding.organizationEmail}`}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-between mb-6">
@@ -234,11 +235,11 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
       </p>
       
       {tripFundSource && (
-         <p className="mb-4 text-justify">
-           {tripFundSource === 'self' 
-             ? `All expenses related to this trip will be borne by Mr./Ms. ${fullName || '[Full Name]'}.`
-             : `All expenses related to this trip will be borne by ${currentInstitutionName}.`}
-         </p>
+        <p className="mb-4 text-justify">
+          {tripFundSource === 'self' 
+            ? `All expenses related to this trip will be borne by Mr./Ms. ${fullName || '[Full Name]'}.`
+            : `All expenses related to this trip will be borne by ${currentInstitutionName}.`}
+        </p>
       )}
 
       <p className="mb-4 text-justify">
@@ -263,7 +264,7 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => { // 
               [Digital Signature Placeholder]
             </div>
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>} {/* Placeholder for height */}
+          {!includeDigitalSignature && <div className="h-16"></div>}
           <p className="font-semibold">{signatoryName || '[Signatory Name]'}</p>
           <p>{signatoryDesignation || '[Signatory Designation]'}</p>
           <p>{currentInstitutionName}</p>
