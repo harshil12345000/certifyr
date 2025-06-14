@@ -32,24 +32,22 @@ export function useUserStats() {
         setLoading(true);
         setError(null);
 
-        // For now, we'll return 0 for all stats since we don't have document tables yet
-        // This can be updated when document storage is implemented
-        const userStats: UserStats = {
-          documentsCreated: 0,
-          documentsSigned: 0,
-          pendingDocuments: 0,
-          totalTemplates: 0
-        };
+        // Fetch documents for this user
+        const { data: documents } = await supabase
+          .from('documents')
+          .select('status')
+          .eq('user_id', user.id);
 
-        // If we had document tables, we would fetch like this:
-        // const { data: documents } = await supabase
-        //   .from('documents')
-        //   .select('status')
-        //   .eq('user_id', user.id);
-        
-        // const documentsCreated = documents?.length || 0;
-        // const documentsSigned = documents?.filter(doc => doc.status === 'signed').length || 0;
-        // const pendingDocuments = documents?.filter(doc => doc.status === 'pending').length || 0;
+        const documentsCreated = documents?.length || 0;
+        const documentsSigned = documents?.filter(doc => doc.status === 'Signed').length || 0;
+        const pendingDocuments = documents?.filter(doc => doc.status === 'Created' || doc.status === 'Sent').length || 0;
+
+        const userStats: UserStats = {
+          documentsCreated,
+          documentsSigned,
+          pendingDocuments,
+          totalTemplates: 0 // Will be updated when templates feature is implemented
+        };
 
         setStats(userStats);
       } catch (err) {
@@ -68,6 +66,28 @@ export function useUserStats() {
     };
 
     fetchStats();
+
+    // Set up real-time subscription for live stats updates
+    const channel = supabase
+      .channel('stats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'documents',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch stats when documents change
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return { stats, loading, error };

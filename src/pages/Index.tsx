@@ -11,6 +11,7 @@ import { Document } from "@/types/document";
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useUserActivity } from '@/hooks/useUserActivity';
+import { useUserDocuments } from '@/hooks/useUserDocuments';
 
 const mockDocuments = [{
   id: "doc-1",
@@ -39,6 +40,7 @@ const Index = () => {
   const { user } = useAuth();
   const { stats, loading: statsLoading, error } = useUserStats();
   const { activityData, loading: activityLoading } = useUserActivity();
+  const { documents, loading: documentsLoading } = useUserDocuments(5);
 
   const statsCards = [
     { 
@@ -133,7 +135,10 @@ const Index = () => {
         </div>
 
         {/* Recent Documents */}
-        <RecentDocuments documents={mockDocuments} />
+        <RecentDocuments 
+          documents={documents} 
+          loading={documentsLoading}
+        />
 
         {/* Recent Templates */}
         <div>

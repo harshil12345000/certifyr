@@ -25,26 +25,46 @@ export function useUserActivity() {
         setLoading(true);
         setError(null);
 
-        // For now, we'll return empty data since we don't have document tables yet
-        // This will be updated when document storage is implemented
-        
+        // Fetch documents from the last 7 months
+        const sevenMonthsAgo = new Date();
+        sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
+
+        const { data: documents } = await supabase
+          .from('documents')
+          .select('created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', sevenMonthsAgo.toISOString());
+
         // Generate the last 7 months
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-        const emptyData: ActivityData[] = months.map(month => ({
-          name: month,
-          documents: 0
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const activityByMonth: { [key: string]: number } = {};
+        
+        // Initialize last 7 months with 0
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          const monthKey = monthNames[date.getMonth()];
+          activityByMonth[monthKey] = 0;
+        }
+
+        // Count documents by month
+        if (documents && documents.length > 0) {
+          documents.forEach(doc => {
+            const docDate = new Date(doc.created_at);
+            const monthKey = monthNames[docDate.getMonth()];
+            if (activityByMonth.hasOwnProperty(monthKey)) {
+              activityByMonth[monthKey]++;
+            }
+          });
+        }
+
+        // Convert to array format for chart
+        const chartData: ActivityData[] = Object.entries(activityByMonth).map(([name, documents]) => ({
+          name,
+          documents
         }));
 
-        // If we had document tables, we would fetch like this:
-        // const { data: documents } = await supabase
-        //   .from('documents')
-        //   .select('created_at')
-        //   .eq('user_id', user.id)
-        //   .gte('created_at', new Date(Date.now() - 7 * 30 * 24 * 60 * 60 * 1000).toISOString());
-        
-        // Then aggregate by month and create the chart data
-
-        setActivityData(emptyData);
+        setActivityData(chartData);
       } catch (err) {
         console.error('Error fetching activity data:', err);
         setError('Failed to fetch activity data');
@@ -57,6 +77,28 @@ export function useUserActivity() {
     };
 
     fetchActivityData();
+
+    // Set up real-time subscription for live activity updates
+    const channel = supabase
+      .channel('activity-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'documents',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch activity data when documents change
+          fetchActivityData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return { activityData, loading, error };
