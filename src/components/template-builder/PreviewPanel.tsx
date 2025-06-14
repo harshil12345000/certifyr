@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { TemplateElement } from '@/types/template-builder';
+import { Section, Field } from '@/types/template-builder';
 import { Button } from '@/components/ui/button';
 import { 
   Download, 
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 interface PreviewPanelProps {
-  elements: TemplateElement[];
+  elements: Section[];
   templateName?: string;
 }
 
@@ -22,7 +22,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
   const [isEditingBody, setIsEditingBody] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   
-  // Generate sample data for placeholders
   useEffect(() => {
     const data: Record<string, any> = {
       'Full Name': 'John Doe',
@@ -37,23 +36,21 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
       'Authorized Signatory Name': 'Dr. Jane Smith',
       'Designation': 'Principal',
     };
-    elements.forEach(element => {
-      if (element.type === 'placeholder') {
-        const fieldName = element.metadata?.fieldName || element.content;
-            data[fieldName] = `Sample ${fieldName}`;
-      }
+    elements.forEach(section => {
+      section.columns.forEach(column => {
+        column.fields.forEach(field => {
+          data[field.label] = `Sample ${field.label}`;
+        });
+      });
     });
     setSampleData(data);
   }, [elements]);
   
-  // Toolbar actions
   const format = (command: string) => {
     document.execCommand(command, false);
   };
 
-  // Replace [Field Name] with sampleData or fallback, preserving HTML formatting
   function renderProcessedBody(html: string) {
-    // Replace [Field Name] with <span> containing the value
     const replaced = html.replace(/\[(.+?)\]/g, (match, p1) => `<span class="font-semibold">${sampleData[p1.trim()] || `[${p1}]`}</span>`);
     return <div dangerouslySetInnerHTML={{ __html: replaced }} />;
   }
@@ -86,18 +83,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
       
       <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-4">
         <div className="w-[21cm] min-h-[29.7cm] bg-white border border-gray-200 shadow-lg relative overflow-hidden flex flex-col">
-          {/* Letterhead */}
           <div className="pt-10 pb-2 text-center border-b border-gray-200">
-            <div className="text-2xl font-bold text-blue-600 tracking-wide">[INSTITUTION NAME]</div>
+            <div className="text-2xl font-bold text-blue-600 tracking-wide">{sampleData['Institution Name'] || '[INSTITUTION NAME]'}</div>
             <div className="text-sm text-gray-500 mt-1">123 Education Street, Knowledge City, 400001 &bull; +1 - info@institution.edu</div>
           </div>
-          {/* Template Name in grey box */}
           <div className="flex justify-center mt-8">
             <div className="bg-gray-100 border border-gray-300 rounded px-6 py-2 text-xl font-bold shadow-sm">
               {templateName}
             </div>
           </div>
-          {/* Editable Document Body */}
           <div className="mt-8 px-8">
             <div className="flex gap-2 mb-2">
               <Button size="sm" variant="outline" type="button" onClick={() => format('bold')}><b>B</b></Button>
@@ -133,7 +127,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
             )}
             <div className="text-xs text-gray-400 mt-2">Click to edit. Use [Field Name] to insert fields. Use toolbar for formatting.</div>
           </div>
-          {/* Date, Place, Signatory */}
           <div className="flex justify-between items-end px-8 mt-16 mb-8">
             <div>
               <div className="font-bold">Date: <span className="font-normal">{sampleData['Date'] || '[Date]'}</span></div>

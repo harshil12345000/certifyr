@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/utils";
 import { Signature } from "lucide-react";
 import { supabase, getLatestBrandingSettings } from "@/integrations/supabase/client";
 import { useEffect, useState, useCallback } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface BonafidePreviewProps {
   data: BonafideData;
@@ -18,6 +18,8 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
   const [orgDetails, setOrgDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refreshKey, setRefreshKey] = useState<number>(Date.now());
+  
+  const { toast } = useToast();
   
   // Function to get a public URL for an asset with cache busting
   const getAssetUrl = useCallback((bucket: string, path: string | null) => {
@@ -33,33 +35,30 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
       try {
         setIsLoading(true);
         
-        // Clear previous assets to prevent stale data
         setOrganizationLogo(null);
         setOrganizationSeal(null);
         setSignatureImage(null);
         
-        // Get the latest branding settings
         const brandingSettings = await getLatestBrandingSettings();
         
         if (brandingSettings) {
           console.log("Loaded latest branding settings:", brandingSettings);
           setBrandingInfo(brandingSettings);
           
-          // Use direct public URLs with cache busting
-          if (brandingSettings.logo) {
-            const logoUrl = getAssetUrl('branding', `logos/${brandingSettings.logo}`);
+          if (brandingSettings.logo_path) {
+            const logoUrl = getAssetUrl('branding', brandingSettings.logo_path);
             setOrganizationLogo(logoUrl);
             console.log("Logo URL:", logoUrl);
           }
           
-          if (brandingSettings.seal) {
-            const sealUrl = getAssetUrl('branding', `seals/${brandingSettings.seal}`);
+          if (brandingSettings.seal_path) {
+            const sealUrl = getAssetUrl('branding', brandingSettings.seal_path);
             setOrganizationSeal(sealUrl);
             console.log("Seal URL:", sealUrl);
           }
 
-          if (brandingSettings.signature) {
-            const signatureUrl = getAssetUrl('branding', `signatures/${brandingSettings.signature}`);
+          if (brandingSettings.signature_path) {
+            const signatureUrl = getAssetUrl('branding', brandingSettings.signature_path);
             setSignatureImage(signatureUrl);
             console.log("Signature URL:", signatureUrl);
           }
@@ -99,14 +98,13 @@ export function BonafidePreview({ data }: BonafidePreviewProps) {
     
     loadData();
     
-    // Set up refresh interval (check every 10 seconds in case user updates branding)
     const refreshInterval = setInterval(() => {
       setRefreshKey(Date.now());
     }, 10000);
     
     return () => clearInterval(refreshInterval);
     
-  }, [refreshKey, getAssetUrl, data]); // Re-fetch when data or refreshKey changes
+  }, [refreshKey, getAssetUrl, data, toast]); // Added toast to dependency array
 
   const getRelation = () => {
     switch (data.gender) {

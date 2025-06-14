@@ -60,6 +60,7 @@ export interface Field {
   id: string;
   type: FieldType;
   label: string;
+  placeholder?: string; // Added placeholder here as it's commonly used
   required?: boolean;
   options?: string[];
   [key: string]: any;
@@ -77,6 +78,9 @@ export interface Section {
   columns: Column[]; // Usually 2 columns
 }
 
+// TemplateElement is currently used as Section in TemplateDocument.
+// Components like MetadataPanel were trying to use it as a generic visual element.
+// For now, we strictly adhere to TemplateElement = Section.
 export type TemplateElement = Section;
 
 // Template Document

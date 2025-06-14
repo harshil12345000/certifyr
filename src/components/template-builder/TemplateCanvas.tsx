@@ -1,20 +1,19 @@
 import { useRef, useState, useEffect } from 'react';
-import { TemplateElement } from '@/types/template-builder';
-import { useDroppable, useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useDroppable as useDndDroppable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { Section, Column, Field } from '@/types/template-builder';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDndDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 
 interface TemplateCanvasProps {
   elements: Section[];
   selectedElement: string | null;
   onSelectElement: (id: string | null) => void;
-  onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
+  onUpdateElement: (id: string, updates: Partial<Section>) => void;
   onDeleteElement: (id: string) => void;
   onChange: () => void;
   onAddSection: () => void;
-  onAddField: (sectionId: string, columnId: string) => void;
+  onAddField: (sectionId: string, columnId: string, fieldType?: string) => void;
   onAddColumn: (sectionId: string) => void;
   onSelectField: (sectionId: string, columnId: string, fieldId: string) => void;
   onDeleteField: (sectionId: string, columnId: string, fieldId: string) => void;
@@ -45,37 +44,16 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
   const [editingField, setEditingField] = useState<{ sectionId: string; columnId: string; fieldId: string; type: 'label' | 'placeholder' } | null>(null);
   const [sectionTitleDraft, setSectionTitleDraft] = useState<string>('');
   
-  // Effect for keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedElement) return;
       
-      // Delete with Delete or Backspace key
+      const section = elements.find(el => el.id === selectedElement);
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        onDeleteElement(selectedElement);
-      }
-      
-      // Arrow keys to move selected element
-      const moveDelta = e.shiftKey ? 10 : 1; // Move faster with shift
-      const element = elements.find(el => el.id === selectedElement);
-      
-      if (!element) return;
-      
-      if (e.key === 'ArrowUp') {
-        onUpdateElement(selectedElement, { style: { ...element.style, y: Math.max(0, element.style.y - moveDelta) } });
-        onChange();
-      }
-      if (e.key === 'ArrowDown') {
-        onUpdateElement(selectedElement, { style: { ...element.style, y: element.style.y + moveDelta } });
-        onChange();
-      }
-      if (e.key === 'ArrowLeft') {
-        onUpdateElement(selectedElement, { style: { ...element.style, x: Math.max(0, element.style.x - moveDelta) } });
-        onChange();
-      }
-      if (e.key === 'ArrowRight') {
-        onUpdateElement(selectedElement, { style: { ...element.style, x: element.style.x + moveDelta } });
-        onChange();
+        if (section) {
+          onDeleteElement(selectedElement);
+        }
       }
     };
     
@@ -83,7 +61,6 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedElement, elements, onDeleteElement, onUpdateElement, onChange]);
   
-  // Handle element dragging
   const handleMouseDown = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     onSelectElement(id);
@@ -109,7 +86,6 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
     const newX = e.clientX - canvasRect.left - dragOffset.x;
     const newY = e.clientY - canvasRect.top - dragOffset.y;
     
-    // Ensure element stays within canvas bounds
     const boundedX = Math.max(0, Math.min(newX, canvasRect.width - element.style.width));
     const boundedY = Math.max(0, Math.min(newY, canvasRect.height - element.style.height));
     
@@ -125,7 +101,6 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
     }
   };
   
-  // Handle canvas click (deselect)
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === canvasRef.current) {
       onSelectElement(null);
@@ -139,15 +114,16 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
 
   const handlePropertyChange = (key: string, value: any) => {
     if (!propertyPanel) return;
-    propertyPanel.field[key] = value;
-    setPropertyPanel({ ...propertyPanel });
+    const updatedField = { ...propertyPanel.field, [key]: value };
+    setPropertyPanel({ ...propertyPanel, field: updatedField });
+    onChange();
   };
   
   return (
     <div className="min-h-[400px] p-6 rounded-xl transition-all border-2 border-gray-200 bg-white relative">
       <div className="flex justify-end mb-4">
         <Button variant={previewMode ? 'default' : 'outline'} onClick={() => setPreviewMode(false)} className="mr-2">Edit</Button>
-        <Button variant={previewMode ? 'outline' : 'default'} onClick={() => setPreviewMode(true)}>Preview</Button>
+        <Button variant={!previewMode ? 'default' : 'outline'} onClick={() => setPreviewMode(true)}>Preview</Button>
       </div>
       {previewMode ? (
         <FormPreview elements={elements} />
@@ -279,9 +255,9 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
                   checked={!!propertyPanel.field.required}
                   onChange={e => handlePropertyChange('required', e.target.checked)}
                 />
-          </div>
+              </div>
               <Button className="mt-4 w-full" variant="outline" onClick={() => setPropertyPanel(null)}>Close</Button>
-      </div>
+            </div>
           )}
         </>
       )}
@@ -297,7 +273,7 @@ function ColumnDropzone({ column, sectionId, onAddField, onFieldClick, onDeleteF
       className={`min-h-[120px] p-4 rounded-lg border-2 transition-all ${isOver ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-white'}`}
     >
       {column.fields.length === 0 ? (
-        <div className="text-gray-400 text-center">Drag fields here</div>
+        <div className="text-gray-400 text-center">Drag fields here or <Button size="sm" variant="link" className="p-0 h-auto" onClick={() => onAddField(sectionId, column.id)}>add field</Button></div>
       ) : (
         <div className="space-y-2">
           {column.fields.map((field, fIdx) => (
@@ -326,15 +302,17 @@ function ColumnDropzone({ column, sectionId, onAddField, onFieldClick, onDeleteF
 
 function FieldCard({ field, onClick, onDelete, editingField, setEditingField, sectionId, columnId, fieldIdx, sectionIdx, columnIdx, elements, onChange }) {
   return (
-    <div className="flex flex-col gap-1 p-2 border rounded mb-2 bg-blue-50 cursor-pointer hover:bg-primary-50">
+    <div className="flex flex-col gap-1 p-2 border rounded mb-2 bg-blue-50 cursor-pointer hover:bg-primary-50" onClick={onClick}>
       <div className="flex items-center justify-between">
         {editingField && editingField.sectionId === sectionId && editingField.columnId === columnId && editingField.fieldId === field.id && editingField.type === 'label' ? (
           <input
             className="font-medium text-sm mb-1 bg-white border-b border-primary-300 focus:outline-none focus:border-primary-500"
             value={field.label}
             autoFocus
+            onClick={e => e.stopPropagation()}
             onChange={e => {
-              elements[sectionIdx].columns[columnIdx].fields[fieldIdx].label = e.target.value;
+              const newElements = [...elements];
+              newElements[sectionIdx].columns[columnIdx].fields[fieldIdx].label = e.target.value;
               onChange();
             }}
             onBlur={() => setEditingField(null)}
@@ -348,7 +326,7 @@ function FieldCard({ field, onClick, onDelete, editingField, setEditingField, se
             {field.label}
           </label>
         )}
-        <Button size="xs" variant="destructive" className="ml-4 px-4" onClick={e => { e.stopPropagation(); onDelete(); }}>Delete</Button>
+        <Button size="sm" variant="destructive" className="ml-4 px-2 py-1 h-auto leading-none" onClick={e => { e.stopPropagation(); onDelete(); }}>Delete</Button>
       </div>
       <FieldPreview
         field={field}
@@ -368,9 +346,7 @@ function FieldCard({ field, onClick, onDelete, editingField, setEditingField, se
 }
 
 function FieldPreview({ field, editingField, setEditingField, sectionId, columnId, fieldId, fieldIdx, sectionIdx, columnIdx, elements, onChange }) {
-  // For text-like fields, allow inline editing of placeholder
   const isEditingPlaceholder = editingField && editingField.sectionId === sectionId && editingField.columnId === columnId && editingField.fieldId === fieldId && editingField.type === 'placeholder';
-  // Always use blank placeholder if not set
   const placeholderValue = typeof field.placeholder === 'string' ? field.placeholder : '';
   switch (field.type) {
     case 'text':
@@ -384,8 +360,10 @@ function FieldPreview({ field, editingField, setEditingField, sectionId, columnI
           className="border px-2 py-1 rounded w-full bg-white border-primary-300 focus:outline-none focus:border-primary-500"
           value={field.placeholder || ''}
           autoFocus
+          onClick={e => e.stopPropagation()}
           onChange={e => {
-            elements[sectionIdx].columns[columnIdx].fields[fieldIdx].placeholder = e.target.value;
+            const newElements = [...elements];
+            newElements[sectionIdx].columns[columnIdx].fields[fieldIdx].placeholder = e.target.value;
             onChange();
           }}
           onBlur={() => setEditingField(null)}
@@ -393,35 +371,36 @@ function FieldPreview({ field, editingField, setEditingField, sectionId, columnI
         />
       ) : (
         <input
-          className="border px-2 py-1 rounded w-full"
-          placeholder={placeholderValue}
+          className="border px-2 py-1 rounded w-full text-sm text-gray-500"
+          placeholder={placeholderValue || `Enter ${field.label}`}
           disabled
           onClick={e => { e.stopPropagation(); setEditingField({ sectionId, columnId, fieldId, type: 'placeholder' }); }}
         />
       );
     case 'dropdown':
       return (
-        <select className="border px-2 py-1 rounded w-full" disabled>
-          {(field.options || []).map((opt, i) => <option key={i}>{opt}</option>)}
+        <select className="border px-2 py-1 rounded w-full text-sm text-gray-500" disabled>
+          <option value="">{placeholderValue || 'Select an option'}</option>
+          {(field.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
         </select>
       );
     case 'checkbox':
-      return <label className="flex items-center"><input type="checkbox" disabled className="mr-2" />{field.label}</label>;
+      return <label className="flex items-center text-sm text-gray-700"><input type="checkbox" disabled className="mr-2" />{placeholderValue || field.label}</label>;
     case 'radio':
       return (
-        <div>
+        <div className="text-sm text-gray-700">
           {(field.options || []).map((opt, i) => (
-            <label key={i} className="mr-4"><input type="radio" disabled className="mr-1" />{opt}</label>
+            <label key={i} className="mr-4"><input type="radio" name={`${field.id}-preview`} disabled className="mr-1" />{opt}</label>
           ))}
+          {(!field.options || field.options.length === 0) && (placeholderValue || 'Radio options')}
         </div>
       );
     default:
-      return <span>{field.label}</span>;
+      return <span className="text-sm text-gray-500">{placeholderValue || field.label}</span>;
   }
 }
 
-// FormPreview renders the form as a user would see it (no edit/delete, enabled inputs)
-function FormPreview({ elements }) {
+function FormPreview({ elements }: { elements: Section[] }) {
   return (
     <form className="space-y-8">
       {elements.map(section => (
@@ -430,12 +409,12 @@ function FormPreview({ elements }) {
             <h2 className="text-xl font-bold mb-1">{section.title}</h2>
             {section.description && <div className="text-gray-500 text-sm">{section.description}</div>}
           </div>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {section.columns.map(col => (
               <div key={col.id} className="space-y-4">
                 {col.fields.map(field => (
                   <div key={field.id} className="flex flex-col gap-1">
-                    <label className="font-medium text-sm mb-1">{field.label}</label>
+                    <label htmlFor={field.id} className="font-medium text-sm mb-1">{field.label}{field.required && <span className="text-red-500">*</span>}</label>
                     <FieldInput field={field} />
                   </div>
                 ))}
@@ -448,40 +427,44 @@ function FormPreview({ elements }) {
   );
 }
 
-// FieldInput renders enabled input for preview mode
-function FieldInput({ field }) {
+function FieldInput({ field }: { field: Field }) {
+  const inputClasses = "border px-3 py-2 rounded w-full text-sm focus:ring-primary-500 focus:border-primary-500";
+  const placeholderText = field.placeholder || `Enter ${field.label.toLowerCase()}`;
+  
   switch (field.type) {
     case 'text':
-      return <input className="border px-2 py-1 rounded w-full" placeholder={field.placeholder || field.label} />;
+      return <input id={field.id} className={inputClasses} placeholder={placeholderText} required={field.required} />;
     case 'number':
-      return <input className="border px-2 py-1 rounded w-full" type="number" placeholder={field.placeholder || field.label} />;
+      return <input id={field.id} className={inputClasses} type="number" placeholder={placeholderText} required={field.required} />;
     case 'email':
-      return <input className="border px-2 py-1 rounded w-full" type="email" placeholder={field.placeholder || field.label} />;
+      return <input id={field.id} className={inputClasses} type="email" placeholder={placeholderText} required={field.required} />;
     case 'phone':
-      return <input className="border px-2 py-1 rounded w-full" type="tel" placeholder={field.placeholder || field.label} />;
+      return <input id={field.id} className={inputClasses} type="tel" placeholder={placeholderText} required={field.required} />;
     case 'date':
-      return <input className="border px-2 py-1 rounded w-full" type="date" placeholder={field.placeholder || field.label} />;
+      return <input id={field.id} className={inputClasses} type="date" placeholder={placeholderText} required={field.required} />;
     case 'dropdown':
       return (
-        <select className="border px-2 py-1 rounded w-full">
-          <option value="">Select...</option>
-          {(field.options || []).map((opt, i) => <option key={i}>{opt}</option>)}
+        <select id={field.id} className={inputClasses} required={field.required} defaultValue="">
+          <option value="" disabled>{placeholderText || 'Select...'}</option>
+          {(field.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
         </select>
       );
     case 'checkbox':
-      return <label className="flex items-center"><input type="checkbox" className="mr-2" />{field.label}</label>;
+      return <label className="flex items-center text-sm"><input id={field.id} type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" required={field.required} />{field.label}</label>;
     case 'radio':
       return (
-        <div>
+        <div className="space-y-1">
           {(field.options || []).map((opt, i) => (
-            <label key={i} className="mr-4"><input type="radio" name={field.id} className="mr-1" />{opt}</label>
+            <label key={i} className="flex items-center text-sm mr-4">
+              <input type="radio" id={`${field.id}-${i}`} name={field.id} value={opt} className="mr-1 h-4 w-4 border-gray-300 text-primary-600 focus:ring-primary-500" required={field.required && i === 0} />
+              {opt}
+            </label>
           ))}
         </div>
       );
     case 'textarea':
-      return <textarea className="border px-2 py-1 rounded w-full" placeholder={field.placeholder || field.label} />;
+      return <textarea id={field.id} className={`${inputClasses} min-h-[80px]`} placeholder={placeholderText} required={field.required} />;
     default:
-      return <span>{field.label}</span>;
+      return <span className="text-sm py-2">{field.label} (Unsupported field type for preview)</span>;
   }
 }
-
