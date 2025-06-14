@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -34,6 +33,7 @@ interface BrandingFilePreview {
 const AdminPage = () => {
   const { user } = useAuth();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [hasOrganization, setHasOrganization] = useState<boolean>(false);
   const [formState, setFormState] = useState<OrganizationFormState>({
     name: '',
     address: '',
@@ -69,15 +69,16 @@ const AdminPage = () => {
           .single();
 
         if (memberError || !memberData?.organization_id) {
-          toast({ title: 'Error', description: 'Could not find your organization.', variant: 'destructive' });
-          console.error("Error fetching org membership or no org_id:", memberError?.message);
+          console.log("No organization found for user, showing admin interface anyway");
+          setHasOrganization(false);
           setIsLoading(false);
           return;
         }
         setOrganizationId(memberData.organization_id);
+        setHasOrganization(true);
       } catch (error) {
         console.error("Error fetching user organization:", error);
-        toast({ title: 'Error', description: 'Failed to load organization data.', variant: 'destructive' });
+        setHasOrganization(false);
         setIsLoading(false);
       }
     };
@@ -153,6 +154,10 @@ const AdminPage = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!hasOrganization) {
+      toast({ title: 'Error', description: 'Please create or join an organization first.', variant: 'destructive' });
+      return;
+    }
     if (!organizationId) {
       toast({ title: 'Error', description: 'Organization ID not found.', variant: 'destructive' });
       return;
@@ -265,17 +270,23 @@ const AdminPage = () => {
   if (isLoading) {
     return <DashboardLayout><div className="p-6 text-center">Loading admin settings...</div></DashboardLayout>;
   }
-  if (!organizationId && !user) {
-     return <DashboardLayout><div className="p-6 text-center">Please log in to manage organization settings.</div></DashboardLayout>;
-  }
-   if (!organizationId && user && !isLoading) {
-     return <DashboardLayout><div className="p-6 text-center">No organization found for your account. Please contact support or ensure your account is linked to an organization.</div></DashboardLayout>;
+
+  if (!user) {
+    return <DashboardLayout><div className="p-6 text-center">Please log in to access admin settings.</div></DashboardLayout>;
   }
 
   return (
     <DashboardLayout>
       <div className="container mx-auto py-4 px-4 md:py-8 md:px-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Settings</h1>
+        
+        {!hasOrganization && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">
+              You are not currently part of an organization. Some features may be limited until you create or join an organization.
+            </p>
+          </div>
+        )}
         
         <Tabs defaultValue="organization" className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
@@ -290,30 +301,65 @@ const AdminPage = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Organization Details</CardTitle>
-                  <CardDescription>Update your organization's information.</CardDescription>
+                  <CardDescription>
+                    {hasOrganization 
+                      ? "Update your organization's information." 
+                      : "Organization details will be available once you create or join an organization."
+                    }
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="name">Organization Name</Label>
-                    <Input id="name" name="name" value={formState.name} onChange={handleInputChange} />
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      value={formState.name} 
+                      onChange={handleInputChange} 
+                      disabled={!hasOrganization}
+                      placeholder={!hasOrganization ? "No organization found" : ""}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="address">Address</Label>
-                    <Input id="address" name="address" value={formState.address} onChange={handleInputChange} />
+                    <Input 
+                      id="address" 
+                      name="address" 
+                      value={formState.address} 
+                      onChange={handleInputChange} 
+                      disabled={!hasOrganization}
+                      placeholder={!hasOrganization ? "No organization found" : ""}
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" name="phone" type="tel" value={formState.phone} onChange={handleInputChange} />
+                      <Input 
+                        id="phone" 
+                        name="phone" 
+                        type="tel" 
+                        value={formState.phone} 
+                        onChange={handleInputChange} 
+                        disabled={!hasOrganization}
+                        placeholder={!hasOrganization ? "No organization found" : ""}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" name="email" type="email" value={formState.email} onChange={handleInputChange} />
+                      <Input 
+                        id="email" 
+                        name="email" 
+                        type="email" 
+                        value={formState.email} 
+                        onChange={handleInputChange} 
+                        disabled={!hasOrganization}
+                        placeholder={!hasOrganization ? "No organization found" : ""}
+                      />
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isSaving}>
+                  <Button type="submit" disabled={isSaving || !hasOrganization}>
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </CardFooter>
@@ -339,7 +385,12 @@ const AdminPage = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Branding Assets</CardTitle>
-                  <CardDescription>Upload your organization's logo, seal, and digital signature.</CardDescription>
+                  <CardDescription>
+                    {hasOrganization 
+                      ? "Upload your organization's logo, seal, and digital signature." 
+                      : "Branding features will be available once you create or join an organization."
+                    }
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {(['logo', 'seal', 'signature'] as Array<keyof BrandingFileState>).map((type) => (
@@ -348,7 +399,13 @@ const AdminPage = () => {
                         <ImagePlus className="w-5 h-5 mr-2" />
                         {type.charAt(0).toUpperCase() + type.slice(1)}
                       </Label>
-                      <Input id={type} type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => handleFileChange(e, type)} />
+                      <Input 
+                        id={type} 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/svg+xml" 
+                        onChange={(e) => handleFileChange(e, type)} 
+                        disabled={!hasOrganization}
+                      />
                       {brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && (
                         <div className="mt-2 p-2 border rounded-md inline-block">
                           <img 
@@ -362,13 +419,15 @@ const AdminPage = () => {
                         <p className="text-sm text-muted-foreground italic">New file selected, pending save.</p>
                       )}
                       {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && !brandingFiles[type] && (
-                        <p className="text-sm text-muted-foreground italic">No {type} uploaded.</p>
+                        <p className="text-sm text-muted-foreground italic">
+                          {hasOrganization ? `No ${type} uploaded.` : `${type.charAt(0).toUpperCase() + type.slice(1)} upload requires an organization.`}
+                        </p>
                       )}
                     </div>
                   ))}
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isSaving}>
+                  <Button type="submit" disabled={isSaving || !hasOrganization}>
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </CardFooter>
