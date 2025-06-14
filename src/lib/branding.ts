@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BrandingFile {
@@ -7,7 +8,6 @@ export interface BrandingFile {
   organization_id: string;
   uploaded_by: string | null;
   created_at: string;
-  updated_at: string;
 }
 
 export class BrandingError extends Error {
@@ -45,7 +45,7 @@ export async function uploadBrandingFile(
     
     // Upload file to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('branding')
+      .from('branding-assets')
       .upload(filePath, file);
 
     if (uploadError) {
@@ -77,14 +77,21 @@ export async function uploadBrandingFile(
 
     if (dbError) {
       // Clean up uploaded file if database insert fails
-      await supabase.storage.from('branding').remove([filePath]);
+      await supabase.storage.from('branding-assets').remove([filePath]);
       throw new BrandingError(
         `Failed to save file metadata: ${dbError.message}`,
         'DB_ERROR'
       );
     }
 
-    return fileData;
+    return {
+      id: fileData.id.toString(),
+      name: fileData.name,
+      path: fileData.path,
+      organization_id: fileData.organization_id,
+      uploaded_by: fileData.uploaded_by,
+      created_at: fileData.created_at,
+    };
   } catch (error) {
     if (error instanceof BrandingError) {
       throw error;
@@ -113,7 +120,14 @@ export async function getBrandingFiles(): Promise<BrandingFile[]> {
       );
     }
 
-    return data;
+    return data.map(file => ({
+      id: file.id.toString(),
+      name: file.name,
+      path: file.path,
+      organization_id: file.organization_id,
+      uploaded_by: file.uploaded_by,
+      created_at: file.created_at,
+    }));
   } catch (error) {
     if (error instanceof BrandingError) {
       throw error;
@@ -135,7 +149,7 @@ export async function deleteBrandingFile(
     const { data: file, error: fetchError } = await supabase
       .from('branding_files')
       .select('path')
-      .eq('id', fileId)
+      .eq('id', parseInt(fileId))
       .eq('organization_id', organizationId)
       .single();
 
@@ -148,7 +162,7 @@ export async function deleteBrandingFile(
 
     // Delete from storage
     const { error: storageError } = await supabase.storage
-      .from('branding')
+      .from('branding-assets')
       .remove([file.path]);
 
     if (storageError) {
@@ -162,7 +176,7 @@ export async function deleteBrandingFile(
     const { error: dbError } = await supabase
       .from('branding_files')
       .delete()
-      .eq('id', fileId)
+      .eq('id', parseInt(fileId))
       .eq('organization_id', organizationId);
 
     if (dbError) {
@@ -204,7 +218,7 @@ export async function getBrandingFileUrl(
     }
 
     const { data, error } = await supabase.storage
-      .from('branding')
+      .from('branding-assets')
       .createSignedUrl(filePath, 3600); // URL valid for 1 hour
 
     if (error) {

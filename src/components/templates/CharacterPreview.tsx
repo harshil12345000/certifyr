@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState, useCallback } from "react";
-import { CharacterData, CharacterPreviewProps } from "@/types/templates";
+import { CharacterPreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature as SignatureIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,17 +18,15 @@ interface OrganizationInfo {
   address: string | null;
   phone: string | null;
   email: string | null;
-  // tagline: string | null; // If tagline is needed, it should be part of organizations table
 }
 
 export function CharacterPreview({ data }: CharacterPreviewProps) {
   const [brandingAssets, setBrandingAssets] = useState<BrandingAssets>({ logoUrl: null, sealUrl: null, signatureUrl: null });
   const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo>({
-    name: data.institutionName || "[Institution Name]",
-    address: "123 Education Street, Knowledge City, 400001",
-    phone: "+91 2222 333333",
-    email: "info@institution.edu",
-    // tagline: null,
+    name: data.institutionName || null,
+    address: null,
+    phone: null,
+    email: null,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
@@ -45,7 +44,6 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
       let fetchedOrgName: string | null = data.institutionName;
 
       try {
-        // 1. Fetch Organization Details (including ID)
         if (data.institutionName) {
           const { data: orgData, error: orgError } = await supabase
             .from('organizations')
@@ -60,23 +58,22 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             orgIdToQuery = orgData.id;
             fetchedOrgName = orgData.name;
             setOrganizationInfo({
-              name: orgData.name || data.institutionName || "[Institution Name]",
-              address: orgData.address || "123 Default Address",
-              phone: orgData.phone || "Default Phone",
-              email: orgData.email || "default@example.com",
+              name: orgData.name || data.institutionName,
+              address: orgData.address,
+              phone: orgData.phone,
+              email: orgData.email,
             });
           } else {
-             console.warn(`Organization named "${data.institutionName}" not found. Using fallback details.`);
-             setOrganizationInfo({
-                name: data.institutionName || "[Institution Name]",
-                address: "123 Education Street, Knowledge City, 400001",
-                phone: "+91 2222 333333",
-                email: "info@institution.edu",
-             });
+            console.warn(`Organization named "${data.institutionName}" not found.`);
+            setOrganizationInfo({
+              name: data.institutionName,
+              address: null,
+              phone: null,
+              email: null,
+            });
           }
         } else if (user?.id) {
-          // Try to get org_id from user if institutionName is not in data
-           const { data: memberData, error: memberError } = await supabase
+          const { data: memberData, error: memberError } = await supabase
             .from('organization_members')
             .select('organization_id')
             .eq('user_id', user.id)
@@ -86,28 +83,27 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             console.warn("CharacterPreview: Could not determine organization ID from user or data.");
           } else {
             orgIdToQuery = memberData.organization_id;
-             const { data: orgData, error: orgError } = await supabase
+            const { data: orgData, error: orgError } = await supabase
               .from('organizations')
               .select('id, name, address, phone, email')
               .eq('id', orgIdToQuery)
               .single();
             if (orgData) {
-                fetchedOrgName = orgData.name;
-                setOrganizationInfo({
-                    name: orgData.name || "[Institution Name]",
-                    address: orgData.address || "123 Default Address",
-                    phone: orgData.phone || "Default Phone",
-                    email: orgData.email || "default@example.com",
-                });
+              fetchedOrgName = orgData.name;
+              setOrganizationInfo({
+                name: orgData.name,
+                address: orgData.address,
+                phone: orgData.phone,
+                email: orgData.email,
+              });
             } else {
-                console.warn("CharacterPreview: Organization details not found for user's org ID.");
+              console.warn("CharacterPreview: Organization details not found for user's org ID.");
             }
           }
         } else {
           console.warn("CharacterPreview: institutionName not provided and no user context. Cannot fetch specific org details.");
         }
 
-        // 2. Fetch Branding Assets if Organization ID is known
         if (orgIdToQuery) {
           const { data: filesData, error: filesError } = await supabase
             .from('branding_files')
@@ -133,15 +129,15 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             });
             setBrandingAssets({ logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl });
           } else {
-             setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); 
+            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); 
           }
         } else {
           setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-           if(data.institutionName || user?.id) { 
-             console.warn("CharacterPreview: No organization ID determined, cannot fetch branding assets.");
-           }
+          if(data.institutionName || user?.id) { 
+            console.warn("CharacterPreview: No organization ID determined, cannot fetch branding assets.");
+          }
         }
-        setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name || "[Institution Name]" }));
+        setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name}));
 
       } catch (err) {
         console.error("Unexpected error loading assets for CharacterPreview:", err);
@@ -158,11 +154,11 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
     loadData();
   }, [data.institutionName, user, getAssetUrlWithCacheBust]);
 
-  const institutionNameToDisplay = organizationInfo.name;
+  const institutionNameToDisplay = organizationInfo.name || "[Institution Name]";
   const contactInfo = {
-    address: organizationInfo.address || "123 Education Street, Knowledge City, 400001",
-    phone: organizationInfo.phone || "+91 2222 333333",
-    email: organizationInfo.email || "info@institution.edu"
+    address: organizationInfo.address,
+    phone: organizationInfo.phone,
+    email: organizationInfo.email
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
@@ -202,9 +198,14 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
           <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
             {institutionNameToDisplay}
           </h1>
-          <p className="text-muted-foreground">
-            {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
-          </p>
+          {contactInfo.address && <p className="text-muted-foreground">{contactInfo.address}</p>}
+          {(contactInfo.phone || contactInfo.email) && (
+            <p className="text-muted-foreground">
+              {contactInfo.phone && contactInfo.phone}
+              {contactInfo.phone && contactInfo.email && ' • '}
+              {contactInfo.email && contactInfo.email}
+            </p>
+          )}
         </div>
 
         {/* Certificate title */}
@@ -240,7 +241,7 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
               <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
             </p>
             <p>
-              <strong>Place:</strong> {data.place || (contactInfo.address?.split(',').slice(-2).join(', ').trim() || "[City, State]")}
+              <strong>Place:</strong> {data.place || "[Place]"}
             </p>
           </div>
           
@@ -272,15 +273,15 @@ export function CharacterPreview({ data }: CharacterPreviewProps) {
             <p>{institutionNameToDisplay}</p>
           </div>
         </div>
-         {brandingAssets.sealUrl && (
-            <div className="absolute bottom-8 left-8">
-                 <img 
-                    src={brandingAssets.sealUrl}
-                    alt="Organization Seal" 
-                    className="h-20 w-20 object-contain opacity-75"
-                    onError={(e) => handleImageError(e, "seal")}
-                />
-            </div>
+        {brandingAssets.sealUrl && (
+          <div className="absolute bottom-8 left-8">
+            <img 
+              src={brandingAssets.sealUrl}
+              alt="Organization Seal" 
+              className="h-20 w-20 object-contain opacity-75"
+              onError={(e) => handleImageError(e, "seal")}
+            />
+          </div>
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { BonafideData } from '@/types/templates';
+import { BonafidePreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,14 +11,6 @@ interface BrandingAssets {
   organizationAddress: string | null;
   organizationPhone: string | null;
   organizationEmail: string | null;
-}
-
-interface OrganizationDetails {
-  id: string;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  // Add other fields from organizations table if needed
 }
 
 export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
@@ -42,9 +35,9 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
     logoUrl: null, 
     sealUrl: null, 
     signatureUrl: null,
-    organizationAddress: '123 Institution Address, City, State, ZIP', // Placeholder
-    organizationPhone: '(123) 456-7890', // Placeholder
-    organizationEmail: 'info@institution.example.com' // Placeholder
+    organizationAddress: null,
+    organizationPhone: null,
+    organizationEmail: null
   });
   const { user } = useAuth();
 
@@ -56,76 +49,67 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
       }
       try {
         let orgIdToQuery: string | null = null;
-        let orgDetails: OrganizationDetails | null = null;
 
         if (institutionName) {
-            const { data: orgData, error: orgError } = await supabase
+          const { data: orgData, error: orgError } = await supabase
             .from('organizations')
             .select('id, address, phone, email')
             .eq('name', institutionName)
             .single();
 
-            if (orgError && orgError.code !== 'PGRST116') { // PGRST116: 0 rows, still an error for .single() but we can ignore
-                console.error("Error fetching organization by name:", orgError.message);
-            } else if (orgError?.code === 'PGRST116') {
-                console.warn(`Organization named "${institutionName}" not found.`);
-            }
-            
-            if (orgData) {
-                orgDetails = orgData as OrganizationDetails; // Cast to known type
-                orgIdToQuery = orgDetails.id;
-                 setBranding(prev => ({
-                    ...prev,
-                    organizationAddress: orgDetails?.address || prev.organizationAddress,
-                    organizationPhone: orgDetails?.phone || prev.organizationPhone,
-                    organizationEmail: orgDetails?.email || prev.organizationEmail,
-                }));
-            }
+          if (orgError && orgError.code !== 'PGRST116') {
+            console.error("Error fetching organization by name:", orgError.message);
+          } else if (orgError?.code === 'PGRST116') {
+            console.warn(`Organization named "${institutionName}" not found.`);
+          }
+          
+          if (orgData) {
+            orgIdToQuery = orgData.id;
+            setBranding(prev => ({
+              ...prev,
+              organizationAddress: orgData.address,
+              organizationPhone: orgData.phone,
+              organizationEmail: orgData.email,
+            }));
+          }
         }
-        
-        // const userOrgId = user?.organization_id; 
-        // if (!orgIdToQuery && userOrgId) orgIdToQuery = userOrgId;
 
         if (!orgIdToQuery) {
           console.warn("Bonafide Preview: Could not determine organization ID for branding assets.");
-          // Optionally, still try to fetch user-specific branding if user context is primary
         }
 
-        // Fetch branding files only if orgIdToQuery is resolved
         if (orgIdToQuery) {
-            const { data: filesData, error: filesError } = await supabase
-              .from('branding_files')
-              .select('name, path')
-              .eq('organization_id', orgIdToQuery);
+          const { data: filesData, error: filesError } = await supabase
+            .from('branding_files')
+            .select('name, path')
+            .eq('organization_id', orgIdToQuery);
 
-            if (filesError) {
-              console.error("Error fetching branding files:", filesError);
-              // Potentially return or set branding to defaults
-            } else if (filesData) {
-                let newLogoUrl: string | null = null;
-                let newSealUrl: string | null = null;
-                let newSignatureUrl: string | null = null;
+          if (filesError) {
+            console.error("Error fetching branding files:", filesError);
+          } else if (filesData) {
+            let newLogoUrl: string | null = null;
+            let newSealUrl: string | null = null;
+            let newSignatureUrl: string | null = null;
 
-                filesData.forEach(file => {
-                  const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-                  const publicUrl = publicUrlRes.data?.publicUrl;
-                  if (publicUrl) {
-                    if (file.name === 'logo') newLogoUrl = publicUrl;
-                    if (file.name === 'seal') newSealUrl = publicUrl;
-                    if (file.name === 'signature') newSignatureUrl = publicUrl;
-                  }
-                });
-                
-                setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
-            }
+            filesData.forEach(file => {
+              const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+              const publicUrl = publicUrlRes.data?.publicUrl;
+              if (publicUrl) {
+                if (file.name === 'logo') newLogoUrl = publicUrl;
+                if (file.name === 'seal') newSealUrl = publicUrl;
+                if (file.name === 'signature') newSignatureUrl = publicUrl;
+              }
+            });
+            
+            setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
+          }
         } else {
-            // Reset or keep default branding assets if no org ID
-             setBranding(prev => ({ 
-                ...prev, 
-                logoUrl: null, // Or some default logo
-                sealUrl: null, // Or some default seal
-                signatureUrl: null // Or some default signature
-            }));
+          setBranding(prev => ({ 
+            ...prev, 
+            logoUrl: null,
+            sealUrl: null,
+            signatureUrl: null
+          }));
         }
 
       } catch (error) {
@@ -150,8 +134,14 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
           <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-2 object-contain" />
         )}
         <h1 className="text-2xl font-bold text-blue-700">{institutionName || '[Institution Name]'}</h1>
-        <p className="text-xs">{branding.organizationAddress}</p>
-        <p className="text-xs">Phone: {branding.organizationPhone} | Email: {branding.organizationEmail}</p>
+        {branding.organizationAddress && <p className="text-xs">{branding.organizationAddress}</p>}
+        {(branding.organizationPhone || branding.organizationEmail) && (
+          <p className="text-xs">
+            {branding.organizationPhone && `Phone: ${branding.organizationPhone}`}
+            {branding.organizationPhone && branding.organizationEmail && ' | '}
+            {branding.organizationEmail && `Email: ${branding.organizationEmail}`}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-between mb-6">
@@ -187,7 +177,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
           {includeDigitalSignature && branding.signatureUrl && (
             <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mx-auto mb-1 object-contain" />
           )}
-           {includeDigitalSignature && !branding.signatureUrl && (
+          {includeDigitalSignature && !branding.signatureUrl && (
             <div className="h-16 w-48 my-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic mx-auto">
               [Digital Signature Placeholder]
             </div>
@@ -201,7 +191,3 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
     </div>
   );
 };
-
-interface BonafidePreviewProps {
-  data: BonafideData;
-}
