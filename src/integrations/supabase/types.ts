@@ -119,26 +119,73 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_invites: {
+        Row: {
+          email: string
+          expires_at: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          organization_id: string
+          role: string
+          status: string | null
+        }
+        Insert: {
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          organization_id: string
+          role: string
+          status?: string | null
+        }
+        Update: {
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          organization_id?: string
+          role?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string | null
           id: string
+          invited_email: string | null
           organization_id: string | null
           role: string
+          status: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          invited_email?: string | null
           organization_id?: string | null
           role: string
+          status?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          invited_email?: string | null
           organization_id?: string | null
           role?: string
+          status?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -314,6 +361,10 @@ export type Database = {
       get_user_organization_id: {
         Args: { user_id: string }
         Returns: string
+      }
+      is_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_user_admin_of_org: {
         Args: { user_id: string; org_id: string }

@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ImagePlus } from 'lucide-react';
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
+import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
 
 interface UserProfileFormState {
   organizationName: string;
@@ -399,15 +400,7 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage users and their permissions.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">User management features coming soon...</p>
-              </CardContent>
-            </Card>
+            <UserPermissionsPanel />
           </TabsContent>
 
           <TabsContent value="branding" className="space-y-6">
