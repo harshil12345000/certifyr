@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface BrandingAssets {
   logoUrl: string | null;
-  sealUrl: string | null; // May not be typical for offer letters, but included for consistency
+  sealUrl: string | null;
   signatureUrl: string | null;
   organizationAddress: string | null;
   organizationPhone: string | null;
@@ -31,7 +31,7 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     workLocation,
     acceptanceDeadline,
     institutionName,
-    date: issueDate, // This is the general document issue date
+    date: issueDate,
     place,
     signatoryName,
     signatoryDesignation,
@@ -56,9 +56,6 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
       }
       try {
         let orgIdToQuery: string | null = null;
-        let fetchedOrgAddress: string | null = null;
-        let fetchedOrgPhone: string | null = null;
-        let fetchedOrgEmail: string | null = null;
 
         if (institutionName) {
           const { data: orgData, error: orgError } = await supabase
@@ -75,18 +72,14 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
           
           if (orgData) {
             orgIdToQuery = orgData.id;
-            fetchedOrgAddress = orgData.address;
-            fetchedOrgPhone = orgData.phone;
-            fetchedOrgEmail = orgData.email;
+            setBranding(prev => ({
+              ...prev,
+              organizationAddress: orgData.address,
+              organizationPhone: orgData.phone,
+              organizationEmail: orgData.email,
+            }));
           }
         }
-        
-        setBranding(prev => ({
-          ...prev,
-          organizationAddress: fetchedOrgAddress,
-          organizationPhone: fetchedOrgPhone,
-          organizationEmail: fetchedOrgEmail,
-        }));
 
         if (orgIdToQuery) {
           const { data: filesData, error: filesError } = await supabase
@@ -106,7 +99,7 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
               const publicUrl = publicUrlRes.data?.publicUrl;
               if (publicUrl) {
                 if (file.name === 'logo') newLogoUrl = publicUrl;
-                if (file.name === 'seal') newSealUrl = publicUrl; // Optional for offer letters
+                if (file.name === 'seal') newSealUrl = publicUrl;
                 if (file.name === 'signature') newSignatureUrl = publicUrl;
               }
             });
@@ -114,6 +107,7 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
             setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
           }
         }
+
       } catch (error) {
         console.error("Unexpected error fetching branding:", error);
       }
@@ -130,116 +124,145 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     if (!amount) return '[Amount]';
     const num = parseFloat(amount.replace(/,/g, ''));
     if (isNaN(num)) return amount;
-    try {
-      return num.toLocaleString('en-IN', { style: 'currency', currency: currency || 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } catch (e) { // Fallback for unknown currency
-      return `${currency} ${num.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    }
+    return `${currency || 'INR'} ${num.toLocaleString('en-IN')}`;
   };
-  
-  const orgAddressLine = branding.organizationAddress || '[Organization Address]';
-  const orgContactLine = [branding.organizationPhone, branding.organizationEmail].filter(Boolean).join(' • ') || '[Organization Phone/Email]';
-
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed font-serif">
+    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
       {/* Header */}
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          {branding.logoUrl && (
-            <img src={branding.logoUrl} alt={`${institutionName || 'Company'} Logo`} className="h-16 mb-2 object-contain" />
-          )}
-          <h1 className="text-xl font-bold text-gray-700 uppercase">
-            {institutionName || '[COMPANY NAME]'}
-          </h1>
-          <p className="text-xs text-gray-500">{orgAddressLine}</p>
-          <p className="text-xs text-gray-500">{orgContactLine}</p>
-        </div>
-        <div className="text-right text-xs">
-          <p>Date: {formatDate(dateOfOffer)}</p>
+      <div className="text-center mb-8">
+        {branding.logoUrl && (
+          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-16 mx-auto mb-4 object-contain" />
+        )}
+        <h1 className="text-2xl font-bold text-blue-600 uppercase tracking-wide mb-2">
+          {institutionName || '[INSTITUTION NAME]'}
+        </h1>
+        <p className="text-sm text-gray-600">
+          {branding.organizationAddress && `${branding.organizationAddress} • `}
+          {branding.organizationPhone && `${branding.organizationPhone} • `}
+          {branding.organizationEmail && branding.organizationEmail}
+        </p>
+      </div>
+
+      {/* Letter Title */}
+      <div className="text-center mb-8">
+        <div className="border-2 border-gray-600 inline-block px-6 py-2">
+          <h2 className="text-lg font-bold uppercase tracking-widest">OFFER LETTER</h2>
         </div>
       </div>
 
-      {/* Candidate Details */}
-      <div className="mb-8 text-left">
+      {/* Reference Number and Date */}
+      <div className="flex justify-between mb-6 text-sm">
+        <p><strong>Reference No.:</strong> OL/{new Date().getFullYear()}/______</p>
+        <p><strong>Date:</strong> {formatDate(dateOfOffer)}</p>
+      </div>
+
+      {/* Candidate Address */}
+      <div className="mb-6">
         <p>To,</p>
         <p><strong>{candidateName || '[Candidate Name]'}</strong></p>
         <p className="whitespace-pre-line">{candidateAddress || '[Candidate Address]'}</p>
       </div>
-      
+
       {/* Subject */}
       <div className="mb-6">
-        <p className="font-bold">Subject: Offer of Employment - {jobTitle || '[Job Title]'}</p>
+        <p><strong>Subject: Offer of Employment - {jobTitle || '[Job Title]'}</strong></p>
       </div>
 
-      {/* Letter Body */}
-      <div className="space-y-4 text-justify">
-        <p>Dear {candidateName || '[Candidate Name]'},</p>
-        <p>
-          We are pleased to offer you the position of <strong>{jobTitle || '[Job Title]'}</strong> in the <strong>{department || '[Department]'}</strong> department at <strong>{institutionName || '[Company Name]'}</strong>. 
-          In this role, you will be reporting to <strong>{reportingManager || '[Reporting Manager]'}</strong>.
+      {/* Letter Content */}
+      <div className="space-y-4 text-base leading-7">
+        <p>Dear {candidateName ? candidateName.split(' ')[0] : '[Name]'},</p>
+
+        <p className="text-justify">
+          We are pleased to offer you the position of <strong>{jobTitle || '[Job Title]'}</strong> in the 
+          <strong> {department || '[Department]'}</strong> department at <strong>{institutionName || '[Institution Name]'}</strong>. 
+          You will be reporting to <strong>{reportingManager || '[Reporting Manager]'}</strong>.
         </p>
-        <p>
-          Your anticipated start date will be <strong>{formatDate(startDate)}</strong>. This offer is contingent upon successful completion of any pre-employment checks, if applicable.
+
+        <p className="text-justify">
+          Your anticipated start date will be <strong>{formatDate(startDate)}</strong>. This offer is subject to 
+          successful completion of pre-employment verification and a probation period of <strong>{probationPeriod || '[Probation Period]'}</strong>.
         </p>
-        <p>
-          Your employment will be subject to a probation period of <strong>{probationPeriod || '[Probation Period]'}</strong>, during which your performance will be reviewed.
-        </p>
-        <p>
-          Your {salaryFrequency === 'annually' ? 'annual' : 'monthly'} compensation will be <strong>{formatCurrency(salaryAmount, salaryCurrency)}</strong>. This will be paid {salaryFrequency === 'annually' ? 'annually, subject to standard payroll deductions' : 'on a monthly basis, subject to standard payroll deductions'}.
-        </p>
-        <p>
-          You will be eligible for the following benefits:
-        </p>
-        <div className="ml-4 whitespace-pre-line bg-gray-50 p-2 border-l-2 border-gray-300">
-          {benefits || '[Benefits Description]'}
+
+        <div className="space-y-2">
+          <p><strong>Compensation & Benefits:</strong></p>
+          <div className="ml-4 space-y-1">
+            <p>• {salaryFrequency === 'annually' ? 'Annual' : 'Monthly'} Salary: <strong>{formatCurrency(salaryAmount, salaryCurrency)}</strong></p>
+            <p>• Work Hours: <strong>{workHours || '[Work Hours]'}</strong></p>
+            <p>• Work Location: <strong>{workLocation || '[Work Location]'}</strong></p>
+          </div>
         </div>
-        <p>
-          Your standard work hours will be <strong>{workHours || '[Work Hours]'}</strong>, and your primary work location will be <strong>{workLocation || '[Work Location]'}</strong>.
+
+        {benefits && (
+          <div className="space-y-2">
+            <p><strong>Additional Benefits:</strong></p>
+            <div className="ml-4 whitespace-pre-line text-sm bg-gray-50 p-3 border-l-2 border-blue-400">
+              {benefits}
+            </div>
+          </div>
+        )}
+
+        <p className="text-justify">
+          This offer is valid until <strong>{formatDate(acceptanceDeadline)}</strong>. Please confirm your acceptance 
+          by signing and returning a copy of this letter by the specified date.
         </p>
-        <p>
-          This offer of employment is valid until <strong>{formatDate(acceptanceDeadline)}</strong>. To accept this offer, please sign and return a copy of this letter by the aforementioned date.
+
+        <p className="text-justify">
+          We look forward to welcoming you to our team and are confident that your skills and experience will be 
+          valuable additions to our organization.
         </p>
-        <p>
-          We are excited about the possibility of you joining our team and look forward to your positive response. If you have any questions, please do not hesitate to contact us.
-        </p>
+
+        <p>We await your positive response.</p>
       </div>
 
-      {/* Closing */}
-      <div className="mt-12">
-        <p>Sincerely,</p>
+      {/* Date and Place */}
+      <div className="mt-12 mb-8">
+        <p><strong>Date:</strong> {formatDate(issueDate)}</p>
+        <p><strong>Place:</strong> {place || '[Place]'}</p>
       </div>
 
       {/* Signatory Section */}
-      <div className="flex justify-start items-end mt-8">
-        <div className="text-left">
+      <div className="flex justify-end items-end mt-16">
+        <div className="text-center">
           {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-1 object-contain" />
+            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>} {/* Placeholder for spacing if no signature */}
-          <div className="border-t border-gray-500 pt-1 min-w-[200px]">
-            <p className="font-semibold">{signatoryName || '[Signatory Name]'}</p>
-            <p className="text-xs">{signatoryDesignation || '[Signatory Designation]'}</p>
-            <p className="text-xs">{institutionName || '[Company Name]'}</p>
+          {!includeDigitalSignature && <div className="h-16"></div>}
+          <div className="border-t border-black pt-2 min-w-[200px]">
+            <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
+            <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
+            <p className="text-sm">{institutionName || '[Institution Name]'}</p>
           </div>
         </div>
       </div>
-      
-      {/* Footer Info - Optional */}
-      <div className="mt-16 text-center text-xs text-gray-400 border-t pt-2">
-         <p>{institutionName || '[Company Name]'} | {orgAddressLine}</p>
-         <p>Issued on: {formatDate(issueDate)} | Place: {place || '[Place]'}</p>
+
+      {/* Acceptance Section */}
+      <div className="mt-16 pt-8 border-t border-gray-300">
+        <div className="space-y-4">
+          <p className="font-semibold">ACCEPTANCE:</p>
+          <p>I hereby accept the terms and conditions of employment as outlined in this offer letter.</p>
+          
+          <div className="grid grid-cols-2 gap-8 mt-8">
+            <div>
+              <div className="border-t border-black pt-2 mt-16">
+                <p className="text-sm">Candidate Signature</p>
+              </div>
+            </div>
+            <div>
+              <div className="border-t border-black pt-2 mt-16">
+                <p className="text-sm">Date</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Optional Seal - not typical for offer letters but kept for structural consistency */}
-      {/*
+      {/* Seal */}
       {branding.sealUrl && (
-        <div className="absolute bottom-16 right-16"> // Positioned differently if used
-          <img src={branding.sealUrl} alt="Company Seal" className="h-20 w-20 object-contain opacity-30" />
+        <div className="absolute bottom-32 left-16">
+          <img src={branding.sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
         </div>
       )}
-      */}
     </div>
   );
 };
-
