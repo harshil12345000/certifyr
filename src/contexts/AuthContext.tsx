@@ -63,15 +63,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const redirectUrl = `${window.location.origin}/dashboard`;
       
+      // Simplify metadata to avoid database constraints
       const metaData: Record<string, any> = {
         full_name: data.fullName,
-        phone_number: data.phoneNumber,
-        organization_name: data.organizationName,
-        organization_type: data.organizationType,
-        organization_size: data.organizationSize,
-        organization_website: data.organizationWebsite,
-        organization_location: data.organizationLocation,
       };
+
+      // Only add optional fields if they have values
+      if (data.phoneNumber) {
+        metaData.phone_number = data.phoneNumber;
+      }
+      if (data.organizationName) {
+        metaData.organization_name = data.organizationName;
+      }
+      if (data.organizationType) {
+        metaData.organization_type = data.organizationType;
+      }
+      if (data.organizationSize) {
+        metaData.organization_size = data.organizationSize;
+      }
+      if (data.organizationWebsite) {
+        metaData.organization_website = data.organizationWebsite;
+      }
+      if (data.organizationLocation) {
+        metaData.organization_location = data.organizationLocation;
+      }
 
       if (data.organizationType === 'Other' && data.organizationTypeOther) {
         metaData.organization_type_other = data.organizationTypeOther;
@@ -88,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return { error };
     } catch (error) {
+      console.error('Sign up error:', error);
       return { error };
     }
   };
