@@ -11,9 +11,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
 
-// Cleaned: only unique templates, NOC for Visa appearing once
-function getUniqueTemplates(templates: typeof allTemplates) {
-  const seen = new Set();
+// Define a minimal Template type to maintain correct typings
+type Template = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  usageCount?: number;
+};
+
+function getUniqueTemplates(templates: Template[]): Template[] {
+  const seen = new Set<string>();
   return templates.filter((tpl) => {
     if (seen.has(tpl.id)) return false;
     seen.add(tpl.id);
@@ -21,8 +29,9 @@ function getUniqueTemplates(templates: typeof allTemplates) {
   });
 }
 
-const uniqueTemplates = getUniqueTemplates([
-  ...popularTemplates, // this includes "noc-visa-1" (NOC for Visa Application) from mockData
+// The actual templates for uniqueness
+const allTemplatesArr: Template[] = [
+  ...popularTemplates,
   {
     id: "embassy-attestation-1",
     title: "Embassy Attestation Letter",
@@ -128,7 +137,9 @@ const uniqueTemplates = getUniqueTemplates([
     category: "Academic",
     usageCount: 35
   }
-]);
+];
+
+const uniqueTemplates: Template[] = getUniqueTemplates(allTemplatesArr);
 
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,7 +166,7 @@ const Templates = () => {
     setSearchQuery('');
   };
 
-  const categories = Array.from(new Set(uniqueTemplates.map(t => t.category)));
+  const categories: string[] = Array.from(new Set(uniqueTemplates.map(t => t.category)));
 
   const handleCreateTemplate = () => {
     navigate('/template-builder');
@@ -251,7 +262,7 @@ const Templates = () => {
             <TabsContent value="all" className="mt-0">
               {/* Selected filters */}
               {selectedCategories.length > 0 && <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedCategories.map(category => <Badge key={category} variant="secondary" className="flex items-center gap-1">
+                  {selectedCategories.map(category => <Badge key={String(category)} variant="secondary" className="flex items-center gap-1">
                       {category}
                       <button onClick={() => toggleCategory(category)} className="hover:bg-muted rounded-full ml-1 h-4 w-4 flex items-center justify-center">
                         <span className="sr-only">Remove</span>
