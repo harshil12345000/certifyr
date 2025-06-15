@@ -259,54 +259,33 @@ const Templates = () => {
           </div>
         </div>
 
-        {/* Template Categories */}
+        {/* Template Content */}
         <div className="glass-card p-5">
-          <Tabs defaultValue="all">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All Templates</TabsTrigger>
-              <TabsTrigger value="recent">Recently Used</TabsTrigger>
-              <TabsTrigger value="favorites">Favorites</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-0">
-              {/* Selected filters */}
-              {selectedCategories.length > 0 && <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedCategories.map(category => <Badge key={String(category)} variant="secondary" className="flex items-center gap-1">
-                      {category}
-                      <button onClick={() => toggleCategory(category)} className="hover:bg-muted rounded-full ml-1 h-4 w-4 flex items-center justify-center">
-                        <span className="sr-only">Remove</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </Badge>)}
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs">
-                    Clear all
-                  </Button>
-                </div>}
+          {/* Selected filters */}
+          {selectedCategories.length > 0 && <div className="flex flex-wrap gap-2 mb-4">
+              {selectedCategories.map(category => <Badge key={String(category)} variant="secondary" className="flex items-center gap-1">
+                  {category}
+                  <button onClick={() => toggleCategory(category)} className="hover:bg-muted rounded-full ml-1 h-4 w-4 flex items-center justify-center">
+                    <span className="sr-only">Remove</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </Badge>)}
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs">
+                Clear all
+              </Button>
+            </div>}
 
-              {filteredTemplates.length === 0 ? <div className="py-12 text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
-                    <Search className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-medium">No templates found</h3>
-                  <p className="text-muted-foreground mt-1">Try adjusting your search or filter criteria</p>
-                </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} />)}
-                </div>}
-            </TabsContent>
-            <TabsContent value="recent" className="mt-0">
-              <div className="py-12 text-center">
-                <h3 className="text-lg font-medium">Recent templates will appear here</h3>
-                <p className="text-muted-foreground mt-1">Start using templates to see them here</p>
+          {filteredTemplates.length === 0 ? <div className="py-12 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
+                <Search className="h-6 w-6 text-muted-foreground" />
               </div>
-            </TabsContent>
-            <TabsContent value="favorites" className="mt-0">
-              <div className="py-12 text-center">
-                <h3 className="text-lg font-medium">No favorite templates yet</h3>
-                <p className="text-muted-foreground mt-1">Mark templates as favorites to see them here</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+              <h3 className="text-lg font-medium">No templates found</h3>
+              <p className="text-muted-foreground mt-1">Try adjusting your search or filter criteria</p>
+            </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} />)}
+            </div>}
         </div>
 
         {/* Template Categories */}
