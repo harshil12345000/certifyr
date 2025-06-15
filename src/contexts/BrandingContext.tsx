@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 
@@ -34,24 +34,33 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
-  const clearBrandingData = useCallback(() => {
-    setLogoUrl(null);
-    setSealUrl(null);
-    setSignatureUrl(null);
-    setOrganizationDetails(null);
-  }, []);
+  const loadBrandingData = async () => {
+    // Prevent multiple simultaneous loads
+    if (isLoading || hasAttemptedLoad) {
+      return;
+    }
 
-  const loadBrandingData = useCallback(async () => {
-    // Prevent multiple calls or calls when already loading
-    if (isLoading || !user?.id) {
+    if (authLoading) {
+      console.log('Auth still loading, waiting...');
+      return;
+    }
+
+    if (!user?.id) {
+      console.log('No user available, clearing branding data');
+      setLogoUrl(null);
+      setSealUrl(null);
+      setSignatureUrl(null);
+      setOrganizationDetails(null);
+      setHasAttemptedLoad(true);
       return;
     }
 
     console.log('Loading branding data for user:', user.id);
     setIsLoading(true);
+    setHasAttemptedLoad(true);
     
     try {
       // Step 1: Get user's organization_id
@@ -63,13 +72,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
       if (memberError) {
         console.error('Error fetching organization membership:', memberError.message);
-        clearBrandingData();
+        setLogoUrl(null);
+        setSealUrl(null);
+        setSignatureUrl(null);
+        setOrganizationDetails(null);
         return;
       }
 
       if (!memberData?.organization_id) {
-        console.log('No organization found for user');
-        clearBrandingData();
+        console.log('No organization found for user, clearing branding data');
+        setLogoUrl(null);
+        setSealUrl(null);
+        setSignatureUrl(null);
+        setOrganizationDetails(null);
         return;
       }
       
@@ -133,40 +148,31 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     } catch (error) {
       console.error('Error loading branding data:', error);
-      clearBrandingData();
+      setLogoUrl(null);
+      setSealUrl(null);
+      setSignatureUrl(null);
+      setOrganizationDetails(null);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, isLoading, clearBrandingData]);
+  };
 
-  // Initialize when auth is ready
   useEffect(() => {
-    if (authLoading) {
-      console.log('Auth still loading...');
-      return;
+    // Reset attempt flag when user changes
+    setHasAttemptedLoad(false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    // Only load if auth is not loading and we haven't attempted yet
+    if (!authLoading && !hasAttemptedLoad) {
+      loadBrandingData();
     }
+  }, [authLoading, hasAttemptedLoad, user?.id]);
 
-    if (initialized) {
-      return;
-    }
-
-    setInitialized(true);
-
-    if (!user?.id) {
-      console.log('No user found, clearing branding data');
-      clearBrandingData();
-      setIsLoading(false);
-      return;
-    }
-
-    // Load branding data
-    loadBrandingData();
-  }, [authLoading, user?.id, initialized, loadBrandingData, clearBrandingData]);
-
-  const refreshBranding = useCallback(async () => {
-    if (!user?.id) return;
+  const refreshBranding = async () => {
+    setHasAttemptedLoad(false);
     await loadBrandingData();
-  }, [user?.id, loadBrandingData]);
+  };
 
   return (
     <BrandingContext.Provider value={{ 
