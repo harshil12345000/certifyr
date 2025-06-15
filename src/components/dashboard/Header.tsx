@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Link } from 'react-router-dom';
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
@@ -19,8 +20,34 @@ interface Announcement {
   created_at: string;
 }
 
+// Import templates data for search functionality
+const allTemplates = [
+  { id: "bonafide-1", title: "Bonafide Certificate", description: "Student verification certificate", category: "Academic" },
+  { id: "character-1", title: "Character Certificate", description: "Character verification document", category: "Academic" },
+  { id: "experience-1", title: "Experience Certificate", description: "Work experience verification", category: "Employment" },
+  { id: "embassy-attestation-1", title: "Embassy Attestation", description: "Letter for document attestation at embassies", category: "Travel" },
+  { id: "completion-certificate-1", title: "Completion Certificate", description: "Certificate for courses, training programs, internships", category: "Educational" },
+  { id: "transfer-certificate-1", title: "Transfer Certificate", description: "Certificate for students moving between institutions", category: "Educational" },
+  { id: "noc-visa-1", title: "NOC for Visa Application", description: "No Objection Certificate for visa applications", category: "Travel" },
+  { id: "income-certificate-1", title: "Income Certificate", description: "Certificate stating employee income details", category: "Employment" },
+  { id: "maternity-leave-1", title: "Maternity Leave Application", description: "Application for maternity leave benefits", category: "Employment" },
+  { id: "bank-verification-1", title: "Bank Account Verification", description: "Letter confirming account details for banks", category: "Financial" },
+  { id: "offer-letter-1", title: "Offer Letter", description: "Formal job offer letter to candidates", category: "Employment" },
+  { id: "address-proof-1", title: "Address Proof Certificate", description: "Certificate verifying residential address", category: "Legal" },
+  { id: "articles-incorporation-1", title: "Articles of Incorporation", description: "Certificate of Incorporation for new corporations", category: "Corporate" },
+  { id: "corporate-bylaws-1", title: "Corporate Bylaws", description: "Corporate governance and operating procedures", category: "Corporate" },
+  { id: "founders-agreement-1", title: "Founders' Agreement", description: "Agreement between company founders", category: "Corporate" },
+  { id: "stock-purchase-agreement-1", title: "Stock Purchase Agreement", description: "Agreement for purchasing company shares", category: "Corporate" },
+  { id: "employment-agreement-1", title: "Employment Agreement", description: "Comprehensive employment contract", category: "Corporate" },
+  { id: "nda-1", title: "Non-Disclosure Agreement (NDA)", description: "Confidentiality agreement between parties", category: "Corporate" },
+  { id: "academic-transcript-1", title: "Academic Transcript / Marksheet", description: "Official academic record and transcript", category: "Academic" },
+  { id: "embassy-attestation-letter-1", title: "Embassy Attestation Letter", description: "Official letter for embassy document attestation", category: "Travel" }
+];
+
 export function Header() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -30,6 +57,18 @@ export function Header() {
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
   };
+
+  // Handle keyboard shortcut for opening search
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   // Fetch active announcements + which are unread
   useEffect(() => {
@@ -86,98 +125,164 @@ export function Header() {
     await signOut();
   };
 
-  return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="hidden md:block w-64"></div>
-      <div className="flex flex-1 items-center justify-between">
-        <div className="flex items-center space-x-2 md:w-72 px-0 mx- mx-[-210px]">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search templates, documents..." className="h-9 md:w-64 bg-transparent focus-visible:bg-white mx-[23px]" />
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {unread.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {loadingAnnouncements ? (
-                <div className="py-8 text-center text-muted-foreground">Loading...</div>
-              ) : announcements.length === 0 ? (
-                <div className="py-12 text-center">
-                  <p className="text-sm text-muted-foreground">No notifications yet</p>
-                </div>
-              ) : (
-                announcements.map(a => (
-                  <DropdownMenuItem
-                    key={a.id}
-                    className="cursor-pointer p-3 relative"
-                    onClick={() => markAsRead(a.id)}
-                  >
-                    <div>
-                      <p className="font-medium flex items-center">
-                        {a.title}
-                        {unread.includes(a.id) && (
-                          <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
-                        )}
-                      </p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
-                    </div>
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+  const handleTemplateSelect = (templateId: string) => {
+    setOpen(false);
+    navigate(`/templates/${templateId}`);
+  };
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-3">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="text-xs">
-                    {user?.email ? getInitials(user.email) : 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden md:block text-sm">{user?.email}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin" className="flex items-center cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Admin Panel</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={handleSignOut}
-                className="cursor-pointer text-red-600 focus:text-red-600"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+  return (
+    <>
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="hidden md:block w-64"></div>
+        <div className="flex flex-1 items-center justify-between">
+          <div className="flex items-center space-x-2 md:w-72">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <div 
+              className="flex h-9 w-full md:w-64 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background cursor-pointer items-center gap-2 text-muted-foreground hover:bg-accent/50 transition-colors"
+              onClick={() => setOpen(true)}
+            >
+              <span>Search templates, documents...</span>
+              <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {unread.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {loadingAnnouncements ? (
+                  <div className="py-8 text-center text-muted-foreground">Loading...</div>
+                ) : announcements.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <p className="text-sm text-muted-foreground">No notifications yet</p>
+                  </div>
+                ) : (
+                  announcements.map(a => (
+                    <DropdownMenuItem
+                      key={a.id}
+                      className="cursor-pointer p-3 relative"
+                      onClick={() => markAsRead(a.id)}
+                    >
+                      <div>
+                        <p className="font-medium flex items-center">
+                          {a.title}
+                          {unread.includes(a.id) && (
+                            <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 px-3">
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback className="text-xs">
+                      {user?.email ? getInitials(user.email) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:block text-sm">{user?.email}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin" className="flex items-center cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleSignOut}
+                  className="cursor-pointer text-red-600 focus:text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput placeholder="Search templates and documents..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Templates">
+            {allTemplates.map((template) => (
+              <CommandItem
+                key={template.id}
+                value={`${template.title} ${template.description} ${template.category}`}
+                onSelect={() => handleTemplateSelect(template.id)}
+                className="cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-primary-500/10 flex items-center justify-center">
+                    <Search className="h-4 w-4 text-primary-500" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{template.title}</div>
+                    <div className="text-sm text-muted-foreground">{template.description}</div>
+                  </div>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Quick Actions">
+            <CommandItem onSelect={() => { setOpen(false); navigate('/templates'); }} className="cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center">
+                  <Search className="h-4 w-4 text-blue-500" />
+                </div>
+                <div>
+                  <div className="font-medium">Browse All Templates</div>
+                  <div className="text-sm text-muted-foreground">View the complete template library</div>
+                </div>
+              </div>
+            </CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate('/dashboard'); }} className="cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center">
+                  <Search className="h-4 w-4 text-green-500" />
+                </div>
+                <div>
+                  <div className="font-medium">Go to Dashboard</div>
+                  <div className="text-sm text-muted-foreground">View your documents and activity</div>
+                </div>
+              </div>
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </>
   );
 }
