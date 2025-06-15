@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -6,6 +5,7 @@ import { Signature as SignatureIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { Letterhead } from "./Letterhead";
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -175,34 +175,8 @@ export function ExperiencePreview({ data }: ExperiencePreviewProps) {
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
       <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <div className="flex flex-col items-center">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading assets...</p>
-            </div>
-          </div>
-        )}
-        
         {/* Letterhead */}
-        <div className="text-center border-b pb-4 mb-8">
-          {brandingAssets.logoUrl && (
-            <div className="flex justify-center mb-2">
-              <img 
-                src={brandingAssets.logoUrl}
-                alt="Organization Logo" 
-                className="h-16 object-contain"
-                onError={(e) => handleImageError(e, "logo")}
-              />
-            </div>
-          )}
-          <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
-            {institutionNameToDisplay}
-          </h1>
-          <p className="text-muted-foreground">
-            {contactInfo.address} • {contactInfo.phone} • {contactInfo.email}
-          </p>
-        </div>
+        <Letterhead />
 
         {/* Certificate title */}
         <div className="text-center mb-8">
