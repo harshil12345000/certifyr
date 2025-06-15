@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -639,13 +640,119 @@ const TemplateDetail = () => {
       case 'nda-1':
         return <NDAPreview data={formData as NDAData} />;
       case 'founders-agreement-1':
-        return <FoundersAgreementPreview data={formData as FoundersAgreementData} />;
+        // Convert corporate template data to preview template data
+        const foundersData = formData as FoundersAgreementData;
+        const foundersPreviewData = {
+          companyName: foundersData.companyName,
+          founders: foundersData.founderNames,
+          equityDistribution: foundersData.equityDistribution,
+          vestingSchedule: foundersData.vestingSchedule,
+          rolesAndResponsibilities: foundersData.roles,
+          intellectualProperty: foundersData.intellectualProperty,
+          nonCompete: foundersData.nonCompete,
+          termination: foundersData.disputeResolution,
+          governingLaw: foundersData.governingLaw,
+          date: foundersData.date,
+          place: foundersData.place,
+          signatoryName: foundersData.signatoryName,
+          signatoryDesignation: foundersData.signatoryDesignation,
+          includeDigitalSignature: foundersData.includeDigitalSignature,
+        };
+        return <FoundersAgreementPreview data={foundersPreviewData} />;
       case 'stock-purchase-agreement-1':
-        return <StockPurchaseAgreementPreview data={formData as StockPurchaseAgreementData} />;
+        // Convert corporate template data to preview template data
+        const stockData = formData as StockPurchaseAgreementData;
+        const stockPreviewData = {
+          companyName: stockData.companyName,
+          seller: {
+            name: stockData.sellerName,
+            address: stockData.sellerAddress,
+          },
+          buyer: {
+            name: stockData.purchaserName,
+            address: stockData.purchaserAddress,
+          },
+          shares: {
+            class: stockData.shareClass,
+            quantity: stockData.numberOfShares,
+          },
+          pricePerShare: stockData.sharePrice,
+          totalConsideration: stockData.totalPurchasePrice,
+          closingDate: stockData.closingDate,
+          representations: stockData.representationsWarranties,
+          warranties: stockData.representationsWarranties,
+          covenants: {
+            restrictionsOnTransfer: stockData.restrictionsOnTransfer,
+          },
+          governingLaw: stockData.governingLaw,
+          date: stockData.date,
+          place: stockData.place,
+          signatoryName: stockData.signatoryName,
+          signatoryDesignation: stockData.signatoryDesignation,
+          includeDigitalSignature: stockData.includeDigitalSignature,
+        };
+        return <StockPurchaseAgreementPreview data={stockPreviewData} />;
       case 'articles-incorporation-1':
-        return <ArticlesOfIncorporationPreview data={formData as ArticlesOfIncorporationData} />;
+        // Convert corporate template data to preview template data
+        const articlesData = formData as ArticlesOfIncorporationData;
+        const articlesPreviewData = {
+          companyName: articlesData.corporationName,
+          stateOfIncorporation: articlesData.stateOfIncorporation,
+          registeredAgent: articlesData.registeredAgent,
+          registeredOffice: articlesData.registeredAgentAddress,
+          purpose: articlesData.businessPurpose,
+          authorizedShares: articlesData.authorizedShares,
+          shareClasses: articlesData.shareValue,
+          incorporators: [{
+            name: articlesData.incorporatorName,
+            address: articlesData.incorporatorAddress,
+            place: articlesData.place,
+          }],
+          date: articlesData.date,
+          place: articlesData.place,
+          signatoryName: articlesData.signatoryName,
+          signatoryDesignation: articlesData.signatoryDesignation,
+          includeDigitalSignature: articlesData.includeDigitalSignature,
+        };
+        return <ArticlesOfIncorporationPreview data={articlesPreviewData} />;
       case 'corporate-bylaws-1':
-        return <CorporateBylawsPreview data={formData as CorporateBylawsData} />;
+        // Convert corporate template data to preview template data
+        const bylawsData = formData as CorporateBylawsData;
+        const bylawsPreviewData = {
+          companyName: bylawsData.corporationName,
+          stateOfIncorporation: bylawsData.stateOfIncorporation,
+          registeredAgent: bylawsData.signatoryName,
+          registeredOffice: bylawsData.principalOffice,
+          directors: {
+            numberOfDirectors: bylawsData.numberOfDirectors,
+            directorTermLength: bylawsData.directorTermLength,
+            boardMeetingFrequency: bylawsData.boardMeetingFrequency,
+          },
+          officers: {
+            officerTitles: bylawsData.officerTitles,
+          },
+          shareholders: {},
+          shareClasses: {
+            dividendPolicy: bylawsData.dividendPolicy,
+          },
+          meetings: {
+            shareholderMeetingDate: bylawsData.shareholderMeetingDate,
+            fiscalYearEnd: bylawsData.fiscalYearEnd,
+          },
+          voting: {
+            votingRights: bylawsData.votingRights,
+          },
+          indemnification: {},
+          amendments: {
+            amendmentProcess: bylawsData.amendmentProcess,
+          },
+          date: bylawsData.date,
+          place: bylawsData.place,
+          signatoryName: bylawsData.signatoryName,
+          signatoryDesignation: bylawsData.signatoryDesignation,
+          includeDigitalSignature: bylawsData.includeDigitalSignature,
+        };
+        return <CorporateBylawsPreview data={bylawsPreviewData} />;
       case 'bonafide-1':
         return <BonafidePreview data={formData as BonafideData} />;
       case 'character-1':
