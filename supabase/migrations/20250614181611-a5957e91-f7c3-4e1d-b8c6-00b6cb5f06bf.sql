@@ -1,4 +1,3 @@
-
 -- 1. Create the announcements table
 create table public.announcements (
   id uuid primary key default gen_random_uuid(),

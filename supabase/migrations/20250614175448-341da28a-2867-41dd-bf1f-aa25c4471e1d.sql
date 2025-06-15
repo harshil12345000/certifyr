@@ -1,4 +1,3 @@
-
 -- Create documents table to store user documents
 CREATE TABLE public.documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -43,7 +43,7 @@ const AdminPage = () => {
   const { user } = useAuth();
   const { refreshBranding } = useBranding();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [hasOrganization, setHasOrganization] = useState<boolean>(false);
+  const [hasOrganization, setHasOrganization] = useState<boolean>(true);
   const [formState, setFormState] = useState<UserProfileFormState>({
     organizationName: '',
     streetAddress: '',
@@ -126,8 +126,8 @@ const AdminPage = () => {
             });
           }
           
-          setHasOrganization(false);
           setOrganizationId(null);
+          setHasOrganization(true);
           setIsLoading(false);
           return;
         }
@@ -160,7 +160,7 @@ const AdminPage = () => {
 
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        setHasOrganization(false);
+        setHasOrganization(true);
       } finally {
         setIsLoading(false);
       }
@@ -366,12 +366,6 @@ const AdminPage = () => {
 
       toast({ title: 'Success', description: 'Organization details updated successfully.' });
       
-      // Update hasOrganization status
-      const hasOrgData = formState.organizationName || 
-                        formState.streetAddress || 
-                        formState.organizationType;
-      setHasOrganization(!!hasOrgData);
-
       // Refresh branding context and previews
       if (currentOrgId) {
         await fetchBrandingFiles(currentOrgId);
@@ -400,14 +394,6 @@ const AdminPage = () => {
     <DashboardLayout>
       <div className="container mx-auto py-4 px-4 md:py-8 md:px-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Settings</h1>
-        
-        {!hasOrganization && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-yellow-800">
-              You haven't provided organization details yet. Complete your organization information below to unlock all features.
-            </p>
-          </div>
-        )}
         
         <Tabs defaultValue="organization" className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">

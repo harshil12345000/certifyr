@@ -1,4 +1,3 @@
-
 -- Update the handle_new_user function to properly handle organization data
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger

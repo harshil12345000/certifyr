@@ -1,4 +1,3 @@
-
 -- Drop all existing policies for both tables
 DROP POLICY IF EXISTS "Admins can manage announcements" ON public.announcements;
 DROP POLICY IF EXISTS "Users can read global or their org announcements" ON public.announcements;

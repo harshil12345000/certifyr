@@ -1,4 +1,3 @@
-
 -- Create the user_profiles table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

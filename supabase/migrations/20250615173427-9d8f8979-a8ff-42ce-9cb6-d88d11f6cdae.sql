@@ -1,4 +1,3 @@
-
 -- Create table for logging QR code verification attempts
 CREATE TABLE public.qr_verification_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,

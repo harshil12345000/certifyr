@@ -1,4 +1,3 @@
-
 -- Fix storage bucket name mismatch and policies
 -- First, let's ensure we're using the correct bucket name 'branding-assets'
 INSERT INTO storage.buckets (id, name, public)

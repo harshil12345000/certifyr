@@ -1,4 +1,3 @@
-
 -- Drop all triggers and functions that reference the non-existent organization_branding table
 DROP TRIGGER IF EXISTS on_auth_user_branding ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_branding_setup ON auth.users;

@@ -1,4 +1,3 @@
-
 -- Create organization_invites table to track pending invitations
 CREATE TABLE IF NOT EXISTS public.organization_invites (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
