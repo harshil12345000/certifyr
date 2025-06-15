@@ -16,7 +16,10 @@ import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
 
 interface UserProfileFormState {
   organizationName: string;
-  organizationLocation: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
   phoneNumber: string;
   email: string;
   organizationType: string;
@@ -43,7 +46,10 @@ const AdminPage = () => {
   const [hasOrganization, setHasOrganization] = useState<boolean>(false);
   const [formState, setFormState] = useState<UserProfileFormState>({
     organizationName: '',
-    organizationLocation: '',
+    streetAddress: '',
+    city: '',
+    state: '',
+    postalCode: '',
     phoneNumber: '',
     email: '',
     organizationType: '',
@@ -88,9 +94,14 @@ const AdminPage = () => {
             .single();
 
           if (!profileError && profileData) {
+            // Parse address if it exists (backward compatibility)
+            const addressParts = profileData.organization_location ? profileData.organization_location.split(', ') : [];
             setFormState({
               organizationName: profileData.organization_name || '',
-              organizationLocation: profileData.organization_location || '',
+              streetAddress: addressParts[0] || '',
+              city: addressParts[1] || '',
+              state: addressParts[2] || '',
+              postalCode: addressParts[3] || '',
               phoneNumber: profileData.phone_number || '',
               email: profileData.email || '',
               organizationType: profileData.organization_type || '',
@@ -111,9 +122,14 @@ const AdminPage = () => {
 
         const orgData = memberData.organizations;
         if (orgData) {
+          // Parse address if it exists (backward compatibility)
+          const addressParts = orgData.address ? orgData.address.split(', ') : [];
           setFormState({
             organizationName: orgData.name || '',
-            organizationLocation: orgData.address || '',
+            streetAddress: addressParts[0] || '',
+            city: addressParts[1] || '',
+            state: addressParts[2] || '',
+            postalCode: addressParts[3] || '',
             phoneNumber: orgData.phone || '',
             email: orgData.email || '',
             organizationType: '',
@@ -194,6 +210,14 @@ const AdminPage = () => {
     try {
       let currentOrgId = organizationId;
 
+      // Create full address string from components
+      const fullAddress = [
+        formState.streetAddress,
+        formState.city,
+        formState.state,
+        formState.postalCode
+      ].filter(Boolean).join(', ');
+
       // Create or update organization
       if (formState.organizationName) {
         if (currentOrgId) {
@@ -202,7 +226,7 @@ const AdminPage = () => {
             .from('organizations')
             .update({
               name: formState.organizationName,
-              address: formState.organizationLocation,
+              address: fullAddress,
               phone: formState.phoneNumber,
               email: formState.email,
             })
@@ -215,7 +239,7 @@ const AdminPage = () => {
             .from('organizations')
             .insert({
               name: formState.organizationName,
-              address: formState.organizationLocation,
+              address: fullAddress,
               phone: formState.phoneNumber,
               email: formState.email,
             })
@@ -245,7 +269,7 @@ const AdminPage = () => {
         .from('user_profiles')
         .update({
           organization_name: formState.organizationName,
-          organization_location: formState.organizationLocation,
+          organization_location: fullAddress,
           phone_number: formState.phoneNumber,
           email: formState.email,
           organization_type: formState.organizationType,
@@ -322,7 +346,7 @@ const AdminPage = () => {
       
       // Update hasOrganization status
       const hasOrgData = formState.organizationName || 
-                        formState.organizationLocation || 
+                        formState.streetAddress || 
                         formState.organizationType;
       setHasOrganization(!!hasOrgData);
 
@@ -391,16 +415,54 @@ const AdminPage = () => {
                       placeholder="Enter organization name"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="organizationLocation">Address/Location</Label>
-                    <Input 
-                      id="organizationLocation" 
-                      name="organizationLocation" 
-                      value={formState.organizationLocation} 
-                      onChange={handleInputChange} 
-                      placeholder="Enter organization address or location"
-                    />
+                  
+                  {/* Full Address Section */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-medium">Address</h4>
+                    <div>
+                      <Label htmlFor="streetAddress">Street Address</Label>
+                      <Input 
+                        id="streetAddress" 
+                        name="streetAddress" 
+                        value={formState.streetAddress} 
+                        onChange={handleInputChange} 
+                        placeholder="Enter street address"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="city">City</Label>
+                        <Input 
+                          id="city" 
+                          name="city" 
+                          value={formState.city} 
+                          onChange={handleInputChange} 
+                          placeholder="Enter city"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="state">State/Province</Label>
+                        <Input 
+                          id="state" 
+                          name="state" 
+                          value={formState.state} 
+                          onChange={handleInputChange} 
+                          placeholder="Enter state or province"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="postalCode">Postal Code</Label>
+                        <Input 
+                          id="postalCode" 
+                          name="postalCode" 
+                          value={formState.postalCode} 
+                          onChange={handleInputChange} 
+                          placeholder="Enter postal code"
+                        />
+                      </div>
+                    </div>
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="phoneNumber">Phone</Label>
