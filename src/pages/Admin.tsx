@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { ImagePlus } from 'lucide-react';
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
@@ -37,6 +38,7 @@ interface BrandingFilePreview {
 
 const AdminPage = () => {
   const { user } = useAuth();
+  const { refreshBranding } = useBranding();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [hasOrganization, setHasOrganization] = useState<boolean>(false);
   const [formState, setFormState] = useState<UserProfileFormState>({
@@ -61,7 +63,7 @@ const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch user profile data
+  // Fetch user profile data and organization data
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user?.id) {
@@ -70,51 +72,59 @@ const AdminPage = () => {
       }
       setIsLoading(true);
       try {
-        // Fetch user profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
+        // Check if user has organization membership
+        const { data: memberData, error: memberError } = await supabase
+          .from('organization_members')
+          .select('organization_id, organizations(name, address, phone, email)')
           .eq('user_id', user.id)
           .single();
 
-        if (profileError) {
-          console.log("No user profile found:", profileError);
+        if (memberError || !memberData?.organization_id) {
+          // Fetch user profile data for fallback
+          const { data: profileData, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (!profileError && profileData) {
+            setFormState({
+              organizationName: profileData.organization_name || '',
+              organizationLocation: profileData.organization_location || '',
+              phoneNumber: profileData.phone_number || '',
+              email: profileData.email || '',
+              organizationType: profileData.organization_type || '',
+              organizationSize: profileData.organization_size || '',
+              organizationWebsite: profileData.organization_website || '',
+            });
+          }
+          
           setHasOrganization(false);
+          setOrganizationId(null);
           setIsLoading(false);
           return;
         }
 
-        if (profileData) {
-          // Check if user has organization data
-          const hasOrgData = profileData.organization_name || 
-                           profileData.organization_location || 
-                           profileData.organization_type;
-          
-          setHasOrganization(!!hasOrgData);
-          
+        // User has organization membership
+        setOrganizationId(memberData.organization_id);
+        setHasOrganization(true);
+
+        const orgData = memberData.organizations;
+        if (orgData) {
           setFormState({
-            organizationName: profileData.organization_name || '',
-            organizationLocation: profileData.organization_location || '',
-            phoneNumber: profileData.phone_number || '',
-            email: profileData.email || '',
-            organizationType: profileData.organization_type || '',
-            organizationSize: profileData.organization_size || '',
-            organizationWebsite: profileData.organization_website || '',
+            organizationName: orgData.name || '',
+            organizationLocation: orgData.address || '',
+            phoneNumber: orgData.phone || '',
+            email: orgData.email || '',
+            organizationType: '',
+            organizationSize: '',
+            organizationWebsite: '',
           });
-
-          // Check for organization membership to get organization ID for branding
-          const { data: memberData } = await supabase
-            .from('organization_members')
-            .select('organization_id')
-            .eq('user_id', user.id)
-            .single();
-
-          if (memberData?.organization_id) {
-            setOrganizationId(memberData.organization_id);
-            // Fetch branding files if user is part of an organization
-            await fetchBrandingFiles(memberData.organization_id);
-          }
         }
+
+        // Fetch branding files
+        await fetchBrandingFiles(memberData.organization_id);
+
       } catch (error) {
         console.error("Error fetching user profile:", error);
         setHasOrganization(false);
@@ -182,7 +192,55 @@ const AdminPage = () => {
     setIsSaving(true);
 
     try {
-      // Update user profile
+      let currentOrgId = organizationId;
+
+      // Create or update organization
+      if (formState.organizationName) {
+        if (currentOrgId) {
+          // Update existing organization
+          const { error: orgUpdateError } = await supabase
+            .from('organizations')
+            .update({
+              name: formState.organizationName,
+              address: formState.organizationLocation,
+              phone: formState.phoneNumber,
+              email: formState.email,
+            })
+            .eq('id', currentOrgId);
+
+          if (orgUpdateError) throw orgUpdateError;
+        } else {
+          // Create new organization
+          const { data: newOrg, error: orgCreateError } = await supabase
+            .from('organizations')
+            .insert({
+              name: formState.organizationName,
+              address: formState.organizationLocation,
+              phone: formState.phoneNumber,
+              email: formState.email,
+            })
+            .select()
+            .single();
+
+          if (orgCreateError) throw orgCreateError;
+          
+          currentOrgId = newOrg.id;
+          setOrganizationId(currentOrgId);
+
+          // Add user as admin of the new organization
+          const { error: memberError } = await supabase
+            .from('organization_members')
+            .insert({
+              organization_id: currentOrgId,
+              user_id: user.id,
+              role: 'admin'
+            });
+
+          if (memberError) throw memberError;
+        }
+      }
+
+      // Update user profile with additional details
       const { error: profileUpdateError } = await supabase
         .from('user_profiles')
         .update({
@@ -199,7 +257,7 @@ const AdminPage = () => {
       if (profileUpdateError) throw profileUpdateError;
 
       // Handle branding files if user has organization
-      if (organizationId) {
+      if (currentOrgId) {
         for (const key of Object.keys(brandingFiles) as Array<keyof BrandingFileState>) {
           const file = brandingFiles[key];
           if (file) {
@@ -207,7 +265,7 @@ const AdminPage = () => {
             const { data: existingFiles, error: fetchExistingError } = await supabase
               .from('branding_files')
               .select('path')
-              .eq('organization_id', organizationId)
+              .eq('organization_id', currentOrgId)
               .eq('name', key);
 
             if (fetchExistingError) {
@@ -228,7 +286,7 @@ const AdminPage = () => {
                   const { error: removeDbError } = await supabase
                       .from('branding_files')
                       .delete()
-                      .eq('organization_id', organizationId)
+                      .eq('organization_id', currentOrgId)
                       .eq('name', key);
                    if (removeDbError) {
                       console.error(`Error removing old ${key} record from DB:`, removeDbError.message);
@@ -236,7 +294,7 @@ const AdminPage = () => {
               }
             }
 
-            const filePath = `${organizationId}/${key}-${Date.now()}.${file.name.split('.').pop()}`;
+            const filePath = `${currentOrgId}/${key}-${Date.now()}.${file.name.split('.').pop()}`;
             const { error: uploadError } = await supabase.storage
               .from('branding-assets')
               .upload(filePath, file, { upsert: true });
@@ -248,7 +306,7 @@ const AdminPage = () => {
               .from('branding_files')
               .upsert(
                 {
-                  organization_id: organizationId,
+                  organization_id: currentOrgId,
                   name: key,
                   path: filePath,
                   uploaded_by: user?.id,
@@ -260,7 +318,7 @@ const AdminPage = () => {
         }
       }
 
-      toast({ title: 'Success', description: 'Profile updated successfully.' });
+      toast({ title: 'Success', description: 'Organization details updated successfully.' });
       
       // Update hasOrganization status
       const hasOrgData = formState.organizationName || 
@@ -268,14 +326,15 @@ const AdminPage = () => {
                         formState.organizationType;
       setHasOrganization(!!hasOrgData);
 
-      // Refresh branding previews if organization exists
-      if (organizationId) {
-        await fetchBrandingFiles(organizationId);
+      // Refresh branding context and previews
+      if (currentOrgId) {
+        await fetchBrandingFiles(currentOrgId);
+        await refreshBranding();
         setBrandingFiles({ logo: null, seal: null, signature: null });
       }
 
     } catch (error) {
-      console.error('Failed to save profile data:', error);
+      console.error('Failed to save organization data:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({ title: 'Save Failed', description: errorMessage, variant: 'destructive' });
     } finally {
@@ -318,7 +377,7 @@ const AdminPage = () => {
                 <CardHeader>
                   <CardTitle>Organization Details</CardTitle>
                   <CardDescription>
-                    Update your organization information from your profile.
+                    Update your organization information. This will be stored in the organizations table and linked to your account.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
