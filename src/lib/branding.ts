@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BrandingFile {
@@ -43,6 +44,9 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
     const timestamp = Date.now();
     const filePath = `${organizationId}/${fileName}-${timestamp}.${fileExtension}`;
     
+    console.log('Uploading to path:', filePath);
+    console.log('Organization ID:', organizationId);
+    
     // Check if file with same name exists and delete it first
     const { data: existingFiles } = await supabase
       .from('branding_files')
@@ -53,19 +57,27 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
     if (existingFiles && existingFiles.length > 0) {
       // Delete old files from storage
       const pathsToDelete = existingFiles.map(f => f.path);
-      await supabase.storage
+      const { error: deleteStorageError } = await supabase.storage
         .from('branding-assets')
         .remove(pathsToDelete);
 
+      if (deleteStorageError) {
+        console.warn('Warning deleting old storage files:', deleteStorageError);
+      }
+
       // Delete old records from database
-      await supabase
+      const { error: deleteDbError } = await supabase
         .from('branding_files')
         .delete()
         .eq('organization_id', organizationId)
         .eq('name', fileName);
+
+      if (deleteDbError) {
+        console.warn('Warning deleting old database records:', deleteDbError);
+      }
     }
     
-    // Upload new file to storage with public access for now
+    // Upload new file to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('branding-assets')
       .upload(filePath, file, { 
@@ -80,6 +92,8 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
         'UPLOAD_ERROR'
       );
     }
+
+    console.log('Upload successful, creating database record...');
 
     // Create database record
     const { data: fileData, error: dbError } = await supabase
@@ -104,6 +118,8 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
         'DB_ERROR'
       );
     }
+
+    console.log('Database record created successfully:', fileData);
 
     return {
       id: fileData.id.toString(),
@@ -216,42 +232,15 @@ export async function deleteBrandingFile(fileId: string): Promise<void> {
 
 export async function getBrandingFileUrl(filePath: string): Promise<string> {
   try {
-    const organizationId = await getOrganizationId();
-    
-    // Verify the file belongs to the organization
-    const { data: file, error: verifyError } = await supabase
-      .from('branding_files')
-      .select('id')
-      .eq('path', filePath)
-      .eq('organization_id', organizationId)
-      .single();
-
-    if (verifyError || !file) {
-      throw new BrandingError(
-        'File not found or access denied',
-        'ACCESS_DENIED'
-      );
-    }
-
-    const { data, error } = await supabase.storage
+    const { data } = supabase.storage
       .from('branding-assets')
-      .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+      .getPublicUrl(filePath);
 
-    if (error) {
-      throw new BrandingError(
-        `Failed to generate signed URL: ${error.message}`,
-        'URL_ERROR'
-      );
-    }
-
-    return data.signedUrl;
+    return data.publicUrl;
   } catch (error) {
-    if (error instanceof BrandingError) {
-      throw error;
-    }
     throw new BrandingError(
-      `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      'UNKNOWN_ERROR'
+      `Failed to generate URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'URL_ERROR'
     );
   }
 }

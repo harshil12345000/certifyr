@@ -44,6 +44,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
+      console.log('Loading branding data for user:', user.id);
+      
       // Step 1: Get user's organization_id
       const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
@@ -61,6 +63,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         return;
       }
       const organizationId = memberData.organization_id;
+      console.log('Found organization ID:', organizationId);
 
       // Step 2: Fetch organization details
       const { data: orgData, error: orgError } = await supabase
@@ -79,6 +82,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           phone: orgData.phone,
           email: orgData.email,
         });
+        console.log('Loaded organization details:', orgData);
       }
 
       // Step 3: Fetch branding files
@@ -93,6 +97,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setSealUrl(null);
         setSignatureUrl(null);
       } else if (filesData) {
+        console.log('Found branding files:', filesData);
         let newLogoUrl: string | null = null;
         let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
@@ -109,6 +114,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
+        console.log('Set branding URLs:', { newLogoUrl, newSealUrl, newSignatureUrl });
       }
 
     } catch (error) {
