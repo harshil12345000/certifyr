@@ -44,9 +44,6 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
     const timestamp = Date.now();
     const filePath = `${organizationId}/${fileName}-${timestamp}.${fileExtension}`;
     
-    console.log('Uploading to path:', filePath);
-    console.log('Organization ID:', organizationId);
-    
     // Check if file with same name exists and delete it first
     const { data: existingFiles } = await supabase
       .from('branding_files')
@@ -57,24 +54,16 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
     if (existingFiles && existingFiles.length > 0) {
       // Delete old files from storage
       const pathsToDelete = existingFiles.map(f => f.path);
-      const { error: deleteStorageError } = await supabase.storage
+      await supabase.storage
         .from('branding-assets')
         .remove(pathsToDelete);
 
-      if (deleteStorageError) {
-        console.warn('Warning deleting old storage files:', deleteStorageError);
-      }
-
       // Delete old records from database
-      const { error: deleteDbError } = await supabase
+      await supabase
         .from('branding_files')
         .delete()
         .eq('organization_id', organizationId)
         .eq('name', fileName);
-
-      if (deleteDbError) {
-        console.warn('Warning deleting old database records:', deleteDbError);
-      }
     }
     
     // Upload new file to storage
@@ -86,14 +75,11 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       });
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError);
       throw new BrandingError(
         `Failed to upload file: ${uploadError.message}`,
         'UPLOAD_ERROR'
       );
     }
-
-    console.log('Upload successful, creating database record...');
 
     // Create database record
     const { data: fileData, error: dbError } = await supabase
@@ -110,7 +96,6 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       .single();
 
     if (dbError) {
-      console.error('Database insert error:', dbError);
       // Clean up uploaded file if database insert fails
       await supabase.storage.from('branding-assets').remove([filePath]);
       throw new BrandingError(
@@ -118,8 +103,6 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
         'DB_ERROR'
       );
     }
-
-    console.log('Database record created successfully:', fileData);
 
     return {
       id: fileData.id.toString(),
@@ -130,7 +113,6 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       created_at: fileData.created_at,
     };
   } catch (error) {
-    console.error('Upload error:', error);
     if (error instanceof BrandingError) {
       throw error;
     }
@@ -197,14 +179,9 @@ export async function deleteBrandingFile(fileId: string): Promise<void> {
     }
 
     // Delete from storage
-    const { error: storageError } = await supabase.storage
+    await supabase.storage
       .from('branding-assets')
       .remove([file.path]);
-
-    if (storageError) {
-      console.warn('Storage deletion warning:', storageError.message);
-      // Continue with database deletion even if storage fails
-    }
 
     // Delete from database
     const { error: dbError } = await supabase

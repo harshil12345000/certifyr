@@ -19,9 +19,7 @@ import CertifyrAdmin from "./pages/certifyradmin";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  console.log('App: Component rendering');
-  
+const App = () => {  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

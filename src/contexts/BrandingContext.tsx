@@ -24,7 +24,7 @@ const BrandingContext = createContext<BrandingContextType>({
   sealUrl: null,
   signatureUrl: null,
   organizationDetails: null,
-  isLoading: true,
+  isLoading: false,
   refreshBranding: async () => {},
 });
 
@@ -33,21 +33,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [sealUrl, setSealUrl] = useState<string | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
   const loadBrandingData = async () => {
     if (!user?.id) {
-      console.log('BrandingContext: No user, setting loading to false');
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
-    console.log('BrandingContext: Loading branding data for user:', user.id);
     
     try {
-      // Step 1: Get user's organization_id
+      // Get user's organization_id
       const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
         .select('organization_id')
@@ -55,7 +53,6 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (memberError || !memberData?.organization_id) {
-        console.log('BrandingContext: No organization membership found or error:', memberError?.message);
         setLogoUrl(null);
         setSealUrl(null);
         setSignatureUrl(null);
@@ -63,42 +60,32 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         return;
       }
-      const organizationId = memberData.organization_id;
-      console.log('BrandingContext: Found organization ID:', organizationId);
 
-      // Step 2: Fetch organization details
+      const organizationId = memberData.organization_id;
+
+      // Fetch organization details
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('name, address, phone, email')
         .eq('id', organizationId)
         .single();
 
-      if (orgError) {
-        console.error('BrandingContext: Error fetching organization details:', orgError.message);
-        setOrganizationDetails(null);
-      } else if (orgData) {
+      if (!orgError && orgData) {
         setOrganizationDetails({
           name: orgData.name,
           address: orgData.address,
           phone: orgData.phone,
           email: orgData.email,
         });
-        console.log('BrandingContext: Loaded organization details:', orgData);
       }
 
-      // Step 3: Fetch branding files
+      // Fetch branding files
       const { data: filesData, error: filesError } = await supabase
         .from('branding_files')
         .select('name, path')
         .eq('organization_id', organizationId);
 
-      if (filesError) {
-        console.error("BrandingContext: Error fetching branding files:", filesError.message);
-        setLogoUrl(null);
-        setSealUrl(null);
-        setSignatureUrl(null);
-      } else if (filesData) {
-        console.log('BrandingContext: Found branding files:', filesData);
+      if (!filesError && filesData) {
         let newLogoUrl: string | null = null;
         let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
@@ -112,35 +99,34 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
             if (file.name === 'signature') newSignatureUrl = publicUrl;
           }
         });
+        
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
-        console.log('BrandingContext: Set branding URLs:', { newLogoUrl, newSealUrl, newSignatureUrl });
       }
 
     } catch (error) {
-      console.error('BrandingContext: Error loading branding data:', error);
+      console.error('Error loading branding data:', error);
       setLogoUrl(null);
       setSealUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
     } finally {
       setIsLoading(false);
-      console.log('BrandingContext: Finished loading, isLoading set to false');
     }
   };
 
   useEffect(() => {
-    console.log('BrandingContext: useEffect triggered, user changed:', user?.email || 'No user');
-    loadBrandingData();
+    if (user) {
+      loadBrandingData();
+    } else {
+      setIsLoading(false);
+    }
   }, [user]);
 
   const refreshBranding = async () => {
-    console.log('BrandingContext: Refreshing branding data');
     await loadBrandingData();
   };
-
-  console.log('BrandingContext: Rendering with isLoading:', isLoading);
 
   return (
     <BrandingContext.Provider value={{ 

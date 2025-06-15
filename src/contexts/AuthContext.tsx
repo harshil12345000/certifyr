@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,37 +40,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
-    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth event:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         // When user signs in, check if they need to be added to an organization
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in, ensuring organization membership');
           await ensureUserHasOrganization(session.user);
         }
         
         setLoading(false);
-        console.log('Auth state updated, loading set to false');
       }
     );
 
     // Get initial session
-    console.log('AuthProvider: Getting initial session');
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session?.user?.email || 'No session');
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         ensureUserHasOrganization(session.user);
       }
       setLoading(false);
-      console.log('Initial auth state set, loading set to false');
     });
 
     return () => subscription.unsubscribe();
@@ -77,8 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const ensureUserHasOrganization = async (user: User) => {
     try {
-      console.log('Checking organization membership for user:', user.id);
-      
       // Check if user is already in an organization
       const { data: existingMembership } = await supabase
         .from('organization_members')
@@ -87,11 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (existingMembership) {
-        console.log('User already has organization membership:', existingMembership.organization_id);
         return;
       }
-
-      console.log('No organization membership found, checking user profile');
 
       // Get user profile to check for organization data
       const { data: userProfile } = await supabase
@@ -101,8 +89,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (userProfile?.organization_name) {
-        console.log('Creating organization for user:', userProfile.organization_name);
-        
         // Create organization
         const { data: newOrg, error: orgError } = await supabase
           .from('organizations')
@@ -120,8 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        console.log('Organization created:', newOrg.id);
-
         // Add user as admin to the organization
         const { error: memberError } = await supabase
           .from('organization_members')
@@ -134,11 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (memberError) {
           console.error('Error adding user to organization:', memberError);
-        } else {
-          console.log('User successfully added as admin to organization');
         }
-      } else {
-        console.log('No organization data found in user profile');
       }
     } catch (error) {
       console.error('Error in ensureUserHasOrganization:', error);
@@ -147,9 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
-      console.log('Starting signup process for:', email);
-      console.log('Signup data received:', data);
-      
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       // Create a clean metadata object - ensure we're using the exact field names the database expects
@@ -160,36 +137,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Only add optional fields if they have non-empty values
       if (data.phoneNumber?.trim()) {
         metaData.phone_number = data.phoneNumber.trim();
-        console.log('Adding phone_number to metadata:', metaData.phone_number);
       }
       if (data.organizationName?.trim()) {
         metaData.organization_name = data.organizationName.trim();
-        console.log('Adding organization_name to metadata:', metaData.organization_name);
       }
       if (data.organizationType?.trim()) {
         metaData.organization_type = data.organizationType.trim();
-        console.log('Adding organization_type to metadata:', metaData.organization_type);
       }
       if (data.organizationSize?.trim()) {
         metaData.organization_size = data.organizationSize.trim();
-        console.log('Adding organization_size to metadata:', metaData.organization_size);
       }
       if (data.organizationWebsite?.trim()) {
         metaData.organization_website = data.organizationWebsite.trim();
-        console.log('Adding organization_website to metadata:', metaData.organization_website);
       }
       if (data.organizationLocation?.trim()) {
         metaData.organization_location = data.organizationLocation.trim();
-        console.log('Adding organization_location to metadata:', metaData.organization_location);
       }
 
       // Handle the "Other" organization type case
       if (data.organizationType === 'Other' && data.organizationTypeOther?.trim()) {
         metaData.organization_type_other = data.organizationTypeOther.trim();
-        console.log('Adding organization_type_other to metadata:', metaData.organization_type_other);
       }
-
-      console.log('Final metadata object being sent to Supabase:', metaData);
       
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -200,16 +168,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      console.log('Supabase signup response:', { signUpData, error });
-      
       if (error) {
         console.error('Supabase signup error:', error);
         return { error };
-      }
-
-      if (signUpData?.user) {
-        console.log('User created successfully:', signUpData.user.id);
-        console.log('User metadata sent:', signUpData.user.user_metadata);
       }
       
       return { error: null };
@@ -262,8 +223,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
   };
-
-  console.log('AuthProvider rendering with:', { user: user?.email || 'No user', loading });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
