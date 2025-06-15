@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
 
-// Updated templates with removed ones and added new templates
+// Updated templates with removed ones and added new templates including corporate templates
 const allTemplates = [...popularTemplates, {
   id: "embassy-attestation-1",
   title: "Embassy Attestation Letter",
@@ -66,7 +66,43 @@ const allTemplates = [...popularTemplates, {
   title: "Address Proof Certificate",
   description: "Certificate verifying residential address",
   category: "Legal",
-  usageCount: 0 // New template
+  usageCount: 0
+}, {
+  id: "articles-incorporation-1",
+  title: "Articles of Incorporation",
+  description: "Certificate of Incorporation for new corporations",
+  category: "Corporate",
+  usageCount: 15
+}, {
+  id: "corporate-bylaws-1",
+  title: "Corporate Bylaws",
+  description: "Corporate governance and operating procedures",
+  category: "Corporate",
+  usageCount: 12
+}, {
+  id: "founders-agreement-1",
+  title: "Founders' Agreement",
+  description: "Agreement between company founders",
+  category: "Corporate",
+  usageCount: 10
+}, {
+  id: "stock-purchase-agreement-1",
+  title: "Stock Purchase Agreement",
+  description: "Agreement for purchasing company shares",
+  category: "Corporate",
+  usageCount: 8
+}, {
+  id: "employment-agreement-1",
+  title: "Employment Agreement",
+  description: "Comprehensive employment contract",
+  category: "Corporate",
+  usageCount: 14
+}, {
+  id: "nda-1",
+  title: "Non-Disclosure Agreement (NDA)",
+  description: "Confidentiality agreement between parties",
+  category: "Corporate",
+  usageCount: 16
 }];
 
 const Templates = () => {
