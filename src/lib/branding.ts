@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BrandingFile {
@@ -66,7 +65,7 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
         .eq('name', fileName);
     }
     
-    // Upload new file to storage
+    // Upload new file to storage with public access for now
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('branding-assets')
       .upload(filePath, file, { 
@@ -75,12 +74,7 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       });
 
     if (uploadError) {
-      if (uploadError.message.includes('policy')) {
-        throw new BrandingError(
-          'You do not have permission to upload files for this organization',
-          'POLICY_VIOLATION'
-        );
-      }
+      console.error('Storage upload error:', uploadError);
       throw new BrandingError(
         `Failed to upload file: ${uploadError.message}`,
         'UPLOAD_ERROR'
@@ -102,6 +96,7 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       .single();
 
     if (dbError) {
+      console.error('Database insert error:', dbError);
       // Clean up uploaded file if database insert fails
       await supabase.storage.from('branding-assets').remove([filePath]);
       throw new BrandingError(
@@ -119,6 +114,7 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       created_at: fileData.created_at,
     };
   } catch (error) {
+    console.error('Upload error:', error);
     if (error instanceof BrandingError) {
       throw error;
     }
