@@ -163,17 +163,17 @@ const VerifyDocument = () => {
         </div>
       `;
       
-      // Create temporary element
-      const tempDiv = document.createElement('div');
+      // Create temporary element using global document object
+      const tempDiv = globalThis.document.createElement('div');
       tempDiv.innerHTML = reportContent;
       tempDiv.className = 'fixed -left-full top-0';
-      document.body.appendChild(tempDiv);
+      globalThis.document.body.appendChild(tempDiv);
       
       // Generate PDF
       await downloadPDF(`verification-report-${document.template_type}.pdf`);
       
-      // Clean up
-      document.body.removeChild(tempDiv);
+      // Clean up using global document object
+      globalThis.document.body.removeChild(tempDiv);
     } catch (error) {
       console.error('Error generating verification report:', error);
       alert('Failed to generate verification report');
