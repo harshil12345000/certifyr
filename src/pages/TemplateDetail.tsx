@@ -19,6 +19,8 @@ import {
   AddressProofForm,
   ArticlesOfIncorporationForm,
   CorporateBylawsForm,
+  FoundersAgreementForm,
+  StockPurchaseAgreementForm,
 } from '@/components/templates/forms';
 import {
   BonafidePreview,
@@ -35,6 +37,8 @@ import {
   AddressProofPreview,
   ArticlesOfIncorporationPreview,
   CorporateBylawsPreview,
+  FoundersAgreementPreview,
+  StockPurchaseAgreementPreview,
 } from '@/components/templates';
 import {
   BonafideData,
@@ -54,6 +58,8 @@ import {
 import {
   ArticlesOfIncorporationData,
   CorporateBylawsData,
+  FoundersAgreementData,
+  StockPurchaseAgreementData,
 } from '@/types/corporate-templates';
 import { Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,7 +71,7 @@ import {
   TabsContent,
 } from '@/components/ui/tabs';
 
-const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData => {
+const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData => {
   const commonFields = {
     institutionName: '',
     date: new Date().toISOString().split('T')[0],
@@ -76,6 +82,43 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
   };
 
   switch (templateId) {
+    case 'founders-agreement-1':
+      return {
+        founderNames: '',
+        companyName: '',
+        businessDescription: '',
+        equityDistribution: '',
+        vestingSchedule: '',
+        roles: '',
+        capitalContributions: '',
+        intellectualProperty: '',
+        confidentiality: '',
+        nonCompete: '',
+        disputeResolution: '',
+        governingLaw: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
+        ...commonFields,
+      } as FoundersAgreementData;
+
+    case 'stock-purchase-agreement-1':
+      return {
+        purchaserName: '',
+        sellerName: '',
+        companyName: '',
+        numberOfShares: '',
+        sharePrice: '',
+        totalPurchasePrice: '',
+        shareClass: '',
+        restrictionsOnTransfer: '',
+        representationsWarranties: '',
+        closingDate: new Date().toISOString().split('T')[0],
+        governingLaw: '',
+        purchaserAddress: '',
+        sellerAddress: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
+        ...commonFields,
+      } as StockPurchaseAgreementData;
+
     case 'articles-incorporation-1':
       return {
         corporationName: '',
@@ -323,7 +366,7 @@ const TemplateDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData>(() => getInitialData(templateId || ''));
+  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData>(() => getInitialData(templateId || ''));
 
   useEffect(() => {
     if (!templateId) {
@@ -336,12 +379,26 @@ const TemplateDetail = () => {
     }
   }, [templateId, navigate, toast]);
 
-  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData) => {
+  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData) => {
     setFormData(data);
   };
 
   const renderForm = () => {
     switch (templateId) {
+      case 'founders-agreement-1':
+        return (
+          <FoundersAgreementForm
+            initialData={formData as FoundersAgreementData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
+      case 'stock-purchase-agreement-1':
+        return (
+          <StockPurchaseAgreementForm
+            initialData={formData as StockPurchaseAgreementData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'articles-incorporation-1':
         return (
           <ArticlesOfIncorporationForm
@@ -452,6 +509,10 @@ const TemplateDetail = () => {
 
   const renderPreview = () => {
     switch (templateId) {
+      case 'founders-agreement-1':
+        return <FoundersAgreementPreview data={formData as FoundersAgreementData} />;
+      case 'stock-purchase-agreement-1':
+        return <StockPurchaseAgreementPreview data={formData as StockPurchaseAgreementData} />;
       case 'articles-incorporation-1':
         return <ArticlesOfIncorporationPreview data={formData as ArticlesOfIncorporationData} />;
       case 'corporate-bylaws-1':
