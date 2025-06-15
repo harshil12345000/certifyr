@@ -160,7 +160,10 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
     case 'nda-1':
       return {
         disclosingParty: '',
+        disclosingPartyAddress: '',
         receivingParty: '',
+        receivingPartyAddress: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
         purposeOfDisclosure: '',
         confidentialInformation: '',
         exclusions: '',
@@ -169,81 +172,96 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
         returnOfInformation: '',
         remedies: '',
         governingLaw: '',
-        disclosingPartyAddress: '',
-        receivingPartyAddress: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as NDAData;
 
     case 'founders-agreement-1':
       return {
-        founderNames: '',
         companyName: '',
-        businessDescription: '',
+        founders: '',
         equityDistribution: '',
         vestingSchedule: '',
-        roles: '',
-        capitalContributions: '',
+        rolesAndResponsibilities: '',
         intellectualProperty: '',
-        confidentiality: '',
         nonCompete: '',
-        disputeResolution: '',
+        termination: '',
         governingLaw: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as FoundersAgreementData;
 
     case 'stock-purchase-agreement-1':
       return {
-        purchaserName: '',
-        sellerName: '',
         companyName: '',
-        numberOfShares: '',
-        sharePrice: '',
-        totalPurchasePrice: '',
-        shareClass: '',
-        restrictionsOnTransfer: '',
-        representationsWarranties: '',
+        seller: {
+          name: '',
+          address: '',
+        },
+        buyer: {
+          name: '',
+          address: '',
+        },
+        shares: {
+          class: '',
+          quantity: '',
+        },
+        pricePerShare: '',
+        totalConsideration: '',
         closingDate: new Date().toISOString().split('T')[0],
+        representations: '',
+        warranties: '',
+        covenants: {
+          restrictionsOnTransfer: '',
+        },
         governingLaw: '',
-        purchaserAddress: '',
-        sellerAddress: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as StockPurchaseAgreementData;
 
     case 'articles-incorporation-1':
       return {
-        corporationName: '',
+        companyName: '',
         stateOfIncorporation: '',
-        businessPurpose: '',
-        corporateAddress: '',
         registeredAgent: '',
-        registeredAgentAddress: '',
+        registeredOffice: '',
+        purpose: '',
         authorizedShares: '',
-        shareValue: '',
-        incorporatorName: '',
-        incorporatorAddress: '',
-        incorporatorSignature: '',
-        filingDate: new Date().toISOString().split('T')[0],
+        shareClasses: '',
+        incorporators: [{
+          name: '',
+          address: '',
+          place: '',
+        }],
         ...commonFields,
       } as ArticlesOfIncorporationData;
 
     case 'corporate-bylaws-1':
       return {
-        corporationName: '',
+        companyName: '',
         stateOfIncorporation: '',
-        principalOffice: '',
-        boardMeetingFrequency: '',
-        shareholderMeetingDate: '',
-        fiscalYearEnd: '',
-        numberOfDirectors: '',
-        directorTermLength: '',
-        officerTitles: '',
-        votingRights: '',
-        dividendPolicy: '',
-        amendmentProcess: '',
-        adoptionDate: new Date().toISOString().split('T')[0],
+        registeredAgent: '',
+        registeredOffice: '',
+        directors: {
+          numberOfDirectors: '',
+          directorTermLength: '',
+          boardMeetingFrequency: '',
+        },
+        officers: {
+          officerTitles: '',
+        },
+        shareholders: {},
+        shareClasses: {
+          dividendPolicy: '',
+        },
+        meetings: {
+          shareholderMeetingDate: '',
+          fiscalYearEnd: '',
+        },
+        voting: {
+          votingRights: '',
+        },
+        indemnification: {},
+        amendments: {
+          amendmentProcess: '',
+        },
         ...commonFields,
       } as CorporateBylawsData;
 
