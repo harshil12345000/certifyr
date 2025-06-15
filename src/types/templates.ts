@@ -1,3 +1,4 @@
+
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -238,7 +239,7 @@ export interface AddressProofData {
   includeDigitalSignature: boolean;
 }
 
-// Corporate template types
+// Corporate template types - aligned with preview components
 export interface ArticlesOfIncorporationData {
   companyName: string;
   stateOfIncorporation: string;
@@ -492,6 +493,14 @@ export interface FoundersAgreementPreviewProps {
 
 export interface StockPurchaseAgreementPreviewProps {
   data: StockPurchaseAgreementData;
+}
+
+export interface EmploymentAgreementPreviewProps {
+  data: EmploymentAgreementData;
+}
+
+export interface IPAssignmentAgreementPreviewProps {
+  data: IPAssignmentAgreementData;
 }
 
 export interface NDAPreviewProps {

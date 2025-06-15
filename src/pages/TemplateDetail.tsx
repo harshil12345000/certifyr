@@ -138,22 +138,20 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
     case 'employment-agreement-1':
       return {
         employeeName: '',
-        employerName: '',
+        employeeAddress: '',
+        companyName: '',
+        companyAddress: '',
         jobTitle: '',
-        department: '',
         startDate: new Date().toISOString().split('T')[0],
-        employmentType: 'full-time' as const,
+        employmentType: 'full-time',
         salary: '',
-        payFrequency: 'monthly' as const,
         benefits: '',
-        workLocation: '',
-        workHours: '',
+        workingHours: '',
         probationPeriod: '',
         terminationClause: '',
         confidentialityClause: '',
         nonCompeteClause: '',
         governingLaw: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as EmploymentAgreementData;
 
