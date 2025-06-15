@@ -138,30 +138,29 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
     case 'employment-agreement-1':
       return {
         employeeName: '',
-        employeeAddress: '',
-        companyName: '',
-        companyAddress: '',
+        employerName: '',
         jobTitle: '',
+        department: '',
         startDate: new Date().toISOString().split('T')[0],
-        employmentType: 'full-time',
+        employmentType: 'full-time' as const,
         salary: '',
+        payFrequency: 'monthly' as const,
         benefits: '',
-        workingHours: '',
+        workLocation: '',
+        workHours: '',
         probationPeriod: '',
         terminationClause: '',
         confidentialityClause: '',
         nonCompeteClause: '',
         governingLaw: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as EmploymentAgreementData;
 
     case 'nda-1':
       return {
         disclosingParty: '',
-        disclosingPartyAddress: '',
         receivingParty: '',
-        receivingPartyAddress: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
         purposeOfDisclosure: '',
         confidentialInformation: '',
         exclusions: '',
@@ -170,96 +169,81 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
         returnOfInformation: '',
         remedies: '',
         governingLaw: '',
+        disclosingPartyAddress: '',
+        receivingPartyAddress: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as NDAData;
 
     case 'founders-agreement-1':
       return {
+        founderNames: '',
         companyName: '',
-        founders: '',
+        businessDescription: '',
         equityDistribution: '',
         vestingSchedule: '',
-        rolesAndResponsibilities: '',
+        roles: '',
+        capitalContributions: '',
         intellectualProperty: '',
+        confidentiality: '',
         nonCompete: '',
-        termination: '',
+        disputeResolution: '',
         governingLaw: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as FoundersAgreementData;
 
     case 'stock-purchase-agreement-1':
       return {
+        purchaserName: '',
+        sellerName: '',
         companyName: '',
-        seller: {
-          name: '',
-          address: '',
-        },
-        buyer: {
-          name: '',
-          address: '',
-        },
-        shares: {
-          class: '',
-          quantity: '',
-        },
-        pricePerShare: '',
-        totalConsideration: '',
+        numberOfShares: '',
+        sharePrice: '',
+        totalPurchasePrice: '',
+        shareClass: '',
+        restrictionsOnTransfer: '',
+        representationsWarranties: '',
         closingDate: new Date().toISOString().split('T')[0],
-        representations: '',
-        warranties: '',
-        covenants: {
-          restrictionsOnTransfer: '',
-        },
         governingLaw: '',
+        purchaserAddress: '',
+        sellerAddress: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as StockPurchaseAgreementData;
 
     case 'articles-incorporation-1':
       return {
-        companyName: '',
+        corporationName: '',
         stateOfIncorporation: '',
+        businessPurpose: '',
+        corporateAddress: '',
         registeredAgent: '',
-        registeredOffice: '',
-        purpose: '',
+        registeredAgentAddress: '',
         authorizedShares: '',
-        shareClasses: '',
-        incorporators: [{
-          name: '',
-          address: '',
-          place: '',
-        }],
+        shareValue: '',
+        incorporatorName: '',
+        incorporatorAddress: '',
+        incorporatorSignature: '',
+        filingDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as ArticlesOfIncorporationData;
 
     case 'corporate-bylaws-1':
       return {
-        companyName: '',
+        corporationName: '',
         stateOfIncorporation: '',
-        registeredAgent: '',
-        registeredOffice: '',
-        directors: {
-          numberOfDirectors: '',
-          directorTermLength: '',
-          boardMeetingFrequency: '',
-        },
-        officers: {
-          officerTitles: '',
-        },
-        shareholders: {},
-        shareClasses: {
-          dividendPolicy: '',
-        },
-        meetings: {
-          shareholderMeetingDate: '',
-          fiscalYearEnd: '',
-        },
-        voting: {
-          votingRights: '',
-        },
-        indemnification: {},
-        amendments: {
-          amendmentProcess: '',
-        },
+        principalOffice: '',
+        boardMeetingFrequency: '',
+        shareholderMeetingDate: '',
+        fiscalYearEnd: '',
+        numberOfDirectors: '',
+        directorTermLength: '',
+        officerTitles: '',
+        votingRights: '',
+        dividendPolicy: '',
+        amendmentProcess: '',
+        adoptionDate: new Date().toISOString().split('T')[0],
         ...commonFields,
       } as CorporateBylawsData;
 
