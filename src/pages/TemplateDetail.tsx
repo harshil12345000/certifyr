@@ -714,17 +714,6 @@ const TemplateDetail = () => {
       <div className="container space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Template Details</h1>
-          <div className="flex gap-2">
-            <Button onClick={handlePrint} variant="secondary" className="gap-2 border border-gray-400">
-              Print <Printer className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleDownloadJPG} variant="secondary" className="gap-2 border border-gray-400">
-              Download JPG <ImageDown className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleDownloadPDF} className="gradient-blue gap-2">
-              Download PDF <FileDown className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
         <Separator />
         <div>
@@ -738,6 +727,17 @@ const TemplateDetail = () => {
               {renderForm()}
             </TabsContent>
             <TabsContent value="preview" className="bg-secondary rounded-md p-4">
+              <div className="flex justify-end gap-2 mb-4">
+                <Button onClick={handlePrint} variant="secondary" className="gap-2 border border-gray-400">
+                  Print <Printer className="h-4 w-4" />
+                </Button>
+                <Button onClick={handleDownloadJPG} variant="secondary" className="gap-2 border border-gray-400">
+                  Download JPG <ImageDown className="h-4 w-4" />
+                </Button>
+                <Button onClick={handleDownloadPDF} className="gradient-blue gap-2">
+                  Download PDF <FileDown className="h-4 w-4" />
+                </Button>
+              </div>
               <h2 className="text-lg font-semibold mb-4">Preview</h2>
               {renderPreview()}
             </TabsContent>
