@@ -9,9 +9,9 @@ import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
   const {
-    studentName,
-    rollNumber,
-    course,
+    fullName: studentName,
+    studentId: rollNumber,
+    program: course,
     department,
     academicYear,
     purpose,
@@ -32,14 +32,14 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
         const url = await generateDocumentQRCode(
           'bonafide-1',
           data,
-          organizationDetails?.id,
+          organizationDetails?.name,
           user?.id
         );
         setQrCodeUrl(url);
       }
     };
     generateQR();
-  }, [data, organizationDetails?.id, user?.id, studentName, course, department]);
+  }, [data, organizationDetails?.name, user?.id, studentName, course, department]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);

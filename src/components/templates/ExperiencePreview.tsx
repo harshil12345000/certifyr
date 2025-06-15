@@ -22,14 +22,14 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
         const url = await generateDocumentQRCode(
           'experience-1',
           data,
-          organizationDetails?.id,
+          organizationDetails?.name,
           user?.id
         );
         setQrCodeUrl(url);
       }
     };
     generateQR();
-  }, [data, organizationDetails?.id, user?.id]);
+  }, [data, organizationDetails?.name, user?.id]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);

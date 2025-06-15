@@ -1,17 +1,18 @@
+
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { 
   Text, 
   List, 
   ImageIcon, 
-  NumberIcon, 
+  Hash, 
   Mail, 
   Phone, 
   Calendar, 
-  Select, 
-  Checkbox, 
-  Radio, 
-  Textarea,
+  ChevronDown, 
+  CheckSquare, 
+  Circle, 
+  FileText,
   File,
   Image,
   Signature,
@@ -29,14 +30,14 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({ draggable = false, o
   
   const fieldTypes: { id: FieldType; label: string; icon: any }[] = [
     { id: 'text', label: 'Text Field', icon: Text },
-    { id: 'number', label: 'Number', icon: NumberIcon },
+    { id: 'number', label: 'Number', icon: Hash },
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'phone', label: 'Phone', icon: Phone },
     { id: 'date', label: 'Date', icon: Calendar },
-    { id: 'dropdown', label: 'Dropdown', icon: Select },
-    { id: 'checkbox', label: 'Checkbox', icon: Checkbox },
-    { id: 'radio', label: 'Radio Group', icon: Radio },
-    { id: 'textarea', label: 'Text Area', icon: Textarea },
+    { id: 'dropdown', label: 'Dropdown', icon: ChevronDown },
+    { id: 'checkbox', label: 'Checkbox', icon: CheckSquare },
+    { id: 'radio', label: 'Radio Group', icon: Circle },
+    { id: 'textarea', label: 'Text Area', icon: FileText },
     { id: 'file', label: 'File Upload', icon: File },
     { id: 'image', label: 'Image Upload', icon: Image },
     { id: 'signature', label: 'Signature', icon: Signature },
