@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ interface UserProfileFormState {
   city: string;
   state: string;
   postalCode: string;
+  country: string;  // Added
   phoneNumber: string;
   email: string;
   organizationType: string;
@@ -50,6 +50,7 @@ const AdminPage = () => {
     city: '',
     state: '',
     postalCode: '',
+    country: '',     // Added
     phoneNumber: '',
     email: '',
     organizationType: '',
@@ -68,6 +69,20 @@ const AdminPage = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Helper function to parse country from an address/location string (e.g., on signup)
+  function parseCountry(address: string | null): string {
+    if (!address) return '';
+    const parts = address.split(',').map(p => p.trim());
+    if (parts.length > 3) {
+      // Assume format like: street, city, state, postal, country
+      return parts[parts.length - 1] || '';
+    } else if (parts.length === 3) {
+      // Could be city, state, country
+      return parts[2] || '';
+    }
+    return '';
+  }
 
   // Fetch user profile data and organization data
   useEffect(() => {
@@ -94,14 +109,15 @@ const AdminPage = () => {
             .single();
 
           if (!profileError && profileData) {
-            // Parse address if it exists (backward compatibility)
-            const addressParts = profileData.organization_location ? profileData.organization_location.split(', ') : [];
+            // Parse address/location for country
+            const addressParts = profileData.organization_location ? profileData.organization_location.split(',').map((x:string) => x.trim()) : [];
             setFormState({
               organizationName: profileData.organization_name || '',
               streetAddress: addressParts[0] || '',
               city: addressParts[1] || '',
               state: addressParts[2] || '',
               postalCode: addressParts[3] || '',
+              country: addressParts[4] || '', // 5th field for country if present
               phoneNumber: profileData.phone_number || '',
               email: profileData.email || '',
               organizationType: profileData.organization_type || '',
@@ -122,14 +138,15 @@ const AdminPage = () => {
 
         const orgData = memberData.organizations;
         if (orgData) {
-          // Parse address if it exists (backward compatibility)
-          const addressParts = orgData.address ? orgData.address.split(', ') : [];
+          // Parse address for country
+          const addressParts = orgData.address ? orgData.address.split(',').map((x:string) => x.trim()) : [];
           setFormState({
             organizationName: orgData.name || '',
             streetAddress: addressParts[0] || '',
             city: addressParts[1] || '',
             state: addressParts[2] || '',
             postalCode: addressParts[3] || '',
+            country: addressParts[4] || '',   // If present
             phoneNumber: orgData.phone || '',
             email: orgData.email || '',
             organizationType: '',
@@ -190,6 +207,10 @@ const AdminPage = () => {
     setFormState(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleCountryChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormState(prev => ({ ...prev, country: e.target.value }));
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>, fileType: keyof BrandingFileState) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -210,12 +231,13 @@ const AdminPage = () => {
     try {
       let currentOrgId = organizationId;
 
-      // Create full address string from components
+      // Create full address string from components (with country at the end)
       const fullAddress = [
         formState.streetAddress,
         formState.city,
         formState.state,
-        formState.postalCode
+        formState.postalCode,
+        formState.country
       ].filter(Boolean).join(', ');
 
       // Create or update organization
@@ -264,7 +286,7 @@ const AdminPage = () => {
         }
       }
 
-      // Update user profile with additional details
+      // Update user profile with additional details (use country in org_location)
       const { error: profileUpdateError } = await supabase
         .from('user_profiles')
         .update({
@@ -460,6 +482,16 @@ const AdminPage = () => {
                           placeholder="Enter postal code"
                         />
                       </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country</Label>
+                      <Input
+                        id="country"
+                        name="country"
+                        value={formState.country}
+                        onChange={handleCountryChange}
+                        placeholder="Enter country"
+                      />
                     </div>
                   </div>
 
