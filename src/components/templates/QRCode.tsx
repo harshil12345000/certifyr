@@ -10,7 +10,7 @@ interface QRCodeProps {
 
 export const QRCode: React.FC<QRCodeProps> = ({ 
   value, 
-  size = 60, 
+  size = 75, 
   className = '' 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

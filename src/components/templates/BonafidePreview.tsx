@@ -116,7 +116,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
           {/* QR Code positioned below institution name */}
           {qrCodeUrl && (
             <div className="flex justify-end">
-              <QRCode value={qrCodeUrl} size={60} />
+              <QRCode value={qrCodeUrl} size={75} />
             </div>
           )}
         </div>
