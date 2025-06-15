@@ -24,7 +24,7 @@ const BrandingContext = createContext<BrandingContextType>({
   sealUrl: null,
   signatureUrl: null,
   organizationDetails: null,
-  isLoading: true,
+  isLoading: false,
   refreshBranding: async () => {},
 });
 
@@ -33,16 +33,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [sealUrl, setSealUrl] = useState<string | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { user, loading: authLoading } = useAuth();
 
   const loadBrandingData = async () => {
-    if (!user?.id) {
+    if (!user?.id || authLoading) {
+      console.log('User not available or auth loading, skipping branding load');
       setIsLoading(false);
       return;
     }
 
+    console.log('Loading branding data for user:', user.id);
     setIsLoading(true);
+    
     try {
       // Step 1: Get user's organization_id
       const { data: memberData, error: memberError } = await supabase
@@ -52,7 +55,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (memberError || !memberData?.organization_id) {
-        console.error('Error fetching organization membership:', memberError?.message);
+        console.log('No organization found for user, clearing branding data');
         setLogoUrl(null);
         setSealUrl(null);
         setSignatureUrl(null);
@@ -60,7 +63,9 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         return;
       }
+      
       const organizationId = memberData.organization_id;
+      console.log('Found organization:', organizationId);
 
       // Step 2: Fetch organization details
       const { data: orgData, error: orgError } = await supabase
@@ -92,7 +97,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setLogoUrl(null);
         setSealUrl(null);
         setSignatureUrl(null);
-      } else if (filesData) {
+      } else if (filesData && filesData.length > 0) {
         let newLogoUrl: string | null = null;
         let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
@@ -106,9 +111,15 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
             if (file.name === 'signature') newSignatureUrl = publicUrl;
           }
         });
+        
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
+      } else {
+        console.log('No branding files found');
+        setLogoUrl(null);
+        setSealUrl(null);
+        setSignatureUrl(null);
       }
 
     } catch (error) {
@@ -123,8 +134,11 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    loadBrandingData();
-  }, [user]);
+    // Only load if user is available and auth is not loading
+    if (!authLoading) {
+      loadBrandingData();
+    }
+  }, [user?.id, authLoading]);
 
   const refreshBranding = async () => {
     await loadBrandingData();
