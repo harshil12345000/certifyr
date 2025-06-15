@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,8 +25,7 @@ const Settings = () => {
     jobTitle: "",
     bio: "",
     phone: "",
-    location: "",
-    website: ""
+    location: ""
   });
 
   const [preferences, setPreferences] = useState({
@@ -68,8 +66,7 @@ const Settings = () => {
             jobTitle: (profile as any).job_title || "",
             bio: (profile as any).bio || "",
             phone: profile.phone_number || "",
-            location: (profile as any).location || "",
-            website: (profile as any).website || ""
+            location: (profile as any).location || ""
           });
         } else {
           // If no profile exists, just set email from user
@@ -107,7 +104,6 @@ const Settings = () => {
         bio: formData.bio.trim() || null,
         phone_number: formData.phone.trim() || null,
         location: formData.location.trim() || null,
-        website: formData.website.trim() || null,
         updated_at: new Date().toISOString()
       };
 
@@ -245,16 +241,6 @@ const Settings = () => {
                       placeholder="Enter your location"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    placeholder="Enter your website URL"
-                  />
                 </div>
 
                 <Button 
