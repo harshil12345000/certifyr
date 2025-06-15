@@ -39,6 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -48,21 +50,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // When user signs in, check if they need to be added to an organization
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('User signed in, ensuring organization membership');
           await ensureUserHasOrganization(session.user);
         }
         
         setLoading(false);
+        console.log('Auth state updated, loading set to false');
       }
     );
 
     // Get initial session
+    console.log('AuthProvider: Getting initial session');
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.email || 'No session');
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         ensureUserHasOrganization(session.user);
       }
       setLoading(false);
+      console.log('Initial auth state set, loading set to false');
     });
 
     return () => subscription.unsubscribe();
@@ -70,6 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const ensureUserHasOrganization = async (user: User) => {
     try {
+      console.log('Checking organization membership for user:', user.id);
+      
       // Check if user is already in an organization
       const { data: existingMembership } = await supabase
         .from('organization_members')
@@ -78,9 +87,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (existingMembership) {
-        console.log('User already has organization membership');
+        console.log('User already has organization membership:', existingMembership.organization_id);
         return;
       }
+
+      console.log('No organization membership found, checking user profile');
 
       // Get user profile to check for organization data
       const { data: userProfile } = await supabase
@@ -109,6 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
+        console.log('Organization created:', newOrg.id);
+
         // Add user as admin to the organization
         const { error: memberError } = await supabase
           .from('organization_members')
@@ -124,6 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.log('User successfully added as admin to organization');
         }
+      } else {
+        console.log('No organization data found in user profile');
       }
     } catch (error) {
       console.error('Error in ensureUserHasOrganization:', error);
@@ -247,6 +262,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
   };
+
+  console.log('AuthProvider rendering with:', { user: user?.email || 'No user', loading });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
