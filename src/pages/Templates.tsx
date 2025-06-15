@@ -103,6 +103,18 @@ const allTemplates = [...popularTemplates, {
   description: "Confidentiality agreement between parties",
   category: "Corporate",
   usageCount: 16
+}, {
+  id: "academic-transcript-1",
+  title: "Academic Transcript / Marksheet",
+  description: "Official academic record and transcript",
+  category: "Academic",
+  usageCount: 35
+}, {
+  id: "embassy-attestation-letter-1",
+  title: "Embassy Attestation Letter",
+  description: "Official letter for embassy document attestation",
+  category: "Travel",
+  usageCount: 28
 }];
 
 const Templates = () => {
