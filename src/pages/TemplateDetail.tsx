@@ -17,6 +17,8 @@ import {
   BankVerificationForm,
   OfferLetterForm,
   AddressProofForm,
+  ArticlesOfIncorporationForm,
+  CorporateBylawsForm,
 } from '@/components/templates/forms';
 import {
   BonafidePreview,
@@ -31,6 +33,8 @@ import {
   BankVerificationPreview,
   OfferLetterPreview,
   AddressProofPreview,
+  ArticlesOfIncorporationPreview,
+  CorporateBylawsPreview,
 } from '@/components/templates';
 import {
   BonafideData,
@@ -47,6 +51,10 @@ import {
   AddressProofData,
   FormData,
 } from '@/types/templates';
+import {
+  ArticlesOfIncorporationData,
+  CorporateBylawsData,
+} from '@/types/corporate-templates';
 import { Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateAndDownloadPdf } from '@/lib/pdf-utils';
@@ -57,7 +65,7 @@ import {
   TabsContent,
 } from '@/components/ui/tabs';
 
-const getInitialData = (templateId: string): FormData => {
+const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData => {
   const commonFields = {
     institutionName: '',
     date: new Date().toISOString().split('T')[0],
@@ -68,6 +76,41 @@ const getInitialData = (templateId: string): FormData => {
   };
 
   switch (templateId) {
+    case 'articles-incorporation-1':
+      return {
+        corporationName: '',
+        stateOfIncorporation: '',
+        businessPurpose: '',
+        corporateAddress: '',
+        registeredAgent: '',
+        registeredAgentAddress: '',
+        authorizedShares: '',
+        shareValue: '',
+        incorporatorName: '',
+        incorporatorAddress: '',
+        incorporatorSignature: '',
+        filingDate: new Date().toISOString().split('T')[0],
+        ...commonFields,
+      } as ArticlesOfIncorporationData;
+
+    case 'corporate-bylaws-1':
+      return {
+        corporationName: '',
+        stateOfIncorporation: '',
+        principalOffice: '',
+        boardMeetingFrequency: '',
+        shareholderMeetingDate: '',
+        fiscalYearEnd: '',
+        numberOfDirectors: '',
+        directorTermLength: '',
+        officerTitles: '',
+        votingRights: '',
+        dividendPolicy: '',
+        amendmentProcess: '',
+        adoptionDate: new Date().toISOString().split('T')[0],
+        ...commonFields,
+      } as CorporateBylawsData;
+
     case 'bonafide-1':
       return {
         fullName: '',
@@ -280,7 +323,7 @@ const TemplateDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [formData, setFormData] = useState<FormData>(() => getInitialData(templateId || ''));
+  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData>(() => getInitialData(templateId || ''));
 
   useEffect(() => {
     if (!templateId) {
@@ -293,12 +336,26 @@ const TemplateDetail = () => {
     }
   }, [templateId, navigate, toast]);
 
-  const handleFormSubmit = (data: FormData) => {
+  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData) => {
     setFormData(data);
   };
 
   const renderForm = () => {
     switch (templateId) {
+      case 'articles-incorporation-1':
+        return (
+          <ArticlesOfIncorporationForm
+            initialData={formData as ArticlesOfIncorporationData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
+      case 'corporate-bylaws-1':
+        return (
+          <CorporateBylawsForm
+            initialData={formData as CorporateBylawsData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'bonafide-1':
         return (
           <BonafideForm
@@ -380,7 +437,7 @@ const TemplateDetail = () => {
         return (
           <AddressProofForm
             initialData={formData as AddressProofData}
-            onDataChange={setFormData} // this one uses onDataChange
+            onDataChange={setFormData}
           />
         );
       default:
@@ -395,6 +452,10 @@ const TemplateDetail = () => {
 
   const renderPreview = () => {
     switch (templateId) {
+      case 'articles-incorporation-1':
+        return <ArticlesOfIncorporationPreview data={formData as ArticlesOfIncorporationData} />;
+      case 'corporate-bylaws-1':
+        return <CorporateBylawsPreview data={formData as CorporateBylawsData} />;
       case 'bonafide-1':
         return <BonafidePreview data={formData as BonafideData} />;
       case 'character-1':
@@ -457,7 +518,6 @@ const TemplateDetail = () => {
         </div>
         <Separator />
         <div>
-          {/* Tabs for Form and Preview */}
           <Tabs defaultValue="form" className="w-full">
             <TabsList className="w-full mb-4">
               <TabsTrigger value="form" className="w-1/2">Form</TabsTrigger>
