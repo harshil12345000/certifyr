@@ -65,11 +65,11 @@ const Settings = () => {
             firstName: profile.first_name || "",
             lastName: profile.last_name || "",
             email: profile.email || user.email || "",
-            jobTitle: profile.job_title || "",
-            bio: profile.bio || "",
+            jobTitle: (profile as any).job_title || "",
+            bio: (profile as any).bio || "",
             phone: profile.phone_number || "",
-            location: profile.location || "",
-            website: profile.website || ""
+            location: (profile as any).location || "",
+            website: (profile as any).website || ""
           });
         } else {
           // If no profile exists, just set email from user
