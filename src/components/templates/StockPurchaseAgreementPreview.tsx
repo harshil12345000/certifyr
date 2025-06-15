@@ -1,14 +1,25 @@
-
 import React from 'react';
 import { StockPurchaseAgreementData } from '@/types/corporate-templates';
+import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 interface StockPurchaseAgreementPreviewProps {
   data: StockPurchaseAgreementData;
 }
 
 export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPreviewProps> = ({ data }) => {
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
+
   return (
     <div className="a4-document bg-white p-8 shadow-lg max-w-4xl mx-auto">
+      {/* Letterhead */}
+      <Letterhead />
+
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">STOCK PURCHASE AGREEMENT</h1>
         <p className="text-sm text-gray-600">{data.companyName}</p>
@@ -70,6 +81,18 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
           </div>
         </div>
       </div>
+
+      {/* Seal */}
+      {sealUrl && (
+        <div className="absolute bottom-8 left-8">
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
+        </div>
+      )}
     </div>
   );
 };

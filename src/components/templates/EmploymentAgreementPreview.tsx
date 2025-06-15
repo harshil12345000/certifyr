@@ -1,14 +1,25 @@
-
 import React from 'react';
 import { EmploymentAgreementData } from '@/types/corporate-templates';
+import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 interface EmploymentAgreementPreviewProps {
   data: EmploymentAgreementData;
 }
 
 export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProps> = ({ data }) => {
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
+
   return (
     <div className="a4-document bg-white p-8 shadow-lg max-w-4xl mx-auto">
+      {/* Letterhead */}
+      <Letterhead />
+
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">EMPLOYMENT AGREEMENT</h1>
         <p className="text-sm text-gray-600">{data.employerName}</p>
@@ -75,6 +86,14 @@ export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProp
             <p className="text-sm">Employee</p>
           </div>
           <div className="text-center">
+            {data.includeDigitalSignature && signatureUrl && (
+              <img 
+                src={signatureUrl}
+                alt="Digital Signature" 
+                className="h-16 mb-2 object-contain mx-auto"
+                onError={(e) => handleImageError(e, "signature")}
+              />
+            )}
             <div className="border-b border-gray-400 w-full mb-2"></div>
             <p className="text-sm font-semibold">{data.signatoryName || '[HR Representative]'}</p>
             <p className="text-sm">{data.signatoryDesignation || 'HR Representative'}</p>
@@ -89,6 +108,18 @@ export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProp
           </div>
         </div>
       </div>
+
+      {/* Seal */}
+      {sealUrl && (
+        <div className="absolute bottom-8 left-8">
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -1,14 +1,26 @@
 
 import React from 'react';
 import { CorporateBylawsData } from '@/types/corporate-templates';
+import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 interface CorporateBylawsPreviewProps {
   data: CorporateBylawsData;
 }
 
 export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ data }) => {
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
+
   return (
     <div className="a4-document bg-white p-8 shadow-lg max-w-4xl mx-auto">
+      {/* Letterhead */}
+      <Letterhead />
+
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">CORPORATE BYLAWS</h1>
@@ -72,6 +84,14 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
           </div>
           
           <div className="text-right">
+            {data.includeDigitalSignature && signatureUrl && (
+              <img 
+                src={signatureUrl}
+                alt="Digital Signature" 
+                className="h-16 mb-2 object-contain ml-auto"
+                onError={(e) => handleImageError(e, "signature")}
+              />
+            )}
             <div className="border-b border-gray-400 w-64 mb-2"></div>
             <p className="text-sm"><strong>{data.signatoryName || '[Secretary Name]'}</strong></p>
             <p className="text-sm">{data.signatoryDesignation || '[Title]'}</p>
@@ -79,6 +99,18 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
           </div>
         </div>
       </div>
+
+      {/* Seal */}
+      {sealUrl && (
+        <div className="absolute bottom-8 left-8">
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
+        </div>
+      )}
     </div>
   );
 };
