@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -133,8 +134,8 @@ export function Header() {
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="hidden md:block w-64"></div>
-        <div className="flex items-center">
-          <div className="flex items-center space-x-2 w-full max-w-md">
+        <div className="flex items-center flex-1 max-w-2xl">
+          <div className="flex items-center space-x-2 w-full">
             <Search className="h-4 w-4 text-muted-foreground" />
             <div 
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background cursor-pointer items-center gap-2 text-muted-foreground hover:bg-accent/50 transition-colors"
