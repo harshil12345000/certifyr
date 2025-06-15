@@ -10,10 +10,9 @@ import { generateDocumentQRCode } from '@/lib/qr-utils';
 export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
   const {
     fullName: studentName,
-    studentId: rollNumber,
-    program: course,
+    courseOrDesignation: course,
     department,
-    academicYear,
+    startDate: academicYear,
     purpose,
     institutionName,
     date: issueDate,
@@ -61,16 +60,16 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
       {/* Certificate Content */}
       <div className="space-y-4 text-justify leading-7 text-base">
         <p>
-          This is to certify that <strong>{studentName || '[Student Name]'}</strong>, {rollNumber || '[Roll Number]'}, 
+          This is to certify that <strong>{studentName || '[Student Name]'}</strong> 
           is a bonafide {course || '[Course]'} of this institution in the {department || '[Department]'} department since <strong>{academicYear || '[Academic Year]'}</strong>.
         </p>
 
         <p>
-          {purpose || '[Purpose]'} purposes.
+          This certificate is issued for <strong>{purpose || '[Purpose]'}</strong> purposes.
         </p>
 
         <p>
-          I wish {studentName || '[Student Name]'} all success in {studentName || '[Student Name]'} future endeavors.
+          I wish {studentName || '[Student Name]'} all success in {studentName ? 'their' : '[their]'} future endeavors.
         </p>
       </div>
 
