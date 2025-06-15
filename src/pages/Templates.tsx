@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
 
-// Templates data
+// Updated templates with removed ones and added new templates
 const allTemplates = [...popularTemplates, {
   id: "embassy-attestation-1",
   title: "Embassy Attestation Letter",
@@ -66,15 +66,13 @@ const allTemplates = [...popularTemplates, {
   title: "Address Proof Certificate",
   description: "Certificate verifying residential address",
   category: "Legal",
-  usageCount: 0
+  usageCount: 0 // New template
 }];
 
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
-
-  console.log('Templates component rendering with', allTemplates.length, 'templates');
 
   // Filter templates based on search and category filters
   const filteredTemplates = allTemplates.filter(template => {
@@ -94,8 +92,13 @@ const Templates = () => {
 
   const categories = Array.from(new Set(allTemplates.map(t => t.category)));
 
+  const handleCreateTemplate = () => {
+    navigate('/template-builder');
+  };
+
   // Function to handle category card clicks
   const handleCategoryClick = (categoryName: string) => {
+    // Map display names to actual category names used in templates
     const categoryMapping: { [key: string]: string } = {
       'Student Documents': 'Academic',
       'Employment Records': 'Employment', 
@@ -125,8 +128,7 @@ const Templates = () => {
     return allTemplates.filter(template => template.category === actualCategory).length;
   };
 
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -134,6 +136,7 @@ const Templates = () => {
             <h1 className="text-2xl font-semibold mb-1">Document Templates</h1>
             <p className="text-muted-foreground">Browse and use our collection of legally compliant templates</p>
           </div>
+          
         </div>
 
         {/* Search and filters */}
@@ -148,25 +151,17 @@ const Templates = () => {
                 <Button variant="outline" className="gap-2">
                   <Filter className="h-4 w-4" />
                   Filter
-                  {selectedCategories.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 rounded-full h-5 w-5 p-0 flex items-center justify-center">
+                  {selectedCategories.length > 0 && <Badge variant="secondary" className="ml-1 rounded-full h-5 w-5 p-0 flex items-center justify-center">
                       {selectedCategories.length}
-                    </Badge>
-                  )}
+                    </Badge>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Categories</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {categories.map(category => (
-                  <DropdownMenuCheckboxItem 
-                    key={category} 
-                    checked={selectedCategories.includes(category)} 
-                    onCheckedChange={() => toggleCategory(category)}
-                  >
+                {categories.map(category => <DropdownMenuCheckboxItem key={category} checked={selectedCategories.includes(category)} onCheckedChange={() => toggleCategory(category)}>
                     {category}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                  </DropdownMenuCheckboxItem>)}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={clearFilters}>
                   Clear filters
@@ -186,10 +181,8 @@ const Templates = () => {
             </TabsList>
             <TabsContent value="all" className="mt-0">
               {/* Selected filters */}
-              {selectedCategories.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedCategories.map(category => (
-                    <Badge key={category} variant="secondary" className="flex items-center gap-1">
+              {selectedCategories.length > 0 && <div className="flex flex-wrap gap-2 mb-4">
+                  {selectedCategories.map(category => <Badge key={category} variant="secondary" className="flex items-center gap-1">
                       {category}
                       <button onClick={() => toggleCategory(category)} className="hover:bg-muted rounded-full ml-1 h-4 w-4 flex items-center justify-center">
                         <span className="sr-only">Remove</span>
@@ -197,35 +190,21 @@ const Templates = () => {
                           <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
                       </button>
-                    </Badge>
-                  ))}
+                    </Badge>)}
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs">
                     Clear all
                   </Button>
-                </div>
-              )}
+                </div>}
 
-              {filteredTemplates.length === 0 ? (
-                <div className="py-12 text-center">
+              {filteredTemplates.length === 0 ? <div className="py-12 text-center">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
                     <Search className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-medium">No templates found</h3>
                   <p className="text-muted-foreground mt-1">Try adjusting your search or filter criteria</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredTemplates.map(template => (
-                    <TemplateCard 
-                      key={template.id} 
-                      id={template.id} 
-                      title={template.title} 
-                      description={template.description} 
-                      category={template.category} 
-                    />
-                  ))}
-                </div>
-              )}
+                </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} />)}
+                </div>}
             </TabsContent>
             <TabsContent value="recent" className="mt-0">
               <div className="py-12 text-center">
@@ -246,10 +225,9 @@ const Templates = () => {
         <h2 className="text-lg font-medium mt-8 mb-4">Browse Categories</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {documentCategories.map(category => {
-            const Icon = category.icon;
-            const realCount = getCategoryCount(category.name);
-            return (
-              <div 
+          const Icon = category.icon;
+          const realCount = getCategoryCount(category.name);
+          return <div 
                 key={category.id} 
                 className="glass-card p-5 flex flex-col cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => handleCategoryClick(category.name)}
@@ -264,13 +242,10 @@ const Templates = () => {
                 <Button variant="ghost" className="justify-start p-0 hover:bg-transparent hover:text-primary-600" size="sm">
                   View category <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
-              </div>
-            );
-          })}
+              </div>;
+        })}
         </div>
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 };
-
 export default Templates;
