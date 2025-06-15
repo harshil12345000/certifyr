@@ -240,18 +240,147 @@ export interface AddressProofData {
   includeDigitalSignature: boolean;
 }
 
-// Import and re-export corporate template types
-export type {
-  ArticlesOfIncorporationData,
-  CorporateBylawsData,
-  FoundersAgreementData,
-  StockPurchaseAgreementData,
-  EmploymentAgreementData,
-  IPAssignmentAgreementData,
-  NDAData,
-} from './corporate-templates';
+// Corporate template types
+export interface ArticlesOfIncorporationData {
+  companyName: string;
+  incorporationState: string;
+  incorporationDate: string;
+  businessPurpose: string;
+  registeredAgentName: string;
+  registeredAgentAddress: string;
+  authorizedShares: string;
+  parValue: string;
+  incorporatorName: string;
+  incorporatorAddress: string;
+  directorNames: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
 
-// Extend FormData union type to include corporate templates
+export interface CorporateBylawsData {
+  companyName: string;
+  incorporationState: string;
+  incorporationDate: string;
+  fiscalYearEnd: string;
+  boardMeetingFrequency: string;
+  shareholderMeetingDate: string;
+  votingRights: string;
+  dividendPolicy: string;
+  amendmentProcess: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface FoundersAgreementData {
+  companyName: string;
+  founderNames: string;
+  foundingDate: string;
+  businessDescription: string;
+  equityDistribution: string;
+  rolesResponsibilities: string;
+  vestingSchedule: string;
+  intellectualProperty: string;
+  nonCompeteClause: string;
+  disputeResolution: string;
+  governingLaw: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface StockPurchaseAgreementData {
+  purchaserName: string;
+  purchaserAddress: string;
+  sellerName: string;
+  sellerAddress: string;
+  companyName: string;
+  shareClass: string;
+  numberOfShares: string;
+  sharePrice: string;
+  totalPurchasePrice: string;
+  closingDate: string;
+  restrictionsOnTransfer: string;
+  representationsWarranties: string;
+  governingLaw: string;
+  effectiveDate: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface EmploymentAgreementData {
+  employeeName: string;
+  employeeAddress: string;
+  companyName: string;
+  companyAddress: string;
+  jobTitle: string;
+  startDate: string;
+  employmentType: string;
+  salary: string;
+  benefits: string;
+  workingHours: string;
+  probationPeriod: string;
+  terminationClause: string;
+  confidentialityClause: string;
+  nonCompeteClause: string;
+  governingLaw: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface IPAssignmentAgreementData {
+  assignorName: string;
+  assignorAddress: string;
+  assigneeName: string;
+  assigneeAddress: string;
+  intellectualPropertyDescription: string;
+  assignmentScope: string;
+  consideration: string;
+  effectiveDate: string;
+  representations: string;
+  governingLaw: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface NDAData {
+  disclosingParty: string;
+  disclosingPartyAddress: string;
+  receivingParty: string;
+  receivingPartyAddress: string;
+  effectiveDate: string;
+  purposeOfDisclosure: string;
+  confidentialInformation: string;
+  exclusions: string;
+  obligations: string;
+  termLength: string;
+  returnOfInformation: string;
+  remedies: string;
+  governingLaw: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+// Corporate FormData union type
 export type CorporateFormData = 
   | ArticlesOfIncorporationData
   | CorporateBylawsData
