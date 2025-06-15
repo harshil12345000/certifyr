@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Moon, Sun, User, Palette, Shield, Globe } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 const Settings = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -38,25 +42,95 @@ const Settings = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Set email from user but leave name fields empty
-    setFormData({
-      firstName: "",
-      lastName: "", 
-      email: user.email || "",
-      jobTitle: "Administrator",
-      bio: "",
-      phone: "",
-      location: "",
-      website: ""
-    });
-    
-    setLoading(false);
+    const loadUserProfile = async () => {
+      try {
+        console.log('Loading user profile for user:', user.id);
+        
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error loading user profile:', error);
+          toast.error('Failed to load profile data');
+          return;
+        }
+
+        console.log('Loaded profile data:', profile);
+
+        if (profile) {
+          setFormData({
+            firstName: profile.first_name || "",
+            lastName: profile.last_name || "",
+            email: profile.email || user.email || "",
+            jobTitle: profile.job_title || "",
+            bio: profile.bio || "",
+            phone: profile.phone_number || "",
+            location: profile.location || "",
+            website: profile.website || ""
+          });
+        } else {
+          // If no profile exists, just set email from user
+          setFormData(prev => ({
+            ...prev,
+            email: user.email || ""
+          }));
+        }
+      } catch (error) {
+        console.error('Unexpected error loading profile:', error);
+        toast.error('Failed to load profile data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
   }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Profile updated:", formData);
+    if (!user) return;
+
+    setSaving(true);
+    
+    try {
+      console.log('Saving profile data:', formData);
+      
+      const profileData = {
+        user_id: user.id,
+        first_name: formData.firstName.trim() || null,
+        last_name: formData.lastName.trim() || null,
+        email: formData.email.trim() || user.email,
+        job_title: formData.jobTitle.trim() || null,
+        bio: formData.bio.trim() || null,
+        phone_number: formData.phone.trim() || null,
+        location: formData.location.trim() || null,
+        website: formData.website.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert(profileData, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving profile:', error);
+        toast.error('Failed to save profile');
+        return;
+      }
+
+      console.log('Profile saved successfully');
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Unexpected error saving profile:', error);
+      toast.error('Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePreferencesChange = (key: string, value: any) => {
@@ -183,8 +257,12 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full md:w-auto">
-                  Save Changes
+                <Button 
+                  type="submit" 
+                  className="w-full md:w-auto"
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
                 </Button>
               </form>
             </CardContent>
