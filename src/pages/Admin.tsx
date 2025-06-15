@@ -429,19 +429,25 @@ const AdminPage = () => {
                         onChange={(e) => handleFileChange(e, type)} 
                         disabled={!organizationId}
                       />
-                      {brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && (
+                      {/* Preview logic: show preview if we have either a newly uploaded file OR a Supabase public URL */}
+                      {(brandingFiles[type] || brandingPreviews[`${type}Url` as keyof BrandingFilePreview]) ? (
                         <div className="mt-2 p-2 border rounded-md inline-block">
                           <img 
-                            src={brandingPreviews[`${type}Url` as keyof BrandingFilePreview]!} 
+                            src={
+                              // Prefer browser object URL for newly picked file, otherwise fall back to Supabase URL
+                              brandingFiles[type]
+                                ? URL.createObjectURL(brandingFiles[type]!)
+                                : brandingPreviews[`${type}Url` as keyof BrandingFilePreview] || undefined
+                            }
                             alt={`${type} preview`} 
-                            className="h-20 object-contain" 
+                            className="h-20 object-contain"
+                            onError={(e) => {
+                              // fallback: hide broken image and maybe show placeholder if desired
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
                           />
                         </div>
-                      )}
-                      {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && brandingFiles[type] && (
-                        <p className="text-sm text-muted-foreground italic">New file selected, pending save.</p>
-                      )}
-                      {!brandingPreviews[`${type}Url` as keyof BrandingFilePreview] && !brandingFiles[type] && (
+                      ) : (
                         <p className="text-sm text-muted-foreground italic">
                           {organizationId ? `No ${type} uploaded.` : `${type.charAt(0).toUpperCase() + type.slice(1)} upload requires organization membership.`}
                         </p>
