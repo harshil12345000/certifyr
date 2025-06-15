@@ -12,7 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
 
 // Cleaned: only unique templates, NOC for Visa appearing once
-const allTemplates = [
+function getUniqueTemplates(templates: typeof allTemplates) {
+  const seen = new Set();
+  return templates.filter((tpl) => {
+    if (seen.has(tpl.id)) return false;
+    seen.add(tpl.id);
+    return true;
+  });
+}
+
+const uniqueTemplates = getUniqueTemplates([
   ...popularTemplates, // this includes "noc-visa-1" (NOC for Visa Application) from mockData
   {
     id: "embassy-attestation-1",
@@ -119,7 +128,7 @@ const allTemplates = [
     category: "Academic",
     usageCount: 35
   }
-];
+]);
 
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -127,9 +136,13 @@ const Templates = () => {
   const navigate = useNavigate();
 
   // Filter templates based on search and category filters
-  const filteredTemplates = allTemplates.filter(template => {
-    const matchesSearch = template.title.toLowerCase().includes(searchQuery.toLowerCase()) || template.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(template.category);
+  const filteredTemplates = uniqueTemplates.filter(template => {
+    const matchesSearch =
+      template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategories.length === 0 ||
+      selectedCategories.includes(template.category);
     return matchesSearch && matchesCategory;
   });
 
@@ -142,7 +155,7 @@ const Templates = () => {
     setSearchQuery('');
   };
 
-  const categories = Array.from(new Set(allTemplates.map(t => t.category)));
+  const categories = Array.from(new Set(uniqueTemplates.map(t => t.category)));
 
   const handleCreateTemplate = () => {
     navigate('/template-builder');
@@ -181,7 +194,7 @@ const Templates = () => {
     };
 
     const actualCategory = categoryMapping[categoryName] || categoryName;
-    return allTemplates.filter(template => template.category === actualCategory).length;
+    return uniqueTemplates.filter(template => template.category === actualCategory).length;
   };
 
   return <DashboardLayout>
