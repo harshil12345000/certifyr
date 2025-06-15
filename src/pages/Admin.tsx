@@ -157,8 +157,11 @@ const AdminPage = () => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>, fileType: keyof BrandingFileState) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log("Selected file for", fileType, file);
       setBrandingFiles(prev => ({ ...prev, [fileType]: file }));
-      setBrandingPreviews(prev => ({ ...prev, [`${fileType}Url`]: URL.createObjectURL(file) }));
+      const objectUrl = URL.createObjectURL(file);
+      console.log("Object URL for preview:", objectUrl);
+      setBrandingPreviews(prev => ({ ...prev, [`${fileType}Url`]: objectUrl }));
     }
   };
 
@@ -416,44 +419,48 @@ const AdminPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {(['logo', 'seal', 'signature'] as Array<keyof BrandingFileState>).map((type) => (
-                    <div key={type} className="space-y-2">
-                      <Label htmlFor={type} className="capitalize flex items-center">
-                        <ImagePlus className="w-5 h-5 mr-2" />
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </Label>
-                      <Input 
-                        id={type} 
-                        type="file" 
-                        accept="image/png, image/jpeg, image/svg+xml" 
-                        onChange={(e) => handleFileChange(e, type)} 
-                        disabled={!organizationId}
-                      />
-                      {/* Preview logic: show preview if we have either a newly uploaded file OR a Supabase public URL */}
-                      {(brandingFiles[type] || brandingPreviews[`${type}Url` as keyof BrandingFilePreview]) ? (
-                        <div className="mt-2 p-2 border rounded-md inline-block">
-                          <img 
-                            src={
-                              // Prefer browser object URL for newly picked file, otherwise fall back to Supabase URL
-                              brandingFiles[type]
-                                ? URL.createObjectURL(brandingFiles[type]!)
-                                : brandingPreviews[`${type}Url` as keyof BrandingFilePreview] || undefined
-                            }
-                            alt={`${type} preview`} 
-                            className="h-20 object-contain"
-                            onError={(e) => {
-                              // fallback: hide broken image and maybe show placeholder if desired
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                          {organizationId ? `No ${type} uploaded.` : `${type.charAt(0).toUpperCase() + type.slice(1)} upload requires organization membership.`}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                  {(['logo', 'seal', 'signature'] as Array<keyof BrandingFileState>).map((type) => {
+                    const previewSrc = brandingFiles[type]
+                      ? URL.createObjectURL(brandingFiles[type]!)
+                      : brandingPreviews[`${type}Url` as keyof BrandingFilePreview] || undefined;
+                    console.log("Rendering preview for", type, {
+                      brandingFile: brandingFiles[type],
+                      brandingPreviewUrl: brandingPreviews[`${type}Url` as keyof BrandingFilePreview],
+                      previewSrc,
+                    });
+                    return (
+                      <div key={type} className="space-y-2">
+                        <Label htmlFor={type} className="capitalize flex items-center">
+                          <ImagePlus className="w-5 h-5 mr-2" />
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Label>
+                        <Input 
+                          id={type} 
+                          type="file" 
+                          accept="image/png, image/jpeg, image/svg+xml" 
+                          onChange={(e) => handleFileChange(e, type)} 
+                          disabled={!organizationId}
+                        />
+                        {(brandingFiles[type] || brandingPreviews[`${type}Url` as keyof BrandingFilePreview]) ? (
+                          <div className="mt-2 p-2 border rounded-md inline-block">
+                            <img 
+                              src={previewSrc}
+                              alt={`${type} preview`} 
+                              className="h-20 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                console.error(`Failed to load image for type: ${type}. Src:`, previewSrc);
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">
+                            {organizationId ? `No ${type} uploaded.` : `${type.charAt(0).toUpperCase() + type.slice(1)} upload requires organization membership.`}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" disabled={isSaving || !organizationId}>
