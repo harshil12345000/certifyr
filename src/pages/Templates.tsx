@@ -30,8 +30,7 @@ function getUniqueTemplates(templates: Template[]): Template[] {
 }
 
 // The actual templates for uniqueness
-const allTemplatesArr: Template[] = [
-  ...popularTemplates,
+const additionalTemplates: Template[] = [
   {
     id: "embassy-attestation-1",
     title: "Embassy Attestation Letter",
@@ -137,6 +136,15 @@ const allTemplatesArr: Template[] = [
     category: "Academic",
     usageCount: 35
   }
+];
+
+// Construct unique templates array:
+const existingPopularIds = new Set(popularTemplates.map(t => t.id));
+const dedupedAdditionalTemplates = additionalTemplates.filter(tpl => !existingPopularIds.has(tpl.id));
+
+const allTemplatesArr: Template[] = [
+  ...popularTemplates,
+  ...dedupedAdditionalTemplates
 ];
 
 const uniqueTemplates: Template[] = getUniqueTemplates(allTemplatesArr);
