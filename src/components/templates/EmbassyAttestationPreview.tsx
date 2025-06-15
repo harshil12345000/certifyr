@@ -32,7 +32,7 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 

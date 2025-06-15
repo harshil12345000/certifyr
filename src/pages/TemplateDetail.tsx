@@ -84,6 +84,52 @@ import {
 } from '@/components/ui/tabs';
 import { downloadPDF, downloadJPG, printDocument } from '@/lib/document-utils';
 
+const TEMPLATE_NAMES: Record<string, string> = {
+  'academic-transcript-1': 'Academic Transcript',
+  'embassy-attestation-letter-1': 'Embassy Attestation Letter',
+  'employment-agreement-1': 'Employment Agreement',
+  'nda-1': 'Non-Disclosure Agreement',
+  'founders-agreement-1': 'Founders Agreement',
+  'stock-purchase-agreement-1': 'Stock Purchase Agreement',
+  'articles-incorporation-1': 'Articles of Incorporation',
+  'corporate-bylaws-1': 'Corporate Bylaws',
+  'bonafide-1': 'Bonafide Certificate',
+  'character-1': 'Character Certificate',
+  'experience-1': 'Experience Certificate',
+  'embassy-attestation-1': 'Embassy Attestation',
+  'completion-certificate-1': 'Completion Certificate',
+  'transfer-certificate-1': 'Transfer Certificate',
+  'noc-visa-1': 'NOC for Visa',
+  'income-certificate-1': 'Income Certificate',
+  'maternity-leave-1': 'Maternity Leave Certificate',
+  'bank-verification-1': 'Bank Verification Letter',
+  'offer-letter-1': 'Offer Letter',
+  'address-proof-1': 'Address Proof',
+};
+
+const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
+  'academic-transcript-1': "Official record of a student's academic performance.",
+  'embassy-attestation-letter-1': 'Letter for embassy attestation and verification.',
+  'employment-agreement-1': 'Contract outlining terms of employment.',
+  'nda-1': 'Agreement to protect confidential information.',
+  'founders-agreement-1': 'Agreement between company founders.',
+  'stock-purchase-agreement-1': 'Agreement for the purchase of company stock.',
+  'articles-incorporation-1': 'Legal document to form a corporation.',
+  'corporate-bylaws-1': 'Rules governing the management of a corporation.',
+  'bonafide-1': "Certificate confirming a person's association with an institution.",
+  'character-1': "Certificate attesting to a person's character.",
+  'experience-1': 'Certificate of work experience.',
+  'embassy-attestation-1': 'Document for embassy attestation purposes.',
+  'completion-certificate-1': 'Certificate for successful course or program completion.',
+  'transfer-certificate-1': 'Certificate for transfer between institutions.',
+  'noc-visa-1': 'No Objection Certificate for visa applications.',
+  'income-certificate-1': 'Certificate stating income details.',
+  'maternity-leave-1': 'Certificate for maternity leave approval.',
+  'bank-verification-1': 'Letter for bank account verification.',
+  'offer-letter-1': 'Official job offer letter.',
+  'address-proof-1': 'Document to verify address.'
+};
+
 const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData => {
   const commonFields = {
     institutionName: '',
@@ -713,7 +759,10 @@ const TemplateDetail = () => {
     <DashboardLayout>
       <div className="container space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">Template Details</h1>
+          <div>
+            <h1 className="text-2xl font-semibold">{TEMPLATE_NAMES[templateId || ''] || 'Template Details'}</h1>
+            <p className="text-muted-foreground text-sm mt-1">{TEMPLATE_DESCRIPTIONS[templateId || ''] || ''}</p>
+          </div>
         </div>
         <Separator />
         <div>
