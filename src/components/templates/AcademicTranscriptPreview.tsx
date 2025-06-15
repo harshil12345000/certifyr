@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { AcademicTranscriptData } from '@/types/corporate-templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 export interface AcademicTranscriptPreviewProps {
   data: AcademicTranscriptData;
@@ -37,23 +37,15 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
 
   const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
+
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
-      {/* Letterhead Section */}
-      <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
-        {logoUrl && (
-          <img src={logoUrl} alt={`${displayInstitutionName} Logo`} className="h-20 mx-auto mb-4 object-contain" />
-        )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">{displayInstitutionName}</h1>
-        {organizationDetails?.address && <p className="text-sm mt-2">{organizationDetails.address}</p>}
-        {(organizationDetails?.phone || organizationDetails?.email) && (
-          <p className="text-sm">
-            {organizationDetails?.phone && `Tel: ${organizationDetails.phone}`}
-            {organizationDetails?.phone && organizationDetails?.email && ' | '}
-            {organizationDetails?.email && `Email: ${organizationDetails.email}`}
-          </p>
-        )}
-      </div>
+      {/* Letterhead */}
+      <Letterhead />
 
       {/* Document Title */}
       <div className="text-center mb-8">

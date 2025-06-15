@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -6,7 +5,7 @@ import { Signature as SignatureIcon } from "lucide-react";
 import { useBranding } from "@/contexts/BrandingContext";
 import { Letterhead } from "./Letterhead";
 
-export function ExperiencePreview({ data }: ExperiencePreviewProps) {
+export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) => {
   const { signatureUrl, sealUrl, organizationDetails, isLoading } = useBranding();
 
   const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";

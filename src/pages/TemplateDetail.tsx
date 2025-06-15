@@ -73,7 +73,7 @@ import {
   AcademicTranscriptData,
   EmbassyAttestationLetterData,
 } from '@/types/corporate-templates';
-import { Download } from 'lucide-react';
+import { Download, FileDown, ImageDown, Printer } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateAndDownloadPdf } from '@/lib/pdf-utils';
 import {
@@ -82,6 +82,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@/components/ui/tabs';
+import { downloadPDF, downloadJPG, printDocument } from '@/lib/document-utils';
 
 const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData => {
   const commonFields = {
@@ -674,23 +675,35 @@ const TemplateDetail = () => {
     }
   };
 
-  const handleDownload = async () => {
-    if (!templateId) {
+  const handleDownloadPDF = async () => {
+    try {
+      await downloadPDF(`${templateId}.pdf`);
+    } catch (error) {
       toast({
         title: 'Error',
-        description: 'Template ID is missing.',
+        description: 'Failed to download PDF. Please try again.',
         variant: 'destructive',
       });
-      return;
     }
-
+  };
+  const handleDownloadJPG = async () => {
     try {
-      await generateAndDownloadPdf(renderPreview(), `${templateId}.pdf`);
+      await downloadJPG(`${templateId}.jpg`);
     } catch (error) {
-      console.error('Error generating PDF:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate PDF. Please check the console for details.',
+        description: 'Failed to download JPG. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  const handlePrint = async () => {
+    try {
+      await printDocument();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to print document. Please try again.',
         variant: 'destructive',
       });
     }
@@ -701,9 +714,17 @@ const TemplateDetail = () => {
       <div className="container space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Template Details</h1>
-          <Button onClick={handleDownload} className="gradient-blue gap-2">
-            Download <Download className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handlePrint} variant="secondary" className="gap-2 border border-gray-400">
+              Print <Printer className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleDownloadJPG} variant="secondary" className="gap-2 border border-gray-400">
+              Download JPG <ImageDown className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleDownloadPDF} className="gradient-blue gap-2">
+              Download PDF <FileDown className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <Separator />
         <div>

@@ -1,14 +1,28 @@
 import React from 'react';
-import { StockPurchaseAgreementData } from '@/types/corporate-templates';
+import { StockPurchaseAgreementPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
 
-interface StockPurchaseAgreementPreviewProps {
-  data: StockPurchaseAgreementData;
-}
-
 export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPreviewProps> = ({ data }) => {
-  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const {
+    companyName,
+    seller,
+    buyer,
+    shares,
+    pricePerShare,
+    totalConsideration,
+    closingDate,
+    representations,
+    warranties,
+    covenants,
+    governingLaw,
+    date: issueDate,
+    signatoryName,
+    signatoryDesignation,
+    includeDigitalSignature,
+  } = data;
+
+  const { signatureUrl, sealUrl } = useBranding();
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -16,67 +30,73 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
   };
 
   return (
-    <div className="a4-document bg-white p-8 shadow-lg max-w-4xl mx-auto">
+    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 
+      {/* Document Title */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">STOCK PURCHASE AGREEMENT</h1>
-        <p className="text-sm text-gray-600">{data.companyName}</p>
+        <div className="border border-gray-400 inline-block px-8 py-3">
+          <h2 className="text-lg font-bold uppercase tracking-widest">STOCK PURCHASE AGREEMENT</h2>
+        </div>
+      </div>
+
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-bold mb-2">{companyName}</h1>
       </div>
 
       <div className="mb-6">
         <h3 className="text-lg font-bold mb-2">PARTIES</h3>
-        <p><strong>Purchaser:</strong> {data.purchaserName}</p>
-        <p className="ml-4 whitespace-pre-line">{data.purchaserAddress}</p>
-        <p className="mt-2"><strong>Seller:</strong> {data.sellerName}</p>
-        <p className="ml-4 whitespace-pre-line">{data.sellerAddress}</p>
+        <p><strong>Purchaser:</strong> {buyer.name}</p>
+        <p className="ml-4 whitespace-pre-line">{buyer.address}</p>
+        <p className="mt-2"><strong>Seller:</strong> {seller.name}</p>
+        <p className="ml-4 whitespace-pre-line">{seller.address}</p>
       </div>
 
       <div className="mb-6">
         <h3 className="text-lg font-bold mb-2">PURCHASE TERMS</h3>
-        <p><strong>Company:</strong> {data.companyName}</p>
-        <p><strong>Share Class:</strong> {data.shareClass}</p>
-        <p><strong>Number of Shares:</strong> {data.numberOfShares}</p>
-        <p><strong>Price per Share:</strong> {data.sharePrice}</p>
-        <p><strong>Total Purchase Price:</strong> {data.totalPurchasePrice}</p>
-        <p><strong>Closing Date:</strong> {data.closingDate ? new Date(data.closingDate).toLocaleDateString() : '[Date]'}</p>
+        <p><strong>Company:</strong> {companyName}</p>
+        <p><strong>Share Class:</strong> {shares.class}</p>
+        <p><strong>Number of Shares:</strong> {shares.quantity}</p>
+        <p><strong>Price per Share:</strong> {pricePerShare}</p>
+        <p><strong>Total Purchase Price:</strong> {totalConsideration}</p>
+        <p><strong>Closing Date:</strong> {closingDate ? new Date(closingDate).toLocaleDateString() : '[Date]'}</p>
       </div>
 
       <div className="mb-6">
         <h3 className="text-lg font-bold mb-2">TRANSFER RESTRICTIONS</h3>
-        <p>{data.restrictionsOnTransfer}</p>
+        <p>{covenants.restrictionsOnTransfer}</p>
       </div>
 
       <div className="mb-6">
         <h3 className="text-lg font-bold mb-2">REPRESENTATIONS AND WARRANTIES</h3>
-        <p>{data.representationsWarranties}</p>
+        <p>{representations}</p>
       </div>
 
       <div className="mb-8">
         <h3 className="text-lg font-bold mb-2">GOVERNING LAW</h3>
-        <p>This Agreement shall be governed by the laws of {data.governingLaw}.</p>
+        <p>This Agreement shall be governed by the laws of {governingLaw}.</p>
       </div>
 
       <div className="mt-12">
-        <p className="mb-6">IN WITNESS WHEREOF, the parties have executed this Agreement as of {data.effectiveDate ? new Date(data.effectiveDate).toLocaleDateString() : '[Date]'}.</p>
+        <p className="mb-6">IN WITNESS WHEREOF, the parties have executed this Agreement as of {issueDate ? new Date(issueDate).toLocaleDateString() : '[Date]'}.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
           <div className="text-center">
             <div className="border-b border-gray-400 w-full mb-2"></div>
-            <p className="text-sm font-semibold">{data.purchaserName}</p>
+            <p className="text-sm font-semibold">{buyer.name}</p>
             <p className="text-sm">Purchaser</p>
           </div>
           <div className="text-center">
             <div className="border-b border-gray-400 w-full mb-2"></div>
-            <p className="text-sm font-semibold">{data.sellerName}</p>
+            <p className="text-sm font-semibold">{seller.name}</p>
             <p className="text-sm">Seller</p>
           </div>
         </div>
 
         <div className="flex justify-between items-end mt-8">
           <div>
-            <p className="text-sm"><strong>Date:</strong> {data.date || '[Date]'}</p>
+            <p className="text-sm"><strong>Date:</strong> {issueDate ? new Date(issueDate).toLocaleDateString() : '[Date]'}</p>
             <p className="text-sm"><strong>Place:</strong> {data.place || '[Place]'}</p>
           </div>
         </div>

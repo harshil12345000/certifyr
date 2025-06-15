@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { EmbassyAttestationLetterData } from '@/types/corporate-templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -53,6 +54,7 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
     organizationEmail: null
   });
   const { user } = useAuth();
+  const { signatureUrl: brandingSignatureUrl, sealUrl: brandingSealUrl } = useBranding();
 
   useEffect(() => {
     const fetchBranding = async () => {
@@ -125,23 +127,15 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
   const formattedDocumentIssueDate = documentIssueDate ? new Date(documentIssueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Document Issue Date]';
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
+
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
-      {/* Letterhead Section */}
-      <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
-        {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
-        )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">{institutionName || '[INSTITUTION NAME]'}</h1>
-        {branding.organizationAddress && <p className="text-sm mt-2">{branding.organizationAddress}</p>}
-        {(branding.organizationPhone || branding.organizationEmail) && (
-          <p className="text-sm">
-            {branding.organizationPhone && `Tel: ${branding.organizationPhone}`}
-            {branding.organizationPhone && branding.organizationEmail && ' | '}
-            {branding.organizationEmail && `Email: ${branding.organizationEmail}`}
-          </p>
-        )}
-      </div>
+      {/* Letterhead */}
+      <Letterhead />
 
       {/* Letter Title */}
       <div className="text-center mb-8">
@@ -218,10 +212,10 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
+          {includeDigitalSignature && brandingSignatureUrl && (
+            <img src={brandingSignatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
           )}
-          {includeDigitalSignature && !branding.signatureUrl && (
+          {includeDigitalSignature && !brandingSignatureUrl && (
             <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
               [Digital Signature Placeholder]
             </div>
@@ -234,9 +228,9 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
       </div>
 
       {/* Seal */}
-      {branding.sealUrl && (
+      {brandingSealUrl && (
         <div className="absolute bottom-32 left-16">
-          <img src={branding.sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
+          <img src={brandingSealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { OfferLetterPreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -38,6 +39,9 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     includeDigitalSignature,
   } = data;
 
+  const { signatureUrl, sealUrl } = useBranding();
+  const { user } = useAuth();
+
   const [branding, setBranding] = useState<BrandingAssets>({
     logoUrl: null,
     sealUrl: null,
@@ -46,7 +50,6 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     organizationPhone: null,
     organizationEmail: null,
   });
-  const { user } = useAuth();
 
   useEffect(() => {
     const fetchBranding = async () => {
@@ -127,26 +130,19 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     return `${currency || 'INR'} ${num.toLocaleString('en-IN')}`;
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
+
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
-      {/* Header */}
-      <div className="text-center mb-8">
-        {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-16 mx-auto mb-4 object-contain" />
-        )}
-        <h1 className="text-2xl font-bold text-blue-600 uppercase tracking-wide mb-2">
-          {institutionName || '[INSTITUTION NAME]'}
-        </h1>
-        <p className="text-sm text-gray-600">
-          {branding.organizationAddress && `${branding.organizationAddress} • `}
-          {branding.organizationPhone && `${branding.organizationPhone} • `}
-          {branding.organizationEmail && branding.organizationEmail}
-        </p>
-      </div>
+    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
+      {/* Letterhead */}
+      <Letterhead />
 
       {/* Letter Title */}
       <div className="text-center mb-8">
-        <div className="border-2 border-gray-600 inline-block px-6 py-2">
+        <div className="border border-gray-400 inline-block px-8 py-3">
           <h2 className="text-lg font-bold uppercase tracking-widest">OFFER LETTER</h2>
         </div>
       </div>
@@ -224,8 +220,8 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+          {includeDigitalSignature && signatureUrl && (
+            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" onError={(e) => handleImageError(e, 'signature')} />
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
@@ -258,9 +254,9 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
       </div>
 
       {/* Seal */}
-      {branding.sealUrl && (
+      {sealUrl && (
         <div className="absolute bottom-32 left-16">
-          <img src={branding.sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
+          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" onError={(e) => handleImageError(e, 'seal')} />
         </div>
       )}
     </div>

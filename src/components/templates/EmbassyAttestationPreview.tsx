@@ -1,37 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { EmbassyAttestationPreviewProps } from '@/types/templates';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-
-interface BrandingAssets {
-  logoUrl: string | null;
-  sealUrl: string | null;
-  signatureUrl: string | null;
-  organizationAddress: string | null;
-  organizationPhone: string | null;
-  organizationEmail: string | null;
-}
+import { useBranding } from '@/contexts/BrandingContext';
+import { Letterhead } from './Letterhead';
 
 export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps> = ({ data }) => {
   const {
     fullName,
     passportNumber,
     nationality,
-    dateOfBirth,
-    placeOfBirth,
-    fatherName,
-    motherName,
-    documentType,
-    documentNumber,
-    issuingAuthority,
-    documentIssueDate,
-    purposeOfAttestation,
+    visaType,
     destinationCountry,
-    embassyName,
-    applicantAddress,
-    phoneNumber,
-    emailAddress,
+    purpose,
+    duration,
     institutionName,
     date: issueDate,
     place,
@@ -40,82 +20,12 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
     includeDigitalSignature,
   } = data;
 
-  const [branding, setBranding] = useState<BrandingAssets>({ 
-    logoUrl: null, 
-    sealUrl: null, 
-    signatureUrl: null,
-    organizationAddress: null,
-    organizationPhone: null,
-    organizationEmail: null
-  });
-  const { user } = useAuth();
+  const { signatureUrl, sealUrl } = useBranding();
 
-  useEffect(() => {
-    const fetchBranding = async () => {
-      if (!institutionName && !user?.id) {
-        console.warn("Embassy Attestation Preview: Institution name or user context not available for fetching branding.");
-        return;
-      }
-      try {
-        let orgIdToQuery: string | null = null;
-
-        if (institutionName) {
-          const { data: orgData, error: orgError } = await supabase
-            .from('organizations')
-            .select('id, address, phone, email')
-            .eq('name', institutionName)
-            .single();
-
-          if (orgError && orgError.code !== 'PGRST116') {
-            console.error("Error fetching organization by name:", orgError.message);
-          } else if (orgError?.code === 'PGRST116') {
-            console.warn(`Organization named "${institutionName}" not found.`);
-          }
-          
-          if (orgData) {
-            orgIdToQuery = orgData.id;
-            setBranding(prev => ({
-              ...prev,
-              organizationAddress: orgData.address,
-              organizationPhone: orgData.phone,
-              organizationEmail: orgData.email,
-            }));
-          }
-        }
-
-        if (orgIdToQuery) {
-          const { data: filesData, error: filesError } = await supabase
-            .from('branding_files')
-            .select('name, path')
-            .eq('organization_id', orgIdToQuery);
-
-          if (filesError) {
-            console.error("Error fetching branding files:", filesError);
-          } else if (filesData) {
-            let newLogoUrl: string | null = null;
-            let newSealUrl: string | null = null;
-            let newSignatureUrl: string | null = null;
-
-            filesData.forEach(file => {
-              const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-              const publicUrl = publicUrlRes.data?.publicUrl;
-              if (publicUrl) {
-                if (file.name === 'logo') newLogoUrl = publicUrl;
-                if (file.name === 'seal') newSealUrl = publicUrl;
-                if (file.name === 'signature') newSignatureUrl = publicUrl;
-              }
-            });
-            
-            setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
-          }
-        }
-
-      } catch (error) {
-        console.error("Unexpected error fetching branding:", error);
-      }
-    };
-    fetchBranding();
-  }, [institutionName, user]);
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
+  };
 
   const formattedDateOfBirth = dateOfBirth ? new Date(dateOfBirth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Date of Birth]';
   const formattedDocumentIssueDate = documentIssueDate ? new Date(documentIssueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Document Issue Date]';
@@ -123,21 +33,8 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
-      {/* Letterhead Section */}
-      <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
-        {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
-        )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">[{institutionName || 'INSTITUTION NAME'}]</h1>
-        {branding.organizationAddress && <p className="text-sm mt-2">{branding.organizationAddress}</p>}
-        {(branding.organizationPhone || branding.organizationEmail) && (
-          <p className="text-sm">
-            {branding.organizationPhone && `Tel: ${branding.organizationPhone}`}
-            {branding.organizationPhone && branding.organizationEmail && ' | '}
-            {branding.organizationEmail && `Email: ${branding.organizationEmail}`}
-          </p>
-        )}
-      </div>
+      {/* Letterhead */}
+      <Letterhead />
 
       {/* Letter Title */}
       <div className="text-center mb-8">
@@ -214,10 +111,10 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
+          {includeDigitalSignature && signatureUrl && (
+            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
           )}
-          {includeDigitalSignature && !branding.signatureUrl && (
+          {includeDigitalSignature && !signatureUrl && (
             <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
               [Digital Signature Placeholder]
             </div>
@@ -230,9 +127,9 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
       </div>
 
       {/* Seal */}
-      {branding.sealUrl && (
+      {sealUrl && (
         <div className="absolute bottom-32 left-16">
-          <img src={branding.sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
+          <img src={sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
         </div>
       )}
     </div>

@@ -1,14 +1,23 @@
 import React from 'react';
-import { NDAData } from '@/types/corporate-templates';
+import { NDAPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
 
-interface NDAPreviewProps {
-  data: NDAData;
-}
-
 export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
-  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const {
+    disclosingParty,
+    receivingParty,
+    confidentialInformation,
+    purpose,
+    term,
+    governingLaw,
+    date: issueDate,
+    signatoryName,
+    signatoryDesignation,
+    includeDigitalSignature,
+  } = data;
+
+  const { signatureUrl, sealUrl } = useBranding();
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -16,12 +25,18 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
   };
 
   return (
-    <div className="a4-document bg-white p-8 shadow-lg max-w-4xl mx-auto">
+    <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 
+      {/* Document Title */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">NON-DISCLOSURE AGREEMENT</h1>
+        <div className="border border-gray-400 inline-block px-8 py-3">
+          <h2 className="text-lg font-bold uppercase tracking-widest">NON-DISCLOSURE AGREEMENT</h2>
+        </div>
+      </div>
+
+      <div className="text-center mb-8">
         <p className="text-sm text-gray-600">Effective Date: {data.effectiveDate ? new Date(data.effectiveDate).toLocaleDateString() : '[Date]'}</p>
       </div>
 
