@@ -1,7 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AddressProofPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }) => {
   const {
@@ -23,6 +26,23 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
   } = data;
 
   const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (fullName && currentAddress) {
+        const url = await generateDocumentQRCode(
+          'address-proof-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id, fullName, currentAddress]);
 
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
@@ -50,7 +70,7 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
   const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed relative">
       {/* Header */}
       <div className="text-center mb-8">
         {logoUrl && (
@@ -136,6 +156,11 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
             <p className="text-sm">{displayInstitutionName}</p>
           </div>
         </div>
+      </div>
+
+      {/* QR Code positioned at bottom right */}
+      <div className="absolute bottom-8 right-8">
+        <QRCode value={qrCodeUrl || ''} size={80} />
       </div>
 
       {/* Seal */}

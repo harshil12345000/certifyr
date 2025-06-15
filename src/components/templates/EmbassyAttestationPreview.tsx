@@ -1,17 +1,31 @@
+
 import React, { useState, useEffect } from 'react';
 import { EmbassyAttestationPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps> = ({ data }) => {
   const {
     fullName,
     passportNumber,
     nationality,
-    visaType,
+    dateOfBirth,
+    placeOfBirth,
+    fatherName,
+    motherName,
+    documentType,
+    documentNumber,
+    issuingAuthority,
+    documentIssueDate,
+    purposeOfAttestation,
     destinationCountry,
-    purpose,
-    duration,
+    embassyName,
+    applicantAddress,
+    phoneNumber,
+    emailAddress,
     institutionName,
     date: issueDate,
     place,
@@ -20,21 +34,42 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, sealUrl } = useBranding();
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (fullName && documentType && destinationCountry) {
+        const url = await generateDocumentQRCode(
+          'embassy-attestation-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id, fullName, documentType, destinationCountry]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
     (e.target as HTMLImageElement).style.display = 'none';
   };
 
-  const formattedDateOfBirth = dateOfBirth ? new Date(dateOfBirth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Date of Birth]';
-  const formattedDocumentIssueDate = documentIssueDate ? new Date(documentIssueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Document Issue Date]';
-  const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
-
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
+
+      {/* QR Code for verification */}
+      <div className="absolute top-8 right-8">
+        <div className="text-center">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+          <p className="text-xs text-gray-500 mt-1">Verify Document</p>
+        </div>
+      </div>
 
       {/* Letter Title */}
       <div className="text-center mb-8">
@@ -43,93 +78,115 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
         </div>
       </div>
 
+      {/* Address Section */}
+      <div className="mb-8">
+        <p><strong>To:</strong></p>
+        <p className="ml-4">{embassyName || '[Embassy Name]'}</p>
+        <p className="ml-4">{destinationCountry || '[Destination Country]'}</p>
+      </div>
+
+      {/* Subject */}
+      <div className="mb-6">
+        <p><strong>Subject:</strong> Attestation of documents for {fullName || '[Applicant Name]'}</p>
+      </div>
+
       {/* Letter Content */}
-      <div className="space-y-4 text-justify leading-7">
-        <p className="text-center font-semibold">
-          TO: {embassyName || '[Embassy/Consulate Name]'}
-        </p>
-
-        <p className="font-semibold">Subject: Request for Document Attestation</p>
-
+      <div className="space-y-4 text-justify leading-7 text-base">
         <p>Dear Sir/Madam,</p>
 
         <p>
-          This is to certify and confirm the authenticity of the document(s) submitted by <strong>{fullName || '[Full Name]'}</strong> for the purpose of embassy attestation.
-        </p>
-
-        <div className="my-6">
-          <h3 className="font-semibold mb-3">Applicant Details:</h3>
-          <div className="ml-4 space-y-1">
-            <p><strong>Full Name:</strong> {fullName || '[Full Name]'}</p>
-            <p><strong>Passport Number:</strong> {passportNumber || '[Passport Number]'}</p>
-            <p><strong>Nationality:</strong> {nationality || '[Nationality]'}</p>
-            <p><strong>Date of Birth:</strong> {formattedDateOfBirth}</p>
-            <p><strong>Place of Birth:</strong> {placeOfBirth || '[Place of Birth]'}</p>
-            <p><strong>Father's Name:</strong> {fatherName || "[Father's Name]"}</p>
-            <p><strong>Mother's Name:</strong> {motherName || "[Mother's Name]"}</p>
-          </div>
-        </div>
-
-        <div className="my-6">
-          <h3 className="font-semibold mb-3">Document Details:</h3>
-          <div className="ml-4 space-y-1">
-            <p><strong>Document Type:</strong> {documentType || '[Document Type]'}</p>
-            {documentNumber && <p><strong>Document Number:</strong> {documentNumber}</p>}
-            <p><strong>Issuing Authority:</strong> {issuingAuthority || '[Issuing Authority]'}</p>
-            {documentIssueDate && <p><strong>Issue Date:</strong> {formattedDocumentIssueDate}</p>}
-          </div>
-        </div>
-
-        <div className="my-6">
-          <h3 className="font-semibold mb-3">Contact Information:</h3>
-          <div className="ml-4 space-y-1">
-            <p><strong>Address:</strong> {applicantAddress || '[Applicant Address]'}</p>
-            <p><strong>Phone:</strong> {phoneNumber || '[Phone Number]'}</p>
-            <p><strong>Email:</strong> {emailAddress || '[Email Address]'}</p>
-          </div>
-        </div>
-
-        <p>
-          The above-mentioned document is being submitted for attestation for the purpose of <strong>{purposeOfAttestation || '[Purpose of Attestation]'}</strong> in <strong>{destinationCountry || '[Destination Country]'}</strong>.
+          This is to certify that <strong>{fullName || '[Applicant Name]'}</strong>, bearing Passport Number <strong>{passportNumber || '[Passport Number]'}</strong>, 
+          is a citizen of <strong>{nationality || '[Nationality]'}</strong>, born on <strong>{dateOfBirth ? new Date(dateOfBirth).toLocaleDateString('en-GB') : '[Date of Birth]'}</strong> 
+          at <strong>{placeOfBirth || '[Place of Birth]'}</strong>.
         </p>
 
         <p>
-          We hereby confirm that the document submitted is genuine and has been issued by the competent authority. We request your kind consideration for the attestation of the said document.
+          Father's Name: <strong>{fatherName || '[Father Name]'}</strong><br/>
+          Mother's Name: <strong>{motherName || '[Mother Name]'}</strong>
         </p>
 
-        <p>We trust that this information is sufficient for your requirements and look forward to your favorable response.</p>
+        <p>
+          The following document(s) are being submitted for attestation:
+        </p>
 
-        <p>Thank you for your cooperation.</p>
+        <ul className="list-disc ml-8 space-y-2">
+          <li>
+            Document Type: <strong>{documentType || '[Document Type]'}</strong><br/>
+            Document Number: <strong>{documentNumber || '[Document Number]'}</strong><br/>
+            Issuing Authority: <strong>{issuingAuthority || '[Issuing Authority]'}</strong><br/>
+            Issue Date: <strong>{documentIssueDate ? new Date(documentIssueDate).toLocaleDateString('en-GB') : '[Issue Date]'}</strong>
+          </li>
+        </ul>
+
+        <p>
+          <strong>Applicant Details:</strong><br/>
+          Address: {applicantAddress || '[Applicant Address]'}<br/>
+          Phone: {phoneNumber || '[Phone Number]'}<br/>
+          Email: {emailAddress || '[Email Address]'}
+        </p>
+
+        <p>
+          The purpose of attestation is <strong>{purposeOfAttestation || '[Purpose of Attestation]'}</strong>.
+        </p>
+
+        <p>
+          We request you to kindly attest the above-mentioned documents and oblige.
+        </p>
+
+        <p>Thanking you,</p>
       </div>
 
-      {/* Date and Place */}
-      <div className="mt-12 mb-16">
-        <p><strong>Date:</strong> {formattedIssueDate}</p>
-        <p><strong>Place:</strong> {place || '[Place]'}</p>
-      </div>
-
-      {/* Signatory Section */}
-      <div className="flex justify-end items-end">
-        <div className="text-right">
-          {includeDigitalSignature && signatureUrl && (
-            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !signatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
+      {/* Date and signature */}
+      <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
+        <div>
+          <p>
+            <strong>Date:</strong> {issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]'}
+          </p>
+          <p>
+            <strong>Place:</strong> {place || '[Place]'}
+          </p>
+        </div>
+        
+        <div className="text-right mt-8 md:mt-0">
+          {includeDigitalSignature ? (
+            <div className="h-16 mb-4 flex justify-end">
+              {signatureUrl ? (
+                <div className="border-b border-gray-800 px-6">
+                  <img 
+                    src={signatureUrl}
+                    alt="Digital Signature" 
+                    className="h-12 object-contain"
+                    onError={(e) => handleImageError(e, "signature")}
+                  />
+                </div>
+              ) : (
+                <div className="border-b border-gray-800 px-6 py-3">
+                  <div className="h-8 w-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                    [Signature]
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-16 mb-4">
+              {/* Space for manual signature */}
             </div>
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>}
-          <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
-          <p>{signatoryDesignation || '[Designation]'}</p>
+          <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
+          <p>{signatoryDesignation || "[Designation]"}</p>
           <p>{institutionName || '[Institution Name]'}</p>
         </div>
       </div>
 
       {/* Seal */}
       {sealUrl && (
-        <div className="absolute bottom-32 left-16">
-          <img src={sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
+        <div className="absolute bottom-8 left-8">
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
         </div>
       )}
     </div>

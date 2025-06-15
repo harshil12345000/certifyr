@@ -83,6 +83,33 @@ export type Database = {
         }
         Relationships: []
       }
+      document_verifications: {
+        Row: {
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          verification_hash: string
+          verification_result: string
+          verified_at: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          verification_hash: string
+          verification_result: string
+          verified_at?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          verification_hash?: string
+          verification_result?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string | null
@@ -249,6 +276,45 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_verification_logs: {
+        Row: {
+          document_id: string | null
+          id: string
+          ip_address: unknown | null
+          organization_id: string | null
+          scanned_at: string
+          template_type: string | null
+          user_agent: string | null
+          user_id: string | null
+          verification_hash: string
+          verification_result: string
+        }
+        Insert: {
+          document_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string | null
+          scanned_at?: string
+          template_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          verification_hash: string
+          verification_result: string
+        }
+        Update: {
+          document_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string | null
+          scanned_at?: string
+          template_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          verification_hash?: string
+          verification_result?: string
+        }
+        Relationships: []
+      }
       user_announcement_reads: {
         Row: {
           announcement_id: string
@@ -353,6 +419,53 @@ export type Database = {
         }
         Relationships: []
       }
+      verified_documents: {
+        Row: {
+          document_data: Json
+          document_id: string | null
+          expires_at: string | null
+          generated_at: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string | null
+          template_type: string
+          user_id: string | null
+          verification_hash: string
+        }
+        Insert: {
+          document_data: Json
+          document_id?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          template_type: string
+          user_id?: string | null
+          verification_hash: string
+        }
+        Update: {
+          document_data?: Json
+          document_id?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          template_type?: string
+          user_id?: string | null
+          verification_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verified_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -361,6 +474,17 @@ export type Database = {
       get_user_organization_id: {
         Args: { user_id: string }
         Returns: string
+      }
+      get_user_organizations: {
+        Args: { check_user_id: string }
+        Returns: {
+          organization_id: string
+          role: string
+        }[]
+      }
+      is_organization_admin: {
+        Args: { check_user_id: string; check_org_id: string }
+        Returns: boolean
       }
       is_user_admin: {
         Args: Record<PropertyKey, never>

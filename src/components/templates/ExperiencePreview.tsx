@@ -1,14 +1,35 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature as SignatureIcon } from "lucide-react";
 import { useBranding } from "@/contexts/BrandingContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
+import { QRCode } from "./QRCode";
+import { generateDocumentQRCode } from "@/lib/qr-utils";
 
 export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) => {
   const { signatureUrl, sealUrl, organizationDetails, isLoading } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (data.fullName && data.designation && data.department) {
+        const url = await generateDocumentQRCode(
+          'experience-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -86,6 +107,12 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
             <p>{institutionNameToDisplay}</p>
           </div>
         </div>
+
+        {/* QR Code positioned at bottom right */}
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+        </div>
+
         {sealUrl && (
           <div className="absolute bottom-8 left-8">
             <img 
