@@ -90,63 +90,56 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
 
-        // Generate signed URLs for private storage access
-        for (const file of filesData) {
-          try {
-            const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-              .from('branding-assets')
-              .createSignedUrl(file.path, 3600); // 1 hour expiry
-
-            if (!signedUrlError && signedUrlData?.signedUrl) {
-              if (file.name === 'logo') newLogoUrl = signedUrlData.signedUrl;
-              if (file.name === 'seal') newSealUrl = signedUrlData.signedUrl;
-              if (file.name === 'signature') newSignatureUrl = signedUrlData.signedUrl;
-            }
-          } catch (error) {
-            console.error(`Failed to generate signed URL for ${file.name}:`, error);
+        filesData.forEach(file => {
+          if (file.path) {
+            const { data: urlData } = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+            const publicUrl = urlData.publicUrl;
+            
+            if (file.name === 'logo') newLogoUrl = publicUrl;
+            if (file.name === 'seal') newSealUrl = publicUrl;
+            if (file.name === 'signature') newSignatureUrl = publicUrl;
           }
-        }
-        
+        });
+
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
       }
-
     } catch (error) {
       console.error('Error loading branding data:', error);
-      setLogoUrl(null);
-      setSealUrl(null);
-      setSignatureUrl(null);
-      setOrganizationDetails(null);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      loadBrandingData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user]);
+    loadBrandingData();
+  }, [user?.id]);
 
   const refreshBranding = async () => {
     await loadBrandingData();
   };
 
   return (
-    <BrandingContext.Provider value={{ 
-      logoUrl, 
-      sealUrl, 
-      signatureUrl, 
-      organizationDetails, 
-      isLoading,
-      refreshBranding
-    }}>
+    <BrandingContext.Provider
+      value={{
+        logoUrl,
+        sealUrl,
+        signatureUrl,
+        organizationDetails,
+        isLoading,
+        refreshBranding,
+      }}
+    >
       {children}
     </BrandingContext.Provider>
   );
 }
 
-export const useBranding = () => useContext(BrandingContext);
+export const useBranding = () => {
+  const context = useContext(BrandingContext);
+  if (!context) {
+    throw new Error('useBranding must be used within a BrandingProvider');
+  }
+  return context;
+};

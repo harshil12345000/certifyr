@@ -1,16 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { BankVerificationPreviewProps } from '@/types/templates';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
-interface BrandingAssets {
-  logoUrl: string | null;
-  sealUrl: string | null;
-  signatureUrl: string | null;
-  organizationAddress: string | null;
-  organizationPhone: string | null;
-  organizationEmail: string | null;
-}
+import React from 'react';
+import { BankVerificationPreviewProps } from '@/types/templates';
+import { useBranding } from '@/contexts/BrandingContext';
 
 export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = ({ data }) => {
   const {
@@ -36,82 +27,7 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
     includeDigitalSignature,
   } = data;
 
-  const [branding, setBranding] = useState<BrandingAssets>({ 
-    logoUrl: null, 
-    sealUrl: null, 
-    signatureUrl: null,
-    organizationAddress: null,
-    organizationPhone: null,
-    organizationEmail: null
-  });
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchBranding = async () => {
-      if (!institutionName && !user?.id) {
-        console.warn("Bank Verification Preview: Institution name or user context not available for fetching branding.");
-        return;
-      }
-      try {
-        let orgIdToQuery: string | null = null;
-
-        if (institutionName) {
-          const { data: orgData, error: orgError } = await supabase
-            .from('organizations')
-            .select('id, address, phone, email')
-            .eq('name', institutionName)
-            .single();
-
-          if (orgError && orgError.code !== 'PGRST116') {
-            console.error("Error fetching organization by name:", orgError.message);
-          } else if (orgError?.code === 'PGRST116') {
-            console.warn(`Organization named "${institutionName}" not found.`);
-          }
-          
-          if (orgData) {
-            orgIdToQuery = orgData.id;
-            setBranding(prev => ({
-              ...prev,
-              organizationAddress: orgData.address,
-              organizationPhone: orgData.phone,
-              organizationEmail: orgData.email,
-            }));
-          }
-        }
-
-        if (orgIdToQuery) {
-          const { data: filesData, error: filesError } = await supabase
-            .from('branding_files')
-            .select('name, path')
-            .eq('organization_id', orgIdToQuery);
-
-          if (filesError) {
-            console.error("Error fetching branding files:", filesError);
-          } else if (filesData) {
-            let newLogoUrl: string | null = null;
-            let newSealUrl: string | null = null;
-            let newSignatureUrl: string | null = null;
-
-            filesData.forEach(file => {
-              const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-              const publicUrl = publicUrlRes.data?.publicUrl;
-              if (publicUrl) {
-                if (file.name === 'logo') newLogoUrl = publicUrl;
-                if (file.name === 'seal') newSealUrl = publicUrl;
-                if (file.name === 'signature') newSignatureUrl = publicUrl;
-              }
-            });
-            
-            setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
-          }
-        }
-
-      } catch (error) {
-        console.error("Unexpected error fetching branding:", error);
-      }
-    };
-    fetchBranding();
-  }, [institutionName, user]);
+  const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
 
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
   const formattedJoinDate = joinDate ? new Date(joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Join Date]';
@@ -131,20 +47,22 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
     }
   };
 
+  const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
+
   return (
     <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
       {/* Header */}
       <div className="text-center mb-8">
-        {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-16 mx-auto mb-4 object-contain" />
+        {logoUrl && (
+          <img src={logoUrl} alt={`${displayInstitutionName} Logo`} className="h-16 mx-auto mb-4 object-contain" />
         )}
         <h1 className="text-2xl font-bold text-blue-600 uppercase tracking-wide mb-2">
-          {institutionName || '[INSTITUTION NAME]'}
+          {displayInstitutionName}
         </h1>
         <p className="text-sm text-gray-600">
-          {branding.organizationAddress && `${branding.organizationAddress} • `}
-          {branding.organizationPhone && `${branding.organizationPhone} • `}
-          {branding.organizationEmail && branding.organizationEmail}
+          {organizationDetails?.address && `${organizationDetails.address} • `}
+          {organizationDetails?.phone && `${organizationDetails.phone} • `}
+          {organizationDetails?.email && organizationDetails.email}
         </p>
       </div>
 
@@ -216,22 +134,22 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && branding.signatureUrl && (
-            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+          {includeDigitalSignature && signatureUrl && (
+            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
             <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
             <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
-            <p className="text-sm">{institutionName || '[Institution Name]'}</p>
+            <p className="text-sm">{displayInstitutionName}</p>
           </div>
         </div>
       </div>
 
       {/* Seal */}
-      {branding.sealUrl && (
+      {sealUrl && (
         <div className="absolute bottom-32 left-16">
-          <img src={branding.sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
+          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
         </div>
       )}
     </div>
