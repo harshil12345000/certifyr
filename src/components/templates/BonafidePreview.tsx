@@ -46,7 +46,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -73,14 +73,6 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
         </p>
       </div>
 
-      {/* QR Code for verification */}
-      <div className="absolute top-8 right-8">
-        <div className="text-center">
-          <QRCode value={qrCodeUrl || ''} size={80} />
-          <p className="text-xs text-gray-500 mt-1">Verify Document</p>
-        </div>
-      </div>
-
       {/* Date and signature */}
       <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
         <div>
@@ -92,7 +84,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
           </p>
         </div>
         
-        <div className="text-right mt-8 md:mt-0">
+        <div className="text-right mt-8 md:mt-0 relative">
           {includeDigitalSignature ? (
             <div className="h-16 mb-4 flex justify-end">
               {signatureUrl ? (
@@ -119,7 +111,14 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
           )}
           <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
           <p>{signatoryDesignation || "[Designation]"}</p>
-          <p>{institutionName || '[Institution Name]'}</p>
+          <p className="mb-4">{institutionName || '[Institution Name]'}</p>
+          
+          {/* QR Code positioned below institution name */}
+          {qrCodeUrl && (
+            <div className="flex justify-end">
+              <QRCode value={qrCodeUrl} size={60} />
+            </div>
+          )}
         </div>
       </div>
 

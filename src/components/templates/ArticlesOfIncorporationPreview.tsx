@@ -1,7 +1,11 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { ArticlesOfIncorporationPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const ArticlesOfIncorporationPreview: React.FC<ArticlesOfIncorporationPreviewProps> = ({ data }) => {
   const {
@@ -19,7 +23,24 @@ export const ArticlesOfIncorporationPreview: React.FC<ArticlesOfIncorporationPre
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, sealUrl } = useBranding();
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (companyName && stateOfIncorporation && registeredAgent) {
+        const url = await generateDocumentQRCode(
+          'articles-incorporation-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id, companyName, stateOfIncorporation, registeredAgent]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -27,7 +48,7 @@ export const ArticlesOfIncorporationPreview: React.FC<ArticlesOfIncorporationPre
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -110,7 +131,14 @@ export const ArticlesOfIncorporationPreview: React.FC<ArticlesOfIncorporationPre
             <div className="border-b border-gray-400 w-64 mb-2"></div>
             <p className="text-sm"><strong>{signatoryName || '[Signatory Name]'}</strong></p>
             <p className="text-sm">{signatoryDesignation || '[Title]'}</p>
-            <p className="text-sm">Incorporator</p>
+            <p className="text-sm mb-4">Incorporator</p>
+            
+            {/* QR Code positioned below incorporator */}
+            {qrCodeUrl && (
+              <div className="flex justify-end">
+                <QRCode value={qrCodeUrl} size={60} />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,289 +1,139 @@
 
-import React, { useEffect, useState, useCallback } from "react";
-import { CharacterPreviewProps } from "@/types/templates";
-import { formatDate } from "@/lib/utils";
-import { Signature as SignatureIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useState, useEffect } from 'react';
+import { CharacterPreviewProps } from '@/types/templates';
+import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
-interface BrandingAssets {
-  logoUrl: string | null;
-  sealUrl: string | null;
-  signatureUrl: string | null;
-}
+export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
+  const {
+    fullName,
+    parentName,
+    address,
+    duration,
+    conduct,
+    institutionName,
+    date: issueDate,
+    place,
+    signatoryName,
+    signatoryDesignation,
+    includeDigitalSignature,
+  } = data;
 
-interface OrganizationInfo {
-  name: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-}
-
-export function CharacterPreview({ data }: CharacterPreviewProps) {
-  const [brandingAssets, setBrandingAssets] = useState<BrandingAssets>({ logoUrl: null, sealUrl: null, signatureUrl: null });
-  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo>({
-    name: data.institutionName || null,
-    address: null,
-    phone: null,
-    email: null,
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
   const { user } = useAuth();
-
-  const getAssetUrlWithCacheBust = useCallback((bucket: string, path: string | null) => {
-    if (!path) return null;
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-    return urlData.publicUrl;
-  }, []);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      let orgIdToQuery: string | null = null;
-      let fetchedOrgName: string | null = data.institutionName;
-
-      try {
-        if (data.institutionName) {
-          const { data: orgData, error: orgError } = await supabase
-            .from('organizations')
-            .select('id, name, address, phone, email')
-            .eq('name', data.institutionName)
-            .maybeSingle();
-
-          if (orgError && orgError.code !== 'PGRST116') {
-            console.error("Error fetching organization by name:", orgError.message);
-            toast({ title: "Error", description: `Could not fetch details for ${data.institutionName}.`, variant: "destructive" });
-          } else if (orgData) {
-            orgIdToQuery = orgData.id;
-            fetchedOrgName = orgData.name;
-            setOrganizationInfo({
-              name: orgData.name || data.institutionName,
-              address: orgData.address,
-              phone: orgData.phone,
-              email: orgData.email,
-            });
-          } else {
-            console.warn(`Organization named "${data.institutionName}" not found.`);
-            setOrganizationInfo({
-              name: data.institutionName,
-              address: null,
-              phone: null,
-              email: null,
-            });
-          }
-        } else if (user?.id) {
-          const { data: memberData, error: memberError } = await supabase
-            .from('organization_members')
-            .select('organization_id')
-            .eq('user_id', user.id)
-            .single();
-          
-          if (memberError || !memberData?.organization_id) {
-            console.warn("CharacterPreview: Could not determine organization ID from user or data.");
-          } else {
-            orgIdToQuery = memberData.organization_id;
-            const { data: orgData, error: orgError } = await supabase
-              .from('organizations')
-              .select('id, name, address, phone, email')
-              .eq('id', orgIdToQuery)
-              .single();
-            if (orgData) {
-              fetchedOrgName = orgData.name;
-              setOrganizationInfo({
-                name: orgData.name,
-                address: orgData.address,
-                phone: orgData.phone,
-                email: orgData.email,
-              });
-            } else {
-              console.warn("CharacterPreview: Organization details not found for user's org ID.");
-            }
-          }
-        } else {
-          console.warn("CharacterPreview: institutionName not provided and no user context. Cannot fetch specific org details.");
-        }
-
-        if (orgIdToQuery) {
-          const { data: filesData, error: filesError } = await supabase
-            .from('branding_files')
-            .select('name, path')
-            .eq('organization_id', orgIdToQuery);
-
-          if (filesError) {
-            console.error("Error fetching branding files:", filesError.message);
-            toast({ title: "Branding Error", description: "Could not load branding assets.", variant: "destructive" });
-            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-          } else if (filesData && filesData.length > 0) {
-            let newLogoUrl: string | null = null;
-            let newSealUrl: string | null = null;
-            let newSignatureUrl: string | null = null;
-
-            filesData.forEach(file => {
-              const publicUrl = getAssetUrlWithCacheBust('branding-assets', file.path);
-              if (publicUrl) {
-                if (file.name === 'logo') newLogoUrl = publicUrl;
-                if (file.name === 'seal') newSealUrl = publicUrl;
-                if (file.name === 'signature') newSignatureUrl = publicUrl;
-              }
-            });
-            setBrandingAssets({ logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl });
-          } else {
-            setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null }); 
-          }
-        } else {
-          setBrandingAssets({ logoUrl: null, sealUrl: null, signatureUrl: null });
-          if(data.institutionName || user?.id) { 
-            console.warn("CharacterPreview: No organization ID determined, cannot fetch branding assets.");
-          }
-        }
-        setOrganizationInfo(prev => ({...prev, name: fetchedOrgName || prev.name}));
-
-      } catch (err) {
-        console.error("Unexpected error loading assets for CharacterPreview:", err);
-        toast({
-          title: "Error loading assets",
-          description: "There was a problem loading your branding assets. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
+    const generateQR = async () => {
+      if (fullName && parentName && duration) {
+        const url = await generateDocumentQRCode(
+          'character-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
       }
     };
-    
-    loadData();
-  }, [data.institutionName, user, getAssetUrlWithCacheBust]);
-
-  const institutionNameToDisplay = organizationInfo.name || "[Institution Name]";
-  const contactInfo = {
-    address: organizationInfo.address,
-    phone: organizationInfo.phone,
-    email: organizationInfo.email
-  };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id, fullName, parentName, duration]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
-    (e.target as HTMLImageElement).style.display = 'none'; 
-    toast({
-      title: `Error loading ${type}`,
-      description: "The image could not be loaded. Try re-uploading it or check the path.",
-      variant: "destructive"
-    });
+    (e.target as HTMLImageElement).style.display = 'none';
   };
 
+  const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
+
   return (
-    <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
-      <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <div className="flex flex-col items-center">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading assets...</p>
-            </div>
-          </div>
-        )}
-        
-        {/* Letterhead */}
-        <div className="text-center border-b pb-4 mb-8">
-          {brandingAssets.logoUrl && (
-            <div className="flex justify-center mb-2">
-              <img 
-                src={brandingAssets.logoUrl}
-                alt="Organization Logo" 
-                className="h-16 object-contain"
-                onError={(e) => handleImageError(e, "logo")}
-              />
-            </div>
-          )}
-          <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">
-            {institutionNameToDisplay}
-          </h1>
-          {contactInfo.address && <p className="text-muted-foreground">{contactInfo.address}</p>}
-          {(contactInfo.phone || contactInfo.email) && (
-            <p className="text-muted-foreground">
-              {contactInfo.phone && contactInfo.phone}
-              {contactInfo.phone && contactInfo.email && ' • '}
-              {contactInfo.email && contactInfo.email}
-            </p>
-          )}
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
+      {/* Letterhead */}
+      <Letterhead />
+
+      {/* Certificate Title */}
+      <div className="text-center mb-8">
+        <div className="border border-gray-400 inline-block px-8 py-3">
+          <h2 className="text-lg font-bold uppercase tracking-widest">CHARACTER CERTIFICATE</h2>
         </div>
-
-        {/* Certificate title */}
-        <div className="text-center mb-8">
-          <h2 className="text-xl md:text-2xl font-bold border-2 border-gray-300 inline-block px-4 py-2">
-            CHARACTER CERTIFICATE
-          </h2>
-        </div>
-
-        {/* Certificate content */}
-        <div className="space-y-6 text-base md:text-lg leading-relaxed">
-          <p className="text-justify">
-            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>, {data.parentName ? `son/daughter of ${data.parentName}` : "son/daughter of [Parent's Name]"}, residing at <strong>{data.address || "[Address]"}</strong>, has been known to us for a period of <strong>{data.duration || "[Duration]"}</strong>.
-          </p>
-
-          <p className="text-justify">
-            During this period, we have observed {data.fullName ? "his/her" : "[his/her]"} conduct and character, and we are pleased to certify that {data.fullName ? "he/she" : "[he/she]"} is of <strong>{data.conduct || "[Conduct]"}</strong> character and moral standing.
-          </p>
-
-          <p className="text-justify">
-            {data.fullName ? "He/She" : "[He/She]"} has always conducted {data.fullName ? "himself/herself" : "[himself/herself]"} in a responsible and dignified manner. We have found {data.fullName ? "him/her" : "[him/her]"} to be honest, trustworthy, and of good character.
-          </p>
-
-          <p className="text-justify">
-            This certificate is issued upon {data.fullName ? "his/her" : "[his/her]"} request for official purposes.
-          </p>
-        </div>
-
-        {/* Date and signature */}
-        <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
-          <div>
-            <p>
-              <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
-            </p>
-            <p>
-              <strong>Place:</strong> {data.place || "[Place]"}
-            </p>
-          </div>
-          
-          <div className="text-right mt-8 md:mt-0">
-            {data.includeDigitalSignature ? (
-              <div className="h-16 mb-4 flex justify-end">
-                {brandingAssets.signatureUrl ? (
-                  <div className="border-b border-gray-800 px-6">
-                    <img 
-                      src={brandingAssets.signatureUrl}
-                      alt="Digital Signature" 
-                      className="h-12 object-contain"
-                      onError={(e) => handleImageError(e, "signature")}
-                    />
-                  </div>
-                ) : (
-                  <div className="border-b border-gray-800 px-6 py-3">
-                    <SignatureIcon className="h-8 w-8 text-primary" />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="h-16 mb-4">
-                {/* Space for manual signature */}
-              </div>
-            )}
-            <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
-            <p>{data.signatoryDesignation || "[Designation]"}</p>
-            <p>{institutionNameToDisplay}</p>
-          </div>
-        </div>
-        {brandingAssets.sealUrl && (
-          <div className="absolute bottom-8 left-8">
-            <img 
-              src={brandingAssets.sealUrl}
-              alt="Organization Seal" 
-              className="h-20 w-20 object-contain opacity-75"
-              onError={(e) => handleImageError(e, "seal")}
-            />
-          </div>
-        )}
       </div>
+
+      {/* Certificate Content */}
+      <div className="space-y-4 text-justify leading-7 text-base">
+        <p>
+          This is to certify that <strong>{fullName || '[Student Name]'}</strong>, 
+          {parentName && ` son/daughter of ${parentName},`} 
+          {address && ` residing at ${address},`} has been known to me for <strong>{duration || '[Duration]'}</strong>.
+        </p>
+
+        <p>
+          During this period, I have found {fullName ? 'their' : '[their]'} character and conduct to be <strong>{conduct || '[Character/Conduct]'}</strong>. 
+          {fullName ? 'They have' : '[They have]'} always been honest, disciplined, and of good moral character.
+        </p>
+
+        <p>
+          I have no hesitation in recommending {fullName || '[Student Name]'} for any position or opportunity they may seek.
+        </p>
+      </div>
+
+      {/* Date and signature */}
+      <div className="flex justify-between items-end mt-16">
+        <div>
+          <p><strong>Date:</strong> {formattedIssueDate}</p>
+          <p><strong>Place:</strong> {place || '[Place]'}</p>
+        </div>
+        
+        <div className="text-right">
+          {includeDigitalSignature ? (
+            <div className="h-16 mb-4 flex justify-end">
+              {signatureUrl ? (
+                <div className="border-b border-gray-800 px-6">
+                  <img 
+                    src={signatureUrl}
+                    alt="Digital Signature" 
+                    className="h-12 object-contain"
+                    onError={(e) => handleImageError(e, "signature")}
+                  />
+                </div>
+              ) : (
+                <div className="border-b border-gray-800 px-6 py-3">
+                  <div className="h-8 w-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                    [Signature]
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-16 mb-4">
+              {/* Space for manual signature */}
+            </div>
+          )}
+          <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
+          <p>{signatoryDesignation || "[Designation]"}</p>
+          <p className="mb-4">{institutionName || '[Institution Name]'}</p>
+          
+          {/* QR Code positioned below institution name */}
+          {qrCodeUrl && (
+            <div className="flex justify-end">
+              <QRCode value={qrCodeUrl} size={60} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Seal */}
+      {sealUrl && (
+        <div className="absolute bottom-8 left-8">
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
+        </div>
+      )}
     </div>
   );
-}
+};

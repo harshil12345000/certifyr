@@ -1,7 +1,11 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { StockPurchaseAgreementPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPreviewProps> = ({ data }) => {
   const {
@@ -22,7 +26,24 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, sealUrl } = useBranding();
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (companyName && seller && buyer) {
+        const url = await generateDocumentQRCode(
+          'stock-purchase-agreement-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id, companyName, seller, buyer]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -30,7 +51,7 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -98,6 +119,27 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
           <div>
             <p className="text-sm"><strong>Date:</strong> {issueDate ? new Date(issueDate).toLocaleDateString() : '[Date]'}</p>
             <p className="text-sm"><strong>Place:</strong> {data.place || '[Place]'}</p>
+          </div>
+          
+          <div className="text-right">
+            {includeDigitalSignature && signatureUrl && (
+              <img 
+                src={signatureUrl}
+                alt="Digital Signature" 
+                className="h-16 mb-2 object-contain ml-auto"
+                onError={(e) => handleImageError(e, "signature")}
+              />
+            )}
+            <p className="text-sm"><strong>{signatoryName || '[Signatory Name]'}</strong></p>
+            <p className="text-sm">{signatoryDesignation || '[Title]'}</p>
+            <p className="text-sm mb-4">{data.place || '[Institution Name]'}</p>
+            
+            {/* QR Code positioned below institution name */}
+            {qrCodeUrl && (
+              <div className="flex justify-end">
+                <QRCode value={qrCodeUrl} size={60} />
+              </div>
+            )}
           </div>
         </div>
       </div>
