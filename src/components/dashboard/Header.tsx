@@ -134,107 +134,107 @@ export function Header() {
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="hidden md:block w-64"></div>
-        <div className="flex flex-1 items-center justify-between">
-          <div className="flex items-center space-x-2 md:w-72">
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex items-center space-x-2 w-full max-w-2xl">
             <Search className="h-4 w-4 text-muted-foreground" />
             <div 
-              className="flex h-9 w-full md:w-64 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background cursor-pointer items-center gap-2 text-muted-foreground hover:bg-accent/50 transition-colors"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background cursor-pointer items-center gap-2 text-muted-foreground hover:bg-accent/50 transition-colors"
               onClick={() => setOpen(true)}
             >
-              <span>Search templates, documents...</span>
+              <span>Search documents...</span>
               <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                 <span className="text-xs">⌘</span>K
               </kbd>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  {unread.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {loadingAnnouncements ? (
-                  <div className="py-8 text-center text-muted-foreground">Loading...</div>
-                ) : announcements.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <p className="text-sm text-muted-foreground">No notifications yet</p>
-                  </div>
-                ) : (
-                  announcements.map(a => (
-                    <DropdownMenuItem
-                      key={a.id}
-                      className="cursor-pointer p-3 relative"
-                      onClick={() => markAsRead(a.id)}
-                    >
-                      <div>
-                        <p className="font-medium flex items-center">
-                          {a.title}
-                          {unread.includes(a.id) && (
-                            <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
-                          )}
-                        </p>
-                        <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+        </div>
+        <div className="flex items-center gap-2 w-64 justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unread.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {loadingAnnouncements ? (
+                <div className="py-8 text-center text-muted-foreground">Loading...</div>
+              ) : announcements.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-sm text-muted-foreground">No notifications yet</p>
+                </div>
+              ) : (
+                announcements.map(a => (
+                  <DropdownMenuItem
+                    key={a.id}
+                    className="cursor-pointer p-3 relative"
+                    onClick={() => markAsRead(a.id)}
+                  >
+                    <div>
+                      <p className="font-medium flex items-center">
+                        {a.title}
+                        {unread.includes(a.id) && (
+                          <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
+                        )}
+                      </p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-3">
-                  <Avatar className="h-7 w-7">
-                    <AvatarFallback className="text-xs">
-                      {user?.email ? getInitials(user.email) : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden md:block text-sm">{user?.email}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="flex items-center cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="flex items-center cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin" className="flex items-center cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Admin Panel</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={handleSignOut}
-                  className="cursor-pointer text-red-600 focus:text-red-600"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 px-3">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="text-xs">
+                    {user?.email ? getInitials(user.email) : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden md:block text-sm">{user?.email}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin" className="flex items-center cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Admin Panel</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="cursor-pointer text-red-600 focus:text-red-600"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search templates and documents..." />
+        <CommandInput placeholder="Search documents..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Templates">
