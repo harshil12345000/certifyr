@@ -1,7 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BankVerificationPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = ({ data }) => {
   const {
@@ -28,6 +31,23 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
   } = data;
 
   const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (fullName && bankName && accountNumber) {
+        const url = await generateDocumentQRCode(
+          'bank-verification-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.name, user?.id, fullName, bankName, accountNumber]);
 
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
   const formattedJoinDate = joinDate ? new Date(joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Join Date]';
@@ -50,7 +70,7 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
   const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed relative">
       {/* Header */}
       <div className="text-center mb-8">
         {logoUrl && (
@@ -144,6 +164,11 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
             <p className="text-sm">{displayInstitutionName}</p>
           </div>
         </div>
+      </div>
+
+      {/* QR Code positioned at bottom right */}
+      <div className="absolute bottom-8 right-8">
+        <QRCode value={qrCodeUrl || ''} size={80} />
       </div>
 
       {/* Seal */}

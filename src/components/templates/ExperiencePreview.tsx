@@ -42,14 +42,6 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
         {/* Letterhead */}
         <Letterhead />
 
-        {/* QR Code for verification */}
-        <div className="absolute top-8 right-8">
-          <div className="text-center">
-            <QRCode value={qrCodeUrl || ''} size={80} />
-            <p className="text-xs text-gray-500 mt-1">Verify Document</p>
-          </div>
-        </div>
-
         {/* Certificate title */}
         <div className="text-center mb-8">
           <h2 className="text-xl md:text-2xl font-bold border-2 border-gray-300 inline-block px-4 py-2">
@@ -115,6 +107,12 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
             <p>{institutionNameToDisplay}</p>
           </div>
         </div>
+
+        {/* QR Code positioned at bottom right */}
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+        </div>
+
         {sealUrl && (
           <div className="absolute bottom-8 left-8">
             <img 

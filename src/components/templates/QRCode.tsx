@@ -29,14 +29,7 @@ export const QRCode: React.FC<QRCodeProps> = ({
   }, [value, size]);
 
   if (!value) {
-    return (
-      <div 
-        className={`border border-dashed border-gray-300 flex items-center justify-center ${className}`}
-        style={{ width: size, height: size }}
-      >
-        <span className="text-xs text-gray-400">QR Code</span>
-      </div>
-    );
+    return null;
   }
 
   return (

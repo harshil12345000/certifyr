@@ -276,6 +276,45 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_verification_logs: {
+        Row: {
+          document_id: string | null
+          id: string
+          ip_address: unknown | null
+          organization_id: string | null
+          scanned_at: string
+          template_type: string | null
+          user_agent: string | null
+          user_id: string | null
+          verification_hash: string
+          verification_result: string
+        }
+        Insert: {
+          document_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string | null
+          scanned_at?: string
+          template_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          verification_hash: string
+          verification_result: string
+        }
+        Update: {
+          document_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string | null
+          scanned_at?: string
+          template_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          verification_hash?: string
+          verification_result?: string
+        }
+        Relationships: []
+      }
       user_announcement_reads: {
         Row: {
           announcement_id: string

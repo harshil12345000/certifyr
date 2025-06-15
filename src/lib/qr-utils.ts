@@ -76,3 +76,27 @@ export const generateDocumentQRCode = async (
     return null;
   }
 };
+
+export const logQRVerification = async (
+  verificationHash: string,
+  result: 'verified' | 'not_found' | 'expired',
+  documentId?: string,
+  templateType?: string,
+  organizationId?: string,
+  userId?: string
+): Promise<void> => {
+  try {
+    await supabase.from('qr_verification_logs').insert({
+      verification_hash: verificationHash,
+      verification_result: result,
+      document_id: documentId,
+      template_type: templateType,
+      organization_id: organizationId,
+      user_id: userId,
+      ip_address: '0.0.0.0', // Would be handled server-side in production
+      user_agent: navigator.userAgent,
+    });
+  } catch (error) {
+    console.error('Error logging QR verification:', error);
+  }
+};

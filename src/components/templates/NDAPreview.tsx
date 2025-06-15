@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NDAPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -56,14 +55,6 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
     <div className="a4-document p-8 bg-white text-gray-800 font-serif text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
-
-      {/* QR Code for verification */}
-      <div className="absolute top-8 right-8">
-        <div className="text-center">
-          <QRCode value={qrCodeUrl || ''} size={80} />
-          <p className="text-xs text-gray-500 mt-1">Verify Document</p>
-        </div>
-      </div>
 
       {/* Document Title */}
       <div className="text-center mb-8">
@@ -161,6 +152,11 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* QR Code positioned at bottom right */}
+      <div className="absolute bottom-8 right-8">
+        <QRCode value={qrCodeUrl || ''} size={80} />
       </div>
 
       {/* Seal */}

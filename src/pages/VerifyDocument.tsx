@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle, AlertTriangle, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { logQRVerification } from '@/lib/qr-utils';
+import { VerificationModal } from '@/components/templates/VerificationModal';
 
 interface VerifiedDocument {
   id: string;
@@ -15,6 +17,7 @@ interface VerifiedDocument {
   expires_at: string | null;
   is_active: boolean;
   organization_id: string | null;
+  user_id: string | null;
 }
 
 const VerifyDocument = () => {
@@ -22,23 +25,26 @@ const VerifyDocument = () => {
   const [document, setDocument] = useState<VerifiedDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
 
   useEffect(() => {
     const verifyDocument = async () => {
       if (!hash) {
+        const result = {
+          isValid: false,
+          status: 'not_found' as const,
+          message: 'Invalid verification link'
+        };
+        setVerificationResult(result);
         setError('Invalid verification link');
         setLoading(false);
+        setShowModal(true);
+        await logQRVerification(hash || '', 'not_found');
         return;
       }
 
       try {
-        // Record verification attempt
-        await supabase.from('document_verifications').insert({
-          verification_hash: hash,
-          verification_result: 'pending',
-          ip_address: '0.0.0.0', // Would be set by server in real implementation
-        });
-
         // Fetch document
         const { data, error: fetchError } = await supabase
           .from('verified_documents')
@@ -47,21 +53,60 @@ const VerifyDocument = () => {
           .single();
 
         if (fetchError || !data) {
+          const result = {
+            isValid: false,
+            status: 'not_found' as const,
+            message: 'Document not found or verification failed'
+          };
+          setVerificationResult(result);
           setError('Document not found or verification failed');
-          await supabase
-            .from('document_verifications')
-            .update({ verification_result: 'failed' })
-            .eq('verification_hash', hash);
+          await logQRVerification(hash, 'not_found');
         } else {
           setDocument(data);
-          await supabase
-            .from('document_verifications')
-            .update({ verification_result: 'success' })
-            .eq('verification_hash', hash);
+          const isExpired = data.expires_at && new Date(data.expires_at) < new Date();
+          const isActive = data.is_active;
+
+          if (isExpired) {
+            const result = {
+              isValid: false,
+              status: 'expired' as const,
+              document: data,
+              message: 'This document has expired'
+            };
+            setVerificationResult(result);
+            await logQRVerification(hash, 'expired', data.id, data.template_type, data.organization_id, data.user_id);
+          } else if (!isActive) {
+            const result = {
+              isValid: false,
+              status: 'not_found' as const,
+              document: data,
+              message: 'This document is no longer active'
+            };
+            setVerificationResult(result);
+            await logQRVerification(hash, 'not_found', data.id, data.template_type, data.organization_id, data.user_id);
+          } else {
+            const result = {
+              isValid: true,
+              status: 'verified' as const,
+              document: data,
+              message: 'Document is valid and verified'
+            };
+            setVerificationResult(result);
+            await logQRVerification(hash, 'verified', data.id, data.template_type, data.organization_id, data.user_id);
+          }
         }
+        setShowModal(true);
       } catch (err) {
         console.error('Verification error:', err);
+        const result = {
+          isValid: false,
+          status: 'not_found' as const,
+          message: 'An error occurred during verification'
+        };
+        setVerificationResult(result);
         setError('An error occurred during verification');
+        setShowModal(true);
+        await logQRVerification(hash, 'not_found');
       } finally {
         setLoading(false);
       }
@@ -159,6 +204,12 @@ const VerifyDocument = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <VerificationModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        verificationResult={verificationResult}
+      />
     </div>
   );
 };
