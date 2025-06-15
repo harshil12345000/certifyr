@@ -34,17 +34,33 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
   const loadBrandingData = async () => {
-    if (!user?.id || authLoading) {
-      console.log('User not available or auth loading, skipping branding load');
-      setIsLoading(false);
+    // Prevent multiple simultaneous loads
+    if (isLoading || hasAttemptedLoad) {
+      return;
+    }
+
+    if (authLoading) {
+      console.log('Auth still loading, waiting...');
+      return;
+    }
+
+    if (!user?.id) {
+      console.log('No user available, clearing branding data');
+      setLogoUrl(null);
+      setSealUrl(null);
+      setSignatureUrl(null);
+      setOrganizationDetails(null);
+      setHasAttemptedLoad(true);
       return;
     }
 
     console.log('Loading branding data for user:', user.id);
     setIsLoading(true);
+    setHasAttemptedLoad(true);
     
     try {
       // Step 1: Get user's organization_id
@@ -52,15 +68,23 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (memberError || !memberData?.organization_id) {
+      if (memberError) {
+        console.error('Error fetching organization membership:', memberError.message);
+        setLogoUrl(null);
+        setSealUrl(null);
+        setSignatureUrl(null);
+        setOrganizationDetails(null);
+        return;
+      }
+
+      if (!memberData?.organization_id) {
         console.log('No organization found for user, clearing branding data');
         setLogoUrl(null);
         setSealUrl(null);
         setSignatureUrl(null);
         setOrganizationDetails(null);
-        setIsLoading(false);
         return;
       }
       
@@ -72,7 +96,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .from('organizations')
         .select('name, address, phone, email')
         .eq('id', organizationId)
-        .single();
+        .maybeSingle();
 
       if (orgError) {
         console.error('Error fetching organization details:', orgError.message);
@@ -134,13 +158,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Only load if user is available and auth is not loading
-    if (!authLoading) {
+    // Reset attempt flag when user changes
+    setHasAttemptedLoad(false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    // Only load if auth is not loading and we haven't attempted yet
+    if (!authLoading && !hasAttemptedLoad) {
       loadBrandingData();
     }
-  }, [user?.id, authLoading]);
+  }, [authLoading, hasAttemptedLoad, user?.id]);
 
   const refreshBranding = async () => {
+    setHasAttemptedLoad(false);
     await loadBrandingData();
   };
 
