@@ -90,15 +90,22 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
 
-        filesData.forEach(file => {
-          const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-          const publicUrl = publicUrlRes.data?.publicUrl;
-          if (publicUrl) {
-            if (file.name === 'logo') newLogoUrl = publicUrl;
-            if (file.name === 'seal') newSealUrl = publicUrl;
-            if (file.name === 'signature') newSignatureUrl = publicUrl;
+        // Generate signed URLs for private storage access
+        for (const file of filesData) {
+          try {
+            const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+              .from('branding-assets')
+              .createSignedUrl(file.path, 3600); // 1 hour expiry
+
+            if (!signedUrlError && signedUrlData?.signedUrl) {
+              if (file.name === 'logo') newLogoUrl = signedUrlData.signedUrl;
+              if (file.name === 'seal') newSealUrl = signedUrlData.signedUrl;
+              if (file.name === 'signature') newSignatureUrl = signedUrlData.signedUrl;
+            }
+          } catch (error) {
+            console.error(`Failed to generate signed URL for ${file.name}:`, error);
           }
-        });
+        }
         
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);

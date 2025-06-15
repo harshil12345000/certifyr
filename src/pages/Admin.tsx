@@ -1,3 +1,4 @@
+
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -134,14 +135,23 @@ const AdminPage = () => {
       if (filesError) throw filesError;
       if (filesData) {
         const previews: BrandingFilePreview = { logoUrl: null, sealUrl: null, signatureUrl: null };
-        filesData.forEach(file => {
-          const publicUrlResult = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-          if (publicUrlResult.data?.publicUrl) {
-            if (file.name === 'logo') previews.logoUrl = publicUrlResult.data.publicUrl;
-            if (file.name === 'seal') previews.sealUrl = publicUrlResult.data.publicUrl;
-            if (file.name === 'signature') previews.signatureUrl = publicUrlResult.data.publicUrl;
+        
+        // Generate signed URLs for private storage access
+        for (const file of filesData) {
+          try {
+            const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+              .from('branding-assets')
+              .createSignedUrl(file.path, 3600); // 1 hour expiry
+
+            if (!signedUrlError && signedUrlData?.signedUrl) {
+              if (file.name === 'logo') previews.logoUrl = signedUrlData.signedUrl;
+              if (file.name === 'seal') previews.sealUrl = signedUrlData.signedUrl;
+              if (file.name === 'signature') previews.signatureUrl = signedUrlData.signedUrl;
+            }
+          } catch (error) {
+            console.error(`Failed to generate signed URL for ${file.name}:`, error);
           }
-        });
+        }
         setBrandingPreviews(previews);
       }
     } catch (error) {
@@ -157,10 +167,8 @@ const AdminPage = () => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>, fileType: keyof BrandingFileState) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      console.log("Selected file for", fileType, file);
       setBrandingFiles(prev => ({ ...prev, [fileType]: file }));
       const objectUrl = URL.createObjectURL(file);
-      console.log("Object URL for preview:", objectUrl);
       setBrandingPreviews(prev => ({ ...prev, [`${fileType}Url`]: objectUrl }));
     }
   };
@@ -192,7 +200,6 @@ const AdminPage = () => {
 
       // Handle branding files if user has organization
       if (organizationId) {
-        // ... keep existing code (branding file upload logic)
         for (const key of Object.keys(brandingFiles) as Array<keyof BrandingFileState>) {
           const file = brandingFiles[key];
           if (file) {
@@ -423,11 +430,7 @@ const AdminPage = () => {
                     const previewSrc = brandingFiles[type]
                       ? URL.createObjectURL(brandingFiles[type]!)
                       : brandingPreviews[`${type}Url` as keyof BrandingFilePreview] || undefined;
-                    console.log("Rendering preview for", type, {
-                      brandingFile: brandingFiles[type],
-                      brandingPreviewUrl: brandingPreviews[`${type}Url` as keyof BrandingFilePreview],
-                      previewSrc,
-                    });
+                    
                     return (
                       <div key={type} className="space-y-2">
                         <Label htmlFor={type} className="capitalize flex items-center">
