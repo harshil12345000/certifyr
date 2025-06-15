@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,10 +38,10 @@ const Settings = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Use mock data for profile info
+    // Set email from user but leave name fields empty
     setFormData({
-      firstName: "John",
-      lastName: "Doe", 
+      firstName: "",
+      lastName: "", 
       email: user.email || "",
       jobTitle: "Administrator",
       bio: "",
