@@ -44,26 +44,19 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
     const timestamp = Date.now();
     const filePath = `${organizationId}/${fileName}-${timestamp}.${fileExtension}`;
     
-    // Check if file with same name exists and delete it first
-    const { data: existingFiles } = await supabase
+    // First, check if there's an existing file with the same name
+    const { data: existingFile } = await supabase
       .from('branding_files')
       .select('id, path')
       .eq('organization_id', organizationId)
-      .eq('name', fileName);
+      .eq('name', fileName)
+      .maybeSingle();
 
-    if (existingFiles && existingFiles.length > 0) {
-      // Delete old files from storage
-      const pathsToDelete = existingFiles.map(f => f.path);
+    // If there's an existing file, delete it from storage first
+    if (existingFile) {
       await supabase.storage
         .from('branding-assets')
-        .remove(pathsToDelete);
-
-      // Delete old records from database
-      await supabase
-        .from('branding_files')
-        .delete()
-        .eq('organization_id', organizationId)
-        .eq('name', fileName);
+        .remove([existingFile.path]);
     }
     
     // Upload new file to storage
@@ -81,22 +74,24 @@ export async function uploadBrandingFile(file: File): Promise<BrandingFile> {
       );
     }
 
-    // Create database record
+    // Use upsert to insert or update database record
     const { data: fileData, error: dbError } = await supabase
       .from('branding_files')
-      .insert([
+      .upsert([
         {
           name: fileName,
           path: uploadData.path,
           organization_id: organizationId,
           uploaded_by: (await supabase.auth.getUser()).data.user?.id
-        },
-      ])
+        }
+      ], {
+        onConflict: 'organization_id,name'
+      })
       .select()
       .single();
 
     if (dbError) {
-      // Clean up uploaded file if database insert fails
+      // Clean up uploaded file if database upsert fails
       await supabase.storage.from('branding-assets').remove([filePath]);
       throw new BrandingError(
         `Failed to save file metadata: ${dbError.message}`,
