@@ -34,10 +34,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
+  console.log('BrandingProvider state:', { 
+    user: !!user, 
+    authLoading, 
+    isLoading, 
+    hasInitialized,
+    userEmail: user?.email 
+  });
+
   const clearBrandingData = useCallback(() => {
+    console.log('Clearing branding data');
     setLogoUrl(null);
     setSealUrl(null);
     setSignatureUrl(null);
@@ -45,8 +54,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadBrandingData = useCallback(async () => {
-    // Prevent multiple calls or calls when already loading
-    if (isLoading || !user?.id) {
+    if (!user?.id || isLoading) {
+      console.log('Skipping branding load:', { hasUser: !!user?.id, isLoading });
       return;
     }
 
@@ -54,7 +63,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Step 1: Get user's organization_id
+      // Get user's organization_id with better error handling
       const { data: memberData, error: memberError } = await supabase
         .from('organization_members')
         .select('organization_id')
@@ -76,7 +85,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       const organizationId = memberData.organization_id;
       console.log('Found organization:', organizationId);
 
-      // Step 2: Fetch organization details
+      // Fetch organization details
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('name, address, phone, email')
@@ -87,6 +96,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching organization details:', orgError.message);
         setOrganizationDetails(null);
       } else if (orgData) {
+        console.log('Organization details loaded:', orgData);
         setOrganizationDetails({
           name: orgData.name,
           address: orgData.address,
@@ -95,7 +105,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      // Step 3: Fetch branding files
+      // Fetch branding files
       const { data: filesData, error: filesError } = await supabase
         .from('branding_files')
         .select('name, path')
@@ -107,6 +117,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setSealUrl(null);
         setSignatureUrl(null);
       } else if (filesData && filesData.length > 0) {
+        console.log('Branding files loaded:', filesData);
         let newLogoUrl: string | null = null;
         let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
@@ -142,15 +153,17 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   // Initialize when auth is ready
   useEffect(() => {
     if (authLoading) {
-      console.log('Auth still loading...');
+      console.log('Auth still loading, waiting...');
       return;
     }
 
-    if (initialized) {
+    if (hasInitialized) {
+      console.log('Already initialized, skipping');
       return;
     }
 
-    setInitialized(true);
+    console.log('Initializing branding context');
+    setHasInitialized(true);
 
     if (!user?.id) {
       console.log('No user found, clearing branding data');
@@ -161,10 +174,11 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     // Load branding data
     loadBrandingData();
-  }, [authLoading, user?.id, initialized, loadBrandingData, clearBrandingData]);
+  }, [authLoading, user?.id, hasInitialized, loadBrandingData, clearBrandingData]);
 
   const refreshBranding = useCallback(async () => {
     if (!user?.id) return;
+    console.log('Refreshing branding data');
     await loadBrandingData();
   }, [user?.id, loadBrandingData]);
 
