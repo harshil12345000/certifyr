@@ -1,5 +1,6 @@
 
 
+
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -243,16 +244,17 @@ export interface AddressProofData {
 // Corporate template types
 export interface ArticlesOfIncorporationData {
   companyName: string;
-  incorporationState: string;
-  incorporationDate: string;
-  businessPurpose: string;
-  registeredAgentName: string;
-  registeredAgentAddress: string;
+  stateOfIncorporation: string;
+  registeredAgent: string;
+  registeredOffice: string;
+  purpose: string;
   authorizedShares: string;
-  parValue: string;
-  incorporatorName: string;
-  incorporatorAddress: string;
-  directorNames: string;
+  shareClasses: string;
+  incorporators: Array<{
+    name: string;
+    address: string;
+    place?: string;
+  }>;
   date: string;
   place: string;
   signatoryName: string;
@@ -262,14 +264,32 @@ export interface ArticlesOfIncorporationData {
 
 export interface CorporateBylawsData {
   companyName: string;
-  incorporationState: string;
-  incorporationDate: string;
-  fiscalYearEnd: string;
-  boardMeetingFrequency: string;
-  shareholderMeetingDate: string;
-  votingRights: string;
-  dividendPolicy: string;
-  amendmentProcess: string;
+  stateOfIncorporation: string;
+  registeredAgent: string;
+  registeredOffice: string;
+  directors: {
+    numberOfDirectors: string;
+    directorTermLength: string;
+    boardMeetingFrequency: string;
+  };
+  officers: {
+    officerTitles: string;
+  };
+  shareholders: any;
+  shareClasses: {
+    dividendPolicy: string;
+  };
+  meetings: {
+    shareholderMeetingDate: string;
+    fiscalYearEnd: string;
+  };
+  voting: {
+    votingRights: string;
+  };
+  indemnification: any;
+  amendments: {
+    amendmentProcess: string;
+  };
   date: string;
   place: string;
   signatoryName: string;
@@ -279,15 +299,13 @@ export interface CorporateBylawsData {
 
 export interface FoundersAgreementData {
   companyName: string;
-  founderNames: string;
-  foundingDate: string;
-  businessDescription: string;
+  founders: string;
   equityDistribution: string;
-  rolesResponsibilities: string;
   vestingSchedule: string;
+  rolesAndResponsibilities: string;
   intellectualProperty: string;
-  nonCompeteClause: string;
-  disputeResolution: string;
+  nonCompete: string;
+  termination: any;
   governingLaw: string;
   date: string;
   place: string;
@@ -297,20 +315,28 @@ export interface FoundersAgreementData {
 }
 
 export interface StockPurchaseAgreementData {
-  purchaserName: string;
-  purchaserAddress: string;
-  sellerName: string;
-  sellerAddress: string;
   companyName: string;
-  shareClass: string;
-  numberOfShares: string;
-  sharePrice: string;
-  totalPurchasePrice: string;
+  seller: {
+    name: string;
+    address: string;
+  };
+  buyer: {
+    name: string;
+    address: string;
+  };
+  shares: {
+    class: string;
+    quantity: string;
+  };
+  pricePerShare: string;
+  totalConsideration: string;
   closingDate: string;
-  restrictionsOnTransfer: string;
-  representationsWarranties: string;
+  representations: string;
+  warranties: string;
+  covenants: {
+    restrictionsOnTransfer: string;
+  };
   governingLaw: string;
-  effectiveDate: string;
   date: string;
   place: string;
   signatoryName: string;
@@ -452,4 +478,25 @@ export interface OfferLetterPreviewProps {
 
 export interface AddressProofPreviewProps {
   data: AddressProofData;
+}
+
+// Corporate template preview props
+export interface ArticlesOfIncorporationPreviewProps {
+  data: ArticlesOfIncorporationData;
+}
+
+export interface CorporateBylawsPreviewProps {
+  data: CorporateBylawsData;
+}
+
+export interface FoundersAgreementPreviewProps {
+  data: FoundersAgreementData;
+}
+
+export interface StockPurchaseAgreementPreviewProps {
+  data: StockPurchaseAgreementData;
+}
+
+export interface NDAPreviewProps {
+  data: NDAData;
 }
