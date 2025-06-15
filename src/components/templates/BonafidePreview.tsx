@@ -1,7 +1,11 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { BonafidePreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { generateDocumentQRCode } from '@/lib/qr-utils';
 
 export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
   const {
@@ -18,7 +22,24 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, sealUrl } = useBranding();
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (studentName && course && department) {
+        const url = await generateDocumentQRCode(
+          'bonafide-1',
+          data,
+          organizationDetails?.id,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.id, user?.id, studentName, course, department]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -51,6 +72,14 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
         <p>
           I wish {studentName || '[Student Name]'} all success in {studentName || '[Student Name]'} future endeavors.
         </p>
+      </div>
+
+      {/* QR Code for verification */}
+      <div className="absolute top-8 right-8">
+        <div className="text-center">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+          <p className="text-xs text-gray-500 mt-1">Verify Document</p>
+        </div>
       </div>
 
       {/* Date and signature */}

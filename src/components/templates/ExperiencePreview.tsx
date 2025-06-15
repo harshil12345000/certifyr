@@ -1,14 +1,35 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
 import { Signature as SignatureIcon } from "lucide-react";
 import { useBranding } from "@/contexts/BrandingContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
+import { QRCode } from "./QRCode";
+import { generateDocumentQRCode } from "@/lib/qr-utils";
 
 export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) => {
   const { signatureUrl, sealUrl, organizationDetails, isLoading } = useBranding();
+  const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";
+
+  useEffect(() => {
+    const generateQR = async () => {
+      if (data.fullName && data.designation && data.department) {
+        const url = await generateDocumentQRCode(
+          'experience-1',
+          data,
+          organizationDetails?.id,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
+    generateQR();
+  }, [data, organizationDetails?.id, user?.id]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -20,6 +41,14 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
       <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
         {/* Letterhead */}
         <Letterhead />
+
+        {/* QR Code for verification */}
+        <div className="absolute top-8 right-8">
+          <div className="text-center">
+            <QRCode value={qrCodeUrl || ''} size={80} />
+            <p className="text-xs text-gray-500 mt-1">Verify Document</p>
+          </div>
+        </div>
 
         {/* Certificate title */}
         <div className="text-center mb-8">

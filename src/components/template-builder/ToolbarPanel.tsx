@@ -1,109 +1,83 @@
-
-import { Button } from '@/components/ui/button';
-import { ElementType as BuilderElementType } from '@/types/template-builder'; // Renamed to avoid conflict if ElementType is used locally
-import { defaultElementStyle } from '@/lib/defaults'; // defaultElementStyle might not be directly used here anymore if we simplify
-import { v4 as uuidv4 } from 'uuid';
-import { useDraggable } from '@dnd-kit/core'; // Changed from Draggable component
-import {
-  Type, Heading1, Image as ImageIcon, Replace, Table, QrCode, Minus, Pilcrow // Renamed Image to ImageIcon
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { 
+  Text, 
+  List, 
+  ImageIcon, 
+  NumberIcon, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  Select, 
+  Checkbox, 
+  Radio, 
+  Textarea,
+  File,
+  Image,
+  Signature,
+  Table,
+  QrCode,
 } from 'lucide-react';
+import { FieldType } from '@/types/template-builder';
 
 interface ToolbarPanelProps {
-  // onAddElement was for a different builder type, this panel is for Form Builder (Sections/Fields)
-  // The primary action is dragging elements, which is handled by dnd-kit.
-  // If clicking directly adds a field (non-draggable mode), that would need a specific handler.
-  // For now, assuming draggable is primary.
-  // onAddElement: (element: { id: string; type: BuilderElementType; content: string; style: any; }) => void; // Commenting out, seems legacy
   draggable?: boolean;
-  // onDragStartSidebar prop is removed, DndContext.onDragStart in parent handles this
+  onDragStartSidebar?: (type: FieldType) => void;
 }
 
-const tools = [
-  { name: 'Text', icon: <Pilcrow size={18} />, type: 'text' as BuilderElementType },
-  { name: 'Heading', icon: <Heading1 size={18} />, type: 'heading' as BuilderElementType }, // 'heading' is a field type, not element type
-  { name: 'Image', icon: <ImageIcon size={18} />, type: 'image' as BuilderElementType },
-  { name: 'Placeholder', icon: <Replace size={18} />, type: 'placeholder' as BuilderElementType }, // Placeholder is fine as a field type
-  { name: 'Signature', icon: <Type size={18} />, type: 'signature' as BuilderElementType },
-  { name: 'Table', icon: <Table size={18} />, type: 'table' as BuilderElementType },
-  { name: 'QR Code', icon: <QrCode size={18} />, type: 'qr' as BuilderElementType }, // Changed from 'qr' to avoid conflict with FieldType.qr
-  { name: 'Divider', icon: <Minus size={18} />, type: 'divider' as BuilderElementType },
-];
-// Note: The 'type' here for tools (BuilderElementType) might need to align with FieldType from types/template-builder.ts
-// For example, 'text' from tools should map to 'text' in FieldType.
-// 'heading' isn't a FieldType, could be a special 'text' field with styling or a 'richtext'.
-// For now, these types are passed to dnd-kit and used by TemplateBuilder to create a field.
+export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({ draggable = false, onDragStartSidebar }) => {
+  
+  const fieldTypes: { id: FieldType; label: string; icon: any }[] = [
+    { id: 'text', label: 'Text Field', icon: Text },
+    { id: 'number', label: 'Number', icon: NumberIcon },
+    { id: 'email', label: 'Email', icon: Mail },
+    { id: 'phone', label: 'Phone', icon: Phone },
+    { id: 'date', label: 'Date', icon: Calendar },
+    { id: 'dropdown', label: 'Dropdown', icon: Select },
+    { id: 'checkbox', label: 'Checkbox', icon: Checkbox },
+    { id: 'radio', label: 'Radio Group', icon: Radio },
+    { id: 'textarea', label: 'Text Area', icon: Textarea },
+    { id: 'file', label: 'File Upload', icon: File },
+    { id: 'image', label: 'Image Upload', icon: Image },
+    { id: 'signature', label: 'Signature', icon: Signature },
+    { id: 'table', label: 'Table', icon: Table },
+    { id: 'qr', label: 'QR Code', icon: QrCode },
+  ];
 
+  const DraggableItem = ({ id, label, icon }: { id: FieldType; label: string; icon: any }) => {
+    const { attributes, listeners, setNodeRef, transform } = useDraggable({
+      id,
+      data: { fromSidebar: true },
+    });
 
-interface DraggableToolProps {
-  tool: { name: string; icon: JSX.Element; type: string };
-}
+    const style = {
+      transform: CSS.Transform.toString(transform),
+    };
 
-const DraggableToolButton: React.FC<DraggableToolProps> = ({ tool }) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: tool.type, // This ID is used by DndContext onDragStart/End to identify the type
-    data: { fromSidebar: true, type: tool.type }, // Pass type in data for clarity in handler
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: 100, // Ensure dragged item is on top
-  } : undefined;
-
-  return (
-    <Button
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      variant="outline"
-      className="w-full justify-start text-sm py-2 h-auto bg-white" // Added bg-white for visibility if dragged
-    >
-      <span className="mr-2">{tool.icon}</span>
-      {tool.name}
-    </Button>
-  );
-};
-
-
-export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({ draggable = false }) => {
-  // const handleAdd = (elementType: BuilderElementType) => { // This was for non-draggable version
-  //   const newElement = {
-  //     id: uuidv4(),
-  //     type: elementType,
-  //     content: `Sample ${elementType}`, // Content might be initial label or placeholder
-  //     style: { ...defaultElementStyle, x: 50, y: 50 }, // Style is not applicable to Fields in Sections
-  //   };
-  //   // onAddElement(newElement); // onAddElement is removed from props
-  // };
-
-  if (draggable) {
     return (
-      <div className="p-4 space-y-3">
-        <h3 className="font-semibold text-sm mb-2 px-1 text-gray-600">DRAG TO ADD FIELD</h3>
-        {tools.map((tool) => (
-          <DraggableToolButton key={tool.name} tool={tool} />
-        ))}
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="bg-white rounded-md p-3 flex items-center gap-2 shadow-sm hover:bg-gray-100 cursor-grab"
+        onMouseDown={() => onDragStartSidebar?.(id)}
+      >
+        {icon({ className: "h-4 w-4 text-gray-500" })}
+        <span>{label}</span>
       </div>
     );
-  }
+  };
 
-  // Fallback for non-draggable mode (if ever needed)
   return (
-    <div className="p-4 space-y-2">
-      <h3 className="font-semibold text-sm mb-1 px-1 text-gray-600">ELEMENTS (Click to add - TBD)</h3>
-      {tools.map((tool) => (
-        <Button
-          key={tool.name}
-          variant="ghost"
-          className="w-full justify-start text-sm py-2 h-auto"
-          // onClick={() => handleAdd(tool.type as BuilderElementType)} // handleAdd needs onAddElement prop
-          disabled // Click-to-add functionality needs to be re-evaluated for Form Builder
-        >
-          <span className="mr-2">{tool.icon}</span>
-          {tool.name}
-        </Button>
-      ))}
+    <div className="p-4">
+      <h3 className="font-semibold mb-2">Form Elements</h3>
+      <p className="text-sm text-muted-foreground mb-4">Drag and drop elements to build your template.</p>
+      <div className="flex flex-col gap-2">
+        {fieldTypes.map((type) => (
+          <DraggableItem key={type.id} id={type.id} label={type.label} icon={type.icon} />
+        ))}
+      </div>
     </div>
   );
 };
-
