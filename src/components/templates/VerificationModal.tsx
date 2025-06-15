@@ -60,6 +60,28 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
     }
   };
 
+  const getTemplateDisplayName = (templateType: string) => {
+    const templateNames: { [key: string]: string } = {
+      'bonafide-1': 'Bonafide Certificate',
+      'character-1': 'Character Certificate',
+      'completion-certificate-1': 'Completion Certificate',
+      'experience-1': 'Experience Certificate',
+      'income-certificate-1': 'Income Certificate',
+      'address-proof-1': 'Address Proof',
+      'bank-verification-1': 'Bank Verification',
+      'nda-1': 'Non-Disclosure Agreement',
+      'maternity-leave-1': 'Maternity Leave Certificate'
+    };
+    return templateNames[templateType] || templateType.replace(/-/g, ' ');
+  };
+
+  const getDocumentDisplayName = () => {
+    if (!document) return '';
+    const templateName = getTemplateDisplayName(document.template_type);
+    const fullName = document.document_data?.fullName || 'Unknown';
+    return `${templateName} for ${fullName}`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -78,7 +100,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
           {isValid && document && (
             <div className="space-y-2 text-sm">
               <div className="bg-gray-50 p-3 rounded">
-                <p><strong>Document Type:</strong> {document.template_type?.replace(/-/g, ' ')}</p>
+                <p><strong>Document:</strong> {getDocumentDisplayName()}</p>
                 <p><strong>Generated:</strong> {new Date(document.generated_at).toLocaleDateString()}</p>
                 {document.expires_at && (
                   <p><strong>Expires:</strong> {new Date(document.expires_at).toLocaleDateString()}</p>

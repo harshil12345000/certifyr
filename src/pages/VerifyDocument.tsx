@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, AlertTriangle, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { logQRVerification } from '@/lib/qr-utils';
 import { VerificationModal } from '@/components/templates/VerificationModal';
+import { downloadPDF } from '@/lib/document-utils';
 
 interface VerifiedDocument {
   id: string;
@@ -115,6 +116,70 @@ const VerifyDocument = () => {
     verifyDocument();
   }, [hash]);
 
+  const getTemplateDisplayName = (templateType: string) => {
+    const templateNames: { [key: string]: string } = {
+      'bonafide-1': 'Bonafide Certificate',
+      'character-1': 'Character Certificate',
+      'completion-certificate-1': 'Completion Certificate',
+      'experience-1': 'Experience Certificate',
+      'income-certificate-1': 'Income Certificate',
+      'address-proof-1': 'Address Proof',
+      'bank-verification-1': 'Bank Verification',
+      'nda-1': 'Non-Disclosure Agreement',
+      'maternity-leave-1': 'Maternity Leave Certificate'
+    };
+    return templateNames[templateType] || templateType.replace(/-/g, ' ');
+  };
+
+  const getDocumentDisplayName = () => {
+    if (!document) return '';
+    const templateName = getTemplateDisplayName(document.template_type);
+    const fullName = document.document_data?.fullName || 'Unknown';
+    return `${templateName} for ${fullName}`;
+  };
+
+  const handleDownloadReport = async () => {
+    if (!document) return;
+    
+    try {
+      // Create a temporary verification report element
+      const reportContent = `
+        <div class="a4-document p-8 bg-white text-gray-800 font-sans">
+          <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold">Document Verification Report</h1>
+          </div>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div><strong>Document:</strong> ${getDocumentDisplayName()}</div>
+              <div><strong>Generated:</strong> ${new Date(document.generated_at).toLocaleDateString()}</div>
+              <div><strong>Status:</strong> ${document.is_active && (!document.expires_at || new Date(document.expires_at) > new Date()) ? 'Valid' : 'Invalid'}</div>
+              ${document.expires_at ? `<div><strong>Expires:</strong> ${new Date(document.expires_at).toLocaleDateString()}</div>` : ''}
+            </div>
+            <div class="mt-8">
+              <p><strong>Verification Hash:</strong> ${hash}</p>
+              <p><strong>Verified On:</strong> ${new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Create temporary element
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = reportContent;
+      tempDiv.className = 'fixed -left-full top-0';
+      document.body.appendChild(tempDiv);
+      
+      // Generate PDF
+      await downloadPDF(`verification-report-${document.template_type}.pdf`);
+      
+      // Clean up
+      document.body.removeChild(tempDiv);
+    } catch (error) {
+      console.error('Error generating verification report:', error);
+      alert('Failed to generate verification report');
+    }
+  };
+
   const isExpired = document?.expires_at && new Date(document.expires_at) < new Date();
   const isActive = document?.is_active;
 
@@ -159,8 +224,8 @@ const VerifyDocument = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="font-semibold">Document Type:</label>
-                    <p className="capitalize">{document.template_type.replace(/-/g, ' ')}</p>
+                    <label className="font-semibold">Document:</label>
+                    <p>{getDocumentDisplayName()}</p>
                   </div>
                   <div>
                     <label className="font-semibold">Generated:</label>
@@ -182,21 +247,10 @@ const VerifyDocument = () => {
                   )}
                 </div>
 
-                {document.document_data && (
-                  <div className="mt-6">
-                    <h3 className="font-semibold mb-2">Document Details:</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <pre className="text-sm whitespace-pre-wrap">
-                        {JSON.stringify(document.document_data, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-
                 <div className="flex justify-center pt-4">
-                  <Button variant="outline" className="gap-2">
+                  <Button onClick={handleDownloadReport} variant="outline" className="gap-2">
                     <Download className="h-4 w-4" />
-                    Download Verification Report
+                    Download Report
                   </Button>
                 </div>
               </div>
