@@ -283,12 +283,6 @@ const Settings = () => {
                         Light
                       </div>
                     </SelectItem>
-                    <SelectItem value="dark">
-                      <div className="flex items-center gap-2">
-                        <Moon className="h-4 w-4" />
-                        Dark
-                      </div>
-                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -312,32 +306,12 @@ const Settings = () => {
                         English
                       </div>
                     </SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <Separator />
 
-              {/* Timezone */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-base">Timezone</Label>
-                  <p className="text-sm text-muted-foreground">Set your local timezone</p>
-                </div>
-                <Select value={preferences.timezone} onValueChange={(value) => handlePreferencesChange("timezone", value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="UTC">UTC</SelectItem>
-                    <SelectItem value="EST">Eastern Time</SelectItem>
-                    <SelectItem value="PST">Pacific Time</SelectItem>
-                    <SelectItem value="GMT">Greenwich Mean Time</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </CardContent>
           </Card>
 
