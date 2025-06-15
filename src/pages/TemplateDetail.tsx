@@ -21,6 +21,8 @@ import {
   CorporateBylawsForm,
   FoundersAgreementForm,
   StockPurchaseAgreementForm,
+  EmploymentAgreementForm,
+  NDAForm,
 } from '@/components/templates/forms';
 import {
   BonafidePreview,
@@ -39,6 +41,8 @@ import {
   CorporateBylawsPreview,
   FoundersAgreementPreview,
   StockPurchaseAgreementPreview,
+  EmploymentAgreementPreview,
+  NDAPreview,
 } from '@/components/templates';
 import {
   BonafideData,
@@ -60,6 +64,8 @@ import {
   CorporateBylawsData,
   FoundersAgreementData,
   StockPurchaseAgreementData,
+  EmploymentAgreementData,
+  NDAData,
 } from '@/types/corporate-templates';
 import { Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,7 +77,7 @@ import {
   TabsContent,
 } from '@/components/ui/tabs';
 
-const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData => {
+const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData => {
   const commonFields = {
     institutionName: '',
     date: new Date().toISOString().split('T')[0],
@@ -82,6 +88,46 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
   };
 
   switch (templateId) {
+    case 'employment-agreement-1':
+      return {
+        employeeName: '',
+        employerName: '',
+        jobTitle: '',
+        department: '',
+        startDate: new Date().toISOString().split('T')[0],
+        employmentType: 'full-time' as const,
+        salary: '',
+        payFrequency: 'monthly' as const,
+        benefits: '',
+        workLocation: '',
+        workHours: '',
+        probationPeriod: '',
+        terminationClause: '',
+        confidentialityClause: '',
+        nonCompeteClause: '',
+        governingLaw: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
+        ...commonFields,
+      } as EmploymentAgreementData;
+
+    case 'nda-1':
+      return {
+        disclosingParty: '',
+        receivingParty: '',
+        purposeOfDisclosure: '',
+        confidentialInformation: '',
+        exclusions: '',
+        obligations: '',
+        termLength: '',
+        returnOfInformation: '',
+        remedies: '',
+        governingLaw: '',
+        disclosingPartyAddress: '',
+        receivingPartyAddress: '',
+        effectiveDate: new Date().toISOString().split('T')[0],
+        ...commonFields,
+      } as NDAData;
+
     case 'founders-agreement-1':
       return {
         founderNames: '',
@@ -366,7 +412,7 @@ const TemplateDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData>(() => getInitialData(templateId || ''));
+  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData>(() => getInitialData(templateId || ''));
 
   useEffect(() => {
     if (!templateId) {
@@ -379,12 +425,26 @@ const TemplateDetail = () => {
     }
   }, [templateId, navigate, toast]);
 
-  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData) => {
+  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData) => {
     setFormData(data);
   };
 
   const renderForm = () => {
     switch (templateId) {
+      case 'employment-agreement-1':
+        return (
+          <EmploymentAgreementForm
+            initialData={formData as EmploymentAgreementData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
+      case 'nda-1':
+        return (
+          <NDAForm
+            initialData={formData as NDAData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'founders-agreement-1':
         return (
           <FoundersAgreementForm
@@ -509,6 +569,10 @@ const TemplateDetail = () => {
 
   const renderPreview = () => {
     switch (templateId) {
+      case 'employment-agreement-1':
+        return <EmploymentAgreementPreview data={formData as EmploymentAgreementData} />;
+      case 'nda-1':
+        return <NDAPreview data={formData as NDAData} />;
       case 'founders-agreement-1':
         return <FoundersAgreementPreview data={formData as FoundersAgreementData} />;
       case 'stock-purchase-agreement-1':
