@@ -18,3 +18,6 @@ export { FoundersAgreementPreview } from './FoundersAgreementPreview';
 export { StockPurchaseAgreementPreview } from './StockPurchaseAgreementPreview';
 export { EmploymentAgreementPreview } from './EmploymentAgreementPreview';
 export { NDAPreview } from './NDAPreview';
+
+export { AcademicTranscriptPreview } from './AcademicTranscriptPreview';
+export { EmbassyAttestationLetterPreview } from './EmbassyAttestationLetterPreview';

@@ -18,3 +18,6 @@ export { FoundersAgreementForm } from '../FoundersAgreementForm';
 export { StockPurchaseAgreementForm } from '../StockPurchaseAgreementForm';
 export { EmploymentAgreementForm } from '../EmploymentAgreementForm';
 export { NDAForm } from '../NDAForm';
+
+export { AcademicTranscriptForm } from '../AcademicTranscriptForm';
+export { EmbassyAttestationLetterForm } from '../EmbassyAttestationLetterForm';

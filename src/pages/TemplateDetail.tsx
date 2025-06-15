@@ -23,6 +23,8 @@ import {
   StockPurchaseAgreementForm,
   EmploymentAgreementForm,
   NDAForm,
+  AcademicTranscriptForm,
+  EmbassyAttestationLetterForm,
 } from '@/components/templates/forms';
 import {
   BonafidePreview,
@@ -43,6 +45,8 @@ import {
   StockPurchaseAgreementPreview,
   EmploymentAgreementPreview,
   NDAPreview,
+  AcademicTranscriptPreview,
+  EmbassyAttestationLetterPreview,
 } from '@/components/templates';
 import {
   BonafideData,
@@ -66,6 +70,8 @@ import {
   StockPurchaseAgreementData,
   EmploymentAgreementData,
   NDAData,
+  AcademicTranscriptData,
+  EmbassyAttestationLetterData,
 } from '@/types/corporate-templates';
 import { Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -77,7 +83,7 @@ import {
   TabsContent,
 } from '@/components/ui/tabs';
 
-const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData => {
+const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData => {
   const commonFields = {
     institutionName: '',
     date: new Date().toISOString().split('T')[0],
@@ -88,6 +94,46 @@ const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationD
   };
 
   switch (templateId) {
+    case 'academic-transcript-1':
+      return {
+        studentName: '',
+        studentId: '',
+        fatherName: '',
+        motherName: '',
+        dateOfBirth: '',
+        courseTitle: '',
+        academicYear: '',
+        semester: '',
+        subjects: '',
+        grades: '',
+        cgpa: '',
+        percentage: '',
+        class: '',
+        ...commonFields,
+      } as AcademicTranscriptData;
+
+    case 'embassy-attestation-letter-1':
+      return {
+        applicantName: '',
+        passportNumber: '',
+        nationality: '',
+        dateOfBirth: '',
+        placeOfBirth: '',
+        fatherName: '',
+        motherName: '',
+        documentType: '',
+        documentNumber: '',
+        issuingAuthority: '',
+        documentIssueDate: '',
+        purposeOfAttestation: '',
+        destinationCountry: '',
+        embassyName: '',
+        applicantAddress: '',
+        phoneNumber: '',
+        emailAddress: '',
+        ...commonFields,
+      } as EmbassyAttestationLetterData;
+
     case 'employment-agreement-1':
       return {
         employeeName: '',
@@ -412,7 +458,7 @@ const TemplateDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData>(() => getInitialData(templateId || ''));
+  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData>(() => getInitialData(templateId || ''));
 
   useEffect(() => {
     if (!templateId) {
@@ -425,12 +471,26 @@ const TemplateDetail = () => {
     }
   }, [templateId, navigate, toast]);
 
-  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData) => {
+  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData) => {
     setFormData(data);
   };
 
   const renderForm = () => {
     switch (templateId) {
+      case 'academic-transcript-1':
+        return (
+          <AcademicTranscriptForm
+            initialData={formData as AcademicTranscriptData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
+      case 'embassy-attestation-letter-1':
+        return (
+          <EmbassyAttestationLetterForm
+            initialData={formData as EmbassyAttestationLetterData}
+            onSubmit={(data) => handleFormSubmit(data)}
+          />
+        );
       case 'employment-agreement-1':
         return (
           <EmploymentAgreementForm
@@ -569,6 +629,10 @@ const TemplateDetail = () => {
 
   const renderPreview = () => {
     switch (templateId) {
+      case 'academic-transcript-1':
+        return <AcademicTranscriptPreview data={formData as AcademicTranscriptData} />;
+      case 'embassy-attestation-letter-1':
+        return <EmbassyAttestationLetterPreview data={formData as EmbassyAttestationLetterData} />;
       case 'employment-agreement-1':
         return <EmploymentAgreementPreview data={formData as EmploymentAgreementData} />;
       case 'nda-1':

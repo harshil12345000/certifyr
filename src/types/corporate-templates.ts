@@ -1,4 +1,3 @@
-
 // Corporate template data types
 export interface ArticlesOfIncorporationData {
   corporationName: string;
@@ -149,6 +148,54 @@ export interface NDAData {
   disclosingPartyAddress: string;
   receivingPartyAddress: string;
   effectiveDate: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface AcademicTranscriptData {
+  studentName: string;
+  studentId: string;
+  fatherName: string;
+  motherName: string;
+  dateOfBirth: string;
+  courseTitle: string;
+  academicYear: string;
+  semester: string;
+  subjects: string;
+  grades: string;
+  cgpa: string;
+  percentage: string;
+  class: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface EmbassyAttestationLetterData {
+  applicantName: string;
+  passportNumber: string;
+  nationality: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  fatherName: string;
+  motherName: string;
+  documentType: string;
+  documentNumber: string;
+  issuingAuthority: string;
+  documentIssueDate: string;
+  purposeOfAttestation: string;
+  destinationCountry: string;
+  embassyName: string;
+  applicantAddress: string;
+  phoneNumber: string;
+  emailAddress: string;
   institutionName: string;
   date: string;
   place: string;
