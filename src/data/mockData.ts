@@ -1,3 +1,4 @@
+
 import { 
   FileText, 
   Users, 
@@ -142,6 +143,20 @@ export const documentCategories = [
     name: "Travel & Visa",
     description: "Documents for travel and visa applications",
     count: 5,
+    icon: CheckCircle
+  },
+  { 
+    id: "cat-corporate", 
+    name: "Corporate",
+    description: "Business formation and corporate governance documents",
+    count: 6,
+    icon: CheckCircle
+  },
+  { 
+    id: "cat-legal", 
+    name: "Legal",
+    description: "Legal agreements and compliance documents",
+    count: 2,
     icon: CheckCircle
   },
   { 

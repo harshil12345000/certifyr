@@ -153,6 +153,8 @@ const Templates = () => {
       'Official Certificates': 'General',
       'Financial Documents': 'Financial',
       'Travel & Visa': 'Travel',
+      'Corporate': 'Corporate',
+      'Legal': 'Legal',
       'Miscellaneous': 'Legal'
     };
 
@@ -169,6 +171,8 @@ const Templates = () => {
       'Official Certificates': 'General',
       'Financial Documents': 'Financial',
       'Travel & Visa': 'Travel',
+      'Corporate': 'Corporate',
+      'Legal': 'Legal',
       'Miscellaneous': 'Legal'
     };
 
@@ -271,7 +275,7 @@ const Templates = () => {
 
         {/* Template Categories */}
         <h2 className="text-lg font-medium mt-8 mb-4">Browse Categories</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {documentCategories.map(category => {
           const Icon = category.icon;
           const realCount = getCategoryCount(category.name);
