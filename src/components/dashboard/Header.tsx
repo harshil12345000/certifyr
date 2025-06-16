@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from 'react';
 import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -11,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
+import { cn } from '@/lib/utils';
 
 interface Announcement {
   id: string;
@@ -146,6 +145,7 @@ export function Header() {
             </div>
           </div>
         </div>
+
         <div className="flex items-center gap-2 ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

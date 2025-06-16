@@ -101,33 +101,8 @@ const AdminPage = () => {
           .single();
 
         if (memberError || !memberData?.organization_id) {
-          // Fetch user profile data for fallback
-          const { data: profileData, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-
-          if (!profileError && profileData) {
-            // Parse address/location for country
-            const addressParts = profileData.organization_location ? profileData.organization_location.split(',').map((x:string) => x.trim()) : [];
-            setFormState({
-              organizationName: profileData.organization_name || '',
-              streetAddress: addressParts[0] || '',
-              city: addressParts[1] || '',
-              state: addressParts[2] || '',
-              postalCode: addressParts[3] || '',
-              country: addressParts[4] || '', // 5th field for country if present
-              phoneNumber: profileData.phone_number || '',
-              email: profileData.email || '',
-              organizationType: profileData.organization_type || '',
-              organizationSize: profileData.organization_size || '',
-              organizationWebsite: profileData.organization_website || '',
-            });
-          }
-          
           setOrganizationId(null);
-          setHasOrganization(true);
+          setHasOrganization(false);
           setIsLoading(false);
           return;
         }
@@ -160,7 +135,7 @@ const AdminPage = () => {
 
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        setHasOrganization(true);
+        setHasOrganization(false);
       } finally {
         setIsLoading(false);
       }
@@ -392,17 +367,15 @@ const AdminPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-4 px-4 md:py-8 md:px-6">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Admin Settings</h1>
-        
+      <div className="container mx-auto py-8">
         <Tabs defaultValue="organization" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
-            <TabsTrigger value="organization" className="text-xs md:text-sm">Organization</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs md:text-sm">Users & Permissions</TabsTrigger>
-            <TabsTrigger value="branding" className="text-xs md:text-sm">Branding</TabsTrigger>
-            <TabsTrigger value="announcements" className="text-xs md:text-sm">Announcements</TabsTrigger>
+          <TabsList className="mb-6">
+            <TabsTrigger value="organization">Organization</TabsTrigger>
+            <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="announcements">Announcements</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="organization" className="space-y-6">
             <form onSubmit={handleSubmit}>
               <Card>
@@ -549,7 +522,7 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <UserPermissionsPanel />
+            <UserPermissionsPanel organizationId={organizationId} />
           </TabsContent>
 
           <TabsContent value="branding" className="space-y-6">
@@ -614,7 +587,7 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-6">
-            <AnnouncementAdminPanel />
+            <AnnouncementAdminPanel organizationId={organizationId} />
           </TabsContent>
         </Tabs>
       </div>

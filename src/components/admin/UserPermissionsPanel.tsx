@@ -30,9 +30,8 @@ interface OrganizationInvite {
   invited_by: string | null;
 }
 
-export function UserPermissionsPanel() {
+export function UserPermissionsPanel({ organizationId }: { organizationId: string | null }) {
   const { user } = useAuth();
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [invites, setInvites] = useState<OrganizationInvite[]>([]);
@@ -42,124 +41,38 @@ export function UserPermissionsPanel() {
     role: "member"
   });
   const [isInviting, setIsInviting] = useState(false);
-  const [isCreatingOrganization, setIsCreatingOrganization] = useState(false);
 
-  // Check if user is admin and get organization
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user?.id) return;
-      
-      setLoading(true);
-      
-      try {
-        // Get user's organization and role
-        const { data: memberData, error: memberError } = await supabase
-          .from('organization_members')
-          .select('organization_id, role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (memberError && memberError.code !== 'PGRST116') {
-          console.error('Error fetching organization membership:', memberError);
-          toast({ 
-            title: "Error", 
-            description: "Failed to check organization membership", 
-            variant: "destructive" 
-          });
-          setLoading(false);
-          return;
-        }
-
-        if (memberData?.organization_id) {
-          setOrganizationId(memberData.organization_id);
-          setIsAdmin(memberData.role === 'admin');
-          
-          if (memberData.role === 'admin') {
-            await fetchMembers(memberData.organization_id);
-            await fetchInvites(memberData.organization_id);
-          }
-        } else {
-          // User doesn't have organization membership, try to create one
-          await createOrganizationFromProfile();
-        }
-      } catch (error) {
-        console.error('Error in checkAdminStatus:', error);
-        toast({ 
-          title: "Error", 
-          description: "Failed to load organization data", 
-          variant: "destructive" 
-        });
-      }
-      
-      setLoading(false);
-    };
-    
-    checkAdminStatus();
-  }, [user]);
-
-  const createOrganizationFromProfile = async () => {
-    if (!user?.id) return;
-
-    try {
-      // Get user profile to check for organization data
-      const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('organization_name, organization_type, organization_location, email, phone_number')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+    const fetchData = async () => {
+      if (!user?.id || !organizationId) {
+        setLoading(false);
         return;
       }
-
-      if (userProfile?.organization_name) {
-        setIsCreatingOrganization(true);
-        
-        // Create organization
-        const { data: newOrg, error: orgError } = await supabase
-          .from('organizations')
-          .insert([{
-            name: userProfile.organization_name,
-            email: userProfile.email,
-            phone: userProfile.phone_number,
-            address: userProfile.organization_location
-          }])
-          .select()
-          .single();
-
-        if (orgError) {
-          console.error('Error creating organization:', orgError);
-          return;
-        }
-
-        // Add user as admin to the organization
-        const { error: memberError } = await supabase
+      setLoading(true);
+      try {
+        // Get user's role in the organization
+        const { data: memberData, error: memberError } = await supabase
           .from('organization_members')
-          .insert([{
-            organization_id: newOrg.id,
-            user_id: user.id,
-            role: 'admin',
-            status: 'active'
-          }]);
-
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
         if (memberError) {
-          console.error('Error adding user to organization:', memberError);
+          setIsAdmin(false);
         } else {
-          setOrganizationId(newOrg.id);
-          setIsAdmin(true);
-          await fetchMembers(newOrg.id);
-          await fetchInvites(newOrg.id);
-          toast({ title: "Organization created successfully!" });
+          setIsAdmin(memberData?.role === 'admin');
         }
-        
-        setIsCreatingOrganization(false);
+        // Fetch members and invites
+        await fetchMembers(organizationId);
+        await fetchInvites(organizationId);
+      } catch (error) {
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error creating organization:', error);
-      setIsCreatingOrganization(false);
-    }
-  };
+    };
+    fetchData();
+  }, [user, organizationId]);
 
   const fetchMembers = async (orgId: string) => {
     const { data, error } = await supabase
@@ -167,11 +80,8 @@ export function UserPermissionsPanel() {
       .select('id, user_id, role, status, invited_email, created_at')
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false });
-      
     if (!error && data) {
       setMembers(data);
-    } else if (error) {
-      console.error('Error fetching members:', error);
     }
   };
 
@@ -181,11 +91,8 @@ export function UserPermissionsPanel() {
       .select('id, email, role, invited_at, expires_at, status, invited_by')
       .eq('organization_id', orgId)
       .order('invited_at', { ascending: false });
-      
     if (!error && data) {
       setInvites(data);
-    } else if (error) {
-      console.error('Error fetching invites:', error);
     }
   };
 
@@ -195,9 +102,7 @@ export function UserPermissionsPanel() {
       toast({ title: "Please enter an email address", variant: "destructive" });
       return;
     }
-    
     setIsInviting(true);
-    
     const { error } = await supabase
       .from('organization_invites')
       .insert([{
@@ -206,22 +111,12 @@ export function UserPermissionsPanel() {
         role: inviteForm.role,
         invited_by: user?.id,
       }]);
-      
     if (error) {
-      console.error('Error creating invitation:', error);
-      toast({ 
-        title: "Error", 
-        description: error.message.includes('duplicate') 
-          ? "This email has already been invited" 
-          : "Failed to send invitation", 
-        variant: "destructive" 
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Invitation sent successfully!" });
       setInviteForm({ email: "", role: "member" });
-      if (organizationId) {
-        await fetchInvites(organizationId);
-      }
+      await fetchInvites(organizationId);
     }
     setIsInviting(false);
   };
@@ -231,15 +126,8 @@ export function UserPermissionsPanel() {
       .from('organization_invites')
       .delete()
       .eq('id', inviteId);
-      
-    if (error) {
-      console.error('Error deleting invitation:', error);
-      toast({ title: "Error", description: "Failed to delete invitation", variant: "destructive" });
-    } else {
-      toast({ title: "Invitation deleted" });
-      if (organizationId) {
-        await fetchInvites(organizationId);
-      }
+    if (!error && organizationId) {
+      await fetchInvites(organizationId);
     }
   };
 
@@ -250,34 +138,12 @@ export function UserPermissionsPanel() {
       inactive: "destructive",
       expired: "outline"
     } as const;
-    
     return (
       <Badge variant={variants[status as keyof typeof variants] || "outline"}>
         {status}
       </Badge>
     );
   };
-
-  if (loading || isCreatingOrganization) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Users & Permissions
-          </CardTitle>
-          <CardDescription>
-            {isCreatingOrganization ? "Setting up your organization..." : "Loading..."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            {isCreatingOrganization ? "Creating your organization and setting up admin access..." : "Please wait while we load your organization data."}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!organizationId) {
     return (
@@ -295,6 +161,23 @@ export function UserPermissionsPanel() {
           <p className="text-muted-foreground">
             Please complete your organization information in the Organization tab to enable user management features.
           </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Users & Permissions
+          </CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Please wait while we load your organization data.</p>
         </CardContent>
       </Card>
     );
@@ -361,10 +244,13 @@ export function UserPermissionsPanel() {
                 </Select>
               </div>
             </div>
-            <Button type="submit" disabled={isInviting} className="w-full md:w-auto">
+            <Button type="submit" disabled={!organizationId || isInviting} className="w-full md:w-auto">
               {isInviting ? "Sending..." : "Send Invitation"}
             </Button>
           </form>
+          {!organizationId && (
+            <p className="text-xs text-red-500 mt-2">You must be part of an organization to send invitations.</p>
+          )}
         </CardContent>
       </Card>
 

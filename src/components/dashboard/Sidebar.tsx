@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -111,12 +110,25 @@ export function Sidebar() {
           isCollapsed ? "justify-center" : "justify-start"
         )}>
           <Avatar className="h-8 w-8">
-            {profileImageUrl ? (
+            {logoUrl ? (
               <AvatarImage 
-                src={profileImageUrl} 
+                src={logoUrl} 
                 alt={displayName}
                 onError={(e) => {
-                  console.error("Failed to load profile image");
+                  // If logo fails, fallback to user avatar or hide
+                  const target = e.target as HTMLImageElement;
+                  if (userAvatarUrl && !target.src.endsWith(userAvatarUrl)) {
+                    target.src = userAvatarUrl;
+                  } else {
+                    target.style.display = 'none';
+                  }
+                }}
+              />
+            ) : userAvatarUrl ? (
+              <AvatarImage 
+                src={userAvatarUrl} 
+                alt={displayName}
+                onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
