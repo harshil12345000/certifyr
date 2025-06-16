@@ -98,25 +98,25 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
       });
     }
   };
-
+  
   return (
     <div className="flex flex-col w-full h-full">
       <div className="bg-muted p-4 flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <div>
-            <h2 className="font-semibold">Document Preview</h2>
-            <p className="text-xs text-muted-foreground">Preview with sample data</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Smartphone className="h-4 w-4 mr-1" /> Mobile
-            </Button>
-            <Button variant="outline" size="sm">
-              <Share2 className="h-4 w-4 mr-1" /> Share
-            </Button>
-            <Button variant="outline" size="sm">
-              <Copy className="h-4 w-4 mr-1" /> Copy
-            </Button>
+        <div>
+          <h2 className="font-semibold">Document Preview</h2>
+          <p className="text-xs text-muted-foreground">Preview with sample data</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Smartphone className="h-4 w-4 mr-1" /> Mobile
+          </Button>
+          <Button variant="outline" size="sm">
+            <Share2 className="h-4 w-4 mr-1" /> Share
+          </Button>
+          <Button variant="outline" size="sm">
+            <Copy className="h-4 w-4 mr-1" /> Copy
+          </Button>
           </div>
         </div>
         

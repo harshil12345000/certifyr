@@ -365,7 +365,7 @@ const AdminPage = () => {
       }
 
       toast({ title: 'Success', description: 'Organization details updated successfully.' });
-      
+
       // Refresh branding context and previews
       if (currentOrgId) {
         await fetchBrandingFiles(currentOrgId);
