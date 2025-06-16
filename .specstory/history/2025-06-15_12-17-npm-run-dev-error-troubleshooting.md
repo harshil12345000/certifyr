@@ -21498,6 +21498,200 @@ Implement this if you have access to Supabase. Once done check why the QR verifi
 
 _**Assistant**_
 
+Here’s how I’ll proceed:
+
+---
+
+## **Step 1: Implement Document Logs Table in Supabase**
+
+**Table:** `organization_document_logs`
+
+**Fields:**
+- `id` (uuid, PK, default: gen_random_uuid())
+- `organization_id` (uuid, FK to organizations)
+- `user_id` (uuid, FK to users)
+- `template_id` (text)
+- `action` (text, enum: 'download', 'sign', 'pending')
+- `created_at` (timestamp, default: now())
+- `document_id` (uuid, nullable)
+- `meta` (jsonb, nullable)
+
+**Migration SQL:**
+```sql
+create table if not exists organization_document_logs (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid references organizations(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  template_id text not null,
+  action text not null check (action in ('download', 'sign', 'pending')),
+  created_at timestamp with time zone default now(),
+  document_id uuid,
+  meta jsonb
+);
+
+-- RLS: Only allow org members to insert/select their org's logs
+alter table organization_document_logs enable row level security;
+
+create policy "Org members can insert logs"
+  on organization_document_logs for insert
+  using (organization_id in (select organization_id from organization_members where user_id = auth.uid()));
+
+create policy "Org members can select logs"
+  on organization_document_logs for select
+  using (organization_id in (select organization_id from organization_members where user_id = auth.uid()));
+```
+
+---
+
+## **Step 2: Update Frontend Event Tracking**
+
+- On each relevant button/toggle, insert a row into `organization_document_logs` with the correct action.
+- Update dashboard stats and graphs by querying this table.
+
+---
+
+## **Step 3: Debug QR Verification on Localhost**
+
+**Checklist:**
+- Check if the QR verification endpoint is running and accessible on localhost.
+- Check for CORS issues or network errors in the browser console.
+- Compare environment variables (API URLs, keys) between local and Lovable hosted.
+- Check if Supabase RLS or storage policies are blocking local requests.
+
+---
+
+## **Next Steps**
+
+1. **I will provide the SQL migration for the Supabase table.**
+2. **I will outline the React code changes for event tracking.**
+3. **I will give you a checklist and debugging steps for the QR verification issue.**
+
+---
+
+**Note:**  
+I do not have direct access to your Supabase instance, so you’ll need to run the SQL migration above in your Supabase SQL editor.
+
+Would you like the full React code for the event tracking next, or should I help you debug the QR verification issue first?
+
+---
+
+_**User**_
+
+Remove the Lovable favicon completely. Only keep the certifyr favicon
+
+---
+
+_**Assistant**_
+
+Read file: index.html
+
+---
+
+```diff
+      <meta property="og:description" content="Simplifying Official Documentation" />
+      <meta property="og:type" content="website" />
+-     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
++     <meta property="og:image" content="/uploads/30a6a699-ff30-486d-8225-816f6de9650e.png" />
+  
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:site" content="certifyr_logo" />
+      <meta name="twitter:image" content="certifyr_logo" />
+      
+-     <link rel="icon" href="/lovable-uploads/30a6a699-ff30-486d-8225-816f6de9650e.png" type="image/png">
++     <link rel="icon" href="/uploads/30a6a699-ff30-486d-8225-816f6de9650e.png" type="image/png">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    </head>
+```
+
+---
+
+The Lovable favicon and any references to Lovable in the favicon and Open Graph image have been removed.  
+Now, only the Certifyr favicon (`/uploads/30a6a699-ff30-486d-8225-816f6de9650e.png`) is used for both the browser tab and social sharing.
+
+No more Lovable branding will appear in the favicon or meta images.  
+Let me know if you want to update the Twitter image as well, or if you need any further branding cleanup!
+
+---
+
+_**User**_
+
+No in /favicon.ico
+
+---
+
+_**Assistant**_
+
+<details>
+            <summary>Listed directory / • **17** results</summary>
+        
+| Name |
+|-------|
+| 📁 `Program Files` |
+| 📁 `Windows` |
+| 📁 `ProgramData` |
+| 📁 `Users` |
+| 📁 `Documents and Settings` |
+| 📁 `shiftsync` |
+| 📁 `inetpub` |
+| 📁 `adobeTemp` |
+| 📁 `$Recycle.Bin` |
+| 📁 `Program Files (x86)` |
+| 📄 `install.log` |
+| 📁 `Kairos` |
+| 📁 `AppData` |
+| 📁 `System.sav` |
+| 📁 `OneDriveTemp` |
+| 📁 `hp` |
+| 📁 `Intel` |
+
+</details>
+
+---
+
+<details>
+            <summary>Listed directory public • **4** results</summary>
+        
+| Name |
+|-------|
+| 📁 `uploads` |
+| 📄 `placeholder.svg` |
+| 📄 `robots.txt` |
+| 📄 `favicon.ico` |
+
+</details>
+
+---
+
+File seems to be binary and cannot be opened as text
+
+---
+
+The file `/public/favicon.ico` exists and is likely the source of the old (Lovable) favicon. Since it is a binary file, it cannot be opened as text, but it can be deleted or replaced.
+
+**To ensure only the Certifyr favicon is used:**
+- Delete `/public/favicon.ico` if you do not want any `.ico` favicon.
+- Or, replace it with a Certifyr-branded `favicon.ico` if you want to support browsers that prefer `.ico` files.
+
+Would you like me to delete this file, or do you want to provide a new Certifyr favicon to replace it?
+
+---
+
+_**User**_
+
+Replace it with this image
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+---
+
 
 
 ---
