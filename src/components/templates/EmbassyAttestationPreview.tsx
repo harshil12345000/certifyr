@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { EmbassyAttestationPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -48,6 +47,9 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Embassy Attestation Preview.');
+        }
       }
     };
     generateQR();

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArticlesOfIncorporationPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -37,6 +36,9 @@ export const ArticlesOfIncorporationPreview: React.FC<ArticlesOfIncorporationPre
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Articles of Incorporation Preview.');
+        }
       }
     };
     generateQR();

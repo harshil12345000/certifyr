@@ -1,6 +1,9 @@
+
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -629,6 +632,28 @@ CREATE POLICY "Anyone can insert verification attempts" ON "public"."document_ve
 
 
 
+CREATE POLICY "Organization admins can insert their organization" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization admins can manage members" ON "public"."organization_members" TO "authenticated" USING (("organization_id" IN ( SELECT "organization_members_1"."organization_id"
+   FROM "public"."organization_members" "organization_members_1"
+  WHERE (("organization_members_1"."user_id" = "auth"."uid"()) AND ("organization_members_1"."role" = 'admin'::"text") AND ("organization_members_1"."status" = 'active'::"text"))))) WITH CHECK (("organization_id" IN ( SELECT "organization_members_1"."organization_id"
+   FROM "public"."organization_members" "organization_members_1"
+  WHERE (("organization_members_1"."user_id" = "auth"."uid"()) AND ("organization_members_1"."role" = 'admin'::"text") AND ("organization_members_1"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization admins can update their organization" ON "public"."organizations" FOR UPDATE TO "authenticated" USING (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text"))))) WITH CHECK (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
 CREATE POLICY "Organization members can delete branding files" ON "public"."branding_files" FOR DELETE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
    FROM "public"."organization_members"
   WHERE ("organization_members"."user_id" = "auth"."uid"()))));
@@ -650,6 +675,12 @@ CREATE POLICY "Organization members can update branding files" ON "public"."bran
 CREATE POLICY "Organization members can view branding files" ON "public"."branding_files" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
    FROM "public"."organization_members"
   WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Organization members can view their organization" ON "public"."organizations" FOR SELECT TO "authenticated" USING (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."status" = 'active'::"text")))));
 
 
 
@@ -751,6 +782,10 @@ CREATE POLICY "Users can view their own documents" ON "public"."documents" FOR S
 
 
 
+CREATE POLICY "Users can view their own organization memberships" ON "public"."organization_members" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
+
+
+
 CREATE POLICY "Users can view their own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
 
 
@@ -776,12 +811,6 @@ ALTER TABLE "public"."documents" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."organization_invites" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."organization_members" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
@@ -1164,46 +1193,3 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 RESET ALL;
-
--- Add policy for organization admins to update their organization
-CREATE POLICY "Organization admins can update their organization" ON "public"."organizations"
-FOR UPDATE TO authenticated
-USING (
-  id IN (
-    SELECT organization_id 
-    FROM organization_members 
-    WHERE user_id = auth.uid() 
-    AND role = 'admin'
-  )
-)
-WITH CHECK (
-  id IN (
-    SELECT organization_id 
-    FROM organization_members 
-    WHERE user_id = auth.uid() 
-    AND role = 'admin'
-  )
-);
-
--- Add policy for organization admins to view their organization
-CREATE POLICY "Organization members can view their organization" ON "public"."organizations"
-FOR SELECT TO authenticated
-USING (
-  id IN (
-    SELECT organization_id 
-    FROM organization_members 
-    WHERE user_id = auth.uid()
-  )
-);
-
--- Add policy for organization admins to insert their organization
-CREATE POLICY "Organization admins can insert their organization" ON "public"."organizations"
-FOR INSERT TO authenticated
-WITH CHECK (
-  id IN (
-    SELECT organization_id 
-    FROM organization_members 
-    WHERE user_id = auth.uid() 
-    AND role = 'admin'
-  )
-);

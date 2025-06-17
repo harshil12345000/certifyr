@@ -41,6 +41,9 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for NDA Preview.');
+        }
       }
     };
     generateQR();

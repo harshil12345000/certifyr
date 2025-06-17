@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MaternityLeavePreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -44,6 +43,9 @@ export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ da
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Maternity Leave Preview.');
+        }
       }
     };
     generateQR();

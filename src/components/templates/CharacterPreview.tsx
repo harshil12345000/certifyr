@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CharacterPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -36,6 +35,9 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Character Preview.');
+        }
       }
     };
     generateQR();

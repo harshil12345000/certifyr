@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BankVerificationPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -44,6 +43,9 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Bank Verification Preview.');
+        }
       }
     };
     generateQR();

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CompletionCertificatePreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -40,6 +39,9 @@ export const CompletionCertificatePreview: React.FC<CompletionCertificatePreview
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Completion Certificate Preview.');
+        }
       }
     };
     generateQR();

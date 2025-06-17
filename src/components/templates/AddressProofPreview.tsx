@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AddressProofPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -39,6 +38,9 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Address Proof Preview.');
+        }
       }
     };
     generateQR();

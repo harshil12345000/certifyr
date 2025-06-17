@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,7 +15,12 @@ export const generateVerificationHash = (): string => {
 };
 
 export const createVerificationUrl = (verificationHash: string): string => {
-  const baseUrl = window.location.origin;
+  let baseUrl = "";
+  if (typeof window !== "undefined" && window.location) {
+    baseUrl = window.location.origin;
+  } else {
+    baseUrl = "https://certifyr.lovable.app";
+  }
   return `${baseUrl}/verify/${verificationHash}`;
 };
 
@@ -67,6 +71,7 @@ export const generateDocumentQRCode = async (
 
     const verificationHash = await saveVerifiedDocument(verificationData);
     if (!verificationHash) {
+      console.error('QR code generation failed: Could not save verified document.');
       return null;
     }
 

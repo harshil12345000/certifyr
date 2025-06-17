@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -26,6 +25,9 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
           user?.id
         );
         setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Experience Preview.');
+        }
       }
     };
     generateQR();
