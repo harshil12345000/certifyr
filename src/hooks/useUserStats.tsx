@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +9,7 @@ interface UserStats {
   totalTemplates: number;
 }
 
-export function useUserStats() {
+export function useUserStats(refreshIndex?: number) {
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats>({
     documentsCreated: 0,
@@ -42,11 +41,16 @@ export function useUserStats() {
         const documentsSigned = documents?.filter(doc => doc.status === 'Signed').length || 0;
         const pendingDocuments = documents?.filter(doc => doc.status === 'Created' || doc.status === 'Sent').length || 0;
 
+        // Fetch total templates count
+        const { count: totalTemplates } = await supabase
+          .from('templates')
+          .select('*', { count: 'exact', head: true });
+
         const userStats: UserStats = {
           documentsCreated,
           documentsSigned,
           pendingDocuments,
-          totalTemplates: 0 // Will be updated when templates feature is implemented
+          totalTemplates: totalTemplates || 0
         };
 
         setStats(userStats);
@@ -88,7 +92,7 @@ export function useUserStats() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, refreshIndex]);
 
   return { stats, loading, error };
 }

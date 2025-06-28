@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +7,7 @@ interface ActivityData {
   documents: number;
 }
 
-export function useUserActivity() {
+export function useUserActivity(refreshIndex?: number) {
   const { user } = useAuth();
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +98,7 @@ export function useUserActivity() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, refreshIndex]);
 
   return { activityData, loading, error };
 }

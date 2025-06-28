@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Document } from '@/types/document';
 
-export function useUserDocuments(limit = 10) {
+export function useUserDocuments(limit = 10, refreshIndex?: number) {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +82,7 @@ export function useUserDocuments(limit = 10) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, limit]);
+  }, [user, limit, refreshIndex]);
 
   return { documents, loading, error };
 }

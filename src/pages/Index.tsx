@@ -12,45 +12,31 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useUserDocuments } from '@/hooks/useUserDocuments';
-const mockDocuments = [{
-  id: "doc-1",
-  name: "Bonafide Certificate - John Smith",
-  type: "Certificate",
-  status: "Signed" as const,
-  date: "2023-06-01",
-  recipient: "John Smith"
-}, {
-  id: "doc-2",
-  name: "Leave Application - HR Department",
-  type: "Application",
-  status: "Sent" as const,
-  date: "2023-05-28",
-  recipient: "HR Manager"
-}, {
-  id: "doc-3",
-  name: "Income Certificate - David Miller",
-  type: "Certificate",
-  status: "Created" as const,
-  date: "2023-05-25",
-  recipient: null
-}] as Document[];
 const Index = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const [refreshIndex, setRefreshIndex] = useState(0);
+
+  // Periodically refresh data every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshIndex((i) => i + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const {
     stats,
     loading: statsLoading,
     error
-  } = useUserStats();
+  } = useUserStats(refreshIndex);
   const {
     activityData,
     loading: activityLoading
-  } = useUserActivity();
+  } = useUserActivity(refreshIndex);
   const {
     documents,
     loading: documentsLoading
-  } = useUserDocuments(5);
+  } = useUserDocuments(5, refreshIndex);
   const statsCards = [{
     title: "Documents Created",
     value: statsLoading ? "..." : stats.documentsCreated.toString(),

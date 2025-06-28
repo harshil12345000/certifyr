@@ -15,6 +15,7 @@ import { SidebarLogo } from './SidebarLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { toast } from '@/components/ui/use-toast';
 
 type NavItem = {
   name: string;
@@ -122,6 +123,11 @@ export function Sidebar() {
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   console.error('[Sidebar] Logo image failed to load:', logoUrl);
+                  toast({
+                    title: 'Logo failed to load',
+                    description: 'Your organization logo could not be loaded. Please check your network or storage settings.',
+                    variant: 'destructive',
+                  });
                   if (userAvatarUrl && !target.src.endsWith(userAvatarUrl)) {
                     target.src = userAvatarUrl;
                   } else {
@@ -136,6 +142,11 @@ export function Sidebar() {
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                   console.error('[Sidebar] User avatar image failed to load:', userAvatarUrl);
+                  toast({
+                    title: 'Avatar failed to load',
+                    description: 'Your user avatar could not be loaded.',
+                    variant: 'destructive',
+                  });
                 }}
               />
             ) : null}

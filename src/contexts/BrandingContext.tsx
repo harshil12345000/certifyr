@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -52,6 +51,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .single();
 
+      console.log('[BrandingContext] memberData:', memberData, 'memberError:', memberError);
+
       if (memberError || !memberData?.organization_id) {
         setLogoUrl(null);
         setSealUrl(null);
@@ -62,6 +63,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       }
 
       const organizationId = memberData.organization_id;
+      console.log('[BrandingContext] organizationId:', organizationId);
 
       // Fetch organization details
       const { data: orgData, error: orgError } = await supabase
@@ -69,6 +71,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .select('name, address, phone, email')
         .eq('id', organizationId)
         .single();
+
+      console.log('[BrandingContext] orgData:', orgData, 'orgError:', orgError);
 
       if (!orgError && orgData) {
         setOrganizationDetails({
@@ -85,6 +89,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         .select('name, path')
         .eq('organization_id', organizationId);
 
+      console.log('[BrandingContext] branding_files:', filesData, 'filesError:', filesError);
+
       if (!filesError && filesData) {
         let newLogoUrl: string | null = null;
         let newSealUrl: string | null = null;
@@ -94,7 +100,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           if (file.path) {
             const { data: urlData } = supabase.storage.from('branding-assets').getPublicUrl(file.path);
             const publicUrl = urlData.publicUrl;
-            
+            console.log(`[BrandingContext] branding file: ${file.name}, path: ${file.path}, publicUrl:`, publicUrl);
             if (file.name === 'logo') newLogoUrl = publicUrl;
             if (file.name === 'seal') newSealUrl = publicUrl;
             if (file.name === 'signature') newSignatureUrl = publicUrl;
@@ -104,11 +110,15 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
+        console.log('[BrandingContext] setLogoUrl:', newLogoUrl);
       }
     } catch (error) {
-      console.error('Error loading branding data:', error);
-    } finally {
+      setLogoUrl(null);
+      setSealUrl(null);
+      setSignatureUrl(null);
+      setOrganizationDetails(null);
       setIsLoading(false);
+      console.error('[BrandingContext] Exception in loadBrandingData:', error);
     }
   };
 
