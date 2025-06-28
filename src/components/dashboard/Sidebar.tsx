@@ -36,6 +36,11 @@ export function Sidebar() {
   const { user } = useAuth();
   const { logoUrl, organizationDetails } = useBranding();
   
+  // Debug logging
+  console.log('[Sidebar] logoUrl:', logoUrl);
+  console.log('[Sidebar] organizationDetails:', organizationDetails);
+  console.log('[Sidebar] user:', user);
+  
   // Get name and avatar from user metadata if available
   const name = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'User';
   const email = user?.email || '';
@@ -115,8 +120,8 @@ export function Sidebar() {
                 src={logoUrl} 
                 alt={displayName}
                 onError={(e) => {
-                  // If logo fails, fallback to user avatar or hide
                   const target = e.target as HTMLImageElement;
+                  console.error('[Sidebar] Logo image failed to load:', logoUrl);
                   if (userAvatarUrl && !target.src.endsWith(userAvatarUrl)) {
                     target.src = userAvatarUrl;
                   } else {
@@ -130,6 +135,7 @@ export function Sidebar() {
                 alt={displayName}
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
+                  console.error('[Sidebar] User avatar image failed to load:', userAvatarUrl);
                 }}
               />
             ) : null}
