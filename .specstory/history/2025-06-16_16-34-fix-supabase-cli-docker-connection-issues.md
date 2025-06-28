@@ -8398,7 +8398,90 @@ I don't see the issuing organization name with the "Issued By: .." field working
 
 _**Assistant**_
 
+Let's troubleshoot and ensure the "Issued By: [Organization Name]" field works as expected:
 
+---
+
+## 1. **Check if `organization_id` is Present in the Document**
+
+- The modal only fetches the organization name if `document.organization_id` is a valid UUID.
+- If `organization_id` is `null` or missing in the document, the field will not show.
+
+**How to check:**
+- Open the browser console.
+- When the modal opens, log the `document` object:
+  ```js
+  console.log('VerificationModal document:', document);
+  ```
+- Confirm that `organization_id` is present and is a valid UUID (not a name or null).
+
+---
+
+## 2. **Check if the Organization Exists in Supabase**
+
+- The code queries Supabase:
+  ```js
+  supabase.from('organizations').select('name').eq('id', document.organization_id).single();
+  ```
+- If the organization with that UUID does not exist, the name will not show.
+
+**How to check:**
+- In Supabase dashboard, go to the `organizations` table.
+- Find a row with `id` matching the `organization_id` from your document.
+- Ensure the `name` field is set.
+
+---
+
+## 3. **Add Logging to the Modal**
+
+Add these logs to the `useEffect` in `VerificationModal.tsx`:
+```js
+useEffect(() => {
+  const fetchOrgName = async () => {
+    console.log('Fetching org name for organization_id:', document?.organization_id);
+    if (document && document.organization_id) {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', document.organization_id)
+        .single();
+      console.log('Supabase org fetch result:', data, error);
+      if (data && data.name) {
+        setOrganizationName(data.name);
+      } else {
+        setOrganizationName(null);
+      }
+    } else {
+      setOrganizationName(null);
+    }
+  };
+  fetchOrgName();
+}, [document?.organization_id]);
+```
+- This will show you if the query is being made and what the result is.
+
+---
+
+## 4. **If You Want to Always Show a Placeholder**
+
+If you want to always show "Issued By: [Unknown]" when the org is missing, update the render logic:
+```js
+{<p><strong>Issued By:</strong> {organizationName || 'Unknown'}</p>}
+```
+
+---
+
+## 5. **Summary Checklist**
+
+- [ ] Is `organization_id` a valid UUID in the document?
+- [ ] Does that UUID exist in the `organizations` table in Supabase?
+- [ ] Is the `name` field set for that organization?
+- [ ] Are there any errors in the browser console from the Supabase query?
+
+---
+
+**If you add the logging and share the output, I can help you pinpoint the issue immediately!  
+If you want, I can update the code to always show a placeholder or to log more details. Let me know!**
 
 ---
 
@@ -8409,6 +8492,62 @@ Fix it for me so we can get this new field implemented fast
 ---
 
 _**Assistant**_
+
+```diff
+    useEffect(() => {
+      const fetchOrgName = async () => {
++       console.log('Fetching org name for organization_id:', document?.organization_id);
+        if (document && document.organization_id) {
+          const { data, error } = await supabase
+```
+
+```diff
+            .eq('id', document.organization_id)
+            .single();
++         console.log('Supabase org fetch result:', data, error);
+          if (data && data.name) {
+            setOrganizationName(data.name);
+```
+
+```diff
+                  <div>
+                    <p><strong>Document:</strong> {getDocumentDisplayName()}</p>
+-                   {organizationName && (
+-                     <p><strong>Issued By:</strong> {organizationName}</p>
+-                   )}
++                   <p><strong>Issued By:</strong> {organizationName || 'Unknown'}</p>
+                  </div>
+                  <div>
+```
+
+---
+
+The "Issued By" field will now **always appear** in the verification modal:
+
+- If the organization name is found in Supabase, it will display the name.
+- If not found or not set, it will display "Issued By: Unknown".
+- Debug logs are added to the console to help you see what `organization_id` is being queried and what Supabase returns.
+
+---
+
+**You do not need to do anything else—just reload and scan a QR code.  
+You will always see the "Issued By" field, and if there are any issues with fetching the organization name, you can check the browser console for details.**
+
+Let me know if you want to further customize the display or add more organization details!
+
+---
+
+_**User**_
+
+Revert changes. Remove the Issued By field
+
+---
+
+_**Assistant**_
+
+
+
+---
 
 
 

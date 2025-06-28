@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -20,34 +19,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   onClose,
   verificationResult,
 }) => {
-  const [organizationName, setOrganizationName] = useState<string | null>(null);
-  const document = verificationResult?.document;
-
-  useEffect(() => {
-    const fetchOrgName = async () => {
-      console.log('Fetching org name for organization_id:', document?.organization_id);
-      if (document && document.organization_id) {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('name')
-          .eq('id', document.organization_id)
-          .single();
-        console.log('Supabase org fetch result:', data, error);
-        if (data && data.name) {
-          setOrganizationName(data.name);
-        } else {
-          setOrganizationName(null);
-        }
-      } else {
-        setOrganizationName(null);
-      }
-    };
-    fetchOrgName();
-  }, [document?.organization_id]);
-
   if (!verificationResult) return null;
 
-  const { isValid, status, message } = verificationResult;
+  const { isValid, status, document, message } = verificationResult;
 
   const getIcon = () => {
     switch (status) {
@@ -121,13 +95,11 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
             <p className="text-gray-600 mb-2">{message}</p>
             {getStatusBadge()}
           </div>
-          
           {isValid && document && (
             <div className="space-y-2 text-sm">
               <div className="bg-gray-50 p-3 rounded flex flex-col md:grid md:grid-cols-2 md:gap-4">
                 <div>
                   <p><strong>Document:</strong> {getDocumentDisplayName()}</p>
-                  <p><strong>Issued By:</strong> {organizationName || 'Unknown'}</p>
                 </div>
                 <div>
                   <p><strong>Generated:</strong> {new Date(document.generated_at).toLocaleDateString()}</p>
