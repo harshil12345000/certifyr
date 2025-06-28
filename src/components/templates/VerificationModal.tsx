@@ -25,12 +25,14 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
   useEffect(() => {
     const fetchOrgName = async () => {
+      console.log('Fetching org name for organization_id:', document?.organization_id);
       if (document && document.organization_id) {
         const { data, error } = await supabase
           .from('organizations')
           .select('name')
           .eq('id', document.organization_id)
           .single();
+        console.log('Supabase org fetch result:', data, error);
         if (data && data.name) {
           setOrganizationName(data.name);
         } else {
@@ -125,9 +127,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               <div className="bg-gray-50 p-3 rounded flex flex-col md:grid md:grid-cols-2 md:gap-4">
                 <div>
                   <p><strong>Document:</strong> {getDocumentDisplayName()}</p>
-                  {organizationName && (
-                    <p><strong>Issued By:</strong> {organizationName}</p>
-                  )}
+                  <p><strong>Issued By:</strong> {organizationName || 'Unknown'}</p>
                 </div>
                 <div>
                   <p><strong>Generated:</strong> {new Date(document.generated_at).toLocaleDateString()}</p>
