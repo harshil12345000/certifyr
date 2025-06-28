@@ -27,41 +27,69 @@ const Index = () => {
   const {
     stats,
     loading: statsLoading,
-    error
+    error: statsError
   } = useUserStats(refreshIndex);
   const {
     activityData,
-    loading: activityLoading
+    loading: activityLoading,
+    error: activityError
   } = useUserActivity(refreshIndex);
   const {
     documents,
-    loading: documentsLoading
+    loading: documentsLoading,
+    error: documentsError
   } = useUserDocuments(5, refreshIndex);
 
-  console.log('[Dashboard] stats:', stats);
+  // If any error, show error UI
+  const error = statsError || activityError || documentsError;
+
+  // Loading spinner for stats
+  if (statsLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Error UI
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <div className="text-4xl mb-4">😕</div>
+          <h2 className="text-xl font-semibold mb-2">Unable to load dashboard data</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => setRefreshIndex(i => i + 1)} variant="outline">Retry</Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const statsCards = [
     {
       label: 'Documents Created',
-      value: stats.documentsCreated,
+      value: String(stats.documentsCreated ?? 0),
       icon: <FileText className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
     {
       label: 'Documents Signed',
-      value: stats.documentsSigned,
+      value: String(stats.documentsSigned ?? 0),
       icon: <FileSignature className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
     {
       label: 'Downloaded Documents',
-      value: stats.downloadedDocuments,
+      value: String(stats.downloadedDocuments ?? 0),
       icon: <FileClock className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
     {
       label: 'Total Verifications',
-      value: stats.totalVerifications,
+      value: String(stats.totalVerifications ?? 0),
       icon: <FileClock className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
