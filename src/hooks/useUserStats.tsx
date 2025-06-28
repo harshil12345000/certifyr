@@ -10,7 +10,7 @@ interface UserStats {
 }
 
 // Add helper to get organization_id for the current user
-async function getOrganizationIdForUser(userId: string) {
+export async function getOrganizationIdForUser(userId: string) {
   const { data, error } = await supabase
     .from('organization_members')
     .select('organization_id')
