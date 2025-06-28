@@ -41,24 +41,38 @@ export const saveVerifiedDocument = async (data: DocumentVerificationData): Prom
   try {
     const verificationHash = generateVerificationHash();
     const expiresAt = data.expiresAt || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year default
-    console.log('[QR] Attempting to save verified document to Supabase:', {
-      ...data,
-      verificationHash,
-      expiresAt: expiresAt.toISOString(),
-    });
+    // document_id is a uuid, generate if not present
+    let document_id: string | undefined = undefined;
+    try {
+      if (typeof data.documentId === 'string' && /^[0-9a-fA-F-]{36}$/.test(data.documentId)) {
+        document_id = data.documentId;
+      }
+    } catch {}
+    // organization_id must be a valid uuid or null
+    let organization_id: string | null = null;
+    if (typeof data.organizationId === 'string' && /^[0-9a-fA-F-]{36}$/.test(data.organizationId)) {
+      organization_id = data.organizationId;
+    }
+    const payload = {
+      document_id,
+      template_type: data.templateType,
+      organization_id,
+      user_id: data.userId || null,
+      document_data: data.documentData,
+      verification_hash: verificationHash,
+      expires_at: expiresAt.toISOString(),
+    };
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+    console.log('[QR] Supabase insert payload:', payload);
+    Object.entries(payload).forEach(([k, v]) => console.log(`[QR] Type of ${k}:`, typeof v, v));
     const { error } = await supabase
       .from('verified_documents')
-      .insert({
-        id: data.documentId,
-        template_type: data.templateType,
-        organization_id: data.organizationId,
-        user_id: data.userId,
-        document_data: data.documentData,
-        verification_hash: verificationHash,
-        expires_at: expiresAt.toISOString(),
-      });
+      .insert(payload);
     if (error) {
       console.error('[QR] Error saving verified document to Supabase:', error);
+      if (error.code === '42501' || error.code === 'PGRST301') {
+        console.error('[QR] RLS policy or permission denied. Check Supabase Row Level Security and user authentication.');
+      }
       return null;
     }
     console.log('[QR] Successfully saved verified document. Hash:', verificationHash);
