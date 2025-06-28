@@ -9,6 +9,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { incrementUserStat, getOrganizationIdForUser } from '@/hooks/useUserStats';
+import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface BonafideFormProps {
   onSubmit: (data: BonafideData) => void;
@@ -37,9 +40,23 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
+  const { user } = useAuth();
+  const { organizationDetails } = useBranding();
 
-  const handleFormSubmit = (values: BonafideData) => {
+  const handleFormSubmit = async (values: BonafideData) => {
     onSubmit(values);
+    if (user && organizationDetails?.name) {
+      const orgId = await getOrganizationIdForUser(user.id);
+      if (orgId) await incrementUserStat({ userId: user.id, organizationId: orgId, statField: 'documents_created' });
+    }
+  };
+
+  const handleDigitalSignatureChange = async (checked: boolean) => {
+    form.setValue('includeDigitalSignature', checked);
+    if (checked && user && organizationDetails?.name) {
+      const orgId = await getOrganizationIdForUser(user.id);
+      if (orgId) await incrementUserStat({ userId: user.id, organizationId: orgId, statField: 'documents_signed' });
+    }
   };
 
   return (
@@ -286,7 +303,7 @@ export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
                 <FormControl>
                   <Switch
                     checked={field.value}
-                    onCheckedChange={field.onChange}
+                    onCheckedChange={handleDigitalSignatureChange}
                   />
                 </FormControl>
               </FormItem>

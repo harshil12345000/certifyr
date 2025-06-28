@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useUserDocuments } from '@/hooks/useUserDocuments';
+import { DocumentIcon, SignatureIcon, DownloadIcon, CheckCircleIcon } from "lucide-react";
 const Index = () => {
   const { user } = useAuth();
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -42,33 +43,29 @@ const Index = () => {
 
   const statsCards = [
     {
-      title: "Documents Created",
-      value: statsLoading ? "..." : stats.documentsCreated.toString(),
-      change: stats.documentsCreated > 0 ? `+${stats.documentsCreated} total` : "No documents yet",
-      trend: "up" as const,
-      icon: FileText
+      label: 'Documents Created',
+      value: stats.documentsCreated,
+      icon: <DocumentIcon className="h-6 w-6 text-primary" />,
+      loading: statsLoading,
     },
     {
-      title: "Documents Signed",
-      value: statsLoading ? "..." : stats.documentsSigned.toString(),
-      change: stats.documentsSigned > 0 ? `+${stats.documentsSigned} total` : "No signed documents",
-      trend: "up" as const,
-      icon: FileSignature
+      label: 'Documents Signed',
+      value: stats.documentsSigned,
+      icon: <SignatureIcon className="h-6 w-6 text-primary" />,
+      loading: statsLoading,
     },
     {
-      title: "Pending Documents",
-      value: statsLoading ? "..." : stats.pendingDocuments.toString(),
-      change: stats.pendingDocuments > 0 ? `${stats.pendingDocuments} pending` : "No pending documents",
-      trend: stats.pendingDocuments > 0 ? "up" as const : "down" as const,
-      icon: FileClock
+      label: 'Downloaded Documents',
+      value: stats.downloadedDocuments,
+      icon: <DownloadIcon className="h-6 w-6 text-primary" />,
+      loading: statsLoading,
     },
     {
-      title: "Total Verifications",
-      value: statsLoading ? "..." : stats.totalVerifications.toString(),
-      change: stats.totalVerifications > 0 ? `+${stats.totalVerifications} verified` : "No verifications",
-      trend: "up" as const,
-      icon: BarChart
-    }
+      label: 'Total Verifications',
+      value: stats.totalVerifications,
+      icon: <CheckCircleIcon className="h-6 w-6 text-primary" />,
+      loading: statsLoading,
+    },
   ];
   return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -82,7 +79,7 @@ const Index = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statsCards.map((stat, index) => <StatsCard key={index} title={stat.title} value={stat.value} trend={{
+          {statsCards.map((stat, index) => <StatsCard key={index} title={stat.label} value={stat.value} trend={{
           value: stat.change,
           positive: stat.trend === 'up'
         }} icon={stat.icon} />)}
