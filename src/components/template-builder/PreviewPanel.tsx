@@ -12,9 +12,6 @@ import {
 import { downloadPDF, downloadJPG, printDocument } from '@/lib/document-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Letterhead } from '@/components/templates/Letterhead';
-import { incrementUserStat } from '@/hooks/useUserStats';
-import { useAuth } from '@/contexts/AuthContext';
-import { useBranding } from '@/contexts/BrandingContext';
 
 interface PreviewPanelProps {
   elements: Section[];
@@ -25,8 +22,6 @@ const DEFAULT_BODY = `This is to certify that [Full Name], son of [Parent's Name
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateName = 'Document Title' }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { organizationDetails } = useBranding();
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
   const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
   const [isEditingBody, setIsEditingBody] = useState(false);
@@ -68,11 +63,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
   const handleDownloadPDF = async () => {
     try {
       await downloadPDF(`${templateName.toLowerCase().replace(/\s+/g, '-')}.pdf`);
-      if (user && organizationDetails?.name) {
-        // Fetch org id
-        const orgId = await getOrganizationIdForUser(user.id);
-        if (orgId) await incrementUserStat({ userId: user.id, organizationId: orgId, statField: 'pending_documents' });
-      }
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast({
@@ -86,10 +76,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ elements, templateNa
   const handleDownloadJPG = async () => {
     try {
       await downloadJPG(`${templateName.toLowerCase().replace(/\s+/g, '-')}.jpg`);
-      if (user && organizationDetails?.name) {
-        const orgId = await getOrganizationIdForUser(user.id);
-        if (orgId) await incrementUserStat({ userId: user.id, organizationId: orgId, statField: 'downloaded_documents' });
-      }
     } catch (error) {
       console.error('Error downloading JPG:', error);
       toast({

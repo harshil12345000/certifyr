@@ -12,7 +12,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useUserDocuments } from '@/hooks/useUserDocuments';
-import { FileText as DocumentIcon, SignatureIcon, DownloadIcon, CheckCircleIcon } from "lucide-react";
 const Index = () => {
   const { user } = useAuth();
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -51,19 +50,19 @@ const Index = () => {
     {
       label: 'Documents Signed',
       value: stats.documentsSigned,
-      icon: <SignatureIcon className="h-6 w-6 text-primary" />,
+      icon: <FileSignature className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
     {
       label: 'Downloaded Documents',
       value: stats.downloadedDocuments,
-      icon: <DownloadIcon className="h-6 w-6 text-primary" />,
+      icon: <FileClock className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
     {
       label: 'Total Verifications',
       value: stats.totalVerifications,
-      icon: <CheckCircleIcon className="h-6 w-6 text-primary" />,
+      icon: <FileClock className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
   ];

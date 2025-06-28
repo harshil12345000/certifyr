@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface UserStats {
   documentsCreated: number;
   documentsSigned: number;
-  downloadedDocuments: number;
+  pendingDocuments: number;
   totalVerifications: number;
 }
 
@@ -36,7 +36,7 @@ export function useUserStats(refreshIndex?: number) {
   const [stats, setStats] = useState<UserStats>({
     documentsCreated: 0,
     documentsSigned: 0,
-    downloadedDocuments: 0,
+    pendingDocuments: 0,
     totalVerifications: 0
   });
   const [loading, setLoading] = useState(true);
@@ -52,38 +52,40 @@ export function useUserStats(refreshIndex?: number) {
       try {
         setLoading(true);
         setError(null);
-        const organizationId = await getOrganizationIdForUser(user.id);
-        if (!organizationId) {
-          setStats({ documentsCreated: 0, documentsSigned: 0, downloadedDocuments: 0, totalVerifications: 0 });
-          setLoading(false);
-          return;
-        }
-        // Fetch stats from user_statistics table for this org
+        // Fetch stats from user_statistics table
         const { data, error: statsError } = await supabase
           .from('user_statistics')
           .select('*')
           .eq('user_id', user.id)
-          .eq('organization_id', organizationId)
           .single();
         if (data) {
           setStats({
             documentsCreated: data.documents_created || 0,
             documentsSigned: data.documents_signed || 0,
-            downloadedDocuments: data.downloaded_documents || 0,
+            pendingDocuments: data.pending_documents || 0,
             totalVerifications: data.total_verifications || 0
           });
         } else {
-          setStats({ documentsCreated: 0, documentsSigned: 0, downloadedDocuments: 0, totalVerifications: 0 });
+          setStats({
+            documentsCreated: 0,
+            documentsSigned: 0,
+            pendingDocuments: 0,
+            totalVerifications: 0
+          });
         }
       } catch (err) {
         setError('Failed to fetch statistics');
-        setStats({ documentsCreated: 0, documentsSigned: 0, downloadedDocuments: 0, totalVerifications: 0 });
+        setStats({
+          documentsCreated: 0,
+          documentsSigned: 0,
+          pendingDocuments: 0,
+          totalVerifications: 0
+        });
       } finally {
         setLoading(false);
       }
     };
     fetchStats();
-
     // Set up real-time subscription for user_statistics changes
     const channel = supabase
       .channel('user-stats-changes')
@@ -100,7 +102,6 @@ export function useUserStats(refreshIndex?: number) {
         }
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
