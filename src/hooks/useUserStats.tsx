@@ -6,7 +6,7 @@ interface UserStats {
   documentsCreated: number;
   documentsSigned: number;
   pendingDocuments: number;
-  totalTemplates: number;
+  totalVerifications: number;
 }
 
 export function useUserStats(refreshIndex?: number) {
@@ -15,7 +15,7 @@ export function useUserStats(refreshIndex?: number) {
     documentsCreated: 0,
     documentsSigned: 0,
     pendingDocuments: 0,
-    totalTemplates: 0
+    totalVerifications: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,38 +31,37 @@ export function useUserStats(refreshIndex?: number) {
         setLoading(true);
         setError(null);
 
-        // Fetch documents for this user
-        const { data: documents } = await supabase
-          .from('documents')
-          .select('status')
-          .eq('user_id', user.id);
+        // Fetch stats from user_statistics table
+        const { data, error: statsError } = await supabase
+          .from('user_statistics')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        console.log('[useUserStats] user_statistics:', data, 'error:', statsError);
 
-        const documentsCreated = documents?.length || 0;
-        const documentsSigned = documents?.filter(doc => doc.status === 'Signed').length || 0;
-        const pendingDocuments = documents?.filter(doc => doc.status === 'Created' || doc.status === 'Sent').length || 0;
-
-        // Fetch total templates count
-        const { count: totalTemplates } = await supabase
-          .from('templates')
-          .select('*', { count: 'exact', head: true });
-
-        const userStats: UserStats = {
-          documentsCreated,
-          documentsSigned,
-          pendingDocuments,
-          totalTemplates: totalTemplates || 0
-        };
-
-        setStats(userStats);
+        if (data) {
+          setStats({
+            documentsCreated: data.documents_created || 0,
+            documentsSigned: data.documents_signed || 0,
+            pendingDocuments: data.pending_documents || 0,
+            totalVerifications: data.total_verifications || 0
+          });
+        } else {
+          setStats({
+            documentsCreated: 0,
+            documentsSigned: 0,
+            pendingDocuments: 0,
+            totalVerifications: 0
+          });
+        }
       } catch (err) {
         console.error('Error fetching user stats:', err);
         setError('Failed to fetch statistics');
-        // Set to 0 on error
         setStats({
           documentsCreated: 0,
           documentsSigned: 0,
           pendingDocuments: 0,
-          totalTemplates: 0
+          totalVerifications: 0
         });
       } finally {
         setLoading(false);
@@ -71,19 +70,18 @@ export function useUserStats(refreshIndex?: number) {
 
     fetchStats();
 
-    // Set up real-time subscription for live stats updates
+    // Set up real-time subscription for user_statistics changes
     const channel = supabase
-      .channel('stats-changes')
+      .channel('user-stats-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'documents',
+          table: 'user_statistics',
           filter: `user_id=eq.${user.id}`
         },
         () => {
-          // Refetch stats when documents change
           fetchStats();
         }
       )

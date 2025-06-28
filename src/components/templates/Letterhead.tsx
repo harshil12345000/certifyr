@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useBranding } from "@/contexts/BrandingContext";
 
@@ -10,6 +9,8 @@ interface LetterheadProps {
 export const Letterhead: React.FC<LetterheadProps> = ({ children, className = "" }) => {
   const { logoUrl, organizationDetails, isLoading } = useBranding();
 
+  if (isLoading) return null;
+
   const orgName = organizationDetails?.name ?? "[Institution Name]";
   const orgAddress = organizationDetails?.address ?? "[Institution Address]";
   const orgPhone = organizationDetails?.phone ?? "[Phone Number]";
@@ -17,32 +18,23 @@ export const Letterhead: React.FC<LetterheadProps> = ({ children, className = ""
 
   return (
     <div className={`text-center border-b pb-4 mb-8 ${className}`}>
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span>Loading branding&hellip;</span>
+      {logoUrl && (
+        <div className="flex justify-center mb-2">
+          <img
+            src={logoUrl}
+            alt="Organization Logo"
+            className="h-16 object-contain"
+            onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+          />
         </div>
-      ) : (
-        <>
-          {logoUrl && (
-            <div className="flex justify-center mb-2">
-              <img
-                src={logoUrl}
-                alt="Organization Logo"
-                className="h-16 object-contain"
-                onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-              />
-            </div>
-          )}
-          <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">{orgName}</h1>
-          <p className="text-muted-foreground break-words">
-            {orgAddress}
-            {orgPhone && <> • {orgPhone}</>}
-            {orgEmail && <> • {orgEmail}</>}
-          </p>
-          {children}
-        </>
       )}
+      <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-primary">{orgName}</h1>
+      <p className="text-muted-foreground break-words">
+        {orgAddress}
+        {orgPhone && <> • {orgPhone}</>}
+        {orgEmail && <> • {orgEmail}</>}
+      </p>
+      {children}
     </div>
   );
 };

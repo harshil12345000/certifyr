@@ -37,31 +37,39 @@ const Index = () => {
     documents,
     loading: documentsLoading
   } = useUserDocuments(5, refreshIndex);
-  const statsCards = [{
-    title: "Documents Created",
-    value: statsLoading ? "..." : stats.documentsCreated.toString(),
-    change: stats.documentsCreated > 0 ? `+${stats.documentsCreated} total` : "No documents yet",
-    trend: "up" as const,
-    icon: FileText
-  }, {
-    title: "Documents Signed",
-    value: statsLoading ? "..." : stats.documentsSigned.toString(),
-    change: stats.documentsSigned > 0 ? `+${stats.documentsSigned} total` : "No signed documents",
-    trend: "up" as const,
-    icon: FileSignature
-  }, {
-    title: "Pending Documents",
-    value: statsLoading ? "..." : stats.pendingDocuments.toString(),
-    change: stats.pendingDocuments > 0 ? `${stats.pendingDocuments} pending` : "No pending documents",
-    trend: stats.pendingDocuments > 0 ? "up" as const : "down" as const,
-    icon: FileClock
-  }, {
-    title: "Total Templates",
-    value: statsLoading ? "..." : stats.totalTemplates.toString(),
-    change: stats.totalTemplates > 0 ? `+${stats.totalTemplates} available` : "No custom templates",
-    trend: "up" as const,
-    icon: BarChart
-  }];
+
+  console.log('[Dashboard] stats:', stats);
+
+  const statsCards = [
+    {
+      title: "Documents Created",
+      value: statsLoading ? "..." : stats.documentsCreated.toString(),
+      change: stats.documentsCreated > 0 ? `+${stats.documentsCreated} total` : "No documents yet",
+      trend: "up" as const,
+      icon: FileText
+    },
+    {
+      title: "Documents Signed",
+      value: statsLoading ? "..." : stats.documentsSigned.toString(),
+      change: stats.documentsSigned > 0 ? `+${stats.documentsSigned} total` : "No signed documents",
+      trend: "up" as const,
+      icon: FileSignature
+    },
+    {
+      title: "Pending Documents",
+      value: statsLoading ? "..." : stats.pendingDocuments.toString(),
+      change: stats.pendingDocuments > 0 ? `${stats.pendingDocuments} pending` : "No pending documents",
+      trend: stats.pendingDocuments > 0 ? "up" as const : "down" as const,
+      icon: FileClock
+    },
+    {
+      title: "Total Verifications",
+      value: statsLoading ? "..." : stats.totalVerifications.toString(),
+      change: stats.totalVerifications > 0 ? `+${stats.totalVerifications} verified` : "No verifications",
+      trend: "up" as const,
+      icon: BarChart
+    }
+  ];
   return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
