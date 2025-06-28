@@ -17,15 +17,14 @@ export const generateVerificationHash = (): string => {
 };
 
 export const createVerificationUrl = (verificationHash: string): string => {
-  // Priority: VITE_APP_BASE_URL > window.location.origin > production fallback
   let baseUrl = '';
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_BASE_URL) {
     baseUrl = import.meta.env.VITE_APP_BASE_URL;
   } else if (typeof window !== 'undefined' && window.location) {
     baseUrl = window.location.origin;
   } else {
-    baseUrl = 'https://certifyr.lovable.app';
-    console.error('Could not determine base URL for QR verification. Falling back to production URL.');
+    console.error('Could not determine base URL for QR verification. window.location and VITE_APP_BASE_URL unavailable.');
+    return '';
   }
   return `${baseUrl}/verify/${verificationHash}`;
 };
