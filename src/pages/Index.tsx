@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useUserDocuments } from '@/hooks/useUserDocuments';
-import { DocumentIcon, SignatureIcon, DownloadIcon, CheckCircleIcon } from "lucide-react";
+import { FileText as DocumentIcon, SignatureIcon, DownloadIcon, CheckCircleIcon } from "lucide-react";
 const Index = () => {
   const { user } = useAuth();
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -45,7 +45,7 @@ const Index = () => {
     {
       label: 'Documents Created',
       value: stats.documentsCreated,
-      icon: <DocumentIcon className="h-6 w-6 text-primary" />,
+      icon: <FileText className="h-6 w-6 text-primary" />,
       loading: statsLoading,
     },
     {
