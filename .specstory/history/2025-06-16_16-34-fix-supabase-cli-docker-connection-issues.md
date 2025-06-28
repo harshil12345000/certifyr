@@ -7118,7 +7118,6 @@ _**Assistant**_
 
 
 
-
 ---
 
 ```diff
@@ -7204,6 +7203,62 @@ Just revert it
 ---
 
 _**Assistant**_
+
+```diff
+      };
+  
+-     let verificationHash = await saveVerifiedDocument(verificationData);
++     const verificationHash = await saveVerifiedDocument(verificationData);
+      if (!verificationHash) {
+-       console.error("QR code generation failed (Supabase insert failed): Falling back to dummy hash.");
+-       // Fallback: use a dummy hash so that a QR code is always generated.
+-       verificationHash = "dummyhash";
++       console.error('QR code generation failed: Could not save verified document.');
++       return null;
+      }
+  
+      return createVerificationUrl(verificationHash);
+    } catch (error) {
+-     console.error("Error generating QR code (falling back to dummy hash):", error);
+-     // Fallback: return a dummy verification URL so that a QR code is always rendered.
+-     return createVerificationUrl("dummyhash");
++     console.error('Error generating QR code:', error);
++     return null;
+    }
+  };
+```
+
+---
+
+The QR code fallback logic has been fully reverted:
+
+- If Supabase is not connected or the insert fails, **no QR code will be generated** (the original behavior).
+- Only successful document saves will result in a QR code being shown in previews.
+
+You are now back to the original, secure logic. If you need further changes or want to troubleshoot Supabase connectivity, let me know!
+
+---
+
+_**User**_
+
+Check the QR verification feature. It only works on certifyr.lovable.app, but fails on localhost, Netlify, and Vercel.
+
+1. Search for hardcoded URLs (like certifyr.lovable.app) in the QR logic.
+2. Replace with dynamic base URL using `window.location.origin` or `import.meta.env.VITE_APP_BASE_URL`.
+3. Ensure all fetch/post/verification routes use this dynamic base.
+4. Verify environment variables are correctly set and available during build.
+5. Check if Supabase or verification API endpoints are restricted by domain.
+6. Add error logs to see which request fails and why.
+7. Confirm the QR feature works on all environments after the fix.
+
+
+---
+
+_**Assistant**_
+
+
+
+---
 
 
 

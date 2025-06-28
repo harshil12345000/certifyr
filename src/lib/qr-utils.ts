@@ -1,3 +1,5 @@
+// IMPORTANT: Set VITE_APP_BASE_URL in your .env file (e.g., http://localhost:3000 for local dev, your Netlify/Vercel URL for preview, etc.)
+// This ensures QR verification links work everywhere.
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,11 +17,15 @@ export const generateVerificationHash = (): string => {
 };
 
 export const createVerificationUrl = (verificationHash: string): string => {
-  let baseUrl = "";
-  if (typeof window !== "undefined" && window.location) {
+  // Priority: VITE_APP_BASE_URL > window.location.origin > production fallback
+  let baseUrl = '';
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_BASE_URL) {
+    baseUrl = import.meta.env.VITE_APP_BASE_URL;
+  } else if (typeof window !== 'undefined' && window.location) {
     baseUrl = window.location.origin;
   } else {
-    baseUrl = "https://certifyr.lovable.app";
+    baseUrl = 'https://certifyr.lovable.app';
+    console.error('Could not determine base URL for QR verification. Falling back to production URL.');
   }
   return `${baseUrl}/verify/${verificationHash}`;
 };
