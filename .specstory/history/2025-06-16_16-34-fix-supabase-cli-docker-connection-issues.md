@@ -8176,6 +8176,133 @@ ProtectedRoute.tsx:13 ProtectedRoute - loading: false user: true
 
 _**Assistant**_
 
+**You have found the root cause:**
+
+```
+[QR] Error saving verified document to Supabase: Object
+code: "22P02"
+message: "invalid input syntax for type uuid: \"Indus International School Pune\""
+```
+
+**This means:**  
+You are passing `"Indus International School Pune"` as the value for `organization_id`, but the Supabase schema expects a UUID for this field.
+
+---
+
+## **How to Fix**
+
+### 1. **organization_id Must Be a UUID**
+- You must pass the actual UUID of the organization, not its name.
+- If you do not have a valid UUID for the organization, set `organization_id: null`.
+
+### 2. **Code Fix in `saveVerifiedDocument`**
+- Only set `organization_id` if it is a valid UUID.
+- Otherwise, set it to `null`.
+
+---
+
+## **Code Update**
+
+I will update the code to validate `organization_id` before inserting:
+
+```ts
+// ... inside saveVerifiedDocument
+let organization_id: string | null = null;
+if (typeof data.organizationId === 'string' && /^[0-9a-fA-F-]{36}$/.test(data.organizationId)) {
+  organization_id = data.organizationId;
+}
+const payload = {
+  document_id,
+  template_type: data.templateType,
+  organization_id,
+  user_id: data.userId || null,
+  document_data: data.documentData,
+  verification_hash: verificationHash,
+  expires_at: expiresAt.toISOString(),
+};
+```
+
+---
+
+## **Action Plan**
+
+1. Update the code to only insert a valid UUID for `organization_id`.
+2. Log the value and type of `organization_id` before insert.
+3. If you need the organization UUID, fetch it from Supabase using the organization name before generating the QR code.
+
+---
+
+**I will now apply this fix.**
+
+---
+
+```diff
+      let document_id: string | undefined = undefined;
+      try {
+-       // If data.documentId is a valid uuid, use it, else undefined
+        if (typeof data.documentId === 'string' && /^[0-9a-fA-F-]{36}$/.test(data.documentId)) {
+          document_id = data.documentId;
+        }
+      } catch {}
++     // organization_id must be a valid uuid or null
++     let organization_id: string | null = null;
++     if (typeof data.organizationId === 'string' && /^[0-9a-fA-F-]{36}$/.test(data.organizationId)) {
++       organization_id = data.organizationId;
++     }
+      const payload = {
+        document_id,
+        template_type: data.templateType,
+-       organization_id: data.organizationId || null,
++       organization_id,
+        user_id: data.userId || null,
+        document_data: data.documentData,
+        verification_hash: verificationHash,
+        expires_at: expiresAt.toISOString(),
+      };
+-     // Remove undefined fields
+      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+-     // Log payload and types
+      console.log('[QR] Supabase insert payload:', payload);
+      Object.entries(payload).forEach(([k, v]) => console.log(`[QR] Type of ${k}:`, typeof v, v));
+```
+
+---
+
+**The code now ensures that `organization_id` is only set if it is a valid UUID.**  
+If it is not a UUID (e.g., a name like "Indus International School Pune"), it will be set to `null`, which matches the Supabase schema and prevents the 400 error.
+
+---
+
+### **What to do next:**
+
+1. **Try generating a QR code again.**
+2. **Check the browser console for `[QR]` logs:**
+   - Confirm that `organization_id` is now either a valid UUID or `null`.
+   - The 400 error for invalid UUID should be gone.
+3. **If you need to associate an organization, fetch the UUID from Supabase using the organization name before calling QR code generation.**
+
+---
+
+**This should resolve the error and allow successful QR code generation.  
+If you still see errors, share the new `[QR]` logs for further diagnosis!**
+
+---
+
+_**User**_
+
+QR works! This is what the verification modal looks like when QR is scanned. Lets add a field like "Issued By: [Organization Name]" and details should follow this format:
+
+
+Where it is responsive with the accurate details and pulls functionally from supabase. 
+
+---
+
+_**Assistant**_
+
+
+
+---
+
 
 
 ---
