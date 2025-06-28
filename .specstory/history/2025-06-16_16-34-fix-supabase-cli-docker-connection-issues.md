@@ -7600,6 +7600,70 @@ export const createVerificationUrl = (verificationHash: string): string => {
 
 _**Assistant**_
 
+```diff
+  
+  export const createVerificationUrl = (verificationHash: string): string => {
+-   // Priority: VITE_APP_BASE_URL > window.location.origin > production fallback
+    let baseUrl = '';
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_BASE_URL) {
+```
+
+```diff
+      baseUrl = window.location.origin;
+    } else {
+-     baseUrl = 'https://certifyr.lovable.app';
+-     console.error('Could not determine base URL for QR verification. Falling back to production URL.');
++     console.error('Could not determine base URL for QR verification. window.location and VITE_APP_BASE_URL unavailable.');
++     return '';
+    }
+    return `${baseUrl}/verify/${verificationHash}`;
+```
+
+---
+
+The code is now fixed:
+
+- The QR verification URL is **no longer hardcoded** to `certifyr.lovable.app`.
+- It will use, in order of priority:
+  1. `import.meta.env.VITE_APP_BASE_URL` (set in your environment or build system)
+  2. `window.location.origin` (for browser environments)
+  3. If neither is available, it logs an error and returns an empty string.
+
+**This ensures QR verification works on localhost, Netlify, Vercel, and production, as long as you set the environment variable appropriately.**
+
+No further hardcoded base URLs remain in the QR logic.  
+You can now set the base URL for each environment without code changes.
+
+If you need a sample `.env` or want to verify the fix, let me know!
+
+---
+
+_**User**_
+
+Create two `.env` files in the project root:
+
+`.env.local`
+
+```
+VITE_APP_BASE_URL=http://localhost:3000
+```
+
+`.env.production`
+
+```
+VITE_APP_BASE_URL=https://your-production-domain.com
+```
+
+
+
+---
+
+_**Assistant**_
+
+Cannot edit files blocked by globalIgnore
+
+---
+
 
 
 ---
