@@ -1,0 +1,36 @@
+[33m1f69e3d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33m74a6dd0[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: pull origin main: Fast-forward
+[33m1f69e3d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{2}: commit: 7
+[33m8850361[m HEAD@{3}: commit: Removed the Default Favicon
+[33m03c5108[m HEAD@{4}: commit: 6
+[33m62540d8[m HEAD@{5}: commit: 5
+[33m1084651[m HEAD@{6}: commit: Dashboard Stats Update 4
+[33m511615b[m HEAD@{7}: commit: Update Stats Dashboard 3
+[33m12d9a04[m HEAD@{8}: commit: Dashboard Stats Update 2
+[33mfc2b9f7[m HEAD@{9}: commit: Dashboard Stats Update
+[33m446fa47[m HEAD@{10}: commit: Logo Sidebar Update
+[33mdea9120[m HEAD@{11}: commit: Removed Issued By Field for QR
+[33m2123267[m HEAD@{12}: commit: QR New Update Organization Name in Modal
+[33ma3ce934[m HEAD@{13}: commit: QR Netlify Update
+[33mc6cef2b[m HEAD@{14}: commit: QR Vercel update
+[33mfbba28b[m HEAD@{15}: commit: Update QR
+[33mcc27b92[m HEAD@{16}: commit: QR Works Now
+[33m6ca4964[m HEAD@{17}: commit: Update 4
+[33m72f3252[m HEAD@{18}: commit: Qr update 2
+[33m8ffea6e[m HEAD@{19}: commit: QRVerification Update
+[33m55a14dc[m HEAD@{20}: commit: new
+[33m4d65de2[m HEAD@{21}: commit: update 11
+[33meb876f5[m HEAD@{22}: commit: update 10
+[33mdcb5f6f[m HEAD@{23}: commit: update 9
+[33m49e524b[m HEAD@{24}: commit: update 8
+[33md50e14c[m HEAD@{25}: pull origin main: Fast-forward
+[33mb50d383[m HEAD@{26}: commit: update 7
+[33mef36ea9[m HEAD@{27}: pull origin main: Fast-forward
+[33m13dc6cb[m HEAD@{28}: commit: update 6
+[33m6868b12[m HEAD@{29}: pull origin main: Fast-forward
+[33me9a2d0d[m HEAD@{30}: commit (merge): update 5
+[33mecb49fc[m HEAD@{31}: commit: update 4
+[33m9977785[m HEAD@{32}: commit: update 3
+[33mec695b4[m HEAD@{33}: commit: update2
+[33ma2b3248[m HEAD@{34}: commit: update
+[33mada7bdc[m HEAD@{35}: clone: from https://github.com/harshil12345000/certifyr.git

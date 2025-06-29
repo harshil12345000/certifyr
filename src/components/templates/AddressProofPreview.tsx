@@ -4,6 +4,7 @@ import { useBranding } from '@/contexts/BrandingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
+import { Letterhead } from './Letterhead';
 
 export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }) => {
   const {
@@ -73,20 +74,8 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed relative">
-      {/* Header */}
-      <div className="text-center mb-8">
-        {logoUrl && (
-          <img src={logoUrl} alt={`${displayInstitutionName} Logo`} className="h-16 mx-auto mb-4 object-contain" />
-        )}
-        <h1 className="text-2xl font-bold text-blue-600 uppercase tracking-wide mb-2">
-          {displayInstitutionName}
-        </h1>
-        <p className="text-sm text-gray-600">
-          {organizationDetails?.address && `${organizationDetails.address} • `}
-          {organizationDetails?.phone && `${organizationDetails.phone} • `}
-          {organizationDetails?.email && organizationDetails.email}
-        </p>
-      </div>
+      {/* Letterhead */}
+      <Letterhead />
 
       {/* Certificate Title */}
       <div className="text-center mb-8">

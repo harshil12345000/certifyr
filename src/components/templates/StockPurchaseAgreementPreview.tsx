@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StockPurchaseAgreementPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';

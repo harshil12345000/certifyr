@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { TransferCertificatePreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Letterhead } from './Letterhead';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -120,21 +120,8 @@ export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProp
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
-      {/* Header */}
-      <div className="text-center mb-8 pb-4 border-b-2 border-blue-200">
-        {branding.logoUrl && (
-          <img src={branding.logoUrl} alt={`${institutionName || 'Institution'} Logo`} className="h-20 mx-auto mb-4 object-contain" />
-        )}
-        <h1 className="text-3xl font-bold text-blue-600 uppercase tracking-wide">[{institutionName || 'INSTITUTION NAME'}]</h1>
-        {branding.organizationAddress && <p className="text-sm mt-2">{branding.organizationAddress}</p>}
-        {(branding.organizationPhone || branding.organizationEmail) && (
-          <p className="text-sm">
-            {branding.organizationPhone && `Tel: ${branding.organizationPhone}`}
-            {branding.organizationPhone && branding.organizationEmail && ' | '}
-            {branding.organizationEmail && `Email: ${branding.organizationEmail}`}
-          </p>
-        )}
-      </div>
+      {/* Letterhead */}
+      <Letterhead />
 
       {/* Certificate Title */}
       <div className="text-center mb-8">
