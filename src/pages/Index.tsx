@@ -44,25 +44,25 @@ const Index = () => {
     {
       label: 'Documents Created',
       value: stats.documentsCreated,
-      icon: <FileText className="h-6 w-6 text-primary" />,
+      icon: FileText,
       loading: statsLoading,
     },
     {
       label: 'Documents Signed',
       value: stats.documentsSigned,
-      icon: <FileSignature className="h-6 w-6 text-primary" />,
+      icon: FileSignature,
       loading: statsLoading,
     },
     {
-      label: 'Downloaded Documents',
-      value: stats.downloadedDocuments,
-      icon: <FileClock className="h-6 w-6 text-primary" />,
+      label: 'Pending Documents',
+      value: stats.pendingDocuments,
+      icon: FileClock,
       loading: statsLoading,
     },
     {
       label: 'Total Verifications',
       value: stats.totalVerifications,
-      icon: <FileClock className="h-6 w-6 text-primary" />,
+      icon: BarChart,
       loading: statsLoading,
     },
   ];
@@ -78,10 +78,14 @@ const Index = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statsCards.map((stat, index) => <StatsCard key={index} title={stat.label} value={stat.value} trend={{
-          value: stat.change,
-          positive: stat.trend === 'up'
-        }} icon={stat.icon} />)}
+          {statsCards.map((stat, index) => (
+            <StatsCard 
+              key={index} 
+              title={stat.label} 
+              value={stat.loading ? 'Loading...' : stat.value.toString()} 
+              icon={stat.icon}
+            />
+          ))}
         </div>
 
         {/* Charts and tables */}

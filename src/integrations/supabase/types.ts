@@ -83,6 +83,63 @@ export type Database = {
         }
         Relationships: []
       }
+      document_requests: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          organization_id: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["request_status"]
+          template_data: Json
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          organization_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          template_data: Json
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          organization_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          template_data?: Json
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "request_portal_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_verifications: {
         Row: {
           id: string
@@ -315,6 +372,100 @@ export type Database = {
         }
         Relationships: []
       }
+      request_portal_employees: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          email: string
+          employee_id: string
+          full_name: string
+          id: string
+          manager_name: string | null
+          organization_id: string
+          phone_number: string | null
+          registered_at: string
+          status: Database["public"]["Enums"]["employee_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email: string
+          employee_id: string
+          full_name: string
+          id?: string
+          manager_name?: string | null
+          organization_id: string
+          phone_number?: string | null
+          registered_at?: string
+          status?: Database["public"]["Enums"]["employee_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email?: string
+          employee_id?: string
+          full_name?: string
+          id?: string
+          manager_name?: string | null
+          organization_id?: string
+          phone_number?: string | null
+          registered_at?: string
+          status?: Database["public"]["Enums"]["employee_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_portal_employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_portal_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          organization_id: string
+          password_hash: string
+          portal_url: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id: string
+          password_hash: string
+          portal_url: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id?: string
+          password_hash?: string
+          portal_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_portal_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_announcement_reads: {
         Row: {
           announcement_id: string
@@ -419,6 +570,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_statistics: {
+        Row: {
+          documents_created: number
+          documents_signed: number
+          id: string
+          organization_id: string | null
+          pending_documents: number
+          total_verifications: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          documents_created?: number
+          documents_signed?: number
+          id?: string
+          organization_id?: string | null
+          pending_documents?: number
+          total_verifications?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          documents_created?: number
+          documents_signed?: number
+          id?: string
+          organization_id?: string | null
+          pending_documents?: number
+          total_verifications?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_statistics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       verified_documents: {
         Row: {
           document_data: Json
@@ -482,6 +674,14 @@ export type Database = {
           role: string
         }[]
       }
+      increment_user_stat: {
+        Args: {
+          p_user_id: string
+          p_organization_id: string
+          p_stat_field: string
+        }
+        Returns: undefined
+      }
       is_organization_admin: {
         Args: { check_user_id: string; check_org_id: string }
         Returns: boolean
@@ -496,7 +696,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      employee_status: "pending" | "approved" | "rejected"
+      request_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -611,6 +812,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      employee_status: ["pending", "approved", "rejected"],
+      request_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const
