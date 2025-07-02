@@ -9,7 +9,11 @@ export default function EmployeePortal() {
   const { organizationId } = useParams<{ organizationId: string }>();
   const [portalSettings, setPortalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [employee, setEmployee] = useState<any>(null);
+  const [employee, setEmployee] = useState<any>(() => {
+    // Try to load employee session from localStorage
+    const stored = localStorage.getItem('employee_portal_session');
+    return stored ? JSON.parse(stored) : null;
+  });
 
   useEffect(() => {
     if (!organizationId) return;
@@ -39,6 +43,15 @@ export default function EmployeePortal() {
     fetchPortalSettings();
   }, [organizationId]);
 
+  // Persist employee session to localStorage
+  useEffect(() => {
+    if (employee) {
+      localStorage.setItem('employee_portal_session', JSON.stringify(employee));
+    } else {
+      localStorage.removeItem('employee_portal_session');
+    }
+  }, [employee]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -54,7 +67,7 @@ export default function EmployeePortal() {
   return (
     <EmployeePortalProvider organizationId={organizationId!}>
       {employee ? (
-        <EmployeePortalDashboard employee={employee} />
+        <EmployeePortalDashboard employee={employee} onSignOut={() => setEmployee(null)} />
       ) : (
         <EmployeePortalAuth 
           portalSettings={portalSettings}

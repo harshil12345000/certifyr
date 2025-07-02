@@ -55,17 +55,14 @@ export function RequestPortalSettings() {
         .eq('organization_id', orgData.organization_id)
         .single();
 
-      if (settingsData) {
-        setSettings({
-          enabled: settingsData.enabled,
-          password: '', // Don't display stored password
-          portalUrl: settingsData.portal_url
-        });
-      } else {
-        // Generate default URL
-        const portalUrl = `${window.location.origin}/${orgData.organization_id}/request-portal`;
-        setSettings(prev => ({ ...prev, portalUrl }));
-      }
+      // Always generate the portal URL dynamically
+      const portalUrl = `${window.location.origin}/${orgData.organization_id}/request-portal`;
+
+      setSettings({
+        enabled: settingsData ? settingsData.enabled : false,
+        password: '', // Don't display stored password
+        portalUrl
+      });
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({
@@ -113,7 +110,7 @@ export function RequestPortalSettings() {
           organization_id: orgData.organization_id,
           enabled: settings.enabled,
           password_hash: passwordHash,
-          portal_url: settings.portalUrl
+          portal_url: settings.portalUrl // Always include portal_url for Supabase type safety
         });
 
       if (error) throw error;

@@ -22,7 +22,7 @@ interface DocumentRequest {
   };
 }
 
-export function RequestPortalRequests() {
+export function RequestPortalRequests({ onRequestProcessed }: { onRequestProcessed?: () => void }) {
   const { user } = useAuth();
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +113,8 @@ export function RequestPortalRequests() {
 
       // Refresh requests
       fetchRequests();
+      // Notify parent to refresh count
+      if (onRequestProcessed) onRequestProcessed();
     } catch (error) {
       console.error('Error processing request:', error);
       toast({

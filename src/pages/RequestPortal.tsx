@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,35 @@ import { RequestPortalMembers } from '@/components/request-portal/RequestPortalM
 
 export default function RequestPortal() {
   const [activeTab, setActiveTab] = useState('settings');
+  const [requestsCount, setRequestsCount] = useState(0);
+
+  // Fetch requests count from Supabase
+  useEffect(() => {
+    const fetchRequestsCount = async () => {
+      // Import supabase client dynamically to avoid SSR issues
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      if (!user) return setRequestsCount(0);
+      // Get user's organization
+      const { data: orgData } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+      if (!orgData) return setRequestsCount(0);
+      // Get pending document requests count
+      const { count, error } = await supabase
+        .from('document_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', orgData.organization_id)
+        .eq('status', 'pending');
+      if (error) return setRequestsCount(0);
+      setRequestsCount(count || 0);
+    };
+    fetchRequestsCount();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -28,7 +57,7 @@ export default function RequestPortal() {
             <TabsTrigger value="requests">
               Requests
               <Badge variant="secondary" className="ml-2">
-                3
+                {requestsCount}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
@@ -39,7 +68,31 @@ export default function RequestPortal() {
           </TabsContent>
 
           <TabsContent value="requests" className="space-y-6">
-            <RequestPortalRequests />
+            <RequestPortalRequests onRequestProcessed={() => {
+              // Refresh count when a request is processed
+              // (re-run fetchRequestsCount)
+              const fetchRequestsCount = async () => {
+                const { supabase } = await import('@/integrations/supabase/client');
+                const { data: userData } = await supabase.auth.getUser();
+                const user = userData?.user;
+                if (!user) return setRequestsCount(0);
+                const { data: orgData } = await supabase
+                  .from('organization_members')
+                  .select('organization_id')
+                  .eq('user_id', user.id)
+                  .eq('role', 'admin')
+                  .single();
+                if (!orgData) return setRequestsCount(0);
+                const { count, error } = await supabase
+                  .from('document_requests')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('organization_id', orgData.organization_id)
+                  .eq('status', 'pending');
+                if (error) return setRequestsCount(0);
+                setRequestsCount(count || 0);
+              };
+              fetchRequestsCount();
+            }} />
           </TabsContent>
 
           <TabsContent value="members" className="space-y-6">
