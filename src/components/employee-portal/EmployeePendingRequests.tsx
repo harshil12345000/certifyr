@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import * as Previews from '@/components/templates';
 import { Clock, Eye, FileText } from 'lucide-react';
 import { FormData } from '@/types/templates';
+import { DocumentRequest } from '@/types/document';
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'bonafide-1': 'BonafidePreview',
@@ -32,15 +33,6 @@ const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'academic-transcript-1': 'AcademicTranscriptPreview',
   'embassy-attestation-letter-1': 'EmbassyAttestationLetterPreview',
 };
-
-interface DocumentRequest {
-  id: string;
-  template_id: string;
-  template_data: FormData;
-  status: 'pending' | 'approved' | 'rejected';
-  requested_at: string;
-  processed_at?: string;
-}
 
 export function EmployeePendingRequests() {
   const { employee, organizationId } = useEmployeePortal();
@@ -171,7 +163,7 @@ export function EmployeePendingRequests() {
                         <div className="mt-4">
                           {PreviewComponent && (
                             <PreviewComponent 
-                              data={request.template_data as any} 
+                              data={request.template_data as FormData} 
                               isEmployeePreview={request.status !== 'approved'}
                               showExportButtons={request.status === 'approved'}
                             />

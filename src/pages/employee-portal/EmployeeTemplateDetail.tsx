@@ -128,7 +128,7 @@ export default function EmployeeTemplateDetail() {
           employee_id: employee.id,
           organization_id: organizationId,
           template_id: id,
-          template_data: formData,
+          template_data: formData as any, // Convert FormData to Json
           status: 'pending'
         });
 
