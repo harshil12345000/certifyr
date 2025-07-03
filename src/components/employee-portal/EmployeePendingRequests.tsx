@@ -130,7 +130,7 @@ export function EmployeePendingRequests() {
 
       <div className="grid gap-4">
         {requests.map((request) => {
-          const PreviewComponent = Previews[TEMPLATE_PREVIEW_MAP[request.template_id]];
+          const PreviewComponent = Previews[TEMPLATE_PREVIEW_MAP[request.template_id]] as any;
           
           return (
             <Card key={request.id}>
@@ -163,7 +163,7 @@ export function EmployeePendingRequests() {
                         <div className="mt-4">
                           {PreviewComponent && (
                             <PreviewComponent 
-                              data={request.template_data as unknown as FormData} 
+                              data={request.template_data as any} 
                               isEmployeePreview={request.status !== 'approved'}
                               showExportButtons={request.status === 'approved'}
                             />
