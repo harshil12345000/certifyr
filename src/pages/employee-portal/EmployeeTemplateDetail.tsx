@@ -71,6 +71,11 @@ export default function EmployeeTemplateDetail() {
   const FormComponent = Forms[TEMPLATE_FORM_MAP[id]];
   const PreviewComponent = Previews[TEMPLATE_PREVIEW_MAP[id]];
 
+  const handleFormSubmit = (data: any) => {
+    setFormData(data);
+    setTab('preview'); // Switch to preview after form submission
+  };
+
   return (
     <EmployeePortalLayout activeTab="templates">
       <div className="max-w-3xl mx-auto py-12">
@@ -82,7 +87,7 @@ export default function EmployeeTemplateDetail() {
           </TabsList>
           <TabsContent value="form">
             <div className="bg-card p-6 rounded shadow">
-              <FormComponent data={formData} onChange={setFormData} />
+              <FormComponent onSubmit={handleFormSubmit} initialData={formData} />
             </div>
           </TabsContent>
           <TabsContent value="preview">
