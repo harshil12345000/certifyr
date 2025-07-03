@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -109,12 +110,15 @@ export default function EmployeeTemplateDetail() {
           </TabsList>
           <TabsContent value="form">
             <div className="bg-card p-6 rounded shadow">
-              <FormComponent onSubmit={handleFormSubmit} initialData={formData} />
+              <FormComponent 
+                onSubmit={handleFormSubmit as any} 
+                initialData={formData as any} 
+              />
             </div>
           </TabsContent>
           <TabsContent value="preview">
             <div className="bg-card p-6 rounded shadow">
-              <PreviewComponent data={formData} />
+              <PreviewComponent data={formData as any} />
             </div>
           </TabsContent>
         </Tabs>
