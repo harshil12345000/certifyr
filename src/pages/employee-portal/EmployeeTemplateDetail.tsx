@@ -99,6 +99,25 @@ export default function EmployeeTemplateDetail() {
     setTab('preview'); // Switch to preview after form submission
   };
 
+  const handleFormDataChange = (data: FormData) => {
+    setFormData(data);
+  };
+
+  // Determine which props to pass based on the form type
+  const getFormProps = () => {
+    if (id === 'address-proof-1') {
+      return {
+        initialData: formData as any,
+        onDataChange: handleFormDataChange as any
+      };
+    }
+    
+    return {
+      onSubmit: handleFormSubmit as any,
+      initialData: formData as any
+    };
+  };
+
   return (
     <EmployeePortalLayout activeTab="templates">
       <div className="max-w-3xl mx-auto py-12">
@@ -110,10 +129,7 @@ export default function EmployeeTemplateDetail() {
           </TabsList>
           <TabsContent value="form">
             <div className="bg-card p-6 rounded shadow">
-              <FormComponent 
-                onSubmit={handleFormSubmit as any} 
-                initialData={formData as any} 
-              />
+              <FormComponent {...getFormProps()} />
             </div>
           </TabsContent>
           <TabsContent value="preview">
