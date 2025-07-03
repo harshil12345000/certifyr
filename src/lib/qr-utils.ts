@@ -19,6 +19,11 @@ export const generateVerificationHash = (): string => {
   return uuidv4().replace(/-/g, '');
 };
 
+export function getBaseUrl() {
+  // Use env var if set, otherwise fallback to window.location.origin
+  return import.meta.env.VITE_APP_BASE_URL || window.location.origin;
+}
+
 export const createVerificationUrl = (verificationHash: string): string => {
   let baseUrl = '';
   // Log which base URL is being used
