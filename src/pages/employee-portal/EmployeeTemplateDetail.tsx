@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -29,6 +30,7 @@ const TEMPLATE_FORM_MAP: Record<string, keyof typeof Forms> = {
   'academic-transcript-1': 'AcademicTranscriptForm',
   'embassy-attestation-letter-1': 'EmbassyAttestationLetterForm',
 };
+
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'bonafide-1': 'BonafidePreview',
   'character-1': 'CharacterPreview',
@@ -80,7 +82,7 @@ export default function EmployeeTemplateDetail() {
           </TabsList>
           <TabsContent value="form">
             <div className="bg-card p-6 rounded shadow">
-              <FormComponent value={formData} onChange={setFormData} />
+              <FormComponent data={formData} onChange={setFormData} />
             </div>
           </TabsContent>
           <TabsContent value="preview">
@@ -92,4 +94,4 @@ export default function EmployeeTemplateDetail() {
       </div>
     </EmployeePortalLayout>
   );
-} 
+}
