@@ -383,6 +383,7 @@ export type Database = {
           id: string
           manager_name: string | null
           organization_id: string
+          password_hash: string | null
           phone_number: string | null
           registered_at: string
           status: Database["public"]["Enums"]["employee_status"]
@@ -398,6 +399,7 @@ export type Database = {
           id?: string
           manager_name?: string | null
           organization_id: string
+          password_hash?: string | null
           phone_number?: string | null
           registered_at?: string
           status?: Database["public"]["Enums"]["employee_status"]
@@ -413,6 +415,7 @@ export type Database = {
           id?: string
           manager_name?: string | null
           organization_id?: string
+          password_hash?: string | null
           phone_number?: string | null
           registered_at?: string
           status?: Database["public"]["Enums"]["employee_status"]
