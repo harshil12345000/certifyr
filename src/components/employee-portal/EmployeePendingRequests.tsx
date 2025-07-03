@@ -163,7 +163,7 @@ export function EmployeePendingRequests() {
                         <div className="mt-4">
                           {PreviewComponent && (
                             <PreviewComponent 
-                              data={request.template_data as FormData} 
+                              data={request.template_data as unknown as FormData} 
                               isEmployeePreview={request.status !== 'approved'}
                               showExportButtons={request.status === 'approved'}
                             />
