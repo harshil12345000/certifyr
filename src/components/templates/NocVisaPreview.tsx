@@ -268,7 +268,7 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => {
 
       {/* Seal */}
       {branding.sealUrl && (
-        <div className="absolute bottom-32 left-16">
+        <div className="absolute bottom-8 left-8">
           <img src={branding.sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
         </div>
       )}

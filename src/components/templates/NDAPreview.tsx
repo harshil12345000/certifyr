@@ -55,7 +55,7 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -134,7 +134,7 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="flex justify-between items-end mt-8">
+        <div className="flex justify-between items-end mt-8 mb-32">
           <div>
             <p className="text-sm"><strong>Date:</strong> {issueDate || '[Date]'}</p>
           </div>
@@ -165,12 +165,7 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img 
-            src={sealUrl}
-            alt="Organization Seal" 
-            className="h-20 w-20 object-contain opacity-75"
-            onError={(e) => handleImageError(e, "seal")}
-          />
+          <img src={sealUrl} alt="Organization Seal" className="h-20 w-20 object-contain opacity-75" onError={(e) => handleImageError(e, "seal")} />
         </div>
       )}
     </div>

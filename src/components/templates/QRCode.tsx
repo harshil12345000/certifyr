@@ -16,7 +16,7 @@ export const QRCode: React.FC<QRCodeProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (canvasRef.current && value) {
+    if (canvasRef.current && value && value.trim() !== '') {
       QRCodeLib.toCanvas(canvasRef.current, value, {
         width: size,
         margin: 1,
@@ -28,7 +28,7 @@ export const QRCode: React.FC<QRCodeProps> = ({
     }
   }, [value, size]);
 
-  if (!value) {
+  if (!value || value.trim() === '') {
     return null;
   }
 

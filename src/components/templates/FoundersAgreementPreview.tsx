@@ -28,7 +28,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -115,7 +115,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
       </div>
 
       {/* Signature Section */}
-      <div className="mt-12">
+      <div className="mt-12 mb-32">
         <p className="mb-6">IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
@@ -155,12 +155,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img 
-            src={sealUrl}
-            alt="Organization Seal" 
-            className="h-20 w-20 object-contain opacity-75"
-            onError={(e) => handleImageError(e, "seal")}
-          />
+          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
         </div>
       )}
     </div>

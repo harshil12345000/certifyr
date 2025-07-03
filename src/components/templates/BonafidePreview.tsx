@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BonafidePreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -79,7 +80,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
             <strong>Date:</strong> {issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]'}
           </p>
           <p>
-            <strong>Place:</strong> {institutionName || '[Institution Name]'}
+            <strong>Place:</strong> {institutionName || organizationDetails?.name || '[Institution Name]'}
           </p>
         </div>
         
@@ -110,7 +111,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
           )}
           <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
           <p>{signatoryDesignation || "[Designation]"}</p>
-          <p className="mb-4">{institutionName || '[Institution Name]'}</p>
+          <p className="mb-4">{institutionName || organizationDetails?.name || '[Institution Name]'}</p>
           
           {/* QR Code positioned below institution name */}
           {qrCodeUrl && (

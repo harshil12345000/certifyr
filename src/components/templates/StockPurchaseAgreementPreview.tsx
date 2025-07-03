@@ -98,6 +98,11 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
         <p>This Agreement shall be governed by the laws of {governingLaw}.</p>
       </div>
 
+      <div className="mt-12 mb-32">
+        <p><strong>Date:</strong> {issueDate ? new Date(issueDate).toLocaleDateString() : '[Date]'}</p>
+        <p><strong>Place:</strong> {data.place || '[Place]'}</p>
+      </div>
+
       <div className="mt-12">
         <p className="mb-6">IN WITNESS WHEREOF, the parties have executed this Agreement as of {issueDate ? new Date(issueDate).toLocaleDateString() : '[Date]'}.</p>
         
@@ -146,12 +151,7 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img 
-            src={sealUrl}
-            alt="Organization Seal" 
-            className="h-20 w-20 object-contain opacity-75"
-            onError={(e) => handleImageError(e, "seal")}
-          />
+          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AddressProofPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -6,7 +7,16 @@ import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
 import { Letterhead } from './Letterhead';
 
-export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }) => {
+interface ExtendedAddressProofPreviewProps extends AddressProofPreviewProps {
+  isEmployeePreview?: boolean;
+  showExportButtons?: boolean;
+}
+
+export const AddressProofPreview: React.FC<ExtendedAddressProofPreviewProps> = ({ 
+  data, 
+  isEmployeePreview = false,
+  showExportButtons = true 
+}) => {
   const {
     fullName,
     fatherName,
@@ -30,22 +40,25 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const generateQR = async () => {
-      if (fullName && currentAddress) {
-        const url = await generateDocumentQRCode(
-          'address-proof-1',
-          data,
-          organizationDetails?.name,
-          user?.id
-        );
-        setQrCodeUrl(url);
-        if (!url) {
-          console.error('QR code URL generation failed for Address Proof Preview.');
+    // Only generate QR code if not in employee preview mode
+    if (!isEmployeePreview) {
+      const generateQR = async () => {
+        if (fullName && currentAddress) {
+          const url = await generateDocumentQRCode(
+            'address-proof-1',
+            data,
+            organizationDetails?.name,
+            user?.id
+          );
+          setQrCodeUrl(url);
+          if (!url) {
+            console.error('QR code URL generation failed for Address Proof Preview.');
+          }
         }
-      }
-    };
-    generateQR();
-  }, [data, organizationDetails?.name, user?.id, fullName, currentAddress]);
+      };
+      generateQR();
+    }
+  }, [data, organizationDetails?.name, user?.id, fullName, currentAddress, isEmployeePreview]);
 
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
@@ -137,10 +150,14 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && signatureUrl && (
+          {/* Only show signature if not in employee preview mode */}
+          {!isEmployeePreview && includeDigitalSignature && signatureUrl && (
             <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>}
+          {!isEmployeePreview && !includeDigitalSignature && <div className="h-16"></div>}
+          {isEmployeePreview && <div className="h-16 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic mb-2 w-48 mx-auto">
+            [Signature will appear after approval]
+          </div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
             <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
             <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
@@ -149,10 +166,19 @@ export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data }
         </div>
       </div>
 
-      {/* QR Code positioned at bottom right */}
-      <div className="absolute bottom-8 right-8">
-        <QRCode value={qrCodeUrl || ''} size={80} />
-      </div>
+      {/* QR Code positioned at bottom right - only show if not in employee preview mode */}
+      {!isEmployeePreview && (
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+        </div>
+      )}
+      
+      {/* Placeholder for QR code in employee preview */}
+      {isEmployeePreview && (
+        <div className="absolute bottom-8 right-8 w-20 h-20 border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
+          QR Code
+        </div>
+      )}
 
       {/* Seal */}
       {sealUrl && (

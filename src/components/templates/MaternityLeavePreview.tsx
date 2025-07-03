@@ -190,12 +190,7 @@ export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ da
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img 
-            src={sealUrl}
-            alt="Organization Seal" 
-            className="h-20 w-20 object-contain opacity-75"
-            onError={(e) => handleImageError(e, "seal")}
-          />
+          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
         </div>
       )}
     </div>
