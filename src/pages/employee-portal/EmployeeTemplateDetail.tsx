@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { getInitialData } from '@/pages/TemplateDetail'; // Reuse admin logic for initial data
 import { EmployeePortalLayout } from '@/components/employee-portal/EmployeePortalLayout';
+import { FormData } from '@/types/templates';
 
 const TEMPLATE_FORM_MAP: Record<string, keyof typeof Forms> = {
   'bonafide-1': 'BonafideForm',
@@ -57,7 +57,29 @@ const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
 export default function EmployeeTemplateDetail() {
   const { id } = useParams();
   const [tab, setTab] = useState('form');
-  const [formData, setFormData] = useState(() => (id ? getInitialData(id) : {}));
+  const [formData, setFormData] = useState<FormData>(() => {
+    if (id) {
+      const initialData = getInitialData(id);
+      return initialData as FormData;
+    }
+    // Return a default object that satisfies the FormData type
+    return {
+      fullName: '',
+      gender: 'male' as const,
+      parentName: '',
+      type: 'student' as const,
+      institutionName: '',
+      startDate: '',
+      courseOrDesignation: '',
+      department: '',
+      purpose: '',
+      date: '',
+      place: '',
+      signatoryName: '',
+      signatoryDesignation: '',
+      includeDigitalSignature: false,
+    };
+  });
 
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
@@ -71,7 +93,7 @@ export default function EmployeeTemplateDetail() {
   const FormComponent = Forms[TEMPLATE_FORM_MAP[id]];
   const PreviewComponent = Previews[TEMPLATE_PREVIEW_MAP[id]];
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: FormData) => {
     setFormData(data);
     setTab('preview'); // Switch to preview after form submission
   };
