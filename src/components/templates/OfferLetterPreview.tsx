@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -14,7 +16,7 @@ interface BrandingAssets {
   organizationEmail: string | null;
 }
 
-export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) => {
+export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     candidateName,
     candidateAddress,
@@ -37,6 +39,7 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     signatoryName,
     signatoryDesignation,
     includeDigitalSignature,
+    qrCodeUrl,
   } = data;
 
   const { signatureUrl, sealUrl } = useBranding();
@@ -136,7 +139,13 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('offer-letter.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('offer-letter.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
       {/* Letterhead */}
       <Letterhead />
 
@@ -220,8 +229,11 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && signatureUrl && (
+          {/* Signature Section */}
+          {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
             <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" onError={(e) => handleImageError(e, 'signature')} />
+          ) : (
+            <div className="h-16 mb-2"></div>
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
@@ -252,6 +264,15 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
           </div>
         </div>
       </div>
+
+      {/* QR Code Section */}
+      {!isEmployeePreview && qrCodeUrl && (
+        <div className="mt-16 pt-8 border-t border-gray-300">
+          <div className="text-center">
+            <QRCode value={qrCodeUrl} size={60} />
+          </div>
+        </div>
+      )}
 
       {/* Seal */}
       {sealUrl && (

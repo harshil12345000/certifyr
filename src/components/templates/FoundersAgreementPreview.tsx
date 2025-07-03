@@ -2,8 +2,9 @@ import React from 'react';
 import { FoundersAgreementPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> = ({ data }) => {
+export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     companyName,
     founders,
@@ -28,7 +29,14 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('founders-agreement.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('founders-agreement.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
+
       {/* Letterhead */}
       <Letterhead />
 
@@ -115,7 +123,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
       </div>
 
       {/* Signature Section */}
-      <div className="mt-12 mb-32">
+      <div className="mt-12">
         <p className="mb-6">IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
@@ -136,7 +144,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
           
           {signatoryName && (
             <div className="text-right">
-              {includeDigitalSignature && signatureUrl && (
+              {includeDigitalSignature && signatureUrl && !isEmployeePreview && (
                 <img 
                   src={signatureUrl}
                   alt="Digital Signature" 
@@ -155,7 +163,12 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
         </div>
       )}
     </div>

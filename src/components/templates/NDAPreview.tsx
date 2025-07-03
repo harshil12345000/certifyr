@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
+export const NDAPreview: React.FC<NDAPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     disclosingParty,
     disclosingPartyAddress,
@@ -55,7 +56,14 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('nda.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('nda.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
+
       {/* Letterhead */}
       <Letterhead />
 
@@ -134,14 +142,14 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
           </div>
         </div>
 
-        <div className="flex justify-between items-end mt-8 mb-32">
+        <div className="flex justify-between items-end mt-8">
           <div>
             <p className="text-sm"><strong>Date:</strong> {issueDate || '[Date]'}</p>
           </div>
           
           {signatoryName && (
             <div className="text-right">
-              {includeDigitalSignature && signatureUrl && (
+              {includeDigitalSignature && signatureUrl && !isEmployeePreview && (
                 <img 
                   src={signatureUrl}
                   alt="Digital Signature" 
@@ -158,14 +166,21 @@ export const NDAPreview: React.FC<NDAPreviewProps> = ({ data }) => {
       </div>
 
       {/* QR Code positioned at bottom right */}
-      <div className="absolute bottom-8 right-8">
-        <QRCode value={qrCodeUrl || ''} size={80} />
-      </div>
+      {!isEmployeePreview && (
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+        </div>
+      )}
 
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img src={sealUrl} alt="Organization Seal" className="h-20 w-20 object-contain opacity-75" onError={(e) => handleImageError(e, "seal")} />
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
         </div>
       )}
     </div>

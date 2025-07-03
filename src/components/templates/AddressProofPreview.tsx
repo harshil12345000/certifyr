@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AddressProofPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -6,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
 import { Letterhead } from './Letterhead';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
 interface ExtendedAddressProofPreviewProps extends AddressProofPreviewProps {
   isEmployeePreview?: boolean;
@@ -86,7 +86,14 @@ export const AddressProofPreview: React.FC<ExtendedAddressProofPreviewProps> = (
   const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed relative">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('address-proof.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('address-proof.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
+
       {/* Letterhead */}
       <Letterhead />
 

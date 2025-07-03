@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps> = ({ data }) => {
+export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     fullName,
     passportNumber,
@@ -61,17 +62,26 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('embassy-attestation.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('embassy-attestation.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
+
       {/* Letterhead */}
       <Letterhead />
 
       {/* QR Code for verification */}
-      <div className="absolute top-8 right-8">
-        <div className="text-center">
-          <QRCode value={qrCodeUrl || ''} size={80} />
-          <p className="text-xs text-gray-500 mt-1">Verify Document</p>
+      {!isEmployeePreview && qrCodeUrl && (
+        <div className="absolute top-8 right-8">
+          <div className="text-center">
+            <QRCode value={qrCodeUrl} size={80} />
+            <p className="text-xs text-gray-500 mt-1">Verify Document</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Letter Title */}
       <div className="text-center mb-8">
@@ -150,7 +160,8 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
         </div>
         
         <div className="text-right mt-8 md:mt-0">
-          {includeDigitalSignature ? (
+          {/* Signature Section */}
+          {data.includeDigitalSignature && data.signatoryName && !isEmployeePreview ? (
             <div className="h-16 mb-4 flex justify-end">
               {signatureUrl ? (
                 <div className="border-b border-gray-800 px-6">

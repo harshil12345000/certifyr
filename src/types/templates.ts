@@ -1,4 +1,3 @@
-
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -432,77 +431,96 @@ export type FormData =
 
 export interface BonafidePreviewProps {
   data: BonafideData;
+  isEmployeePreview?: boolean;
 }
 
 export interface CharacterPreviewProps {
   data: CharacterData;
+  isEmployeePreview?: boolean;
 }
 
 export interface ExperiencePreviewProps {
   data: ExperienceData;
+  isEmployeePreview?: boolean;
 }
 
 export interface EmbassyAttestationPreviewProps {
   data: EmbassyAttestationData;
+  isEmployeePreview?: boolean;
 }
 
 export interface CompletionCertificatePreviewProps {
   data: CompletionCertificateData;
+  isEmployeePreview?: boolean;
 }
 
 export interface TransferCertificatePreviewProps {
   data: TransferCertificateData;
+  isEmployeePreview?: boolean;
 }
 
 export interface NocVisaPreviewProps {
   data: NocVisaData;
+  isEmployeePreview?: boolean;
 }
 
 export interface IncomeCertificatePreviewProps {
   data: IncomeCertificateData;
+  isEmployeePreview?: boolean;
 }
 
 export interface MaternityLeavePreviewProps {
   data: MaternityLeaveData;
+  isEmployeePreview?: boolean;
 }
 
 export interface BankVerificationPreviewProps {
   data: BankVerificationData;
+  isEmployeePreview?: boolean;
 }
 
 export interface OfferLetterPreviewProps {
   data: OfferLetterData;
+  isEmployeePreview?: boolean;
 }
 
 export interface AddressProofPreviewProps {
   data: AddressProofData;
+  isEmployeePreview?: boolean;
 }
 
 // Corporate template preview props
 export interface ArticlesOfIncorporationPreviewProps {
   data: ArticlesOfIncorporationData;
+  isEmployeePreview?: boolean;
 }
 
 export interface CorporateBylawsPreviewProps {
   data: CorporateBylawsData;
+  isEmployeePreview?: boolean;
 }
 
 export interface FoundersAgreementPreviewProps {
   data: FoundersAgreementData;
+  isEmployeePreview?: boolean;
 }
 
 export interface StockPurchaseAgreementPreviewProps {
   data: StockPurchaseAgreementData;
+  isEmployeePreview?: boolean;
 }
 
 export interface EmploymentAgreementPreviewProps {
   data: EmploymentAgreementData;
+  isEmployeePreview?: boolean;
 }
 
 export interface IPAssignmentAgreementPreviewProps {
   data: IPAssignmentAgreementData;
+  isEmployeePreview?: boolean;
 }
 
 export interface NDAPreviewProps {
   data: NDAData;
+  isEmployeePreview?: boolean;
 }

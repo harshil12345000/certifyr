@@ -76,6 +76,20 @@ export function EmployeePortalAuth({ portalSettings, onEmployeeAuthenticated }: 
       }
       setStep('pending');
       toast({ title: 'Registration Submitted', description: 'Your registration is pending admin approval' });
+
+      // Insert notification for org admin
+      await supabase.from('notifications').insert({
+        org_id: portalSettings.organization_id,
+        type: 'join_request',
+        subject: `${registrationData.fullName} Requested Portal Access`,
+        body: `${registrationData.fullName} has requested access to your organization's Certifyr Request Portal.\n\nDetails:\n• Email: ${registrationData.email}\n• ID: ${registrationData.employeeId}\n• Manager: ${registrationData.managerName}\n\nReview in Request Portal → Members.`,
+        data: {
+          employee_name: registrationData.fullName,
+          employee_email: registrationData.email,
+          employee_id: registrationData.employeeId,
+          manager_name: registrationData.managerName
+        }
+      });
     } catch (error) {
       console.error('Error registering:', error);
       toast({ title: 'Error', description: 'Failed to submit registration', variant: 'destructive' });

@@ -2,13 +2,15 @@ import React from 'react';
 import { EmploymentAgreementData } from '@/types/corporate-templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
 
 interface EmploymentAgreementPreviewProps {
   data: EmploymentAgreementData;
+  isEmployeePreview?: boolean;
 }
 
-export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProps> = ({ data }) => {
-  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProps> = ({ data, isEmployeePreview = false }) => {
+  const { signatureUrl, sealUrl, organizationDetails, qrCodeUrl } = useBranding();
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -86,13 +88,11 @@ export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProp
             <p className="text-sm">Employee</p>
           </div>
           <div className="text-center">
-            {data.includeDigitalSignature && signatureUrl && (
-              <img 
-                src={signatureUrl}
-                alt="Digital Signature" 
-                className="h-16 mb-2 object-contain mx-auto"
-                onError={(e) => handleImageError(e, "signature")}
-              />
+            {/* Signature Section */}
+            {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
+              <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+            ) : (
+              <div className="h-16 mb-2"></div>
             )}
             <div className="border-b border-gray-400 w-full mb-2"></div>
             <p className="text-sm font-semibold">{data.signatoryName || '[HR Representative]'}</p>
@@ -118,6 +118,13 @@ export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProp
             className="h-20 w-20 object-contain opacity-75"
             onError={(e) => handleImageError(e, "seal")}
           />
+        </div>
+      )}
+
+      {/* QR Code Section */}
+      {!isEmployeePreview && qrCodeUrl && (
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl} size={75} />
         </div>
       )}
     </div>

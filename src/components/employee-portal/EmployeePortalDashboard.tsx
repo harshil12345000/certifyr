@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +15,7 @@ interface EmployeePortalDashboardProps {
 }
 
 export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalDashboardProps) {
-  const { organization } = useEmployeePortal();
+  const { organization, setEmployee } = useEmployeePortal();
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('tab') || 'templates';
@@ -32,6 +31,10 @@ export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalD
     }
     window.history.replaceState({}, '', url.toString());
   }, [activeTab]);
+
+  useEffect(() => {
+    setEmployee(employee);
+  }, [employee, setEmployee]);
 
   const handleSignOut = () => {
     localStorage.removeItem('employee_portal_session');

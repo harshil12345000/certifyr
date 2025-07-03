@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
 import { Letterhead } from './Letterhead';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = ({ data }) => {
+export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     fullName,
     employeeId,
@@ -73,7 +74,14 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
   const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed relative">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('bank-verification.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('bank-verification.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
+
       {/* Letterhead */}
       <Letterhead />
 
@@ -145,10 +153,12 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && signatureUrl && (
+          {/* Signature Section */}
+          {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
             <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+          ) : (
+            <div className="h-16 mb-2"></div>
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
             <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
             <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
@@ -157,10 +167,12 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
         </div>
       </div>
 
-      {/* QR Code positioned at bottom right */}
-      <div className="absolute bottom-8 right-8">
-        <QRCode value={qrCodeUrl || ''} size={80} />
-      </div>
+      {/* QR Code Section */}
+      {!isEmployeePreview && qrCodeUrl && (
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl} size={60} />
+        </div>
+      )}
 
       {/* Seal */}
       {sealUrl && (

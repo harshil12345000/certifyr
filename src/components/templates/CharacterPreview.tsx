@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
+export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     fullName,
     parentName,
@@ -51,7 +52,13 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('character-certificate.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('character-certificate.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
       {/* Letterhead */}
       <Letterhead />
 
@@ -88,39 +95,19 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
         </div>
         
         <div className="text-right">
-          {includeDigitalSignature ? (
-            <div className="h-16 mb-4 flex justify-end">
-              {signatureUrl ? (
-                <div className="border-b border-gray-800 px-6">
-                  <img 
-                    src={signatureUrl}
-                    alt="Digital Signature" 
-                    className="h-12 object-contain"
-                    onError={(e) => handleImageError(e, "signature")}
-                  />
-                </div>
-              ) : (
-                <div className="border-b border-gray-800 px-6 py-3">
-                  <div className="h-8 w-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                    [Signature]
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Signature Section */}
+          {data.includeDigitalSignature && data.signatoryName && !isEmployeePreview ? (
+            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
           ) : (
-            <div className="h-16 mb-4">
-              {/* Space for manual signature */}
-            </div>
+            <div className="h-16 mb-2"></div>
           )}
           <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
           <p>{signatoryDesignation || "[Designation]"}</p>
           <p className="mb-4">{institutionName || '[Institution Name]'}</p>
           
-          {/* QR Code positioned below institution name */}
-          {qrCodeUrl && (
-            <div className="flex justify-end">
-              <QRCode value={qrCodeUrl} size={75} />
-            </div>
+          {/* QR Code Section */}
+          {!isEmployeePreview && qrCodeUrl && (
+            <QRCode value={qrCodeUrl} size={75} />
           )}
         </div>
       </div>

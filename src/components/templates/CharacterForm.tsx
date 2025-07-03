@@ -1,4 +1,3 @@
-
 import React from "react";
 import { CharacterData } from "@/types/templates";
 import { Input } from "@/components/ui/input";

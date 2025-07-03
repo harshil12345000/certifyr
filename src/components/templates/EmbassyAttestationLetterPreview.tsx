@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -16,9 +18,11 @@ interface BrandingAssets {
 
 export interface EmbassyAttestationLetterPreviewProps {
   data: EmbassyAttestationLetterData;
+  isEmployeePreview?: boolean;
+  showExportButtons?: boolean;
 }
 
-export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterPreviewProps> = ({ data }) => {
+export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     applicantName,
     passportNumber,
@@ -43,6 +47,7 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
     signatoryName,
     signatoryDesignation,
     includeDigitalSignature,
+    qrCodeUrl,
   } = data;
 
   const [branding, setBranding] = useState<BrandingAssets>({ 
@@ -133,7 +138,13 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('embassy-attestation-letter.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('embassy-attestation-letter.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
       {/* Letterhead */}
       <Letterhead />
 
@@ -212,13 +223,11 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && brandingSignatureUrl && (
+          {/* Signature Section */}
+          {includeDigitalSignature && brandingSignatureUrl && !isEmployeePreview ? (
             <img src={brandingSignatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !brandingSignatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
-            </div>
+          ) : (
+            <div className="h-16 mb-2"></div>
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
           <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
@@ -226,6 +235,13 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
           <p>{institutionName || '[Institution Name]'}</p>
         </div>
       </div>
+
+      {/* QR Code Section */}
+      {!isEmployeePreview && qrCodeUrl && (
+        <div className="flex justify-center mt-4">
+          <QRCode value={qrCodeUrl} size={75} />
+        </div>
+      )}
 
       {/* Seal */}
       {brandingSealUrl && (

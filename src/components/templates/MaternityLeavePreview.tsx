@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ data }) => {
+export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     fullName,
     employeeId,
@@ -62,7 +63,13 @@ export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ da
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('maternity-leave.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('maternity-leave.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
       {/* Letterhead */}
       <Letterhead />
 
@@ -150,7 +157,7 @@ export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ da
         </div>
         
         <div className="text-right">
-          {includeDigitalSignature ? (
+          {includeDigitalSignature && !isEmployeePreview ? (
             <div className="h-16 mb-4 flex justify-end">
               {signatureUrl ? (
                 <div className="border-b border-gray-800 px-6">
@@ -171,15 +178,14 @@ export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ da
             </div>
           ) : (
             <div className="h-16 mb-4">
-              {/* Space for manual signature */}
+              {/* Space for manual signature or hidden in preview */}
             </div>
           )}
           <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
           <p>{signatoryDesignation || "[Designation]"}</p>
           <p className="mb-4">{institutionName || '[Institution Name]'}</p>
-          
           {/* QR Code positioned below institution name */}
-          {qrCodeUrl && (
+          {!isEmployeePreview && qrCodeUrl && (
             <div className="flex justify-end">
               <QRCode value={qrCodeUrl} size={60} />
             </div>
@@ -190,7 +196,12 @@ export const MaternityLeavePreview: React.FC<MaternityLeavePreviewProps> = ({ da
       {/* Seal */}
       {sealUrl && (
         <div className="absolute bottom-8 left-8">
-          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
         </div>
       )}
     </div>

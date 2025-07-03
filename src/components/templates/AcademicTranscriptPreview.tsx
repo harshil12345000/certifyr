@@ -2,12 +2,16 @@ import React from 'react';
 import { AcademicTranscriptData } from '@/types/corporate-templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
+import { QRCode } from './QRCode';
+import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
 export interface AcademicTranscriptPreviewProps {
   data: AcademicTranscriptData;
+  isEmployeePreview?: boolean;
+  showExportButtons?: boolean;
 }
 
-export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps> = ({ data }) => {
+export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     studentName,
     studentId,
@@ -28,6 +32,7 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
     signatoryName,
     signatoryDesignation,
     includeDigitalSignature,
+    qrCodeUrl,
   } = data;
 
   const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
@@ -43,7 +48,14 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
   };
 
   return (
-    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
+    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+      {showExportButtons && (
+        <div className="flex gap-2 justify-end mb-4">
+          <button onClick={() => downloadPDF('academic-transcript.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
+          <button onClick={() => downloadJPG('academic-transcript.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
+        </div>
+      )}
+
       {/* Letterhead */}
       <Letterhead />
 
@@ -120,13 +132,11 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && signatureUrl && (
-            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !signatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
-            </div>
+          {/* Signature Section */}
+          {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
+            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+          ) : (
+            <div className="h-16 mb-2"></div>
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
           <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
@@ -134,6 +144,13 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
           <p>{displayInstitutionName}</p>
         </div>
       </div>
+
+      {/* QR Code Section */}
+      {!isEmployeePreview && qrCodeUrl && (
+        <div className="mt-8 text-center">
+          <QRCode value={qrCodeUrl} size={75} />
+        </div>
+      )}
 
       {/* Seal */}
       {sealUrl && (
