@@ -6,15 +6,136 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Filter } from 'lucide-react';
 import { popularTemplates } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-// Define a minimal Template type to maintain correct typings
-const allTemplatesArr = popularTemplates;
-const uniqueTemplates = allTemplatesArr;
+// Copy the additionalTemplates and aggregation logic from admin dashboard
+const additionalTemplates = [
+  {
+    id: "embassy-attestation-1",
+    title: "Embassy Attestation Letter",
+    description: "Letter for document attestation at embassies",
+    category: "Travel",
+    usageCount: 31
+  },
+  {
+    id: "completion-certificate-1",
+    title: "Completion Certificate",
+    description: "Certificate for courses, training programs, internships",
+    category: "Educational",
+    usageCount: 28
+  },
+  {
+    id: "transfer-certificate-1",
+    title: "Transfer Certificate",
+    description: "Certificate for students moving between institutions",
+    category: "Educational",
+    usageCount: 25
+  },
+  {
+    id: "income-certificate-1",
+    title: "Income Certificate",
+    description: "Certificate stating employee income details",
+    category: "Employment",
+    usageCount: 23
+  },
+  {
+    id: "maternity-leave-1",
+    title: "Maternity Leave Application",
+    description: "Application for maternity leave benefits",
+    category: "Employment",
+    usageCount: 22
+  },
+  {
+    id: "bank-verification-1",
+    title: "Bank Account Verification",
+    description: "Letter confirming account details for banks",
+    category: "Financial",
+    usageCount: 19
+  },
+  {
+    id: "offer-letter-1",
+    title: "Offer Letter",
+    description: "Formal job offer letter to candidates",
+    category: "Employment",
+    usageCount: 18
+  },
+  {
+    id: "address-proof-1",
+    title: "Address Proof Certificate",
+    description: "Certificate verifying residential address",
+    category: "Legal",
+    usageCount: 0
+  },
+  {
+    id: "articles-incorporation-1",
+    title: "Articles of Incorporation",
+    description: "Certificate of Incorporation for new corporations",
+    category: "Corporate",
+    usageCount: 15
+  },
+  {
+    id: "corporate-bylaws-1",
+    title: "Corporate Bylaws",
+    description: "Corporate governance and operating procedures",
+    category: "Corporate",
+    usageCount: 12
+  },
+  {
+    id: "founders-agreement-1",
+    title: "Founders' Agreement",
+    description: "Agreement between company founders",
+    category: "Corporate",
+    usageCount: 10
+  },
+  {
+    id: "stock-purchase-agreement-1",
+    title: "Stock Purchase Agreement",
+    description: "Agreement for purchasing company shares",
+    category: "Corporate",
+    usageCount: 8
+  },
+  {
+    id: "employment-agreement-1",
+    title: "Employment Agreement",
+    description: "Comprehensive employment contract",
+    category: "Corporate",
+    usageCount: 14
+  },
+  {
+    id: "nda-1",
+    title: "Non-Disclosure Agreement (NDA)",
+    description: "Confidentiality agreement between parties",
+    category: "Corporate",
+    usageCount: 16
+  },
+  {
+    id: "academic-transcript-1",
+    title: "Academic Transcript / Marksheet",
+    description: "Official academic record and transcript",
+    category: "Academic",
+    usageCount: 35
+  }
+];
+
+function getUniqueTemplates(templates) {
+  const seen = new Set();
+  return templates.filter(tpl => {
+    if (seen.has(tpl.id)) return false;
+    seen.add(tpl.id);
+    return true;
+  });
+}
+
+const existingPopularIds = new Set(popularTemplates.map(t => t.id));
+const dedupedAdditionalTemplates = additionalTemplates.filter(tpl => !existingPopularIds.has(tpl.id));
+const allTemplatesArr = [...popularTemplates, ...dedupedAdditionalTemplates];
+const uniqueTemplates = getUniqueTemplates(allTemplatesArr);
 
 export function EmployeeTemplates() {
-  const { employee } = useEmployeePortal();
+  const { employee, organizationId } = useEmployeePortal();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   // Filter templates based on search and category filters
   const filteredTemplates = uniqueTemplates.filter(template => {
@@ -84,7 +205,10 @@ export function EmployeeTemplates() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredTemplates.map(template => (
-          <div key={template.id} className="glass-card p-5 flex flex-col">
+          <div
+            key={template.id}
+            className="glass-card p-5 flex flex-col"
+          >
             <div className="mb-4 flex items-start justify-between">
               <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500">
                 <Search className="h-5 w-5" />
@@ -96,8 +220,8 @@ export function EmployeeTemplates() {
             <h3 className="font-medium text-lg mb-1">{template.title}</h3>
             <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
             <div className="mt-auto flex items-center justify-end">
-              <Button variant="ghost" size="sm" className="gap-1" onClick={() => requestDocument(template.id)}>
-                Request <Search className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate(`/${organizationId}/request-portal/templates/${template.id}`)}>
+                Use <Search className="h-4 w-4" />
               </Button>
             </div>
           </div>

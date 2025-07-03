@@ -19,6 +19,8 @@ import AdminTemplateBuilder from '@/pages/admin/templates/TemplateBuilder';
 import NotFound from '@/pages/NotFound';
 import VerifyDocument from '@/pages/VerifyDocument';
 import EmployeePortal from '@/pages/EmployeePortal';
+import EmployeeTemplateDetail from '@/pages/employee-portal/EmployeeTemplateDetail';
+import { EmployeePortalProvider } from '@/contexts/EmployeePortalContext';
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,11 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/request-portal" element={<ProtectedRoute><RequestPortal /></ProtectedRoute>} />
               <Route path="/:organizationId/request-portal" element={<EmployeePortal />} />
+              <Route path="/:organizationId/request-portal/templates/:id" element={
+                <EmployeePortalProvider organizationId={window.location.pathname.split('/')[1]}>
+                  <EmployeeTemplateDetail />
+                </EmployeePortalProvider>
+              } />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/admin/branding" element={<ProtectedRoute><Branding /></ProtectedRoute>} />
               <Route path="/admin/templates" element={<ProtectedRoute><AdminTemplates /></ProtectedRoute>} />
