@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTemplates } from './EmployeeTemplates';
 import { EmployeeSettings } from './EmployeeSettings';
-import { FileText, Settings, Building2, User } from 'lucide-react';
+import { EmployeePendingRequests } from './EmployeePendingRequests';
+import { FileText, Settings, Building2, User, Clock } from 'lucide-react';
 
 interface EmployeePortalDashboardProps {
   employee: any;
@@ -15,7 +17,21 @@ interface EmployeePortalDashboardProps {
 
 export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalDashboardProps) {
   const { organization } = useEmployeePortal();
-  const [activeTab, setActiveTab] = useState('templates');
+  const [activeTab, setActiveTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') || 'templates';
+  });
+
+  // Update URL when tab changes
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (activeTab === 'templates') {
+      url.searchParams.delete('tab');
+    } else {
+      url.searchParams.set('tab', activeTab);
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, [activeTab]);
 
   const handleSignOut = () => {
     localStorage.removeItem('employee_portal_session');
@@ -43,6 +59,12 @@ export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalD
             <FileText className="h-5 w-5 mr-2" /> Templates
           </button>
           <button
+            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'pending' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
+            onClick={() => setActiveTab('pending')}
+          >
+            <Clock className="h-5 w-5 mr-2" /> Pending
+          </button>
+          <button
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -63,6 +85,7 @@ export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalD
       {/* Main Content */}
       <main className="flex-1 p-6">
         {activeTab === 'templates' && <EmployeeTemplates />}
+        {activeTab === 'pending' && <EmployeePendingRequests />}
         {activeTab === 'settings' && <EmployeeSettings employee={employee} />}
       </main>
     </div>
