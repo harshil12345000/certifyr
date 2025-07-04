@@ -12,22 +12,24 @@ import { generateDocumentQRCode } from '@/lib/qr-utils';
 export const BonafidePreview: React.FC<BonafidePreviewProps & { 
   isEmployeePreview?: boolean; 
   showExportButtons?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
 }> = ({ 
   data, 
   isEmployeePreview = false, 
-  showExportButtons = true 
+  showExportButtons = true,
+  requestStatus = 'pending'
 }) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!isEmployeePreview && data.includeDigitalSignature) {
+    if (!isEmployeePreview && data.includeDigitalSignature && requestStatus === 'approved') {
       const generateQR = async () => {
         const url = await generateDocumentQRCode('bonafide-1', data);
         if (url) setQrCodeUrl(url);
       };
       generateQR();
     }
-  }, [data, isEmployeePreview]);
+  }, [data, isEmployeePreview, requestStatus]);
 
   const handlePrint = () => {
     window.print();
@@ -80,7 +82,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps & {
 
   return (
     <div className="max-w-4xl mx-auto bg-white">
-      {showExportButtons && !isEmployeePreview && (
+      {showExportButtons && !isEmployeePreview && requestStatus === 'approved' && (
         <div className="flex justify-end gap-2 mb-4 no-print">
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
@@ -98,7 +100,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps & {
       )}
       
       <div id="bonafide-preview" className="p-8 min-h-[297mm] bg-white">
-        <Letterhead organizationName={data.institutionName} />
+        <Letterhead />
         
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold underline decoration-2 underline-offset-4">
@@ -126,7 +128,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps & {
 
         <div className="flex justify-between items-end mt-16">
           <div className="flex flex-col">
-            {!isEmployeePreview && data.includeDigitalSignature && qrCodeUrl && (
+            {!isEmployeePreview && data.includeDigitalSignature && qrCodeUrl && requestStatus === 'approved' && (
               <div className="mb-4">
                 <QRCode value={qrCodeUrl} size={80} />
                 <p className="text-xs text-gray-600 mt-1">Scan to verify</p>
@@ -139,7 +141,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps & {
           </div>
           
           <div className="text-center">
-            {!isEmployeePreview && data.includeDigitalSignature && (
+            {!isEmployeePreview && data.includeDigitalSignature && requestStatus === 'approved' && (
               <div className="mb-4">
                 <div className="w-32 h-16 border-b border-gray-400 mb-2"></div>
               </div>
