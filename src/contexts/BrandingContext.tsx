@@ -2,7 +2,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
-import type { User } from '@supabase/supabase-js';
 
 export interface BrandingContextType {
   logoUrl: string | null;
@@ -35,20 +34,34 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   } | null>(null);
   
   const authContext = useAuth();
-  const currentUser: User | null = authContext?.user || null;
+  const userId = authContext?.user?.id;
 
   const refreshBranding = async () => {
-    if (!currentUser?.id) {
+    if (!userId) {
       console.warn("Branding Context: User not available, cannot fetch branding.");
       return;
     }
 
     setIsLoading(true);
     try {
+      // First get the user's organization through organization_members
+      const { data: memberData, error: memberError } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (memberError || !memberData) {
+        console.warn("No active organization membership found for user.");
+        return;
+      }
+
+      // Then get the organization details
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('id, name, address, phone, email')
-        .eq('owner_id', currentUser.id)
+        .eq('id', memberData.organization_id)
         .single();
 
       if (orgError) {
@@ -57,15 +70,15 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       if (!orgData) {
-        console.warn("No organization found for the current user.");
+        console.warn("No organization found.");
         return;
       }
 
       setOrganizationDetails({
         name: orgData.name,
-        address: orgData.address,
-        phone: orgData.phone,
-        email: orgData.email,
+        address: orgData.address || '',
+        phone: orgData.phone || '',
+        email: orgData.email || '',
       });
 
       const { data: filesData, error: filesError } = await supabase
@@ -82,15 +95,19 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       let newSealUrl: string | null = null;
       let newSignatureUrl: string | null = null;
 
-      filesData.forEach(file => {
-        const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
-        const publicUrl = publicUrlRes.data?.publicUrl;
-        if (publicUrl) {
-          if (file.name === 'logo') newLogoUrl = publicUrl;
-          if (file.name === 'seal') newSealUrl = publicUrl;
-          if (file.name === 'signature') newSignatureUrl = publicUrl;
-        }
-      });
+      if (filesData) {
+        filesData.forEach(file => {
+          if (file.path) {
+            const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+            const publicUrl = publicUrlRes.data?.publicUrl;
+            if (publicUrl) {
+              if (file.name === 'logo') newLogoUrl = publicUrl;
+              if (file.name === 'seal') newSealUrl = publicUrl;
+              if (file.name === 'signature') newSignatureUrl = publicUrl;
+            }
+          }
+        });
+      }
 
       setLogoUrl(newLogoUrl);
       setSealUrl(newSealUrl);
@@ -104,10 +121,10 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    if (currentUser?.id) {
+    if (userId) {
       refreshBranding();
     }
-  }, [currentUser?.id]);
+  }, [userId]);
 
   const value: BrandingContextType = {
     logoUrl,
