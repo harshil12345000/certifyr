@@ -32,7 +32,9 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     phone: string;
     email: string;
   } | null>(null);
-  const { user } = useAuth();
+  
+  const authContext = useAuth();
+  const user = authContext?.user || null;
 
   const refreshBranding = async (): Promise<void> => {
     if (!user?.id) {
@@ -101,8 +103,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    const userId = user?.id;
-    if (userId) {
+    if (user?.id) {
       refreshBranding();
     }
   }, [user?.id]);
@@ -124,7 +125,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
-export const useBranding = () => {
+export const useBranding = (): BrandingContextType => {
   const context = useContext(BrandingContext);
   if (context === undefined) {
     throw new Error("useBranding must be used within a BrandingProvider");
