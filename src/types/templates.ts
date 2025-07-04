@@ -1,4 +1,3 @@
-
 // Base interfaces for all template data
 export interface BaseTemplateData {
   date?: string;
@@ -432,10 +431,14 @@ export interface TransferCertificateData extends BaseTemplateData {
   dateOfBirth?: string;
   admissionNumber?: string;
   className?: string;
+  section?: string;
   academicYear?: string;
+  dateOfAdmission?: string;
+  dateOfLeaving?: string;
   lastAttendanceDate?: string;
   reasonForLeaving?: string;
   conduct?: string;
+  subjects?: string;
   institutionName?: string;
 }
 

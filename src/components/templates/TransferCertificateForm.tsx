@@ -16,7 +16,7 @@ const formSchema = z.object({
   motherName: z.string().min(1, "Mother's name is required"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   admissionNumber: z.string().min(1, "Admission number is required"),
-  class: z.string().min(1, "Class is required"),
+  className: z.string().min(1, "Class is required"),
   section: z.string().min(1, "Section is required"),
   academicYear: z.string().min(1, "Academic year is required"),
   dateOfAdmission: z.string().min(1, "Date of admission is required"),
@@ -119,7 +119,7 @@ export const TransferCertificateForm: React.FC<TransferCertificateFormProps> = (
 
           <FormField
             control={form.control}
-            name="class"
+            name="className"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Class</FormLabel>

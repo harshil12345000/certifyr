@@ -1,129 +1,110 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface OrganizationDetails {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-}
+import { useAuth } from './AuthContext';
 
 export interface BrandingContextType {
   logoUrl: string | null;
-  signatureUrl: string | null;
   sealUrl: string | null;
+  signatureUrl: string | null;
   qrCodeUrl: string | null;
-  organizationDetails: OrganizationDetails | null;
-  isLoading: boolean;
-  uploadLogo: (file: File) => Promise<void>;
-  uploadSignature: (file: File) => Promise<void>;
-  uploadSeal: (file: File) => Promise<void>;
+  organizationDetails: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+  } | null;
+  refreshBranding: () => Promise<void>;
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
-export const useBranding = () => {
-  const context = useContext(BrandingContext);
-  if (!context) {
-    throw new Error('useBranding must be used within a BrandingProvider');
-  }
-  return context;
-};
-
 export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [sealUrl, setSealUrl] = useState<string | null>(null);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
-  const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [organizationDetails, setOrganizationDetails] = useState<{
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+  } | null>(null);
+  const { user } = useAuth();
 
-  const uploadLogo = async (file: File) => {
-    setIsLoading(true);
+  const refreshBranding = async () => {
+    if (!user?.id) {
+      console.warn("Branding Context: User not available, cannot fetch branding.");
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.storage
-        .from('branding-assets')
-        .upload(`logos/${file.name}`, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name, address, phone, email')
+        .eq('owner_id', user.id)
+        .single();
 
-      if (error) {
-        console.error('Error uploading logo:', error);
-      } else {
-        const publicUrlResponse = supabase.storage
-          .from('branding-assets')
-          .getPublicUrl(data.path);
-        setLogoUrl(publicUrlResponse.data.publicUrl);
+      if (orgError) {
+        console.error("Error fetching organization:", orgError.message);
+        return;
       }
+
+      if (!orgData) {
+        console.warn("No organization found for the current user.");
+        return;
+      }
+
+      setOrganizationDetails({
+        name: orgData.name,
+        address: orgData.address,
+        phone: orgData.phone,
+        email: orgData.email,
+      });
+
+      const { data: filesData, error: filesError } = await supabase
+        .from('branding_files')
+        .select('name, path')
+        .eq('organization_id', orgData.id);
+
+      if (filesError) {
+        console.error("Error fetching branding files:", filesError);
+        return;
+      }
+
+      let newLogoUrl: string | null = null;
+      let newSealUrl: string | null = null;
+      let newSignatureUrl: string | null = null;
+
+      filesData.forEach(file => {
+        const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+        const publicUrl = publicUrlRes.data?.publicUrl;
+        if (publicUrl) {
+          if (file.name === 'logo') newLogoUrl = publicUrl;
+          if (file.name === 'seal') newSealUrl = publicUrl;
+          if (file.name === 'signature') newSignatureUrl = publicUrl;
+        }
+      });
+
+      setLogoUrl(newLogoUrl);
+      setSealUrl(newSealUrl);
+      setSignatureUrl(newSignatureUrl);
+
     } catch (error) {
-      console.error('Unexpected error uploading logo:', error);
-    } finally {
-      setIsLoading(false);
+      console.error("Unexpected error fetching branding:", error);
     }
   };
 
-  const uploadSignature = async (file: File) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.storage
-        .from('branding-assets')
-        .upload(`signatures/${file.name}`, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Error uploading signature:', error);
-      } else {
-        const publicUrlResponse = supabase.storage
-          .from('branding-assets')
-          .getPublicUrl(data.path);
-        setSignatureUrl(publicUrlResponse.data.publicUrl);
-      }
-    } catch (error) {
-      console.error('Unexpected error uploading signature:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const uploadSeal = async (file: File) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.storage
-        .from('branding-assets')
-        .upload(`seals/${file.name}`, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Error uploading seal:', error);
-      } else {
-        const publicUrlResponse = supabase.storage
-          .from('branding-assets')
-          .getPublicUrl(data.path);
-        setSealUrl(publicUrlResponse.data.publicUrl);
-      }
-    } catch (error) {
-      console.error('Unexpected error uploading seal:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    refreshBranding();
+  }, [user?.id]);
 
   const value: BrandingContextType = {
     logoUrl,
-    signatureUrl,
     sealUrl,
+    signatureUrl,
     qrCodeUrl,
     organizationDetails,
-    isLoading,
-    uploadLogo,
-    uploadSignature,
-    uploadSeal,
+    refreshBranding,
   };
 
   return (
@@ -131,4 +112,12 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {children}
     </BrandingContext.Provider>
   );
+};
+
+export const useBranding = () => {
+  const context = useContext(BrandingContext);
+  if (context === undefined) {
+    throw new Error("useBranding must be used within a BrandingProvider");
+  }
+  return context;
 };
