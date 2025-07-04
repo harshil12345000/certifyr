@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import type { User } from '@supabase/supabase-js';
 
 export interface BrandingContextType {
   logoUrl: string | null;
@@ -34,10 +35,10 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   } | null>(null);
   
   const authContext = useAuth();
-  const user = authContext?.user || null;
+  const currentUser: User | null = authContext?.user || null;
 
-  const refreshBranding = async (): Promise<void> => {
-    if (!user?.id) {
+  const refreshBranding = async () => {
+    if (!currentUser?.id) {
       console.warn("Branding Context: User not available, cannot fetch branding.");
       return;
     }
@@ -47,7 +48,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('id, name, address, phone, email')
-        .eq('owner_id', user.id)
+        .eq('owner_id', currentUser.id)
         .single();
 
       if (orgError) {
@@ -103,10 +104,10 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    if (user?.id) {
+    if (currentUser?.id) {
       refreshBranding();
     }
-  }, [user?.id]);
+  }, [currentUser?.id]);
 
   const value: BrandingContextType = {
     logoUrl,
