@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -89,7 +90,7 @@ export default function EmployeeTemplateDetail() {
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
       <EmployeePortalLayout activeTab="templates">
-        <div className="max-w-2xl mx-auto py-12">
+        <div className="max-w-2xl mx-auto py-8">
           <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
           <p className="text-muted-foreground mb-2">No template found for ID: <span className="font-mono">{id}</span></p>
         </div>
@@ -110,10 +111,13 @@ export default function EmployeeTemplateDetail() {
   };
 
   const handleRequestApproval = async () => {
+    console.log('Employee context:', employee);
+    console.log('Organization ID:', organizationId);
+    
     if (!employee || !organizationId) {
       toast({
         title: "Error",
-        description: "Employee or organization information not found",
+        description: "Employee or organization information not found. Please try logging in again.",
         variant: "destructive"
       });
       return;
@@ -131,7 +135,10 @@ export default function EmployeeTemplateDetail() {
           status: 'pending'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Request Submitted",
@@ -154,9 +161,9 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="max-w-3xl mx-auto py-12">
-        <h1 className="text-2xl font-bold mb-4">Fill Out Template</h1>
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+      <div className="max-w-4xl mx-auto py-6">
+        <h1 className="text-2xl font-bold mb-6">Fill Out Template</h1>
+        <Tabs value={tab} onValueChange={setTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
