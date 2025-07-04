@@ -101,7 +101,10 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    refreshBranding();
+    const userId = user?.id;
+    if (userId) {
+      refreshBranding();
+    }
   }, [user?.id]);
 
   const value: BrandingContextType = {
