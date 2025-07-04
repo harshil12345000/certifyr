@@ -7,9 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
 import { QRCode } from "./QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) => {
   const { signatureUrl, sealUrl, organizationDetails, isLoading } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -40,13 +39,7 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data, isEm
   };
 
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('experience-certificate.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('experience-certificate.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
+    <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
       <div className="p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto bg-white relative">
         {/* Letterhead */}
         <Letterhead />
@@ -89,7 +82,7 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data, isEm
           </div>
           
           <div className="text-right mt-8 md:mt-0">
-            {data.includeDigitalSignature && !isEmployeePreview ? (
+            {data.includeDigitalSignature ? (
               <div className="h-16 mb-4 flex justify-end">
                 {signatureUrl ? (
                   <div className="border-b border-gray-800 px-6">
@@ -108,7 +101,7 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data, isEm
               </div>
             ) : (
               <div className="h-16 mb-4">
-                {/* Space for manual signature or hidden in preview */}
+                {/* Space for manual signature */}
               </div>
             )}
             <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
@@ -118,11 +111,9 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data, isEm
         </div>
 
         {/* QR Code positioned at bottom right */}
-        {!isEmployeePreview && (
-          <div className="absolute bottom-8 right-8">
-            <QRCode value={qrCodeUrl || ''} size={80} />
-          </div>
-        )}
+        <div className="absolute bottom-8 right-8">
+          <QRCode value={qrCodeUrl || ''} size={80} />
+        </div>
 
         {sealUrl && (
           <div className="absolute bottom-8 left-8">

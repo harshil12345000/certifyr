@@ -2,10 +2,8 @@ import React from 'react';
 import { CorporateBylawsPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
-import { QRCode } from './QRCode';
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ data }) => {
   const {
     companyName,
     stateOfIncorporation,
@@ -23,7 +21,6 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
     signatoryName,
     signatoryDesignation,
     includeDigitalSignature,
-    qrCodeUrl,
   } = data;
 
   const { signatureUrl, sealUrl } = useBranding();
@@ -34,14 +31,7 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
   };
 
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('corporate-bylaws.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('corporate-bylaws.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
-
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 
@@ -116,11 +106,13 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
           </div>
           
           <div className="text-right">
-            {/* Signature Section */}
-            {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
-              <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
-            ) : (
-              <div className="h-16 mb-2"></div>
+            {includeDigitalSignature && signatureUrl && (
+              <img 
+                src={signatureUrl}
+                alt="Digital Signature" 
+                className="h-16 mb-2 object-contain ml-auto"
+                onError={(e) => handleImageError(e, "signature")}
+              />
             )}
             <div className="border-b border-gray-400 w-64 mb-2"></div>
             <p className="text-sm"><strong>{signatoryName || '[Secretary Name]'}</strong></p>
@@ -129,13 +121,6 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
           </div>
         </div>
       </div>
-
-      {/* QR Code Section */}
-      {!isEmployeePreview && qrCodeUrl && (
-        <div className="text-center mt-8">
-          <QRCode value={qrCodeUrl} size={75} />
-        </div>
-      )}
 
       {/* Seal */}
       {sealUrl && (

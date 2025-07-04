@@ -5,9 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPreviewProps> = ({ data }) => {
   const {
     companyName,
     seller,
@@ -51,14 +50,7 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
   };
 
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('stock-purchase-agreement.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('stock-purchase-agreement.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
-
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -129,7 +121,7 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
           </div>
           
           <div className="text-right">
-            {includeDigitalSignature && signatureUrl && !isEmployeePreview && (
+            {includeDigitalSignature && signatureUrl && (
               <img 
                 src={signatureUrl}
                 alt="Digital Signature" 
@@ -142,7 +134,7 @@ export const StockPurchaseAgreementPreview: React.FC<StockPurchaseAgreementPrevi
             <p className="text-sm mb-4">{data.place || '[Institution Name]'}</p>
             
             {/* QR Code positioned below institution name */}
-            {!isEmployeePreview && qrCodeUrl && (
+            {qrCodeUrl && (
               <div className="flex justify-end">
                 <QRCode value={qrCodeUrl} size={60} />
               </div>

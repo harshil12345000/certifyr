@@ -54,11 +54,6 @@ export function Header() {
   const [unread, setUnread] = useState<string[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
 
-  // Notifications state
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadNotifications, setUnreadNotifications] = useState<string[]>([]);
-  const [loadingNotifications, setLoadingNotifications] = useState(true);
-
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
   };
@@ -114,30 +109,6 @@ export function Header() {
     fetchAnnouncements();
   }, [user]);
 
-  // Fetch notifications for org admin
-  useEffect(() => {
-    if (!user || !user.organization_id) return;
-    setLoadingNotifications(true);
-    const fetchNotifications = async () => {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('org_id', user.organization_id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        setNotifications([]);
-        setUnreadNotifications([]);
-        setLoadingNotifications(false);
-        return;
-      }
-      setNotifications(data ?? []);
-      // Unread: not in read_by
-      setUnreadNotifications((data ?? []).filter(n => !(n.read_by || []).includes(user.id)).map(n => n.id));
-      setLoadingNotifications(false);
-    };
-    fetchNotifications();
-  }, [user]);
-
   // Mark as read
   const markAsRead = async (announcementId: string) => {
     if (!user || !announcementId) return;
@@ -148,13 +119,6 @@ export function Header() {
       announcement_id: announcementId,
       read_at: new Date().toISOString(),
     });
-  };
-
-  const markNotificationAsRead = async (notificationId: string) => {
-    if (!user || !notificationId) return;
-    setUnreadNotifications(prev => prev.filter(id => id !== notificationId));
-    // Add user.id to read_by array
-    await supabase.rpc('mark_notification_read', { notification_id: notificationId, user_id: user.id });
   };
 
   const handleSignOut = async () => {
@@ -187,61 +151,37 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                {(unread.length > 0 || unreadNotifications.length > 0) && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
+                {unread.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {loadingAnnouncements || loadingNotifications ? (
+              {loadingAnnouncements ? (
                 <div className="py-8 text-center text-muted-foreground">Loading...</div>
+              ) : announcements.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-sm text-muted-foreground">No notifications yet</p>
+                </div>
               ) : (
-                <>
-                  {notifications.length === 0 && announcements.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <p className="text-sm text-muted-foreground">No notifications yet</p>
+                announcements.map(a => (
+                  <DropdownMenuItem
+                    key={a.id}
+                    className="cursor-pointer p-3 relative"
+                    onClick={() => markAsRead(a.id)}
+                  >
+                    <div>
+                      <p className="font-medium flex items-center">
+                        {a.title}
+                        {unread.includes(a.id) && (
+                          <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
+                        )}
+                      </p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
                     </div>
-                  ) : (
-                    <>
-                      {notifications.map(n => (
-                        <DropdownMenuItem
-                          key={n.id}
-                          className="cursor-pointer p-3 relative"
-                          onClick={() => markNotificationAsRead(n.id)}
-                        >
-                          <div>
-                            <p className="font-medium flex items-center">
-                              {n.subject}
-                              {unreadNotifications.includes(n.id) && (
-                                <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
-                              )}
-                            </p>
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">{n.body}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{dayjs(n.created_at).format("MMM D, YYYY HH:mm")}</p>
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                      {announcements.map(a => (
-                        <DropdownMenuItem
-                          key={a.id}
-                          className="cursor-pointer p-3 relative"
-                          onClick={() => markAsRead(a.id)}
-                        >
-                          <div>
-                            <p className="font-medium flex items-center">
-                              {a.title}
-                              {unread.includes(a.id) && (
-                                <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
-                              )}
-                            </p>
-                            <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                    </>
-                  )}
-                </>
+                  </DropdownMenuItem>
+                ))
               )}
             </DropdownMenuContent>
           </DropdownMenu>

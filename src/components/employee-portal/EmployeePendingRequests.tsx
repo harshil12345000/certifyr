@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import * as Previews from '@/components/templates';
-import { Clock, Eye, FileText, Printer, ImageDown, FileDown } from 'lucide-react';
+import { Clock, Eye, FileText } from 'lucide-react';
 import { FormData } from '@/types/templates';
 import { DocumentRequest } from '@/types/document';
-import { downloadPDF, downloadJPG, printDocument } from '@/lib/document-utils';
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'bonafide-1': 'BonafidePreview',
@@ -98,9 +98,6 @@ export function EmployeePendingRequests() {
     return nameMap[templateId] || templateId;
   };
 
-  // Helper to check if request is accepted/approved
-  const isAcceptedStatus = (status: string) => ['approved', 'accepted'].includes(status.toLowerCase());
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -163,25 +160,12 @@ export function EmployeePendingRequests() {
                             Document preview - Status: {request.status}
                           </DialogDescription>
                         </DialogHeader>
-                        {isAcceptedStatus(request.status) && (
-                          <div className="flex justify-end gap-2 mb-4">
-                            <Button variant="outline" onClick={printDocument}>
-                              <Printer className="h-4 w-4 mr-2" /> Print
-                            </Button>
-                            <Button variant="outline" onClick={() => downloadJPG(`${request.template_id}.jpg`)}>
-                              <ImageDown className="h-4 w-4 mr-2" /> Download JPG
-                            </Button>
-                            <Button className="gradient-blue" onClick={() => downloadPDF(`${request.template_id}.pdf`)}>
-                              <FileDown className="h-4 w-4 mr-2" /> Download PDF
-                            </Button>
-                          </div>
-                        )}
                         <div className="mt-4">
                           {PreviewComponent && (
                             <PreviewComponent 
                               data={request.template_data as any} 
-                              isEmployeePreview={!isAcceptedStatus(request.status)}
-                              showExportButtons={isAcceptedStatus(request.status)}
+                              isEmployeePreview={request.status !== 'approved'}
+                              showExportButtons={request.status === 'approved'}
                             />
                           )}
                         </div>

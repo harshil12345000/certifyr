@@ -3,8 +3,6 @@ import { TransferCertificatePreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
-import { QRCode } from './QRCode';
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -15,7 +13,7 @@ interface BrandingAssets {
   organizationEmail: string | null;
 }
 
-export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProps> = ({ data }) => {
   const {
     fullName,
     fatherName,
@@ -120,16 +118,8 @@ export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProp
   const formattedDateOfLeaving = dateOfLeaving ? new Date(dateOfLeaving).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Date of Leaving]';
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
-  const qrCodeUrl = `https://example.com/certificate/${data.id}`; // Replace with actual QR code generation logic
-
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('transfer-certificate.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('transfer-certificate.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
+    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 
@@ -219,25 +209,20 @@ export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProp
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {/* Signature Section */}
-          {data.includeDigitalSignature && branding.signatureUrl && !isEmployeePreview ? (
+          {includeDigitalSignature && branding.signatureUrl && (
             <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          ) : (
-            <div className="h-16 mb-2"></div>
           )}
-          {!data.includeDigitalSignature && <div className="h-16"></div>}
+          {includeDigitalSignature && !branding.signatureUrl && (
+            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
+              [Digital Signature Placeholder]
+            </div>
+          )}
+          {!includeDigitalSignature && <div className="h-16"></div>}
           <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
           <p>{signatoryDesignation || '[Designation]'}</p>
           <p>{institutionName || '[Institution Name]'}</p>
         </div>
       </div>
-
-      {/* QR Code Section */}
-      {!isEmployeePreview && qrCodeUrl && (
-        <div className="mt-8 text-center">
-          <QRCode value={qrCodeUrl} size={75} />
-        </div>
-      )}
 
       {/* Seal */}
       {branding.sealUrl && (

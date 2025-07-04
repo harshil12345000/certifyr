@@ -2,9 +2,8 @@ import React from 'react';
 import { FoundersAgreementPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> = ({ data }) => {
   const {
     companyName,
     founders,
@@ -29,14 +28,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
   };
 
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('founders-agreement.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('founders-agreement.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
-
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 
@@ -144,7 +136,7 @@ export const FoundersAgreementPreview: React.FC<FoundersAgreementPreviewProps> =
           
           {signatoryName && (
             <div className="text-right">
-              {includeDigitalSignature && signatureUrl && !isEmployeePreview && (
+              {includeDigitalSignature && signatureUrl && (
                 <img 
                   src={signatureUrl}
                   alt="Digital Signature" 
