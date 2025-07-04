@@ -25,7 +25,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [sealUrl, setSealUrl] = useState<string | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [organizationDetails, setOrganizationDetails] = useState<{
     name: string;
     address: string;
@@ -34,7 +34,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   } | null>(null);
   const { user } = useAuth();
 
-  const refreshBranding = async () => {
+  const refreshBranding = async (): Promise<void> => {
     if (!user?.id) {
       console.warn("Branding Context: User not available, cannot fetch branding.");
       return;
