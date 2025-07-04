@@ -15,6 +15,21 @@ export interface BasePreviewProps {
   showExportButtons?: boolean;
 }
 
+// Generic FormData type for templates
+export type FormData = 
+  | BonafideData 
+  | CharacterData 
+  | ExperienceData 
+  | EmbassyAttestationData 
+  | CompletionCertificateData 
+  | TransferCertificateData 
+  | NocVisaData 
+  | IncomeCertificateData 
+  | MaternityLeaveData 
+  | BankVerificationData 
+  | OfferLetterData
+  | AddressProofData;
+
 // Academic Transcript
 export interface AcademicTranscriptData extends BaseTemplateData {
   studentName: string;
@@ -35,6 +50,24 @@ export interface AcademicTranscriptData extends BaseTemplateData {
 
 export interface AcademicTranscriptPreviewProps extends BasePreviewProps {
   data: AcademicTranscriptData;
+}
+
+// Address Proof
+export interface AddressProofData extends BaseTemplateData {
+  fullName: string;
+  fatherName?: string;
+  currentAddress: string;
+  permanentAddress: string;
+  residenceDuration: string;
+  relationshipWithApplicant: 'self' | 'father' | 'mother' | 'spouse' | 'other';
+  idProofType: 'aadhar' | 'passport' | 'driving_license' | 'voter_id' | 'other';
+  idProofNumber: string;
+  purpose: string;
+  institutionName?: string;
+}
+
+export interface AddressProofPreviewProps extends BasePreviewProps {
+  data: AddressProofData;
 }
 
 // Articles of Incorporation
@@ -83,6 +116,9 @@ export interface BankVerificationPreviewProps extends BasePreviewProps {
 // Bonafide
 export interface BonafideData extends BaseTemplateData {
   fullName: string;
+  gender?: 'male' | 'female' | 'other';
+  parentName?: string;
+  type?: 'student' | 'employee';
   courseOrDesignation: string;
   department?: string;
   startDate?: string;
@@ -166,7 +202,20 @@ export interface EmbassyAttestationData extends BaseTemplateData {
   fullName: string;
   passportNumber: string;
   nationality?: string;
+  dateOfBirth?: string;
+  placeOfBirth?: string;
+  fatherName?: string;
+  motherName?: string;
   documentType: string;
+  documentNumber?: string;
+  issuingAuthority?: string;
+  documentIssueDate?: string;
+  purposeOfAttestation?: string;
+  destinationCountry?: string;
+  embassyName?: string;
+  applicantAddress?: string;
+  phoneNumber?: string;
+  emailAddress?: string;
   purpose: string;
   destination?: string;
   institutionName?: string;
@@ -294,14 +343,14 @@ export interface NDAPreviewProps extends BasePreviewProps {
 export interface NocVisaData extends BaseTemplateData {
   fullName: string;
   passportNumber: string;
-  nationality: string;
+  nationality?: string;
   designation: string;
   employeeId?: string;
   department?: string;
-  joinDate: string;
+  joinDate?: string;
   travelDates?: string;
   travelPurpose?: string;
-  destination: string;
+  destinationCountry?: string;
   visaType?: string;
   institutionName?: string;
 }

@@ -1,89 +1,34 @@
+
 import React, { useState, useEffect } from 'react';
 import { AddressProofPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
-import { Letterhead } from './Letterhead';
 import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-interface ExtendedAddressProofPreviewProps extends AddressProofPreviewProps {
-  isEmployeePreview?: boolean;
-  showExportButtons?: boolean;
-}
-
-export const AddressProofPreview: React.FC<ExtendedAddressProofPreviewProps> = ({ 
-  data, 
-  isEmployeePreview = false,
-  showExportButtons = true 
-}) => {
-  const {
-    fullName,
-    fatherName,
-    currentAddress,
-    permanentAddress,
-    residenceDuration,
-    relationshipWithApplicant,
-    idProofType,
-    idProofNumber,
-    purpose,
-    institutionName,
-    date: issueDate,
-    place,
-    signatoryName,
-    signatoryDesignation,
-    includeDigitalSignature,
-  } = data;
-
-  const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
+export const AddressProofPreview: React.FC<AddressProofPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only generate QR code if not in employee preview mode
+    const generateQR = async () => {
+      if (data.fullName && data.purpose) {
+        const url = await generateDocumentQRCode(
+          'address-proof-1',
+          data,
+          organizationDetails?.name,
+          user?.id
+        );
+        setQrCodeUrl(url);
+      }
+    };
     if (!isEmployeePreview) {
-      const generateQR = async () => {
-        if (fullName && currentAddress) {
-          const url = await generateDocumentQRCode(
-            'address-proof-1',
-            data,
-            organizationDetails?.name,
-            user?.id
-          );
-          setQrCodeUrl(url);
-          if (!url) {
-            console.error('QR code URL generation failed for Address Proof Preview.');
-          }
-        }
-      };
       generateQR();
     }
-  }, [data, organizationDetails?.name, user?.id, fullName, currentAddress, isEmployeePreview]);
-
-  const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
-
-  const getIdProofText = (type: string) => {
-    switch (type) {
-      case 'aadhar': return 'Aadhar Card';
-      case 'passport': return 'Passport';
-      case 'voter_id': return 'Voter ID Card';
-      case 'driving_license': return 'Driving License';
-      default: return 'ID Proof';
-    }
-  };
-
-  const getRelationshipText = (relationship: string) => {
-    switch (relationship) {
-      case 'self': return 'the applicant';
-      case 'father': return 'father of the applicant';
-      case 'mother': return 'mother of the applicant';
-      case 'guardian': return 'guardian of the applicant';
-      case 'spouse': return 'spouse of the applicant';
-      default: return 'relative of the applicant';
-    }
-  };
-
-  const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
+  }, [data, organizationDetails?.name, user?.id, isEmployeePreview]);
 
   return (
     <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
@@ -94,103 +39,71 @@ export const AddressProofPreview: React.FC<ExtendedAddressProofPreviewProps> = (
         </div>
       )}
 
-      {/* Letterhead */}
       <Letterhead />
 
-      {/* Certificate Title */}
       <div className="text-center mb-8">
-        <div className="border-2 border-gray-600 inline-block px-6 py-2">
+        <div className="border border-gray-400 inline-block px-8 py-3">
           <h2 className="text-lg font-bold uppercase tracking-widest">ADDRESS PROOF CERTIFICATE</h2>
         </div>
       </div>
 
-      {/* Reference Number */}
-      <div className="flex justify-between mb-6 text-sm">
-        <p><strong>Reference No.:</strong> APC/{new Date().getFullYear()}/______</p>
-        <p><strong>Date:</strong> {formattedIssueDate}</p>
-      </div>
-
-      {/* Letter Content */}
-      <div className="space-y-6 text-base leading-7">
-        <p className="text-center font-semibold text-lg mb-6">
-          TO WHOM IT MAY CONCERN
+      <div className="space-y-6 text-justify leading-7 text-base">
+        <p>
+          This is to certify that <strong>{data.fullName || '[Full Name]'}</strong>, 
+          {data.fatherName && ` son/daughter of ${data.fatherName},`} has been residing at the following address:
         </p>
 
-        <p className="text-justify">
-          This is to certify that <strong>{fullName || '[Full Name]'}</strong>, son/daughter of <strong>{fatherName || "[Father's Name]"}</strong>, 
-          has been residing at the address mentioned below for a period of <strong>{residenceDuration || '[Duration]'}</strong>.
-        </p>
-
-        <div className="ml-8 space-y-2">
+        <div className="bg-gray-50 p-4 rounded">
           <p><strong>Current Address:</strong></p>
-          <p className="ml-4 whitespace-pre-line">{currentAddress || '[Current Address]'}</p>
-          
+          <p className="ml-4">{data.currentAddress || '[Current Address]'}</p>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded">
           <p><strong>Permanent Address:</strong></p>
-          <p className="ml-4 whitespace-pre-line">{permanentAddress || '[Permanent Address]'}</p>
+          <p className="ml-4">{data.permanentAddress || '[Permanent Address]'}</p>
         </div>
 
-        <p className="text-justify">
-          I am <strong>{getRelationshipText(relationshipWithApplicant)}</strong> and can verify the above address details based on 
-          my personal knowledge and the records available with me.
+        <p>
+          The above-mentioned person has been residing at the current address for a period of{' '}
+          <strong>{data.residenceDuration || '[Duration]'}</strong>.
         </p>
 
-        <p className="text-justify">
-          The verification is based on <strong>{getIdProofText(idProofType)}</strong> bearing number <strong>{idProofNumber || '[ID Number]'}</strong> 
-          and other relevant documents.
+        <p>
+          <strong>ID Proof Details:</strong><br/>
+          Type: {data.idProofType || '[ID Proof Type]'}<br/>
+          Number: {data.idProofNumber || '[ID Proof Number]'}
         </p>
 
-        <p className="text-justify">
-          This certificate is being issued for <strong>{purpose || '[Purpose]'}</strong> and is valid as on the date of issue.
-        </p>
-
-        <p className="text-center font-medium">
-          This certificate is issued upon request for official purposes only.
+        <p>
+          This certificate is issued for the purpose of <strong>{data.purpose || '[Purpose]'}</strong>.
         </p>
       </div>
 
-      {/* Date and Place */}
-      <div className="mt-16 mb-8">
-        <p><strong>Date:</strong> {formattedIssueDate}</p>
-        <p><strong>Place:</strong> {place || '[Place]'}</p>
-      </div>
-
-      {/* Signatory Section */}
-      <div className="flex justify-end items-end mt-16">
-        <div className="text-center">
-          {/* Only show signature if not in employee preview mode */}
-          {!isEmployeePreview && includeDigitalSignature && signatureUrl && (
+      <div className="flex justify-between items-end mt-16">
+        <div>
+          <p><strong>Date:</strong> {data.date ? new Date(data.date).toLocaleDateString() : '[Date]'}</p>
+          <p><strong>Place:</strong> {data.place || '[Place]'}</p>
+        </div>
+        
+        <div className="text-right">
+          {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
             <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+          ) : (
+            <div className="h-16 mb-2"></div>
           )}
-          {!isEmployeePreview && !includeDigitalSignature && <div className="h-16"></div>}
-          {isEmployeePreview && <div className="h-16 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic mb-2 w-48 mx-auto">
-            [Signature will appear after approval]
-          </div>}
-          <div className="border-t border-black pt-2 min-w-[200px]">
-            <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
-            <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
-            <p className="text-sm">{displayInstitutionName}</p>
-          </div>
+          <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
+          <p>{data.signatoryDesignation || "[Designation]"}</p>
+          <p className="mb-4">{data.institutionName || '[Institution Name]'}</p>
+          
+          {!isEmployeePreview && qrCodeUrl && (
+            <QRCode value={qrCodeUrl} size={75} />
+          )}
         </div>
       </div>
 
-      {/* QR Code positioned at bottom right - only show if not in employee preview mode */}
-      {!isEmployeePreview && (
-        <div className="absolute bottom-8 right-8">
-          <QRCode value={qrCodeUrl || ''} size={80} />
-        </div>
-      )}
-      
-      {/* Placeholder for QR code in employee preview */}
-      {isEmployeePreview && (
-        <div className="absolute bottom-8 right-8 w-20 h-20 border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
-          QR Code
-        </div>
-      )}
-
-      {/* Seal */}
       {sealUrl && (
-        <div className="absolute bottom-32 left-16">
-          <img src={sealUrl} alt="Institution Seal" className="h-20 w-20 object-contain opacity-50" />
+        <div className="absolute bottom-8 left-8">
+          <img src={sealUrl} alt="Organization Seal" className="h-20 w-20 object-contain opacity-75" />
         </div>
       )}
     </div>
