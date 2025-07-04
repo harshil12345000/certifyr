@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
 import * as Previews from '@/components/templates';
@@ -61,7 +62,7 @@ export default function EmployeeTemplateDetail() {
   const { id } = useParams();
   const [tab, setTab] = useState('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { employee, organizationId, setEmployee } = useEmployeePortal();
+  const { employee, organizationId } = useEmployeePortal();
   const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>(() => {
     if (id) {
@@ -85,16 +86,6 @@ export default function EmployeeTemplateDetail() {
       includeDigitalSignature: false,
     };
   });
-
-  // Restore employee from localStorage if missing
-  useEffect(() => {
-    if (!employee) {
-      const stored = localStorage.getItem('employee_portal_session');
-      if (stored) {
-        setEmployee(JSON.parse(stored));
-      }
-    }
-  }, [employee, setEmployee]);
 
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
@@ -142,20 +133,6 @@ export default function EmployeeTemplateDetail() {
         });
 
       if (error) throw error;
-
-      // Insert notification for org admin
-      await supabase.from('notifications').insert({
-        org_id: organizationId,
-        type: 'document_request',
-        subject: `${employee.full_name || employee.name || 'Employee'} Requested Document Approval`,
-        body: `${employee.full_name || employee.name || 'Employee'} requested approval for a document: ${(TEMPLATE_PREVIEW_MAP[id] || id).replace(/([A-Z])/g, ' $1').replace(/-/g, ' ').replace('Preview', '').trim()}.
-Check details and respond in Request Portal → Requests.`,
-        data: {
-          employee_name: employee.full_name || employee.name,
-          template_id: id,
-          template_name: (TEMPLATE_PREVIEW_MAP[id] || id).replace(/([A-Z])/g, ' $1').replace(/-/g, ' ').replace('Preview', '').trim()
-        }
-      });
 
       toast({
         title: "Request Submitted",

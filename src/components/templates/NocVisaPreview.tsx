@@ -3,7 +3,6 @@ import { NocVisaPreviewProps } from '@/types/templates';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
 interface BrandingAssets {
   logoUrl: string | null;
@@ -14,7 +13,7 @@ interface BrandingAssets {
   organizationEmail: string | null;
 }
 
-export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data }) => {
   const {
     fullName,
     designation,
@@ -116,13 +115,7 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data, isEmployee
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('noc-visa.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('noc-visa.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
+    <div className="a4-document p-8 bg-white text-gray-800 text-sm leading-relaxed">
       {/* Letterhead */}
       <Letterhead />
 
@@ -250,30 +243,26 @@ export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data, isEmployee
       </div>
 
       {/* Date and Place */}
-      <div className="flex justify-between items-end mt-16">
-        <div>
-          <p><strong>Date:</strong> {formattedIssueDate}</p>
-          <p><strong>Place:</strong> {place || '[Place]'}</p>
-        </div>
+      <div className="mt-12 mb-16">
+        <p><strong>Date:</strong> {formattedIssueDate}</p>
+        <p><strong>Place:</strong> {place || '[Place]'}</p>
+      </div>
+
+      {/* Signatory Section */}
+      <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && branding.signatureUrl && !isEmployeePreview && (
-            <img 
-              src={branding.signatureUrl}
-              alt="Signatory Signature" 
-              className="h-16 mb-2 object-contain ml-auto"
-              onError={(e) => handleImageError(e, "signature")}
-            />
+          {includeDigitalSignature && branding.signatureUrl && (
+            <img src={branding.signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
           )}
-          <div className="border-b border-gray-400 w-48 mb-2"></div>
-          <p className="font-bold">{signatoryName || '[Authorized Signatory Name]'}</p>
-          <p>{signatoryDesignation || '[Designation]'}</p>
-          <p>{institutionName || '[Institution Name]'}</p>
-          {/* QR Code positioned below institution name */}
-          {!isEmployeePreview && (
-            <div className="flex justify-end">
-              {/* QR code rendering logic here if present */}
+          {includeDigitalSignature && !branding.signatureUrl && (
+            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
+              [Digital Signature Placeholder]
             </div>
           )}
+          {!includeDigitalSignature && <div className="h-16"></div>}
+          <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
+          <p>{signatoryDesignation || '[Designation]'}</p>
+          <p>{institutionName || '[Institution Name]'}</p>
         </div>
       </div>
 

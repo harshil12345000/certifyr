@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BonafidePreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -5,9 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
-import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
+export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data }) => {
   const {
     fullName: studentName,
     courseOrDesignation: course,
@@ -46,14 +46,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data, isEmploy
   };
 
   return (
-    <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
-      {showExportButtons && (
-        <div className="flex gap-2 justify-end mb-4">
-          <button onClick={() => downloadPDF('bonafide.pdf')} className="px-3 py-1 bg-blue-600 text-white rounded">Download PDF</button>
-          <button onClick={() => downloadJPG('bonafide.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
-        </div>
-      )}
-
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
       {/* Letterhead */}
       <Letterhead />
 
@@ -92,8 +85,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data, isEmploy
         </div>
         
         <div className="text-right mt-8 md:mt-0 relative">
-          {/* Signature Section */}
-          {data.includeDigitalSignature && data.signatoryName && !isEmployeePreview ? (
+          {includeDigitalSignature ? (
             <div className="h-16 mb-4 flex justify-end">
               {signatureUrl ? (
                 <div className="border-b border-gray-800 px-6">
@@ -121,8 +113,8 @@ export const BonafidePreview: React.FC<BonafidePreviewProps> = ({ data, isEmploy
           <p>{signatoryDesignation || "[Designation]"}</p>
           <p className="mb-4">{institutionName || organizationDetails?.name || '[Institution Name]'}</p>
           
-          {/* QR Code Section */}
-          {!isEmployeePreview && qrCodeUrl && (
+          {/* QR Code positioned below institution name */}
+          {qrCodeUrl && (
             <div className="flex justify-end">
               <QRCode value={qrCodeUrl} size={75} />
             </div>

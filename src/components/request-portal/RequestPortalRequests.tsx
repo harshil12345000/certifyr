@@ -7,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
-import * as Previews from '@/components/templates';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface DocumentRequest {
   id: string;
@@ -24,35 +22,10 @@ interface DocumentRequest {
   };
 }
 
-// Add TEMPLATE_PREVIEW_MAP for mapping
-const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
-  'bonafide-1': 'BonafidePreview',
-  'character-1': 'CharacterPreview',
-  'experience-1': 'ExperiencePreview',
-  'embassy-attestation-1': 'EmbassyAttestationPreview',
-  'completion-certificate-1': 'CompletionCertificatePreview',
-  'transfer-certificate-1': 'TransferCertificatePreview',
-  'noc-visa-1': 'NocVisaPreview',
-  'income-certificate-1': 'IncomeCertificatePreview',
-  'maternity-leave-1': 'MaternityLeavePreview',
-  'bank-verification-1': 'BankVerificationPreview',
-  'offer-letter-1': 'OfferLetterPreview',
-  'address-proof-1': 'AddressProofPreview',
-  'articles-incorporation-1': 'ArticlesOfIncorporationPreview',
-  'corporate-bylaws-1': 'CorporateBylawsPreview',
-  'founders-agreement-1': 'FoundersAgreementPreview',
-  'stock-purchase-agreement-1': 'StockPurchaseAgreementPreview',
-  'employment-agreement-1': 'EmploymentAgreementPreview',
-  'nda-1': 'NDAPreview',
-  'academic-transcript-1': 'AcademicTranscriptPreview',
-  'embassy-attestation-letter-1': 'EmbassyAttestationLetterPreview',
-};
-
 export function RequestPortalRequests({ onRequestProcessed }: { onRequestProcessed?: () => void }) {
   const { user } = useAuth();
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [previewRequest, setPreviewRequest] = useState<DocumentRequest | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -196,78 +169,48 @@ export function RequestPortalRequests({ onRequestProcessed }: { onRequestProcess
           </div>
         ) : (
           <div className="space-y-4">
-            {requests.map((request) => {
-              // Map template_id to Preview component
-              const previewKey = Object.keys(Previews).find(key => key.toLowerCase().startsWith(request.template_id.replace(/-/g, '')));
-              const PreviewComponent = previewKey ? (Previews as any)[previewKey] : null;
-              return (
-                <div key={request.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-medium">
-                        {getTemplateName(request.template_id)} for {request.employee.full_name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Requested by {request.employee.email} • Employee ID: {request.employee.employee_id}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(request.requested_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                    <Badge variant="secondary">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Pending
-                    </Badge>
+            {requests.map((request) => (
+              <div key={request.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-medium">
+                      {getTemplateName(request.template_id)} for {request.employee.full_name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Requested by {request.employee.email} • Employee ID: {request.employee.employee_id}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(request.requested_at), { addSuffix: true })}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setPreviewRequest(request)}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => processRequest(request.id, 'approved')}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => processRequest(request.id, 'rejected')}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </Button>
-                  </div>
+                  <Badge variant="secondary">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Pending
+                  </Badge>
                 </div>
-              );
-            })}
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => processRequest(request.id, 'approved')}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => processRequest(request.id, 'rejected')}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-        {/* Preview Modal */}
-        <Dialog open={!!previewRequest} onOpenChange={open => !open && setPreviewRequest(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Document Preview</DialogTitle>
-              <DialogDescription>
-                Preview of the requested document
-              </DialogDescription>
-            </DialogHeader>
-            {previewRequest && (() => {
-              const PreviewComponent = TEMPLATE_PREVIEW_MAP[previewRequest.template_id] ? (Previews as any)[TEMPLATE_PREVIEW_MAP[previewRequest.template_id]] : null;
-              return PreviewComponent ? (
-                <PreviewComponent data={previewRequest.template_data} isEmployeePreview={false} />
-              ) : (
-                <div>Preview not available for this template.</div>
-              );
-            })()}
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );
