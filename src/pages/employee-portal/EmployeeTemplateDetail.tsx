@@ -57,6 +57,32 @@ const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'embassy-attestation-letter-1': 'EmbassyAttestationLetterPreview',
 };
 
+const getTemplateName = (templateId: string) => {
+  const nameMap: Record<string, string> = {
+    'bonafide-1': 'Bonafide Certificate',
+    'character-1': 'Character Certificate',
+    'experience-1': 'Experience Certificate',
+    'embassy-attestation-1': 'Embassy Attestation',
+    'completion-certificate-1': 'Completion Certificate',
+    'transfer-certificate-1': 'Transfer Certificate',
+    'noc-visa-1': 'NOC for Visa',
+    'income-certificate-1': 'Income Certificate',
+    'maternity-leave-1': 'Maternity Leave Letter',
+    'bank-verification-1': 'Bank Verification Letter',
+    'offer-letter-1': 'Offer Letter',
+    'address-proof-1': 'Address Proof Certificate',
+    'articles-incorporation-1': 'Articles of Incorporation',
+    'corporate-bylaws-1': 'Corporate Bylaws',
+    'founders-agreement-1': 'Founders Agreement',
+    'stock-purchase-agreement-1': 'Stock Purchase Agreement',
+    'employment-agreement-1': 'Employment Agreement',
+    'nda-1': 'Non-Disclosure Agreement',
+    'academic-transcript-1': 'Academic Transcript',
+    'embassy-attestation-letter-1': 'Embassy Attestation Letter',
+  };
+  return nameMap[templateId] || templateId;
+};
+
 export default function EmployeeTemplateDetail() {
   const { id } = useParams();
   const [tab, setTab] = useState('form');
@@ -144,7 +170,7 @@ export default function EmployeeTemplateDetail() {
         org_id: organizationId,
         type: 'document_approval',
         subject: `${employee.full_name} Requested Document Approval`,
-        body: `${employee.full_name} requested approval for a document: ${id}.\n\nCheck details and respond in Request Portal → Requests.`,
+        body: `${employee.full_name} requested approval for a document: ${getTemplateName(id)}.\n\nCheck details and respond in Request Portal → Requests.`,
         data: {
           document_id: id,
           employee_id: employee.id,
