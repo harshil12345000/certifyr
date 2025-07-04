@@ -21,6 +21,7 @@ import VerifyDocument from '@/pages/VerifyDocument';
 import EmployeePortal from '@/pages/EmployeePortal';
 import EmployeeTemplateDetail from '@/pages/employee-portal/EmployeeTemplateDetail';
 import { EmployeePortalProvider } from '@/contexts/EmployeePortalContext';
+import NoAccess from '@/pages/employee-portal/NoAccess';
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ function App() {
               <Route path="/admin/templates/:id" element={<ProtectedRoute><AdminTemplateBuilder /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/verify/:hash" element={<VerifyDocument />} />
+              <Route path="/no-access" element={<NoAccess />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

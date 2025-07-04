@@ -130,6 +130,8 @@ export function EmployeePortalAuth({ portalSettings, onEmployeeAuthenticated }: 
 
       // Insert new employee (pending status)
       const passwordHash = btoa(register.password);
+      // Get current user from Supabase auth
+      const { data: authUser } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('request_portal_employees')
         .insert({
@@ -140,7 +142,8 @@ export function EmployeePortalAuth({ portalSettings, onEmployeeAuthenticated }: 
           phone_number: register.phoneNumber || null,
           manager_name: register.managerName || null,
           password_hash: passwordHash,
-          status: 'pending'
+          status: 'pending',
+          user_id: authUser?.user?.id || null
         })
         .select()
         .single();

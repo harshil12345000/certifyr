@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
+import { Bell, Search, Settings, User, LogOut, CircleHelp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -178,6 +178,22 @@ export function Header() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Support Center Icon */}
+          <div className="relative group flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-1"
+              aria-label="Support Center"
+              onClick={() => window.open('https://certifyr.featurebase.app/', '_blank', 'noopener,noreferrer')}
+            >
+              <CircleHelp className="h-5 w-5 text-black group-hover:text-black transition-colors" />
+            </Button>
+            <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
+              Feedback & Help Center
+            </span>
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

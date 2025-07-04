@@ -1,6 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { FileText, Settings, User, Building2, Clock, FolderOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface EmployeePortalLayoutProps {
   children: ReactNode;
@@ -10,6 +11,15 @@ interface EmployeePortalLayoutProps {
 export function EmployeePortalLayout({ children, activeTab = 'templates' }: EmployeePortalLayoutProps) {
   const { employee, organization } = useEmployeePortal();
   const [selectedTab, setSelectedTab] = useState(activeTab);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (employee && employee.status !== 'approved') {
+      // Clear session/localStorage and redirect
+      localStorage.removeItem(`employee_portal_${organization?.id}`);
+      navigate('/no-access', { replace: true });
+    }
+  }, [employee, organization, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
