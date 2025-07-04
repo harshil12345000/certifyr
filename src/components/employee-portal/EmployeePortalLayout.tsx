@@ -1,4 +1,3 @@
-
 import { ReactNode, useState } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { FileText, Settings, User, Building2, Clock } from 'lucide-react';
@@ -15,7 +14,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col glass-card border-r border-border/50 min-h-screen h-screen">
+      <aside className="fixed left-0 top-0 w-64 h-screen flex flex-col glass-card border-r border-border/50 z-40">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
             <Building2 className="h-5 w-5 text-primary" />
@@ -60,7 +59,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
         </div>
       </aside>
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 ml-64 overflow-y-auto">
         {children}
       </main>
     </div>
