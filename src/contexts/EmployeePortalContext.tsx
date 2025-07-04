@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,17 +30,27 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
   const [organization, setOrganization] = useState<any>(null);
 
   useEffect(() => {
+    if (!organizationId) return;
+
     const fetchOrganization = async () => {
       try {
-        const { data } = await supabase
+        console.log('Fetching organization:', organizationId);
+        const { data, error } = await supabase
           .from('organizations')
           .select('*')
           .eq('id', organizationId)
-          .single();
+          .maybeSingle();
 
-        setOrganization(data);
+        if (error) {
+          console.error('Error fetching organization:', error);
+        } else if (data) {
+          console.log('Organization loaded:', data);
+          setOrganization(data);
+        } else {
+          console.log('No organization found');
+        }
       } catch (error) {
-        console.error('Error fetching organization:', error);
+        console.error('Error in fetchOrganization:', error);
       }
     };
 
