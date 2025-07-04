@@ -143,8 +143,7 @@ export default function EmployeeTemplateDetail() {
       await supabase.from('notifications').insert({
         org_id: organizationId,
         subject: `${employee.full_name} Requested Document Approval`,
-        body: `${employee.full_name} requested approval for a document: ${id}.\n\nCheck details and respond in Request Portal → Requests.`,
-        created_by: employee.id
+        body: `${employee.full_name} requested approval for a document: ${id}.\n\nCheck details and respond in Request Portal → Requests.`
       });
       // --- End notification insert ---
 
