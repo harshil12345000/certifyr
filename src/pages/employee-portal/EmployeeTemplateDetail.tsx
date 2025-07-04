@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -155,15 +154,15 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="max-w-3xl mx-auto py-12">
-        <h1 className="text-2xl font-bold mb-4">Fill Out Template</h1>
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+      <div className="max-w-3xl mx-auto p-0 m-0 mt-0 !mt-0">
+        <h1 className="text-2xl font-bold m-0 p-0 mt-0 !mt-0">Fill Out Template</h1>
+        <Tabs value={tab} onValueChange={setTab} className="m-0 p-0 mt-0 !mt-0">
           <TabsList>
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
           <TabsContent value="form">
-            <div className="bg-card p-6 rounded shadow">
+            <div className="bg-card p-4 rounded shadow">
               <FormComponent 
                 onSubmit={handleFormSubmit as any}
                 onDataChange={handleFormDataChange as any}
@@ -172,8 +171,8 @@ export default function EmployeeTemplateDetail() {
             </div>
           </TabsContent>
           <TabsContent value="preview">
-            <div className="bg-card p-6 rounded shadow relative">
-              <div className="flex justify-end mb-4">
+            <div className="bg-card p-4 rounded shadow relative">
+              <div className="flex justify-end mb-2">
                 <Button 
                   onClick={handleRequestApproval}
                   disabled={isSubmitting}

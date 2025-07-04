@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
-import { FileText, Settings, User, Building2, Clock } from 'lucide-react';
+import { FileText, Settings, User, Building2, Clock, FolderOpen } from 'lucide-react';
 
 interface EmployeePortalLayoutProps {
   children: ReactNode;
@@ -36,7 +36,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === 'pending' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
             onClick={() => setSelectedTab('pending')}
           >
-            <Clock className="h-5 w-5 mr-2" /> Pending
+            <FolderOpen className="h-5 w-5 mr-2" /> My Requests
           </a>
           <a
             href={`/${organization?.id}/request-portal?tab=settings`}
@@ -57,7 +57,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
         </div>
       </aside>
       <div className="pl-64 flex flex-col min-h-screen">
-        <main className="flex-1 p-6">
+        <main className="flex-1 px-2">
           {children}
         </main>
       </div>
