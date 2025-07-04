@@ -24,7 +24,7 @@ interface IPAssignmentAgreementPreviewProps {
   showExportButtons?: boolean;
 }
 
-export const IPAssignmentAgreementPreview: React.FC<IPAssignmentAgreviewProps> = ({ 
+export const IPAssignmentAgreementPreview: React.FC<IPAssignmentAgreementPreviewProps> = ({ 
   data, 
   isEmployeePreview = false, 
   showExportButtons = false 
