@@ -142,8 +142,14 @@ export default function EmployeeTemplateDetail() {
       // --- Insert admin notification ---
       await supabase.from('notifications').insert({
         org_id: organizationId,
+        type: 'document_approval',
         subject: `${employee.full_name} Requested Document Approval`,
-        body: `${employee.full_name} requested approval for a document: ${id}.\n\nCheck details and respond in Request Portal → Requests.`
+        body: `${employee.full_name} requested approval for a document: ${id}.\n\nCheck details and respond in Request Portal → Requests.`,
+        data: {
+          document_id: id,
+          employee_id: employee.id,
+          template_id: id
+        }
       });
       // --- End notification insert ---
 

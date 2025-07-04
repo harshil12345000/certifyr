@@ -154,8 +154,15 @@ export function EmployeePortalAuth({ portalSettings, onEmployeeAuthenticated }: 
       // Notify admin (insert notification)
       await supabase.from('notifications').insert({
         org_id: portalSettings.organization_id,
+        type: 'employee_registration',
         subject: `${register.fullName} Requested Portal Access`,
-        body: `${register.fullName} has requested access to your organization's Certifyr Request Portal.\n\nDetails:\n• Email: ${register.email}\n• Employee ID: ${register.employeeId || 'Not provided'}\n• Phone: ${register.phoneNumber || 'Not provided'}\n• Manager: ${register.managerName || 'Not provided'}\n\nPlease review and approve/reject this request in Request Portal → Members.`
+        body: `${register.fullName} has requested access to your organization's Certifyr Request Portal.\n\nDetails:\n• Email: ${register.email}\n• Employee ID: ${register.employeeId || 'Not provided'}\n• Phone: ${register.phoneNumber || 'Not provided'}\n• Manager: ${register.managerName || 'Not provided'}\n\nPlease review and approve/reject this request in Request Portal → Members.`,
+        data: {
+          email: register.email,
+          employeeId: register.employeeId,
+          phoneNumber: register.phoneNumber,
+          managerName: register.managerName
+        }
       });
 
       setMode('pending');
