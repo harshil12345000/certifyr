@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useBranding } from "@/contexts/BrandingContext";
 
 interface LetterheadProps {
@@ -8,6 +8,26 @@ interface LetterheadProps {
 
 export const Letterhead: React.FC<LetterheadProps> = ({ children, className = "" }) => {
   const { logoUrl, organizationDetails, isLoading } = useBranding();
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchLogoDataUrl() {
+      if (logoUrl && logoUrl.startsWith('http')) {
+        try {
+          const response = await fetch(logoUrl);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => setLogoDataUrl(reader.result as string);
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          setLogoDataUrl(null);
+        }
+      } else {
+        setLogoDataUrl(logoUrl);
+      }
+    }
+    fetchLogoDataUrl();
+  }, [logoUrl]);
 
   if (isLoading) {
     return (
@@ -28,10 +48,10 @@ export const Letterhead: React.FC<LetterheadProps> = ({ children, className = ""
 
   return (
     <div className={`text-center border-b pb-4 mb-8 ${className}`}>
-      {logoUrl && (
+      {logoDataUrl && (
         <div className="flex justify-center mb-4">
           <img
-            src={logoUrl}
+            src={logoDataUrl}
             alt="Organization Logo"
             className="h-16 object-contain"
             crossOrigin="anonymous"

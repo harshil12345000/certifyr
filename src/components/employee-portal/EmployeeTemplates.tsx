@@ -7,6 +7,7 @@ import { Search, Filter, ArrowRight } from 'lucide-react';
 import { popularTemplates } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 // Copy the additionalTemplates and aggregation logic from admin dashboard
 const additionalTemplates = [
@@ -156,6 +157,16 @@ export function EmployeeTemplates() {
     try {
       // This would normally show a form to fill template data
       // For now, we'll just create a basic request
+      if (!employee || !organizationId) return;
+      // Insert notification for admin
+      await supabase.from('announcements').insert({
+        title: `${employee.full_name} Requested Document Approval`,
+        content: `${employee.full_name} requested approval for the following document: ${uniqueTemplates.find(t => t.id === templateId)?.title || templateId}.\n\nCheck details and respond in Request Portal → Requests.`,
+        organization_id: organizationId,
+        created_by: employee.id,
+        is_active: true,
+        is_global: false
+      });
       toast({
         title: 'Request Submitted',
         description: 'Your document request has been submitted for approval'

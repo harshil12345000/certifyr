@@ -9,11 +9,7 @@ export default function EmployeePortal() {
   const { organizationId } = useParams<{ organizationId: string }>();
   const [portalSettings, setPortalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [employee, setEmployee] = useState<any>(() => {
-    // Try to load employee session from localStorage
-    const stored = localStorage.getItem('employee_portal_session');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [employee, setEmployee] = useState<any>(null);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -43,15 +39,6 @@ export default function EmployeePortal() {
     fetchPortalSettings();
   }, [organizationId]);
 
-  // Persist employee session to localStorage
-  useEffect(() => {
-    if (employee) {
-      localStorage.setItem('employee_portal_session', JSON.stringify(employee));
-    } else {
-      localStorage.removeItem('employee_portal_session');
-    }
-  }, [employee]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -61,12 +48,19 @@ export default function EmployeePortal() {
   }
 
   if (!portalSettings) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white p-8 rounded shadow text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-2">Portal Not Available</h2>
+          <p className="text-muted-foreground mb-4">This organization's request portal is not enabled or does not exist. Please contact your admin for access.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <EmployeePortalProvider organizationId={organizationId!}>
-      {employee ? (
+      {employee && employee.status === 'approved' ? (
         <EmployeePortalDashboard employee={employee} onSignOut={() => setEmployee(null)} />
       ) : (
         <EmployeePortalAuth 

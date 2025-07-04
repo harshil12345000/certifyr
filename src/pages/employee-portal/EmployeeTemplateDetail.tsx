@@ -139,6 +139,17 @@ export default function EmployeeTemplateDetail() {
         throw error;
       }
 
+      // --- Insert admin notification ---
+      await supabase.from('announcements').insert({
+        title: `${employee.full_name} Requested Document Approval`,
+        content: `${employee.full_name} requested approval for the following document: ${id}.\n\nCheck details and respond in Request Portal → Requests.`,
+        organization_id: organizationId,
+        created_by: employee.id,
+        is_active: true,
+        is_global: false
+      });
+      // --- End notification insert ---
+
       toast({
         title: "Request Submitted",
         description: "Your document request has been submitted for approval",
