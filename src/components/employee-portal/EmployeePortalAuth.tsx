@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,14 +151,12 @@ export function EmployeePortalAuth({ portalSettings, onEmployeeAuthenticated }: 
         return;
       }
 
-      // Notify admin
-      await supabase.from('announcements').insert({
-        title: `${register.fullName} Requested Portal Access`,
-        content: `${register.fullName} has requested access to your organization's Certifyr Request Portal.\n\nDetails:\n• Email: ${register.email}\n• Employee ID: ${register.employeeId || 'Not provided'}\n• Phone: ${register.phoneNumber || 'Not provided'}\n• Manager: ${register.managerName || 'Not provided'}\n\nPlease review and approve/reject this request in Request Portal → Members.`,
-        organization_id: portalSettings.organization_id,
-        created_by: data.id,
-        is_active: true,
-        is_global: false
+      // Notify admin (insert notification)
+      await supabase.from('notifications').insert({
+        org_id: portalSettings.organization_id,
+        subject: `${register.fullName} Requested Portal Access`,
+        body: `${register.fullName} has requested access to your organization's Certifyr Request Portal.\n\nDetails:\n• Email: ${register.email}\n• Employee ID: ${register.employeeId || 'Not provided'}\n• Phone: ${register.phoneNumber || 'Not provided'}\n• Manager: ${register.managerName || 'Not provided'}\n\nPlease review and approve/reject this request in Request Portal → Members.`,
+        created_by: data.id
       });
 
       setMode('pending');
