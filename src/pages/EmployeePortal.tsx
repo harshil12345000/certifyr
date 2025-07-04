@@ -3,7 +3,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EmployeePortalAuth } from '@/components/employee-portal/EmployeePortalAuth';
 import { EmployeePortalDashboard } from '@/components/employee-portal/EmployeePortalDashboard';
-import { EmployeePortalProvider, useEmployeePortal } from '@/contexts/EmployeePortalContext';
+import { EmployeePortalProvider } from '@/contexts/EmployeePortalContext';
 
 export default function EmployeePortal() {
   const { organizationId } = useParams<{ organizationId: string }>();
@@ -14,14 +14,6 @@ export default function EmployeePortal() {
     const stored = localStorage.getItem('employee_portal_session');
     return stored ? JSON.parse(stored) : null;
   });
-
-  // Sync employee state with context
-  const context = useEmployeePortal?.();
-  useEffect(() => {
-    if (context && context.setEmployee) {
-      context.setEmployee(employee);
-    }
-  }, [employee, context]);
 
   useEffect(() => {
     if (!organizationId) return;
