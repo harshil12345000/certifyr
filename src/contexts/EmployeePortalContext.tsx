@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -54,7 +53,18 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
     if (storedEmployee) {
       try {
         const employeeData = JSON.parse(storedEmployee);
-        console.log('Setting employee from localStorage:', employeeData);
+        // Check if employee still exists in DB
+        const { data: dbEmployee } = await supabase
+          .from('request_portal_employees')
+          .select('*')
+          .eq('id', employeeData.id)
+          .single();
+        if (!dbEmployee) {
+          // Employee was deleted, clear session and reload to portal auth
+          localStorage.removeItem(`employee_portal_${organizationId}`);
+          window.location.href = `/${organizationId}/request-portal`;
+          return;
+        }
         setEmployee(employeeData);
       } catch (error) {
         console.error('Error parsing stored employee data:', error);
