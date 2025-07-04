@@ -41,10 +41,10 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Personal Details Section */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <h3 className="text-lg font-medium">Personal Details</h3>
             
             <FormField
@@ -91,7 +91,7 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
           </div>
 
           {/* Character Details Section */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <h3 className="text-lg font-medium">Character Details</h3>
 
             <FormField
@@ -142,10 +142,10 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
         </div>
 
         {/* Certificate Details Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h3 className="text-lg font-medium">Certificate Details</h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="date"
@@ -177,9 +177,9 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
         </div>
 
         {/* Signatory Details Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h3 className="text-lg font-medium">Signatory Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="signatoryName"
@@ -214,7 +214,7 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
             control={form.control}
             name="includeDigitalSignature"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-4">
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-2">
                 <div className="space-y-0.5">
                   <FormLabel className="text-base">Digital Signature</FormLabel>
                   <FormDescription className="text-sm text-muted-foreground">

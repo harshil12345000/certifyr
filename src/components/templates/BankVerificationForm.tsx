@@ -74,8 +74,8 @@ export const BankVerificationForm: React.FC<BankVerificationFormProps> = ({ onSu
   };
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <Label htmlFor="fullName">Full Name *</Label>
           <Input
@@ -255,7 +255,7 @@ export const BankVerificationForm: React.FC<BankVerificationFormProps> = ({ onSu
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <Label htmlFor="institutionName">Institution Name *</Label>
           <Input
