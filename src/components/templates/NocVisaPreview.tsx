@@ -28,7 +28,7 @@ export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({
     joinDate,
     travelDates,
     travelPurpose,
-    destination,
+    destinationCountry,
     visaType,
     institutionName,
     date: issueDate,
@@ -44,7 +44,7 @@ export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({
 
   useEffect(() => {
     const generateQR = async () => {
-      if (fullName && passportNumber && destination) {
+      if (fullName && passportNumber && destinationCountry) {
         const url = await generateDocumentQRCode(
           'noc-visa-1',
           data,
@@ -58,7 +58,7 @@ export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({
       }
     };
     generateQR();
-  }, [data, organizationDetails?.name, user?.id, fullName, passportNumber, destination]);
+  }, [data, organizationDetails?.name, user?.id, fullName, passportNumber, destinationCountry]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -131,7 +131,7 @@ export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({
 
         <p className="text-justify">
           We have no objection to {fullName ? 'their' : '[their]'} application for <strong>{getVisaTypeText(visaType || 'tourist')}</strong> 
-          to travel to <strong>{destination || '[Destination Country]'}</strong> for <strong>{travelPurpose || '[Travel Purpose]'}</strong> 
+          to travel to <strong>{destinationCountry || '[Destination Country]'}</strong> for <strong>{travelPurpose || '[Travel Purpose]'}</strong> 
           during the period <strong>{formattedTravelDates}</strong>.
         </p>
 

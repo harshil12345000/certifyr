@@ -311,6 +311,12 @@ export interface MaternityLeaveData extends BaseTemplateData {
   expectedDeliveryDate?: string;
   leaveStartDate?: string;
   leaveEndDate?: string;
+  totalLeaveDays?: string;
+  medicalCertificateNumber?: string;
+  doctorName?: string;
+  hospitalName?: string;
+  emergencyContact?: string;
+  emergencyContactPhone?: string;
   institutionName?: string;
 }
 
@@ -352,6 +358,8 @@ export interface NocVisaData extends BaseTemplateData {
   travelPurpose?: string;
   destinationCountry?: string;
   visaType?: string;
+  returnDate?: string;
+  sponsorDetails?: string;
   institutionName?: string;
 }
 
@@ -362,11 +370,22 @@ export interface NocVisaPreviewProps extends BasePreviewProps {
 // Offer Letter
 export interface OfferLetterData extends BaseTemplateData {
   candidateName: string;
-  position: string;
+  candidateAddress?: string;
+  dateOfOffer?: string;
+  jobTitle?: string;
+  position?: string;
   department?: string;
-  salary: string;
-  startDate?: string;
   reportingManager?: string;
+  startDate?: string;
+  probationPeriod?: string;
+  salary?: string;
+  salaryAmount?: string;
+  salaryCurrency?: string;
+  salaryFrequency?: 'monthly' | 'annually';
+  benefits?: string;
+  workHours?: string;
+  workLocation?: string;
+  acceptanceDeadline?: string;
   institutionName?: string;
 }
 
