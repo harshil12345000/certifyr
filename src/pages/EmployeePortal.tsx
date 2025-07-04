@@ -14,14 +14,9 @@ export default function EmployeePortal() {
     const stored = localStorage.getItem('employee_portal_session');
     return stored ? JSON.parse(stored) : null;
   });
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!organizationId) {
-      setErrorMsg('Invalid organization link. Please check your URL.');
-      setLoading(false);
-      return;
-    }
+    if (!organizationId) return;
 
     const fetchPortalSettings = async () => {
       try {
@@ -32,17 +27,13 @@ export default function EmployeePortal() {
           .eq('enabled', true)
           .single();
 
-        if (error) {
-          setErrorMsg('Error fetching portal settings. Please try again later.');
-          setPortalSettings(null);
-        } else if (!data) {
-          setErrorMsg('This organization does not have the request portal enabled. Please contact your admin.');
+        if (error || !data) {
           setPortalSettings(null);
         } else {
           setPortalSettings(data);
         }
       } catch (error) {
-        setErrorMsg('A network or server error occurred. Please try again later.');
+        console.error('Error fetching portal settings:', error);
         setPortalSettings(null);
       } finally {
         setLoading(false);
@@ -69,27 +60,8 @@ export default function EmployeePortal() {
     );
   }
 
-  if (errorMsg) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center p-4">
-        <div className="mb-4 text-red-600 font-semibold text-lg">{errorMsg}</div>
-        <button
-          className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
-          onClick={() => window.location.reload()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
   if (!portalSettings) {
-    // This should be unreachable, but fallback just in case
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center p-4">
-        <div className="mb-4 text-red-600 font-semibold text-lg">Request portal is not available for this organization.</div>
-      </div>
-    );
+    return <Navigate to="/auth" replace />;
   }
 
   return (
