@@ -11,13 +11,12 @@ import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
 import { cn } from '@/lib/utils';
 
-interface Announcement {
+interface Notification {
   id: string;
-  title: string;
-  content: string;
-  is_active: boolean;
-  is_global: boolean;
+  subject: string;
+  body: string;
   created_at: string;
+  is_read?: boolean;
 }
 
 // Import templates data for search functionality
@@ -49,10 +48,10 @@ export function Header() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  // Announcements state
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  // Notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unread, setUnread] = useState<string[]>([]);
-  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -70,55 +69,49 @@ export function Header() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  // Fetch active announcements + which are unread
+  // Fetch notifications
   useEffect(() => {
     if (!user) return;
-    setLoadingAnnouncements(true);
-    const fetchAnnouncements = async () => {
-      // Get all relevant, active announcements for the user's organization
-      const { data, error } = await supabase
-        .from("announcements")
-        .select("id, title, content, is_active, is_global, created_at")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error('Error fetching announcements:', error);
-        setAnnouncements([]);
+    setLoadingNotifications(true);
+    const fetchNotifications = async () => {
+      // 1. Fetch admin's organization
+      const { data: orgs, error: orgsError } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+      if (orgsError || !orgs?.organization_id) {
+        setNotifications([]);
         setUnread([]);
-        setLoadingAnnouncements(false);
+        setLoadingNotifications(false);
         return;
       }
-      setAnnouncements(data ?? []);
-
-      // Now, get which are read by user
-      if (data && data.length > 0) {
-        const ids = data.map(a => a.id);
-        const { data: reads } = await supabase
-          .from("user_announcement_reads")
-          .select("announcement_id")
-          .in("announcement_id", ids)
-          .eq("user_id", user.id);
-        const readIds = (reads ?? []).map(r => r.announcement_id);
-        setUnread(data.filter(a => !readIds.includes(a.id)).map(a => a.id));
-      } else {
+      const orgId = orgs.organization_id;
+      // 2. Fetch notifications for this org
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, subject, body, created_at")
+        .eq("org_id", orgId)
+        .order("created_at", { ascending: false });
+      if (error) {
+        setNotifications([]);
         setUnread([]);
+        setLoadingNotifications(false);
+        return;
       }
-      setLoadingAnnouncements(false);
+      setNotifications(data ?? []);
+      // Optionally, implement unread logic if you have a read-tracking table
+      setUnread((data ?? []).map(n => n.id)); // Mark all as unread for now
+      setLoadingNotifications(false);
     };
-    fetchAnnouncements();
+    fetchNotifications();
   }, [user]);
 
-  // Mark as read
-  const markAsRead = async (announcementId: string) => {
-    if (!user || !announcementId) return;
-    // Optimistically remove from unread
-    setUnread(prev => prev.filter(id => id !== announcementId));
-    await supabase.from("user_announcement_reads").upsert({
-      user_id: user.id,
-      announcement_id: announcementId,
-      read_at: new Date().toISOString(),
-    });
+  // Mark as read (optional, if you have a read-tracking table)
+  const markAsRead = async (notificationId: string) => {
+    setUnread(prev => prev.filter(id => id !== notificationId));
+    // Optionally, update a read-tracking table here
   };
 
   const handleSignOut = async () => {
@@ -157,28 +150,28 @@ export function Header() {
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {loadingAnnouncements ? (
+              {loadingNotifications ? (
                 <div className="py-8 text-center text-muted-foreground">Loading...</div>
-              ) : announcements.length === 0 ? (
+              ) : notifications.length === 0 ? (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">No notifications yet</p>
                 </div>
               ) : (
-                announcements.map(a => (
+                notifications.map(n => (
                   <DropdownMenuItem
-                    key={a.id}
+                    key={n.id}
                     className="cursor-pointer p-3 relative"
-                    onClick={() => markAsRead(a.id)}
+                    onClick={() => markAsRead(n.id)}
                   >
                     <div>
                       <p className="font-medium flex items-center">
-                        {a.title}
-                        {unread.includes(a.id) && (
+                        {n.subject}
+                        {unread.includes(n.id) && (
                           <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
                         )}
                       </p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{a.content}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{dayjs(a.created_at).format("MMM D, YYYY HH:mm")}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{n.body}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{dayjs(n.created_at).format("MMM D, YYYY HH:mm")}</p>
                     </div>
                   </DropdownMenuItem>
                 ))

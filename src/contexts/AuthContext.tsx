@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,17 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const ensureUserHasOrganization = async (user: User) => {
     try {
-      // Check if user is already in an organization
-      const { data: existingMembership } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingMembership) {
-        return;
-      }
-
       // Get user profile to check for organization data
       const { data: userProfile } = await supabase
         .from('user_profiles')
@@ -112,37 +100,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', user.id)
         .single();
 
+      let orgId: string | null = null;
       if (userProfile?.organization_name) {
-        // Create organization
-        const { data: newOrg, error: orgError } = await supabase
+        // Try to find existing org
+        const { data: org } = await supabase
           .from('organizations')
-          .insert([{
-            name: userProfile.organization_name,
-            email: userProfile.email,
-            phone: userProfile.phone_number,
-            address: userProfile.organization_location
-          }])
-          .select()
-          .single();
-
-        if (orgError) {
-          console.error('Error creating organization:', orgError);
-          return;
+          .select('id')
+          .eq('name', userProfile.organization_name)
+          .maybeSingle();
+        if (org?.id) {
+          orgId = org.id;
+        } else {
+          // Create organization if not exists
+          const { data: newOrg, error: orgError } = await supabase
+            .from('organizations')
+            .insert([{
+              name: userProfile.organization_name,
+              email: userProfile.email,
+              phone: userProfile.phone_number,
+              address: userProfile.organization_location
+            }])
+            .select()
+            .single();
+          if (orgError) {
+            console.error('Error creating organization:', orgError);
+            return;
+          }
+          orgId = newOrg.id;
         }
-
-        // Add user as admin to the organization
-        const { error: memberError } = await supabase
-          .from('organization_members')
-          .insert([{
-            organization_id: newOrg.id,
-            user_id: user.id,
-            role: 'admin',
-            status: 'active'
-          }]);
-
-        if (memberError) {
-          console.error('Error adding user to organization:', memberError);
-        }
+      }
+      if (!orgId) return;
+      // Upsert user as admin in organization_members
+      const { error: upsertError } = await supabase
+        .from('organization_members')
+        .upsert({
+          organization_id: orgId,
+          user_id: user.id,
+          role: 'admin',
+          status: 'active'
+        }, { onConflict: ['organization_id', 'user_id'] });
+      if (upsertError) {
+        console.error('Error upserting user to organization_members:', upsertError);
       }
     } catch (error) {
       console.error('Error in ensureUserHasOrganization:', error);
