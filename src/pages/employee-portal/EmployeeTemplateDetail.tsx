@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
 import * as Previews from '@/components/templates';
@@ -111,6 +111,25 @@ export default function EmployeeTemplateDetail() {
       includeDigitalSignature: false,
     };
   });
+  const [requestStatus, setRequestStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      if (!employee || !organizationId || !id) return;
+      const { data, error } = await supabase
+        .from('document_requests')
+        .select('status')
+        .eq('employee_id', employee.id)
+        .eq('organization_id', organizationId)
+        .eq('template_id', id)
+        .order('requested_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (!error && data) setRequestStatus(data.status);
+      else setRequestStatus(null);
+    };
+    fetchStatus();
+  }, [employee, organizationId, id]);
 
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
@@ -227,11 +246,17 @@ export default function EmployeeTemplateDetail() {
                   {isSubmitting ? "Submitting..." : "Request Approval"}
                 </Button>
               </div>
-              <PreviewComponent 
-                data={formData as any} 
-                isEmployeePreview={true}
-                showExportButtons={false}
-              />
+              {requestStatus === 'approved' ? (
+                <PreviewComponent 
+                  data={formData as any} 
+                  isEmployeePreview={false}
+                  showExportButtons={true}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>QR code and signature will appear after admin approval.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
