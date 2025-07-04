@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -7,6 +8,7 @@ interface EmployeePortalContextType {
   employee: any;
   setEmployee: (employee: any) => void;
   isAuthenticated: boolean;
+  refreshEmployee: () => Promise<void>;
 }
 
 const EmployeePortalContext = createContext<EmployeePortalContextType | undefined>(undefined);
@@ -46,12 +48,41 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
     fetchOrganization();
   }, [organizationId]);
 
+  const refreshEmployee = async () => {
+    // Check if there's employee data in localStorage (from authentication)
+    const storedEmployee = localStorage.getItem('employee_portal_auth');
+    if (storedEmployee) {
+      try {
+        const employeeData = JSON.parse(storedEmployee);
+        console.log('Setting employee from localStorage:', employeeData);
+        setEmployee(employeeData);
+      } catch (error) {
+        console.error('Error parsing stored employee data:', error);
+        localStorage.removeItem('employee_portal_auth');
+      }
+    }
+  };
+
+  useEffect(() => {
+    refreshEmployee();
+  }, []);
+
   const value = {
     organizationId,
     organization,
     employee,
-    setEmployee,
-    isAuthenticated: !!employee
+    setEmployee: (emp: any) => {
+      console.log('Setting employee in context:', emp);
+      setEmployee(emp);
+      // Store in localStorage for persistence
+      if (emp) {
+        localStorage.setItem('employee_portal_auth', JSON.stringify(emp));
+      } else {
+        localStorage.removeItem('employee_portal_auth');
+      }
+    },
+    isAuthenticated: !!employee,
+    refreshEmployee
   };
 
   return (

@@ -34,11 +34,11 @@ export const EmbassyAttestationForm: React.FC<EmbassyAttestationFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-3">
       {/* Applicant Details Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h3 className="text-lg font-medium border-b pb-2">Applicant Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name *</Label>
             <Input
@@ -107,9 +107,9 @@ export const EmbassyAttestationForm: React.FC<EmbassyAttestationFormProps> = ({
       </div>
 
       {/* Document Details Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h3 className="text-lg font-medium border-b pb-2">Document Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="documentType">Document Type *</Label>
             <Select onValueChange={(value) => handleChange('documentType', value)}>
@@ -157,9 +157,9 @@ export const EmbassyAttestationForm: React.FC<EmbassyAttestationFormProps> = ({
       </div>
 
       {/* Purpose and Destination Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h3 className="text-lg font-medium border-b pb-2">Purpose and Destination</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="purposeOfAttestation">Purpose of Attestation *</Label>
             <Textarea
@@ -194,9 +194,9 @@ export const EmbassyAttestationForm: React.FC<EmbassyAttestationFormProps> = ({
       </div>
 
       {/* Contact Information Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h3 className="text-lg font-medium border-b pb-2">Contact Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="applicantAddress">Applicant Address *</Label>
             <Textarea
@@ -231,9 +231,9 @@ export const EmbassyAttestationForm: React.FC<EmbassyAttestationFormProps> = ({
       </div>
 
       {/* Institution/Authority Details Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h3 className="text-lg font-medium border-b pb-2">Issuing Authority Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="institutionName">Institution/Organization Name *</Label>
             <Input

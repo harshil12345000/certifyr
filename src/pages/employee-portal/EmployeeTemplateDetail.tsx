@@ -89,7 +89,7 @@ export default function EmployeeTemplateDetail() {
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
       <EmployeePortalLayout activeTab="templates">
-        <div className="max-w-2xl mx-auto py-12">
+        <div className="max-w-2xl mx-auto py-8">
           <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
           <p className="text-muted-foreground mb-2">No template found for ID: <span className="font-mono">{id}</span></p>
         </div>
@@ -110,10 +110,13 @@ export default function EmployeeTemplateDetail() {
   };
 
   const handleRequestApproval = async () => {
+    console.log('Employee context:', employee);
+    console.log('Organization ID:', organizationId);
+    
     if (!employee || !organizationId) {
       toast({
         title: "Error",
-        description: "Employee or organization information not found",
+        description: "Employee or organization information not found. Please try logging in again.",
         variant: "destructive"
       });
       return;
@@ -127,18 +130,21 @@ export default function EmployeeTemplateDetail() {
           employee_id: employee.id,
           organization_id: organizationId,
           template_id: id,
-          template_data: formData as any, // Convert FormData to Json
+          template_data: formData as any,
           status: 'pending'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Request Submitted",
         description: "Your document request has been submitted for approval",
       });
 
-      // Redirect to pending tab or templates
+      // Redirect to pending tab
       window.location.href = `/${organizationId}/request-portal?tab=pending`;
     } catch (error) {
       console.error('Error submitting request:', error);
@@ -181,7 +187,11 @@ export default function EmployeeTemplateDetail() {
                   {isSubmitting ? "Submitting..." : "Request Approval"}
                 </Button>
               </div>
-              <PreviewComponent data={formData as any} isEmployeePreview={true} />
+              <PreviewComponent 
+                data={formData as any} 
+                isEmployeePreview={true}
+                showExportButtons={false}
+              />
             </div>
           </TabsContent>
         </Tabs>

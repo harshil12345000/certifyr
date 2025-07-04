@@ -23,7 +23,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
             <p className="text-xs text-muted-foreground">Employee Portal</p>
           </div>
         </div>
-        <nav className="flex-1 py-6 px-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
           <a
             href={`/${organization?.id}/request-portal`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === 'templates' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
@@ -51,7 +51,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
             <User className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium">{employee?.full_name || organization?.name || 'Employee'}</p>
+            <p className="text-sm font-medium">{employee?.full_name || 'Employee'}</p>
             <p className="text-xs text-muted-foreground">{employee?.email}</p>
           </div>
         </div>
@@ -63,4 +63,4 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
       </div>
     </div>
   );
-} 
+}

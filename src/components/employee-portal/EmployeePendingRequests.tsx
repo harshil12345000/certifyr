@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import * as Previews from '@/components/templates';
-import { Clock, Eye, FileText } from 'lucide-react';
+import { Clock, Eye, FileText, Printer, Download } from 'lucide-react';
 import { FormData } from '@/types/templates';
 import { DocumentRequest } from '@/types/document';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'bonafide-1': 'BonafidePreview',
@@ -98,6 +100,78 @@ export function EmployeePendingRequests() {
     return nameMap[templateId] || templateId;
   };
 
+  const handlePrint = (elementId: string) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Print Document</title>
+              <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                @media print {
+                  body { margin: 0; }
+                }
+              </style>
+            </head>
+            <body>
+              ${element.innerHTML}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    }
+  };
+
+  const handleDownloadJPG = async (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      try {
+        const canvas = await html2canvas(element);
+        const link = document.createElement('a');
+        link.download = `${filename}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg');
+        link.click();
+      } catch (error) {
+        console.error('Error generating JPG:', error);
+      }
+    }
+  };
+
+  const handleDownloadPDF = async (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      try {
+        const canvas = await html2canvas(element);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        pdf.save(`${filename}.pdf`);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -122,7 +196,7 @@ export function EmployeePendingRequests() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold mb-1">Pending Requests</h1>
+        <h1 className="text-2xl font-semibold mb-1">My Requests</h1>
         <p className="text-muted-foreground">
           Track the status of your document requests
         </p>
@@ -131,6 +205,8 @@ export function EmployeePendingRequests() {
       <div className="grid gap-4">
         {requests.map((request) => {
           const PreviewComponent = Previews[TEMPLATE_PREVIEW_MAP[request.template_id]] as any;
+          const isApproved = request.status === 'approved';
+          const elementId = `preview-${request.id}`;
           
           return (
             <Card key={request.id}>
@@ -161,13 +237,43 @@ export function EmployeePendingRequests() {
                           </DialogDescription>
                         </DialogHeader>
                         <div className="mt-4">
-                          {PreviewComponent && (
-                            <PreviewComponent 
-                              data={request.template_data as any} 
-                              isEmployeePreview={request.status !== 'approved'}
-                              showExportButtons={request.status === 'approved'}
-                            />
+                          {isApproved && (
+                            <div className="flex justify-end gap-2 mb-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePrint(elementId)}
+                              >
+                                <Printer className="h-4 w-4 mr-2" />
+                                Print
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadJPG(elementId, `${getTemplateName(request.template_id)}-${request.id}`)}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                JPG
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadPDF(elementId, `${getTemplateName(request.template_id)}-${request.id}`)}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                PDF
+                              </Button>
+                            </div>
                           )}
+                          <div id={elementId}>
+                            {PreviewComponent && (
+                              <PreviewComponent 
+                                data={request.template_data as any} 
+                                isEmployeePreview={!isApproved}
+                                showExportButtons={false}
+                              />
+                            )}
+                          </div>
                         </div>
                       </DialogContent>
                     </Dialog>
