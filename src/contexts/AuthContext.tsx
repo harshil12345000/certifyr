@@ -45,11 +45,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        let userWithOrg = initialSession?.user ?? null;
+        if (userWithOrg) {
+          // Fetch organization_id for admin
+          const { data: orgMember } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', userWithOrg.id)
+            .maybeSingle();
+          if (orgMember?.organization_id) {
+            userWithOrg = { ...userWithOrg, organization_id: orgMember.organization_id };
+          }
+        }
         if (mounted) {
           setSession(initialSession);
-          setUser(initialSession?.user ?? null);
-          if (initialSession?.user) {
-            await ensureUserHasOrganization(initialSession.user);
+          setUser(userWithOrg);
+          if (userWithOrg) {
+            await ensureUserHasOrganization(userWithOrg);
           }
         }
       } catch (error) {
@@ -65,11 +77,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
+        let userWithOrg = session?.user ?? null;
+        if (userWithOrg) {
+          const { data: orgMember } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', userWithOrg.id)
+            .maybeSingle();
+          if (orgMember?.organization_id) {
+            userWithOrg = { ...userWithOrg, organization_id: orgMember.organization_id };
+          }
+        }
         setSession(session);
-        setUser(session?.user ?? null);
-        if (event === 'SIGNED_IN' && session?.user) {
+        setUser(userWithOrg);
+        if (event === 'SIGNED_IN' && userWithOrg) {
           setTimeout(() => {
-            ensureUserHasOrganization(session.user);
+            ensureUserHasOrganization(userWithOrg);
           }, 0);
         }
         setLoading(false);

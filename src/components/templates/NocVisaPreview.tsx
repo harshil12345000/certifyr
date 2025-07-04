@@ -1,35 +1,32 @@
-
 import React, { useState, useEffect } from 'react';
 import { NocVisaPreviewProps } from '@/types/templates';
-import { useBranding } from '@/contexts/BrandingContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { QRCode } from './QRCode';
-import { generateDocumentQRCode } from '@/lib/qr-utils';
 import { Letterhead } from './Letterhead';
 import { downloadPDF, downloadJPG } from '@/lib/document-utils';
 
-interface ExtendedNocVisaPreviewProps extends NocVisaPreviewProps {
-  isEmployeePreview?: boolean;
-  showExportButtons?: boolean;
+interface BrandingAssets {
+  logoUrl: string | null;
+  sealUrl: string | null;
+  signatureUrl: string | null;
+  organizationAddress: string | null;
+  organizationPhone: string | null;
+  organizationEmail: string | null;
 }
 
-export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({ 
-  data, 
-  isEmployeePreview = false,
-  showExportButtons = false 
-}) => {
+export const NocVisaPreview: React.FC<NocVisaPreviewProps> = ({ data, isEmployeePreview = false, showExportButtons = false }) => {
   const {
     fullName,
-    passportNumber,
-    nationality,
     designation,
     employeeId,
     department,
-    joinDate,
-    travelDates,
-    travelPurpose,
-    destinationCountry,
+    passportNumber,
     visaType,
+    destinationCountry,
+    travelPurpose,
+    travelDates,
+    returnDate,
+    sponsorDetails,
     institutionName,
     date: issueDate,
     place,
@@ -38,49 +35,85 @@ export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({
     includeDigitalSignature,
   } = data;
 
-  const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
+  const [branding, setBranding] = useState<BrandingAssets>({ 
+    logoUrl: null, 
+    sealUrl: null, 
+    signatureUrl: null,
+    organizationAddress: null,
+    organizationPhone: null,
+    organizationEmail: null
+  });
   const { user } = useAuth();
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const generateQR = async () => {
-      if (fullName && passportNumber && destinationCountry) {
-        const url = await generateDocumentQRCode(
-          'noc-visa-1',
-          data,
-          organizationDetails?.name,
-          user?.id
-        );
-        setQrCodeUrl(url);
-        if (!url) {
-          console.error('QR code URL generation failed for NOC Visa Preview.');
+    const fetchBranding = async () => {
+      if (!institutionName && !user?.id) {
+        console.warn("NOC Visa Preview: Institution name or user context not available for fetching branding.");
+        return;
+      }
+      try {
+        let orgIdToQuery: string | null = null;
+
+        if (institutionName) {
+          const { data: orgData, error: orgError } = await supabase
+            .from('organizations')
+            .select('id, address, phone, email')
+            .eq('name', institutionName)
+            .single();
+
+          if (orgError && orgError.code !== 'PGRST116') {
+            console.error("Error fetching organization by name:", orgError.message);
+          } else if (orgError?.code === 'PGRST116') {
+            console.warn(`Organization named "${institutionName}" not found.`);
+          }
+          
+          if (orgData) {
+            orgIdToQuery = orgData.id;
+            setBranding(prev => ({
+              ...prev,
+              organizationAddress: orgData.address,
+              organizationPhone: orgData.phone,
+              organizationEmail: orgData.email,
+            }));
+          }
         }
+
+        if (orgIdToQuery) {
+          const { data: filesData, error: filesError } = await supabase
+            .from('branding_files')
+            .select('name, path')
+            .eq('organization_id', orgIdToQuery);
+
+          if (filesError) {
+            console.error("Error fetching branding files:", filesError);
+          } else if (filesData) {
+            let newLogoUrl: string | null = null;
+            let newSealUrl: string | null = null;
+            let newSignatureUrl: string | null = null;
+
+            filesData.forEach(file => {
+              const publicUrlRes = supabase.storage.from('branding-assets').getPublicUrl(file.path);
+              const publicUrl = publicUrlRes.data?.publicUrl;
+              if (publicUrl) {
+                if (file.name === 'logo') newLogoUrl = publicUrl;
+                if (file.name === 'seal') newSealUrl = publicUrl;
+                if (file.name === 'signature') newSignatureUrl = publicUrl;
+              }
+            });
+            
+            setBranding(prev => ({ ...prev, logoUrl: newLogoUrl, sealUrl: newSealUrl, signatureUrl: newSignatureUrl }));
+          }
+        }
+
+      } catch (error) {
+        console.error("Unexpected error fetching branding:", error);
       }
     };
-    generateQR();
-  }, [data, organizationDetails?.name, user?.id, fullName, passportNumber, destinationCountry]);
+    fetchBranding();
+  }, [institutionName, user]);
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
-    console.error(`Error loading ${type}:`, e);
-    (e.target as HTMLImageElement).style.display = 'none';
-  };
-
+  const formattedReturnDate = returnDate ? new Date(returnDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Return Date]';
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
-  const formattedJoinDate = joinDate ? new Date(joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Join Date]';
-  const formattedTravelDates = travelDates || '[Travel Dates]';
-
-  const getVisaTypeText = (type: string) => {
-    switch (type) {
-      case 'tourist': return 'Tourist Visa';
-      case 'business': return 'Business Visa';
-      case 'work': return 'Work Visa';
-      case 'student': return 'Student Visa';
-      case 'transit': return 'Transit Visa';
-      default: return 'Visa';
-    }
-  };
-
-  const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
 
   return (
     <div className="a4-document bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
@@ -90,105 +123,164 @@ export const NocVisaPreview: React.FC<ExtendedNocVisaPreviewProps> = ({
           <button onClick={() => downloadJPG('noc-visa.jpg')} className="px-3 py-1 bg-gray-600 text-white rounded">Download JPG</button>
         </div>
       )}
-
       {/* Letterhead */}
       <Letterhead />
 
       {/* Certificate Title */}
       <div className="text-center mb-8">
-        <div className="border-2 border-gray-600 inline-block px-6 py-2">
-          <h2 className="text-lg font-bold uppercase tracking-widest">NO OBJECTION CERTIFICATE</h2>
-          <h3 className="text-base font-semibold mt-1">FOR VISA APPLICATION</h3>
+        <div className="border border-gray-400 inline-block px-8 py-3">
+          <h2 className="text-xl font-bold uppercase tracking-widest">NO OBJECTION CERTIFICATE</h2>
+          <p className="text-sm mt-1 font-semibold">For Visa Application</p>
         </div>
       </div>
 
       {/* Reference Number */}
-      <div className="flex justify-between mb-6 text-sm">
-        <p><strong>Reference No.:</strong> NOC/{new Date().getFullYear()}/______</p>
+      <div className="mb-6">
+        <p><strong>Ref. No.:</strong> NOC/VISA/{new Date().getFullYear()}/______</p>
         <p><strong>Date:</strong> {formattedIssueDate}</p>
       </div>
 
-      {/* Letter Content */}
-      <div className="space-y-6 text-base leading-7">
-        <p className="text-center font-semibold text-lg mb-6">
-          TO WHOM IT MAY CONCERN
+      {/* Address */}
+      <div className="mb-6">
+        <p><strong>To,</strong></p>
+        <p className="mt-2">The Visa Officer</p>
+        <p>Embassy/Consulate of {destinationCountry || '[Destination Country]'}</p>
+        <p>New Delhi / Mumbai / Chennai / Kolkata</p>
+      </div>
+
+      {/* Subject */}
+      <div className="mb-6">
+        <p><strong>Subject:</strong> No Objection Certificate for Visa Application - {fullName || '[Employee Name]'}</p>
+      </div>
+
+      {/* Salutation */}
+      <div className="mb-6">
+        <p>Dear Sir/Madam,</p>
+      </div>
+
+      {/* Certificate Content */}
+      <div className="space-y-4 text-justify leading-7">
+        <p>
+          This is to certify that <strong>{fullName || '[Employee Name]'}</strong>, 
+          Employee ID: <strong>{employeeId || '[Employee ID]'}</strong>, 
+          working as <strong>{designation || '[Designation]'}</strong> in the 
+          <strong> {department || '[Department]'}</strong> department of our organization, 
+          has been granted permission to travel to <strong>{destinationCountry || '[Destination Country]'}</strong> 
+          for the purpose of <strong>{travelPurpose || '[Travel Purpose]'}</strong>.
         </p>
 
-        <p className="text-justify">
-          This is to certify that <strong>{fullName || '[Employee Name]'}</strong> (Employee ID: <strong>{employeeId || '[Employee ID]'}</strong>) 
-          is a regular employee of our organization working as <strong>{designation || '[Designation]'}</strong> 
-          in the <strong>{department || '[Department]'}</strong> department since <strong>{formattedJoinDate}</strong>.
-        </p>
-
-        <div className="ml-8 space-y-2">
-          <p><strong>Employee Details:</strong></p>
-          <p className="ml-4"><strong>Full Name:</strong> {fullName || '[Employee Name]'}</p>
-          <p className="ml-4"><strong>Passport Number:</strong> {passportNumber || '[Passport Number]'}</p>
-          <p className="ml-4"><strong>Nationality:</strong> {nationality || '[Nationality]'}</p>
-          <p className="ml-4"><strong>Designation:</strong> {designation || '[Designation]'}</p>
-          <p className="ml-4"><strong>Employee ID:</strong> {employeeId || '[Employee ID]'}</p>
+        <div className="my-6">
+          <h3 className="font-bold text-lg mb-3">Employee Details:</h3>
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50 w-1/3">Full Name</td>
+                <td className="border border-gray-400 p-2">{fullName || '[Employee Name]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Designation</td>
+                <td className="border border-gray-400 p-2">{designation || '[Designation]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Employee ID</td>
+                <td className="border border-gray-400 p-2">{employeeId || '[Employee ID]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Department</td>
+                <td className="border border-gray-400 p-2">{department || '[Department]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Passport Number</td>
+                <td className="border border-gray-400 p-2">{passportNumber || '[Passport Number]'}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <p className="text-justify">
-          We have no objection to {fullName ? 'their' : '[their]'} application for <strong>{getVisaTypeText(visaType || 'tourist')}</strong> 
-          to travel to <strong>{destinationCountry || '[Destination Country]'}</strong> for <strong>{travelPurpose || '[Travel Purpose]'}</strong> 
-          during the period <strong>{formattedTravelDates}</strong>.
+        <div className="my-6">
+          <h3 className="font-bold text-lg mb-3">Travel Details:</h3>
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50 w-1/3">Visa Type</td>
+                <td className="border border-gray-400 p-2">{visaType || '[Visa Type]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Destination Country</td>
+                <td className="border border-gray-400 p-2">{destinationCountry || '[Destination Country]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Travel Dates</td>
+                <td className="border border-gray-400 p-2">{travelDates || '[Travel Dates]'}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50">Expected Return Date</td>
+                <td className="border border-gray-400 p-2">{formattedReturnDate}</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 p-2 font-semibold bg-gray-50 align-top">Purpose of Travel</td>
+                <td className="border border-gray-400 p-2">{travelPurpose || '[Purpose of Travel]'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          <strong>Sponsor Details:</strong> {sponsorDetails || '[Sponsor Details]'}
         </p>
 
-        <p className="text-justify">
-          The employee will resume {fullName ? 'their' : '[their]'} duties immediately upon return from the trip. 
-          We guarantee that {fullName ? 'they will' : '[they will]'} return to India after the completion of {fullName ? 'their' : '[their]'} visit.
+        <p>
+          The organization has no objection to the employee's travel and will continue employment upon return. 
+          The employee is expected to return to duties on or before the expected return date mentioned above.
         </p>
 
-        <p className="text-justify">
-          We request you to grant the necessary visa to the above-mentioned employee. 
-          For any further information or clarification, please feel free to contact us.
+        <p>
+          We request you to kindly consider the visa application favorably and grant the necessary visa 
+          to enable the employee to travel for the stated purpose.
         </p>
 
-        <p className="text-center font-medium">
-          This certificate is issued upon the request of the employee for visa application purposes only.
+        <p>
+          Should you require any additional information or clarification, please feel free to contact 
+          the undersigned.
+        </p>
+
+        <p className="mt-6">
+          Thank you for your kind consideration.
         </p>
       </div>
 
       {/* Date and Place */}
-      <div className="mt-16 mb-8">
-        <p><strong>Date:</strong> {formattedIssueDate}</p>
-        <p><strong>Place:</strong> {place || '[Place]'}</p>
-      </div>
-
-      {/* Signatory Section */}
-      <div className="flex justify-end items-end mt-16">
-        <div className="text-center">
-          {/* Signature Section */}
-          {data.includeDigitalSignature && signatureUrl && !isEmployeePreview ? (
-            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
-          ) : (
-            <div className="h-16 mb-2"></div>
+      <div className="flex justify-between items-end mt-16">
+        <div>
+          <p><strong>Date:</strong> {formattedIssueDate}</p>
+          <p><strong>Place:</strong> {place || '[Place]'}</p>
+        </div>
+        <div className="text-right">
+          {includeDigitalSignature && branding.signatureUrl && !isEmployeePreview && (
+            <img 
+              src={branding.signatureUrl}
+              alt="Signatory Signature" 
+              className="h-16 mb-2 object-contain ml-auto"
+              onError={(e) => handleImageError(e, "signature")}
+            />
           )}
-          <div className="border-t border-black pt-2 min-w-[200px]">
-            <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
-            <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>
-            <p className="text-sm">{displayInstitutionName}</p>
-          </div>
+          <div className="border-b border-gray-400 w-48 mb-2"></div>
+          <p className="font-bold">{signatoryName || '[Authorized Signatory Name]'}</p>
+          <p>{signatoryDesignation || '[Designation]'}</p>
+          <p>{institutionName || '[Institution Name]'}</p>
+          {/* QR Code positioned below institution name */}
+          {!isEmployeePreview && (
+            <div className="flex justify-end">
+              {/* QR code rendering logic here if present */}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* QR Code positioned at bottom right */}
-      {!isEmployeePreview && qrCodeUrl && (
-        <div className="absolute bottom-8 right-8">
-          <QRCode value={qrCodeUrl} size={80} />
-        </div>
-      )}
 
       {/* Seal */}
-      {sealUrl && (
+      {branding.sealUrl && (
         <div className="absolute bottom-32 left-16">
-          <img 
-            src={sealUrl}
-            alt="Institution Seal" 
-            className="h-20 w-20 object-contain opacity-50"
-            onError={(e) => handleImageError(e, "seal")}
-          />
+          <img src={branding.sealUrl} alt="Institution Seal" className="h-24 w-24 object-contain opacity-50" />
         </div>
       )}
     </div>

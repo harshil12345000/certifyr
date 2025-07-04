@@ -48,7 +48,6 @@ export function Header() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [userOrgId, setUserOrgId] = useState<string | null>(null);
 
   // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -59,20 +58,6 @@ export function Header() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState<string[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
-
-  // Get user's organization ID
-  useEffect(() => {
-    const fetchUserOrgId = async () => {
-      if (!user) return;
-      try {
-        const { data } = await supabase.rpc('get_user_organization_id', { user_id: user.id });
-        setUserOrgId(data);
-      } catch (error) {
-        console.error('Error fetching user org ID:', error);
-      }
-    };
-    fetchUserOrgId();
-  }, [user]);
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -92,7 +77,7 @@ export function Header() {
 
   // Fetch active announcements + which are unread
   useEffect(() => {
-    if (!user || !userOrgId) return;
+    if (!user) return;
     setLoadingAnnouncements(true);
     const fetchAnnouncements = async () => {
       // Get all relevant, active announcements for the user's organization
@@ -127,17 +112,17 @@ export function Header() {
       setLoadingAnnouncements(false);
     };
     fetchAnnouncements();
-  }, [user, userOrgId]);
+  }, [user]);
 
   // Fetch notifications for org admin
   useEffect(() => {
-    if (!user || !userOrgId) return;
+    if (!user || !user.organization_id) return;
     setLoadingNotifications(true);
     const fetchNotifications = async () => {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('org_id', userOrgId)
+        .eq('org_id', user.organization_id)
         .order('created_at', { ascending: false });
       if (error) {
         setNotifications([]);
@@ -151,7 +136,7 @@ export function Header() {
       setLoadingNotifications(false);
     };
     fetchNotifications();
-  }, [user, userOrgId]);
+  }, [user]);
 
   // Mark as read
   const markAsRead = async (announcementId: string) => {
@@ -168,15 +153,8 @@ export function Header() {
   const markNotificationAsRead = async (notificationId: string) => {
     if (!user || !notificationId) return;
     setUnreadNotifications(prev => prev.filter(id => id !== notificationId));
-    // Update the notification by adding user.id to read_by array
-    const notification = notifications.find(n => n.id === notificationId);
-    if (notification) {
-      const updatedReadBy = [...(notification.read_by || []), user.id];
-      await supabase
-        .from('notifications')
-        .update({ read_by: updatedReadBy })
-        .eq('id', notificationId);
-    }
+    // Add user.id to read_by array
+    await supabase.rpc('mark_notification_read', { notification_id: notificationId, user_id: user.id });
   };
 
   const handleSignOut = async () => {
@@ -366,3 +344,4 @@ export function Header() {
     </>
   );
 }
+

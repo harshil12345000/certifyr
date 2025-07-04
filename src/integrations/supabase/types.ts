@@ -203,47 +203,6 @@ export type Database = {
         }
         Relationships: []
       }
-      notifications: {
-        Row: {
-          body: string
-          created_at: string | null
-          data: Json | null
-          id: string
-          org_id: string | null
-          read_by: string[] | null
-          subject: string
-          type: string
-        }
-        Insert: {
-          body: string
-          created_at?: string | null
-          data?: Json | null
-          id?: string
-          org_id?: string | null
-          read_by?: string[] | null
-          subject: string
-          type: string
-        }
-        Update: {
-          body?: string
-          created_at?: string | null
-          data?: Json | null
-          id?: string
-          org_id?: string | null
-          read_by?: string[] | null
-          subject?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       organization_invites: {
         Row: {
           email: string

@@ -22,7 +22,7 @@ export const TransferCertificatePreview: React.FC<TransferCertificatePreviewProp
     motherName,
     dateOfBirth,
     admissionNumber,
-    className: studentClass,
+    class: studentClass,
     section,
     academicYear,
     dateOfAdmission,

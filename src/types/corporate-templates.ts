@@ -1,72 +1,4 @@
-
-// Employment Agreement
-export interface EmploymentAgreementData {
-  employerName: string;
-  employeeName: string;
-  jobTitle: string;
-  department?: string;
-  employmentType: string;
-  startDate?: string;
-  workLocation: string;
-  workHours: string;
-  probationPeriod?: string;
-  salary: string;
-  payFrequency: string;
-  benefits?: string;
-  terminationClause: string;
-  confidentialityClause: string;
-  nonCompeteClause?: string;
-  governingLaw: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
-}
-
-// Academic Transcript
-export interface AcademicTranscriptData {
-  studentName: string;
-  studentId: string;
-  fatherName?: string;
-  motherName?: string;
-  dateOfBirth?: string;
-  courseTitle: string;
-  academicYear: string;
-  semester?: string;
-  subjects?: string;
-  grades?: string;
-  cgpa?: string;
-  percentage?: string;
-  class?: string;
-  institutionName?: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
-}
-
-// Offer Letter
-export interface OfferLetterData {
-  candidateName: string;
-  position: string;
-  department?: string;
-  salary: string;
-  startDate?: string;
-  reportingManager?: string;
-  institutionName?: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
-}
-
-// Articles of Incorporation
+// Corporate template data types
 export interface ArticlesOfIncorporationData {
   corporationName: string;
   stateOfIncorporation: string;
@@ -80,15 +12,14 @@ export interface ArticlesOfIncorporationData {
   incorporatorAddress: string;
   incorporatorSignature: string;
   filingDate: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
 }
 
-// Corporate Bylaws
 export interface CorporateBylawsData {
   corporationName: string;
   stateOfIncorporation: string;
@@ -103,43 +34,14 @@ export interface CorporateBylawsData {
   dividendPolicy: string;
   amendmentProcess: string;
   adoptionDate: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
 }
 
-// Embassy Attestation Letter
-export interface EmbassyAttestationLetterData {
-  applicantName: string;
-  passportNumber: string;
-  nationality: string;
-  dateOfBirth: string;
-  placeOfBirth: string;
-  fatherName: string;
-  motherName: string;
-  documentType: string;
-  documentNumber?: string;
-  issuingAuthority: string;
-  documentIssueDate?: string;
-  purposeOfAttestation: string;
-  destinationCountry: string;
-  embassyName: string;
-  applicantAddress: string;
-  phoneNumber: string;
-  emailAddress: string;
-  institutionName?: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
-}
-
-// Founders Agreement
 export interface FoundersAgreementData {
   founderNames: string;
   companyName: string;
@@ -154,15 +56,14 @@ export interface FoundersAgreementData {
   disputeResolution: string;
   governingLaw: string;
   effectiveDate: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
 }
 
-// Stock Purchase Agreement
 export interface StockPurchaseAgreementData {
   purchaserName: string;
   sellerName: string;
@@ -178,15 +79,61 @@ export interface StockPurchaseAgreementData {
   purchaserAddress: string;
   sellerAddress: string;
   effectiveDate: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
 }
 
-// NDA
+export interface EmploymentAgreementData {
+  employeeName: string;
+  employerName: string;
+  jobTitle: string;
+  department: string;
+  startDate: string;
+  employmentType: 'full-time' | 'part-time' | 'contract';
+  salary: string;
+  payFrequency: 'monthly' | 'bi-weekly' | 'weekly';
+  benefits: string;
+  workLocation: string;
+  workHours: string;
+  probationPeriod: string;
+  terminationClause: string;
+  confidentialityClause: string;
+  nonCompeteClause: string;
+  governingLaw: string;
+  effectiveDate: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface IPAssignmentAgreementData {
+  assignorName: string;
+  assigneeName: string;
+  relationshipDescription: string;
+  intellectualPropertyDescription: string;
+  workScope: string;
+  creationPeriod: string;
+  compensationDetails: string;
+  assignmentScope: string;
+  moralRights: string;
+  warrantiesAssignor: string;
+  governingLaw: string;
+  effectiveDate: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
 export interface NDAData {
   disclosingParty: string;
   receivingParty: string;
@@ -201,10 +148,58 @@ export interface NDAData {
   disclosingPartyAddress: string;
   receivingPartyAddress: string;
   effectiveDate: string;
-  date?: string;
-  place?: string;
-  signatoryName?: string;
-  signatoryDesignation?: string;
-  includeDigitalSignature?: boolean;
-  qrCodeUrl?: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface AcademicTranscriptData {
+  studentName: string;
+  studentId: string;
+  fatherName: string;
+  motherName: string;
+  dateOfBirth: string;
+  courseTitle: string;
+  academicYear: string;
+  semester: string;
+  subjects: string;
+  grades: string;
+  cgpa: string;
+  percentage: string;
+  class: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface EmbassyAttestationLetterData {
+  applicantName: string;
+  passportNumber: string;
+  nationality: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  fatherName: string;
+  motherName: string;
+  documentType: string;
+  documentNumber: string;
+  issuingAuthority: string;
+  documentIssueDate: string;
+  purposeOfAttestation: string;
+  destinationCountry: string;
+  embassyName: string;
+  applicantAddress: string;
+  phoneNumber: string;
+  emailAddress: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
 }

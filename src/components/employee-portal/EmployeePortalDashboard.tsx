@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,43 +17,28 @@ interface EmployeePortalDashboardProps {
 export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalDashboardProps) {
   const { organization, setEmployee } = useEmployeePortal();
   const [activeTab, setActiveTab] = useState(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('tab') || 'templates';
-    } catch {
-      return 'templates';
-    }
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') || 'templates';
   });
 
   // Update URL when tab changes
   useEffect(() => {
-    try {
-      const url = new URL(window.location.href);
-      if (activeTab === 'templates') {
-        url.searchParams.delete('tab');
-      } else {
-        url.searchParams.set('tab', activeTab);
-      }
-      window.history.replaceState({}, '', url.toString());
-    } catch (error) {
-      console.error('Error updating URL:', error);
+    const url = new URL(window.location.href);
+    if (activeTab === 'templates') {
+      url.searchParams.delete('tab');
+    } else {
+      url.searchParams.set('tab', activeTab);
     }
+    window.history.replaceState({}, '', url.toString());
   }, [activeTab]);
 
   useEffect(() => {
-    if (employee && setEmployee) {
-      setEmployee(employee);
-    }
+    setEmployee(employee);
   }, [employee, setEmployee]);
 
   const handleSignOut = () => {
-    try {
-      localStorage.removeItem('employee_portal_session');
-      onSignOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-      onSignOut();
-    }
+    localStorage.removeItem('employee_portal_session');
+    onSignOut();
   };
 
   return (
@@ -72,32 +56,20 @@ export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalD
         </div>
         <nav className="flex-1 py-6 px-2 space-y-1 overflow-y-auto">
           <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'templates' 
-                ? 'bg-primary-500/10 text-primary-600' 
-                : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'
-            }`}
+            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'templates' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
             onClick={() => setActiveTab('templates')}
           >
             <FileText className="h-5 w-5 mr-2" /> Templates
           </button>
           <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'pending' 
-                ? 'bg-primary-500/10 text-primary-600' 
-                : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'
-            }`}
+            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'pending' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
             onClick={() => setActiveTab('pending')}
           >
             <Clock className="h-5 w-5 mr-2" /> Pending
           </button>
           <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'settings' 
-                ? 'bg-primary-500/10 text-primary-600' 
-                : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'
-            }`}
-            onClick={() => setActiveTab('settings')}  
+            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
+            onClick={() => setActiveTab('settings')}
           >
             <Settings className="h-5 w-5 mr-2" /> Settings
           </button>
@@ -107,14 +79,14 @@ export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalD
           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
             <User className="h-4 w-4 text-primary" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{employee?.full_name || organization?.name || 'Employee'}</p>
-            <p className="text-xs text-muted-foreground truncate">{employee?.email}</p>
+          <div>
+            <p className="text-sm font-medium">{employee?.full_name || organization?.name || 'Employee'}</p>
+            <p className="text-xs text-muted-foreground">{employee?.email}</p>
           </div>
         </div>
       </aside>
       {/* Main Content */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-6">
         {activeTab === 'templates' && <EmployeeTemplates />}
         {activeTab === 'pending' && <EmployeePendingRequests />}
         {activeTab === 'settings' && <EmployeeSettings employee={employee} />}
