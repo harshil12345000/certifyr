@@ -12,9 +12,8 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
   const [selectedTab, setSelectedTab] = useState(activeTab);
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 w-64 h-screen flex flex-col glass-card border-r border-border/50 z-40">
+    <div className="min-h-screen bg-background">
+      <aside className="sticky top-0 left-0 h-screen w-64 z-40 flex flex-col glass-card border-r border-border/50">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
             <Building2 className="h-5 w-5 text-primary" />
@@ -47,7 +46,6 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
             <Settings className="h-5 w-5 mr-2" /> Settings
           </a>
         </nav>
-        {/* Bottom info: always visible, sticky to bottom */}
         <div className="sticky bottom-0 left-0 w-full bg-background p-4 border-t border-border/30 flex items-center gap-3 z-10">
           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
             <User className="h-4 w-4 text-primary" />
@@ -58,10 +56,11 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
           </div>
         </div>
       </aside>
-      {/* Main Content */}
-      <main className="flex-1 p-6 ml-64 overflow-y-auto">
-        {children}
-      </main>
+      <div className="pl-64 flex flex-col min-h-screen">
+        <main className="flex-1 p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 } 

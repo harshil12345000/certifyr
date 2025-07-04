@@ -3,7 +3,7 @@ import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, ArrowRight } from 'lucide-react';
 import { popularTemplates } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -209,10 +209,7 @@ export function EmployeeTemplates() {
             key={template.id}
             className="glass-card p-5 flex flex-col"
           >
-            <div className="mb-4 flex items-start justify-between">
-              <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500">
-                <Search className="h-5 w-5" />
-              </div>
+            <div className="mb-4 flex items-start justify-end">
               <Badge variant="outline" className="text-xs">
                 {template.category}
               </Badge>
@@ -220,8 +217,8 @@ export function EmployeeTemplates() {
             <h3 className="font-medium text-lg mb-1">{template.title}</h3>
             <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
             <div className="mt-auto flex items-center justify-end">
-              <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate(`/${organizationId}/request-portal/templates/${template.id}`)}>
-                Use <Search className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="ml-auto flex items-center gap-1" onClick={() => navigate(`/${organizationId}/request-portal/templates/${template.id}`)}>
+                Use <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

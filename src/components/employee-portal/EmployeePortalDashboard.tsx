@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,11 +15,18 @@ interface EmployeePortalDashboardProps {
 }
 
 export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalDashboardProps) {
-  const { organization } = useEmployeePortal();
+  const { organization, setEmployee } = useEmployeePortal();
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('tab') || 'templates';
   });
+
+  // Sync employee prop with context
+  useEffect(() => {
+    if (employee && setEmployee) {
+      setEmployee(employee);
+    }
+  }, [employee, setEmployee]);
 
   // Update URL when tab changes
   useEffect(() => {
