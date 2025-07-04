@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EmployeePortalAuth } from '@/components/employee-portal/EmployeePortalAuth';
 import { EmployeePortalDashboard } from '@/components/employee-portal/EmployeePortalDashboard';
@@ -24,6 +25,7 @@ export default function EmployeePortal() {
           .single();
 
         if (error || !data) {
+          console.error('Portal settings fetch error:', error);
           setPortalSettings(null);
         } else {
           setPortalSettings(data);
@@ -39,6 +41,31 @@ export default function EmployeePortal() {
     fetchPortalSettings();
   }, [organizationId]);
 
+  // Check for existing employee session
+  useEffect(() => {
+    const storedEmployee = localStorage.getItem(`employee_portal_${organizationId}`);
+    if (storedEmployee) {
+      try {
+        const employeeData = JSON.parse(storedEmployee);
+        setEmployee(employeeData);
+      } catch (error) {
+        console.error('Error parsing stored employee data:', error);
+        localStorage.removeItem(`employee_portal_${organizationId}`);
+      }
+    }
+  }, [organizationId]);
+
+  const handleEmployeeAuthenticated = (employeeData: any) => {
+    setEmployee(employeeData);
+    // Store employee data for session persistence
+    localStorage.setItem(`employee_portal_${organizationId}`, JSON.stringify(employeeData));
+  };
+
+  const handleSignOut = () => {
+    setEmployee(null);
+    localStorage.removeItem(`employee_portal_${organizationId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -52,7 +79,10 @@ export default function EmployeePortal() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-white p-8 rounded shadow text-center max-w-md">
           <h2 className="text-2xl font-bold mb-2">Portal Not Available</h2>
-          <p className="text-muted-foreground mb-4">This organization's request portal is not enabled or does not exist. Please contact your admin for access.</p>
+          <p className="text-muted-foreground mb-4">
+            This organization's request portal is not enabled or does not exist. 
+            Please contact your administrator for access.
+          </p>
         </div>
       </div>
     );
@@ -61,11 +91,14 @@ export default function EmployeePortal() {
   return (
     <EmployeePortalProvider organizationId={organizationId!}>
       {employee && employee.status === 'approved' ? (
-        <EmployeePortalDashboard employee={employee} onSignOut={() => setEmployee(null)} />
+        <EmployeePortalDashboard 
+          employee={employee} 
+          onSignOut={handleSignOut} 
+        />
       ) : (
         <EmployeePortalAuth 
           portalSettings={portalSettings}
-          onEmployeeAuthenticated={setEmployee}
+          onEmployeeAuthenticated={handleEmployeeAuthenticated}
         />
       )}
     </EmployeePortalProvider>

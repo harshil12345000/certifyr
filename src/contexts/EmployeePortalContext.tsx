@@ -50,7 +50,7 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
 
   const refreshEmployee = async () => {
     // Check if there's employee data in localStorage (from authentication)
-    const storedEmployee = localStorage.getItem('employee_portal_auth');
+    const storedEmployee = localStorage.getItem(`employee_portal_${organizationId}`);
     if (storedEmployee) {
       try {
         const employeeData = JSON.parse(storedEmployee);
@@ -58,30 +58,32 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
         setEmployee(employeeData);
       } catch (error) {
         console.error('Error parsing stored employee data:', error);
-        localStorage.removeItem('employee_portal_auth');
+        localStorage.removeItem(`employee_portal_${organizationId}`);
       }
     }
   };
 
   useEffect(() => {
     refreshEmployee();
-  }, []);
+  }, [organizationId]);
+
+  const handleSetEmployee = (emp: any) => {
+    console.log('Setting employee in context:', emp);
+    setEmployee(emp);
+    // Store in localStorage for persistence with org-specific key
+    if (emp) {
+      localStorage.setItem(`employee_portal_${organizationId}`, JSON.stringify(emp));
+    } else {
+      localStorage.removeItem(`employee_portal_${organizationId}`);
+    }
+  };
 
   const value = {
     organizationId,
     organization,
     employee,
-    setEmployee: (emp: any) => {
-      console.log('Setting employee in context:', emp);
-      setEmployee(emp);
-      // Store in localStorage for persistence
-      if (emp) {
-        localStorage.setItem('employee_portal_auth', JSON.stringify(emp));
-      } else {
-        localStorage.removeItem('employee_portal_auth');
-      }
-    },
-    isAuthenticated: !!employee,
+    setEmployee: handleSetEmployee,
+    isAuthenticated: !!employee && employee.status === 'approved',
     refreshEmployee
   };
 
