@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useBranding } from "@/contexts/BrandingContext";
 
@@ -35,6 +34,7 @@ export const Letterhead: React.FC<LetterheadProps> = ({ children, className = ""
             src={logoUrl}
             alt="Organization Logo"
             className="h-16 object-contain"
+            crossOrigin="anonymous"
             onError={(e) => {
               console.error('Error loading logo image:', e);
               (e.target as HTMLImageElement).style.display = "none";

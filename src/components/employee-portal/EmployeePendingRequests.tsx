@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,7 @@ import { FormData } from '@/types/templates';
 import { DocumentRequest } from '@/types/document';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { downloadPDF, downloadJPG, printDocument } from '@/lib/document-utils';
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   'bonafide-1': 'BonafidePreview',
@@ -101,30 +101,7 @@ export function EmployeePendingRequests() {
   };
 
   const handlePrint = (elementId: string) => {
-    const element = document.getElementById(elementId);
-    if (element) {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Print Document</title>
-              <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                @media print {
-                  body { margin: 0; }
-                }
-              </style>
-            </head>
-            <body>
-              ${element.innerHTML}
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-      }
-    }
+    printDocument();
   };
 
   const handleDownloadJPG = async (elementId: string, filename: string) => {

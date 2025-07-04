@@ -12,8 +12,52 @@ const getPreviewElement = () => {
   return previewElement;
 };
 
+const waitForImagesToLoad = async (element: HTMLElement) => {
+  const images = Array.from(element.querySelectorAll('img')) as HTMLImageElement[];
+  await Promise.all(images.map(img => {
+    if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
+    return new Promise(resolve => {
+      img.onload = img.onerror = resolve;
+    });
+  }));
+};
+
+const toDataUrl = async (url: string): Promise<string> => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+const replaceImagesWithDataUrls = async (element: HTMLElement) => {
+  const images = Array.from(element.querySelectorAll('img')) as HTMLImageElement[];
+  const originalSrcs: string[] = [];
+  for (const img of images) {
+    originalSrcs.push(img.src);
+    if (img.src.startsWith('http')) {
+      try {
+        img.crossOrigin = 'anonymous';
+        img.src = await toDataUrl(img.src);
+      } catch (e) {
+        // If fetch fails, keep original src
+      }
+    }
+  }
+  return () => {
+    images.forEach((img, i) => {
+      img.src = originalSrcs[i];
+    });
+  };
+};
+
 const generateCanvas = async (element: HTMLElement) => {
-  return await html2canvas(element, {
+  await waitForImagesToLoad(element);
+  const restoreImages = await replaceImagesWithDataUrls(element);
+  const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
     allowTaint: true,
@@ -21,6 +65,8 @@ const generateCanvas = async (element: HTMLElement) => {
     width: A4_WIDTH_PX,
     height: A4_HEIGHT_PX,
   });
+  restoreImages();
+  return canvas;
 };
 
 export const downloadPDF = async (filename: string = 'document.pdf') => {

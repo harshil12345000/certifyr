@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, Download } from 'lucide-react';
@@ -99,7 +98,7 @@ export const BonafidePreview: React.FC<BonafidePreviewProps & {
         </div>
       )}
       
-      <div id="bonafide-preview" className="p-8 min-h-[297mm] bg-white">
+      <div id="bonafide-preview" className="a4-document p-8 min-h-[297mm] bg-white">
         <Letterhead />
         
         <div className="text-center mb-8">

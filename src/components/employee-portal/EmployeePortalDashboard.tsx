@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTemplates } from './EmployeeTemplates';
 import { EmployeeSettings } from './EmployeeSettings';
 import { EmployeePendingRequests } from './EmployeePendingRequests';
-import { FileText, Settings, Building2, User, Clock } from 'lucide-react';
+import { FileText, Settings, Building2, User, Clock, FolderOpen } from 'lucide-react';
 
 interface EmployeePortalDashboardProps {
   employee: any;
@@ -68,7 +68,7 @@ export function EmployeePortalDashboard({ employee, onSignOut }: EmployeePortalD
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'pending' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
             onClick={() => setActiveTab('pending')}
           >
-            <Clock className="h-5 w-5 mr-2" /> Pending
+            <FolderOpen className="h-5 w-5 mr-2" /> My Requests
           </button>
           <button
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-primary-500/10 text-primary-600' : 'text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500'}`}
