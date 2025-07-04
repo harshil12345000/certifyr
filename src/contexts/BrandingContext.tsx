@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -13,6 +14,7 @@ export interface BrandingContextType {
     phone: string;
     email: string;
   } | null;
+  isLoading: boolean;
   refreshBranding: () => Promise<void>;
 }
 
@@ -23,6 +25,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [sealUrl, setSealUrl] = useState<string | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [organizationDetails, setOrganizationDetails] = useState<{
     name: string;
     address: string;
@@ -37,6 +40,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
 
+    setIsLoading(true);
     try {
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
@@ -91,6 +95,8 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     } catch (error) {
       console.error("Unexpected error fetching branding:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,6 +110,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     signatureUrl,
     qrCodeUrl,
     organizationDetails,
+    isLoading,
     refreshBranding,
   };
 
