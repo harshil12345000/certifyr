@@ -205,135 +205,141 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
   }
 
   return (
-    <div className="space-y-6">
-      {/* Invite Users Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Invite New User
-          </CardTitle>
-          <CardDescription>
-            Send an invitation to add a new user to your organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleInvite} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={inviteForm.email}
-                  onChange={(e) => setInviteForm(f => ({ ...f, email: e.target.value }))}
-                  placeholder="user@example.com"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={inviteForm.role} onValueChange={(value) => setInviteForm(f => ({ ...f, role: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Button type="submit" disabled={!organizationId || isInviting} className="w-full md:w-auto">
-              {isInviting ? "Sending..." : "Send Invitation"}
-            </Button>
-          </form>
-          {!organizationId && (
-            <p className="text-xs text-red-500 mt-2">You must be part of an organization to send invitations.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pending Invitations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Pending Invitations
-          </CardTitle>
-          <CardDescription>
-            Invitations that have been sent but not yet accepted.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {invites.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No pending invitations.</p>
-          ) : (
-            <div className="space-y-3">
-              {invites.map(invite => (
-                <div key={invite.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{invite.email}</span>
-                      {getStatusBadge(invite.status)}
-                      <Badge variant="outline">{invite.role}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Invited {dayjs(invite.invited_at).format("MMM D, YYYY")} • 
-                      Expires {dayjs(invite.expires_at).format("MMM D, YYYY")}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteInvite(invite.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+    <div className="relative">
+      <div className="space-y-6">
+        {/* Invite Users Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Invite New User
+            </CardTitle>
+            <CardDescription>
+              Send an invitation to add a new user to your organization.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleInvite} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={inviteForm.email}
+                    onChange={(e) => setInviteForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="user@example.com"
+                    required
+                  />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Organization Members */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Organization Members
-          </CardTitle>
-          <CardDescription>
-            Current members of your organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {members.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No members found.</p>
-          ) : (
-            <div className="space-y-3">
-              {members.map(member => (
-                <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {member.invited_email || 'Active User'}
-                      </span>
-                      {member.status && getStatusBadge(member.status)}
-                      <Badge variant="outline">{member.role}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Joined {member.created_at ? dayjs(member.created_at).format("MMM D, YYYY") : 'Unknown'}
-                    </p>
-                  </div>
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={inviteForm.role} onValueChange={(value) => setInviteForm(f => ({ ...f, role: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+              <Button type="submit" disabled={!organizationId || isInviting} className="w-full md:w-auto">
+                {isInviting ? "Sending..." : "Send Invitation"}
+              </Button>
+            </form>
+            {!organizationId && (
+              <p className="text-xs text-red-500 mt-2">You must be part of an organization to send invitations.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pending Invitations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Pending Invitations
+            </CardTitle>
+            <CardDescription>
+              Invitations that have been sent but not yet accepted.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {invites.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No pending invitations.</p>
+            ) : (
+              <div className="space-y-3">
+                {invites.map(invite => (
+                  <div key={invite.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{invite.email}</span>
+                        {getStatusBadge(invite.status)}
+                        <Badge variant="outline">{invite.role}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Invited {dayjs(invite.invited_at).format("MMM D, YYYY")} • 
+                        Expires {dayjs(invite.expires_at).format("MMM D, YYYY")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteInvite(invite.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Organization Members */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Organization Members
+            </CardTitle>
+            <CardDescription>
+              Current members of your organization.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {members.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No members found.</p>
+            ) : (
+              <div className="space-y-3">
+                {members.map(member => (
+                  <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {member.invited_email || 'Active User'}
+                        </span>
+                        {member.status && getStatusBadge(member.status)}
+                        <Badge variant="outline">{member.role}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Joined {member.created_at ? dayjs(member.created_at).format("MMM D, YYYY") : 'Unknown'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      {/* Overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/60 backdrop-blur-sm">
+        <span className="text-2xl font-bold text-black">Coming Soon...</span>
+      </div>
     </div>
   );
 }
