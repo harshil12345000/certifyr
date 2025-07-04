@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -128,7 +127,7 @@ export default function EmployeeTemplateDetail() {
           employee_id: employee.id,
           organization_id: organizationId,
           template_id: id,
-          template_data: formData as any, // Convert FormData to Json
+          template_data: formData as any,
           status: 'pending'
         });
 
@@ -139,7 +138,7 @@ export default function EmployeeTemplateDetail() {
         description: "Your document request has been submitted for approval",
       });
 
-      // Redirect to pending tab or templates
+      // Redirect to pending tab
       window.location.href = `/${organizationId}/request-portal?tab=pending`;
     } catch (error) {
       console.error('Error submitting request:', error);
@@ -182,7 +181,11 @@ export default function EmployeeTemplateDetail() {
                   {isSubmitting ? "Submitting..." : "Request Approval"}
                 </Button>
               </div>
-              <PreviewComponent data={formData as any} isEmployeePreview={true} />
+              <PreviewComponent 
+                data={formData as any} 
+                isEmployeePreview={true}
+                showExportButtons={false}
+              />
             </div>
           </TabsContent>
         </Tabs>

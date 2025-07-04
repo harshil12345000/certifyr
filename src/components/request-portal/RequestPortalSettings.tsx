@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ export function RequestPortalSettings() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -36,24 +38,31 @@ export function RequestPortalSettings() {
 
     try {
       // Get user's organization
-      const { data: orgData } = await supabase
+      const { data: orgData, error: orgError } = await supabase
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
         .eq('role', 'admin')
         .single();
 
-      if (!orgData) {
+      if (orgError || !orgData) {
+        console.error('Error fetching organization:', orgError);
         setLoading(false);
         return;
       }
 
+      setOrganizationId(orgData.organization_id);
+
       // Get portal settings
-      const { data: settingsData } = await supabase
+      const { data: settingsData, error: settingsError } = await supabase
         .from('request_portal_settings')
         .select('*')
         .eq('organization_id', orgData.organization_id)
-        .single();
+        .maybeSingle();
+
+      if (settingsError) {
+        console.error('Error fetching settings:', settingsError);
+      }
 
       // Always generate the portal URL dynamically
       const portalUrl = `${window.location.origin}/${orgData.organization_id}/request-portal`;
@@ -76,7 +85,16 @@ export function RequestPortalSettings() {
   };
 
   const saveSettings = async () => {
-    if (!user || !settings.password.trim()) {
+    if (!user || !organizationId) {
+      toast({
+        title: 'Error',
+        description: 'User or organization not found',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!settings.password.trim()) {
       toast({
         title: 'Error',
         description: 'Password is required',
@@ -88,18 +106,6 @@ export function RequestPortalSettings() {
     setSaving(true);
 
     try {
-      // Get user's organization
-      const { data: orgData } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single();
-
-      if (!orgData) {
-        throw new Error('Organization not found');
-      }
-
       // Hash the password (simple hash for demo - use bcrypt in production)
       const passwordHash = btoa(settings.password);
 
@@ -107,13 +113,18 @@ export function RequestPortalSettings() {
       const { error } = await supabase
         .from('request_portal_settings')
         .upsert({
-          organization_id: orgData.organization_id,
+          organization_id: organizationId,
           enabled: settings.enabled,
           password_hash: passwordHash,
-          portal_url: settings.portalUrl // Always include portal_url for Supabase type safety
+          portal_url: settings.portalUrl
+        }, {
+          onConflict: 'organization_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: 'Success',
