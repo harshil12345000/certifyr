@@ -155,7 +155,7 @@ export default function EmployeeTemplateDetail() {
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
       <EmployeePortalLayout activeTab="templates">
-        <div className="max-w-2xl mx-auto py-8">
+        <div className="max-w-2xl mx-auto py-4">
           <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
           <p className="text-muted-foreground mb-2">No template found for ID: <span className="font-mono">{id}</span></p>
         </div>
@@ -240,30 +240,32 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="max-w-3xl mx-auto p-0 m-0 mt-0 !mt-0">
-        <h1 className="text-2xl font-bold m-0 p-0 mt-0 !mt-0">
-          {requestId ? `View ${getTemplateName(id)}` : 'Fill Out Template'}
-        </h1>
-        
-        {requestStatus === 'approved' && (
-          <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
-            <p className="text-green-800 font-medium">✓ This document has been approved</p>
-          </div>
-        )}
-        
-        {requestStatus === 'rejected' && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-            <p className="text-red-800 font-medium">✗ This document request was rejected</p>
-          </div>
-        )}
+      <div className="max-w-4xl mx-auto px-4 py-2">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold mb-2">
+            {requestId ? `View ${getTemplateName(id)}` : 'Fill Out Template'}
+          </h1>
+          
+          {requestStatus === 'approved' && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+              <p className="text-green-800 font-medium">✓ This document has been approved</p>
+            </div>
+          )}
+          
+          {requestStatus === 'rejected' && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+              <p className="text-red-800 font-medium">✗ This document request was rejected</p>
+            </div>
+          )}
+        </div>
 
-        <Tabs value={tab} onValueChange={setTab} className="m-0 p-0 mt-0 !mt-0">
-          <TabsList>
+        <Tabs value={tab} onValueChange={setTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
-          <TabsContent value="form">
-            <div className="bg-card p-4 rounded shadow">
+          <TabsContent value="form" className="mt-0">
+            <div className="bg-card p-6 rounded-lg shadow-sm border">
               <FormComponent 
                 onSubmit={handleFormSubmit as any}
                 onDataChange={handleFormDataChange as any}
@@ -271,10 +273,10 @@ export default function EmployeeTemplateDetail() {
               />
             </div>
           </TabsContent>
-          <TabsContent value="preview">
-            <div className="bg-card p-4 rounded shadow relative">
+          <TabsContent value="preview" className="mt-0">
+            <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
               {!requestId && (
-                <div className="flex justify-end mb-2">
+                <div className="p-4 border-b bg-gray-50 flex justify-end">
                   <Button 
                     onClick={handleRequestApproval}
                     disabled={isSubmitting}
@@ -284,11 +286,13 @@ export default function EmployeeTemplateDetail() {
                   </Button>
                 </div>
               )}
-              <PreviewComponent 
-                data={formData as any} 
-                isEmployeePreview={true}
-                requestStatus={requestStatus}
-              />
+              <div className="p-4">
+                <PreviewComponent 
+                  data={formData as any} 
+                  isEmployeePreview={true}
+                  requestStatus={requestStatus}
+                />
+              </div>
             </div>
           </TabsContent>
         </Tabs>
