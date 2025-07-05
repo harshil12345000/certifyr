@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
@@ -286,7 +287,6 @@ export default function EmployeeTemplateDetail() {
               <PreviewComponent 
                 data={formData as any} 
                 isEmployeePreview={true}
-                showExportButtons={requestStatus === 'approved'}
                 requestStatus={requestStatus}
               />
             </div>

@@ -21,7 +21,6 @@ export const AddressProofPreview: React.FC<ExtendedAddressProofPreviewProps> = (
     fullName,
     currentAddress,
     permanentAddress,
-    residenceType,
     residenceDuration,
     purpose,
     institutionName,
@@ -95,7 +94,7 @@ export const AddressProofPreview: React.FC<ExtendedAddressProofPreviewProps> = (
         )}
 
         <p>
-          The above mentioned person has been residing at the current address as a <strong>{residenceType || '[Residence Type]'}</strong> for the past <strong>{residenceDuration || '[Duration]'}</strong>.
+          The above mentioned person has been residing at the current address for the past <strong>{residenceDuration || '[Duration]'}</strong>.
         </p>
 
         <p>
