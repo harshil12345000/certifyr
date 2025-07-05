@@ -1,3 +1,4 @@
+
 import { ReactNode, useState, useEffect } from 'react';
 import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 import { FileText, Settings, User, Building2, Clock, FolderOpen } from 'lucide-react';
@@ -67,7 +68,7 @@ export function EmployeePortalLayout({ children, activeTab = 'templates' }: Empl
         </div>
       </aside>
       <div className="pl-64 flex flex-col min-h-screen">
-        <main className="flex-1 px-2">
+        <main className="flex-1 h-full overflow-auto">
           {children}
         </main>
       </div>
