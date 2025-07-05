@@ -1,178 +1,175 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Printer, Download } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { BonafidePreviewProps } from '@/types/templates';
+import { useBranding } from '@/contexts/BrandingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
-import { useBranding } from '@/contexts/BrandingContext';
-import { useAuth } from '@/contexts/AuthContext';
 
-export const BonafidePreview: React.FC<BonafidePreviewProps & { 
-  isEmployeePreview?: boolean; 
-  showExportButtons?: boolean;
+interface ExtendedBonafidePreviewProps extends BonafidePreviewProps {
+  isEmployeePreview?: boolean;
   requestStatus?: 'pending' | 'approved' | 'rejected';
-}> = ({ 
+}
+
+export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({ 
   data, 
-  isEmployeePreview = false, 
-  showExportButtons = true,
+  isEmployeePreview = false,
   requestStatus = 'pending'
 }) => {
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const { signatureUrl, organizationDetails } = useBranding();
+  const {
+    fullName,
+    parentName,
+    type,
+    institutionName,
+    startDate,
+    courseOrDesignation,
+    department,
+    purpose,
+    date: issueDate,
+    place,
+    signatoryName,
+    signatoryDesignation,
+    includeDigitalSignature,
+  } = data;
+
+  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
   const { user } = useAuth();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (requestStatus === 'approved' && data.fullName) {
+    if (fullName && type && institutionName) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
-          'bonafide-1', 
-          data, 
+          'bonafide-1',
+          data,
           organizationDetails?.name,
           user?.id
         );
-        if (url) setQrCodeUrl(url);
+        setQrCodeUrl(url);
+        if (!url) {
+          console.error('QR code URL generation failed for Bonafide Preview.');
+        }
       };
       generateQR();
     }
-  }, [data, requestStatus, organizationDetails?.name, user?.id]);
+  }, [data, organizationDetails?.name, user?.id, fullName, type, institutionName]);
 
-  const handlePrint = () => {
-    window.print();
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+    console.error(`Error loading ${type}:`, e);
+    (e.target as HTMLImageElement).style.display = 'none';
   };
 
-  const handleDownloadJPG = async () => {
-    const element = document.getElementById('bonafide-preview');
-    if (element) {
-      try {
-        const canvas = await html2canvas(element);
-        const link = document.createElement('a');
-        link.download = 'bonafide-certificate.jpg';
-        link.href = canvas.toDataURL('image/jpeg');
-        link.click();
-      } catch (error) {
-        console.error('Error generating JPG:', error);
-      }
-    }
-  };
+  const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
+  const formattedStartDate = startDate ? new Date(startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Start Date]';
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById('bonafide-preview');
-    if (element) {
-      try {
-        const canvas = await html2canvas(element);
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft >= 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
-
-        pdf.save('bonafide-certificate.pdf');
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-      }
-    }
-  };
+  // Determine if content should be blurred for employee preview
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   return (
-    <div className="max-w-4xl mx-auto bg-white">
-      {showExportButtons && requestStatus === 'approved' && !isEmployeePreview && (
-        <div className="flex justify-end gap-2 mb-4 no-print">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-2" />
-            Print
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadJPG}>
-            <Download className="h-4 w-4 mr-2" />
-            JPG
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            PDF
-          </Button>
-        </div>
-      )}
-      
-      <div id="bonafide-preview" className="a4-document p-8 min-h-[297mm] bg-white">
-        <Letterhead />
-        
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold underline decoration-2 underline-offset-4">
-            BONAFIDE CERTIFICATE
-          </h1>
-        </div>
+    <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
+      {/* Letterhead */}
+      <Letterhead />
 
-        <div className="mb-8 text-justify leading-7">
-          <p className="mb-4">
-            This is to certify that {data.gender === 'male' ? 'Mr.' : data.gender === 'female' ? 'Ms.' : ''} <strong>{data.fullName}</strong>, 
-            {data.gender === 'male' ? ' son' : data.gender === 'female' ? ' daughter' : ' child'} of <strong>{data.parentName}</strong>, 
-            is a bonafide {data.type} of this {data.institutionName}.
-          </p>
-          
-          <p className="mb-4">
-            {data.gender === 'male' ? 'He' : data.gender === 'female' ? 'She' : 'They'} has been {data.type === 'student' ? 'studying' : 'working'} 
-            {data.courseOrDesignation && ` in ${data.courseOrDesignation}`}
-            {data.department && ` in the ${data.department} department`} since <strong>{data.startDate}</strong>.
-          </p>
-          
-          <p className="mb-4">
-            This certificate is issued for the purpose of <strong>{data.purpose}</strong> at the request of the concerned {data.type}.
-          </p>
-        </div>
-
-        <div className="flex justify-between items-end mt-16">
-          <div className="flex flex-col">
-            {requestStatus === 'approved' && data.includeDigitalSignature && qrCodeUrl && (
-              <div className="mb-4">
-                <QRCode value={qrCodeUrl} size={80} />
-                <p className="text-xs text-gray-600 mt-1">Scan to verify</p>
-              </div>
-            )}
-            {isEmployeePreview && requestStatus !== 'approved' && (
-              <div className="mb-4 w-20 h-20 border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
-                QR Code
-              </div>
-            )}
-            <div>
-              <p className="text-sm">Date: {data.date}</p>
-              <p className="text-sm">Place: {data.place}</p>
-            </div>
-          </div>
-          
-          <div className="text-center">
-            {requestStatus === 'approved' && data.includeDigitalSignature && signatureUrl && (
-              <div className="mb-4">
-                <img src={signatureUrl} alt="Digital Signature" className="h-16 w-32 object-contain mx-auto" />
-              </div>
-            )}
-            {isEmployeePreview && requestStatus !== 'approved' && (
-              <div className="mb-4 h-16 w-32 border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500 mx-auto">
-                [Signature will appear after approval]
-              </div>
-            )}
-            <div>
-              <p className="font-semibold">{data.signatoryName}</p>
-              <p className="text-sm">{data.signatoryDesignation}</p>
-              <p className="text-sm">{data.institutionName}</p>
-            </div>
-          </div>
+      {/* Certificate Title */}
+      <div className="text-center mb-8">
+        <div className="border border-gray-400 inline-block px-8 py-3">
+          <h2 className="text-lg font-bold uppercase tracking-widest">BONAFIDE CERTIFICATE</h2>
         </div>
       </div>
+
+      {/* Certificate Content */}
+      <div className="space-y-4 text-justify leading-7 text-base">
+        <p>
+          This is to certify that <strong>{fullName || '[Student Name]'}</strong>
+          {parentName && `, son/daughter of ${parentName},`} is a bonafide{' '}
+          <strong>{type === 'student' ? 'student' : 'employee'}</strong> of{' '}
+          <strong>{organizationDetails?.name || institutionName || '[Institution Name]'}</strong>.
+        </p>
+
+        {type === 'student' ? (
+          <p>
+            {fullName ? 'He/She' : '[He/She]'} is studying <strong>{courseOrDesignation || '[Course]'}</strong> in the{' '}
+            <strong>{department || '[Department]'}</strong> department and has been with us since{' '}
+            <strong>{formattedStartDate}</strong>.
+          </p>
+        ) : (
+          <p>
+            {fullName ? 'He/She' : '[He/She]'} is working as <strong>{courseOrDesignation || '[Designation]'}</strong> in the{' '}
+            <strong>{department || '[Department]'}</strong> department and has been with us since{' '}
+            <strong>{formattedStartDate}</strong>.
+          </p>
+        )}
+
+        <p>
+          This certificate is issued for <strong>{purpose || '[Purpose]'}</strong> purposes.
+        </p>
+
+        <p>
+          We wish {fullName ? 'him/her' : '[him/her]'} all the best for future endeavors.
+        </p>
+      </div>
+
+      {/* Date and signature */}
+      <div className="flex justify-between items-end mt-16">
+        <div>
+          <p><strong>Date:</strong> {formattedIssueDate}</p>
+          <p><strong>Place:</strong> {place || '[Place]'}</p>
+        </div>
+        
+        <div className="text-right">
+          {includeDigitalSignature && signatureUrl ? (
+            <div className="h-16 mb-4 flex justify-end relative">
+              <div className="border-b border-gray-800 px-6">
+                <img 
+                  src={signatureUrl}
+                  alt="Digital Signature" 
+                  className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                  onError={(e) => handleImageError(e, "signature")}
+                />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-16 mb-4">
+              {/* Space for manual signature */}
+            </div>
+          )}
+          <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
+          <p>{signatoryDesignation || "[Designation]"}</p>
+          <p className="mb-4">{organizationDetails?.name || institutionName || '[Institution Name]'}</p>
+          
+          {/* QR Code positioned below institution name */}
+          {qrCodeUrl && (
+            <div className="flex justify-end relative">
+              <div className={shouldBlur ? 'blur-sm' : ''}>
+                <QRCode value={qrCodeUrl} size={75} />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400 w-[75px] h-[75px]">
+                  <span className="text-xs text-gray-500 text-center">QR pending approval</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Seal */}
+      {sealUrl && (
+        <div className="absolute bottom-8 left-8">
+          <img 
+            src={sealUrl}
+            alt="Organization Seal" 
+            className="h-20 w-20 object-contain opacity-75"
+            onError={(e) => handleImageError(e, "seal")}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -26,7 +26,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
   const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";
 
   useEffect(() => {
-    if (requestStatus === 'approved' && data.fullName && data.designation && data.department) {
+    if (data.fullName && data.designation && data.department) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
           'experience-1',
@@ -41,12 +41,15 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
       };
       generateQR();
     }
-  }, [data, organizationDetails?.name, user?.id, requestStatus]);
+  }, [data, organizationDetails?.name, user?.id]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
     (e.target as HTMLImageElement).style.display = 'none';
   };
+
+  // Determine if content should be blurred for employee preview
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
@@ -92,20 +95,21 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
           </div>
           
           <div className="text-right mt-8 md:mt-0">
-            {requestStatus === 'approved' && data.includeDigitalSignature && signatureUrl ? (
-              <div className="h-16 mb-4 flex justify-end">
+            {data.includeDigitalSignature && signatureUrl ? (
+              <div className="h-16 mb-4 flex justify-end relative">
                 <div className="border-b border-gray-800 px-6">
                   <img 
                     src={signatureUrl}
                     alt="Digital Signature" 
-                    className="h-12 object-contain"
+                    className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
                     onError={(e) => handleImageError(e, "signature")}
                   />
                 </div>
-              </div>
-            ) : isEmployeePreview && requestStatus !== 'approved' ? (
-              <div className="h-16 mb-4 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic w-48 ml-auto">
-                [Signature will appear after approval]
+                {shouldBlur && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                    <span className="text-xs text-gray-500">Signature pending approval</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="h-16 mb-4">
@@ -120,13 +124,18 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
 
         {/* QR Code positioned at bottom right */}
         <div className="absolute bottom-8 right-8">
-          {requestStatus === 'approved' && qrCodeUrl ? (
-            <QRCode value={qrCodeUrl} size={80} />
-          ) : isEmployeePreview && requestStatus !== 'approved' ? (
-            <div className="w-20 h-20 border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
-              QR Code
+          {qrCodeUrl && (
+            <div className="relative">
+              <div className={shouldBlur ? 'blur-sm' : ''}>
+                <QRCode value={qrCodeUrl} size={80} />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400 w-20 h-20">
+                  <span className="text-xs text-gray-500 text-center">QR pending approval</span>
+                </div>
+              )}
             </div>
-          ) : null}
+          )}
         </div>
 
         {sealUrl && (

@@ -36,7 +36,7 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (requestStatus === 'approved' && fullName && parentName && duration) {
+    if (fullName && parentName && duration) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
           'character-1',
@@ -51,7 +51,7 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
       };
       generateQR();
     }
-  }, [data, organizationDetails?.name, user?.id, fullName, parentName, duration, requestStatus]);
+  }, [data, organizationDetails?.name, user?.id, fullName, parentName, duration]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -59,6 +59,9 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
   };
 
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
+
+  // Determine if content should be blurred for employee preview
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
@@ -98,20 +101,21 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
         </div>
         
         <div className="text-right">
-          {requestStatus === 'approved' && includeDigitalSignature && signatureUrl ? (
-            <div className="h-16 mb-4 flex justify-end">
+          {includeDigitalSignature && signatureUrl ? (
+            <div className="h-16 mb-4 flex justify-end relative">
               <div className="border-b border-gray-800 px-6">
                 <img 
                   src={signatureUrl}
                   alt="Digital Signature" 
-                  className="h-12 object-contain"
+                  className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
                   onError={(e) => handleImageError(e, "signature")}
                 />
               </div>
-            </div>
-          ) : isEmployeePreview && requestStatus !== 'approved' ? (
-            <div className="h-16 mb-4 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic w-48 mx-auto">
-              [Signature will appear after approval]
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="h-16 mb-4">
@@ -123,16 +127,16 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
           <p className="mb-4">{institutionName || '[Institution Name]'}</p>
           
           {/* QR Code positioned below institution name */}
-          {requestStatus === 'approved' && qrCodeUrl && (
-            <div className="flex justify-end">
-              <QRCode value={qrCodeUrl} size={75} />
-            </div>
-          )}
-          {isEmployeePreview && requestStatus !== 'approved' && (
-            <div className="flex justify-end">
-              <div className="w-[75px] h-[75px] border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
-                QR Code
+          {qrCodeUrl && (
+            <div className="flex justify-end relative">
+              <div className={shouldBlur ? 'blur-sm' : ''}>
+                <QRCode value={qrCodeUrl} size={75} />
               </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400 w-[75px] h-[75px]">
+                  <span className="text-xs text-gray-500 text-center">QR pending approval</span>
+                </div>
+              )}
             </div>
           )}
         </div>
