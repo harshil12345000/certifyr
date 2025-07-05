@@ -22,6 +22,8 @@ import EmployeePortal from '@/pages/EmployeePortal';
 import EmployeeTemplateDetail from '@/pages/employee-portal/EmployeeTemplateDetail';
 import { EmployeePortalProvider } from '@/contexts/EmployeePortalContext';
 import NoAccess from '@/pages/employee-portal/NoAccess';
+import { BookmarksPage } from './pages/Index';
+import { BookmarksProvider } from './contexts/BookmarksContext';
 
 const queryClient = new QueryClient();
 
@@ -31,30 +33,33 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <BrandingProvider>
-            <Routes>
-              <Route path="/" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
-              <Route path="/templates/:id" element={<ProtectedRoute><TemplateDetail /></ProtectedRoute>} />
-              <Route path="/templates/:id/edit" element={<ProtectedRoute><TemplateBuilder /></ProtectedRoute>} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/request-portal" element={<ProtectedRoute><RequestPortal /></ProtectedRoute>} />
-              <Route path="/:organizationId/request-portal" element={<EmployeePortal />} />
-              <Route path="/:organizationId/request-portal/templates/:id" element={
-                <EmployeePortalProvider organizationId={window.location.pathname.split('/')[1]}>
-                  <EmployeeTemplateDetail />
-                </EmployeePortalProvider>
-              } />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/admin/branding" element={<ProtectedRoute><Branding /></ProtectedRoute>} />
-              <Route path="/admin/templates" element={<ProtectedRoute><AdminTemplates /></ProtectedRoute>} />
-              <Route path="/admin/templates/:id" element={<ProtectedRoute><AdminTemplateBuilder /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/verify/:hash" element={<VerifyDocument />} />
-              <Route path="/no-access" element={<NoAccess />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
+            <BookmarksProvider>
+              <Routes>
+                <Route path="/" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+                <Route path="/templates/:id" element={<ProtectedRoute><TemplateDetail /></ProtectedRoute>} />
+                <Route path="/templates/:id/edit" element={<ProtectedRoute><TemplateBuilder /></ProtectedRoute>} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/request-portal" element={<ProtectedRoute><RequestPortal /></ProtectedRoute>} />
+                <Route path="/:organizationId/request-portal" element={<EmployeePortal />} />
+                <Route path="/:organizationId/request-portal/templates/:id" element={
+                  <EmployeePortalProvider organizationId={window.location.pathname.split('/')[1]}>
+                    <EmployeeTemplateDetail />
+                  </EmployeePortalProvider>
+                } />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/admin/branding" element={<ProtectedRoute><Branding /></ProtectedRoute>} />
+                <Route path="/admin/templates" element={<ProtectedRoute><AdminTemplates /></ProtectedRoute>} />
+                <Route path="/admin/templates/:id" element={<ProtectedRoute><AdminTemplateBuilder /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/verify/:hash" element={<VerifyDocument />} />
+                <Route path="/no-access" element={<NoAccess />} />
+                <Route path="/bookmarks" element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+            </BookmarksProvider>
           </BrandingProvider>
         </AuthProvider>
       </BrowserRouter>

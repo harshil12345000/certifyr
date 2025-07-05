@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { popularTemplates } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Define a minimal Template type to maintain correct typings
 type Template = {
@@ -125,11 +126,14 @@ const additionalTemplates: Template[] = [{
 const existingPopularIds = new Set(popularTemplates.map(t => t.id));
 const dedupedAdditionalTemplates = additionalTemplates.filter(tpl => !existingPopularIds.has(tpl.id));
 const allTemplatesArr: Template[] = [...popularTemplates, ...dedupedAdditionalTemplates];
-const uniqueTemplates: Template[] = getUniqueTemplates(allTemplatesArr);
+export const uniqueTemplates: Template[] = getUniqueTemplates(allTemplatesArr);
 const Templates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // TODO: Replace with real admin check
+  const isAdmin = true;
 
   // Filter templates based on search and category filters
   const filteredTemplates = uniqueTemplates.filter(template => {
@@ -254,7 +258,7 @@ const Templates = () => {
               <h3 className="text-lg font-medium">No templates found</h3>
               <p className="text-muted-foreground mt-1">Try adjusting your search or filter criteria</p>
             </div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} />)}
+              {filteredTemplates.map(template => <TemplateCard key={template.id} id={template.id} title={template.title} description={template.description} category={template.category} isAdmin={isAdmin} />)}
             </div>}
         </div>
 

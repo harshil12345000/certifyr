@@ -12,6 +12,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useUserDocuments } from '@/hooks/useUserDocuments';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { uniqueTemplates } from './Templates';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { BookmarkCheck } from 'lucide-react';
+
 const Index = () => {
   const { user } = useAuth();
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -127,4 +142,56 @@ const Index = () => {
       </div>
     </DashboardLayout>;
 };
+
+export function BookmarksPage() {
+  const { bookmarks, removeBookmark } = useBookmarks();
+  const bookmarkedTemplates = uniqueTemplates.filter(t => bookmarks.includes(t.id));
+  const [dialogOpen, setDialogOpen] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<{id: string, title: string} | null>(null);
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6 animate-fade-in">
+        <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
+          <span>Bookmarks</span>
+        </h1>
+        {bookmarkedTemplates.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground">No bookmarks yet. Click the bookmark icon on any template to add it here.</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {bookmarkedTemplates.map(template => (
+              <div key={template.id} className="relative group">
+                <TemplateCard {...template} isAdmin={true} forceBookmarked={true} onBookmarkClick={e => {
+                  e.preventDefault();
+                  setPendingRemove({id: template.id, title: template.title});
+                  setDialogOpen(template.id);
+                }} />
+                {/* Modal for confirming removal */}
+                <AlertDialog open={dialogOpen === template.id} onOpenChange={open => { if (!open) setDialogOpen(null); }}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirm to Remove {template.title} from Bookmarks</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to remove this template from your bookmarks?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setDialogOpen(null)}>No</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => {
+                        if (pendingRemove) removeBookmark(pendingRemove.id);
+                        setDialogOpen(null);
+                        setPendingRemove(null);
+                      }}>Yes</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
+
 export default Index;

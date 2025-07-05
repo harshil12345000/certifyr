@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  DoorOpen
+  DoorOpen,
+  Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarLogo } from './SidebarLogo';
@@ -59,6 +60,9 @@ export function Sidebar() {
   // Use organization name if available, otherwise use user name
   const displayName = organizationDetails?.name || name;
 
+  // TODO: Replace with real admin check
+  const isAdmin = true;
+
   return (
     <>
       {/* Mobile Sidebar Toggle */}
@@ -94,21 +98,39 @@ export function Sidebar() {
         
         <div className="flex-1 py-6 overflow-y-auto">
           <nav className="px-2 space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all",
-                  location.pathname === item.path 
-                    ? "bg-primary-500/10 text-primary-600" 
-                    : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500",
-                  isCollapsed ? "justify-center" : "justify-start"
+            {navItems.map((item, idx) => (
+              <>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all",
+                    location.pathname === item.path 
+                      ? "bg-primary-500/10 text-primary-600" 
+                      : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500",
+                    isCollapsed ? "justify-center" : "justify-start"
+                  )}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  {!isCollapsed && <span className="ml-3">{item.name}</span>}
+                </Link>
+                {/* Insert Bookmarks tab right after Templates */}
+                {isAdmin && item.name === 'Templates' && (
+                  <Link
+                    to="/bookmarks"
+                    className={cn(
+                      "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all",
+                      location.pathname === "/bookmarks"
+                        ? "bg-primary-500/10 text-primary-600"
+                        : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500",
+                      isCollapsed ? "justify-center" : "justify-start"
+                    )}
+                  >
+                    <span className="flex-shrink-0"><Bookmark className="h-5 w-5" /></span>
+                    {!isCollapsed && <span className="ml-3">Bookmarks</span>}
+                  </Link>
                 )}
-              >
-                <span className="flex-shrink-0">{item.icon}</span>
-                {!isCollapsed && <span className="ml-3">{item.name}</span>}
-              </Link>
+              </>
             ))}
           </nav>
         </div>
