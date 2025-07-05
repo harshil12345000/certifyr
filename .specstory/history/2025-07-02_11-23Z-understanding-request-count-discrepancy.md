@@ -90,6 +90,7 @@ The actual requests are fetched dynamically in `RequestPortalRequests.tsx` using
 ### How to Fix
 
 To make the badge accurate, user-specific, and responsive:
+
 1. **Lift the requests count state up** from `RequestPortalRequests` to `RequestPortal` (the parent).
 2. **Pass the count as a prop** to the badge in the tab.
 3. **Update the count** whenever requests are fetched.
@@ -106,11 +107,6 @@ Implement the fix for me. Ensure functionality and accuracy with Supabase.
 
 _**Assistant**_
 
-
-
 ---
 
-
-
 ---
-

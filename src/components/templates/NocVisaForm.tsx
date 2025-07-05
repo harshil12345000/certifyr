@@ -1,15 +1,27 @@
-
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { NocVisaData } from '@/types/templates';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { NocVisaData } from "@/types/templates";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -36,21 +48,24 @@ interface NocVisaFormProps {
   initialData: NocVisaData;
 }
 
-export const NocVisaForm: React.FC<NocVisaFormProps> = ({ onSubmit, initialData }) => {
+export const NocVisaForm: React.FC<NocVisaFormProps> = ({
+  onSubmit,
+  initialData,
+}) => {
   const form = useForm<NocVisaData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
   const visaTypes = [
-    'Tourist Visa',
-    'Business Visa',
-    'Student Visa',
-    'Work Visa',
-    'Transit Visa',
-    'Medical Visa',
-    'Conference Visa',
-    'Other'
+    "Tourist Visa",
+    "Business Visa",
+    "Student Visa",
+    "Work Visa",
+    "Transit Visa",
+    "Medical Visa",
+    "Conference Visa",
+    "Other",
   ];
 
   return (
@@ -133,7 +148,10 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({ onSubmit, initialData 
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Visa Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select visa type" />
@@ -173,7 +191,10 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({ onSubmit, initialData 
               <FormItem>
                 <FormLabel>Travel Dates</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 15/01/2024 to 30/01/2024" {...field} />
+                  <Input
+                    placeholder="e.g., 15/01/2024 to 30/01/2024"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

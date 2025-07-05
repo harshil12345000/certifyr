@@ -1,14 +1,19 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   verificationResult: {
     isValid: boolean;
-    status: 'verified' | 'not_found' | 'expired';
+    status: "verified" | "not_found" | "expired";
     document?: any;
     message: string;
   } | null;
@@ -25,11 +30,11 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const getIcon = () => {
     switch (status) {
-      case 'verified':
+      case "verified":
         return <CheckCircle className="h-12 w-12 text-green-500" />;
-      case 'expired':
+      case "expired":
         return <AlertTriangle className="h-12 w-12 text-yellow-500" />;
-      case 'not_found':
+      case "not_found":
       default:
         return <XCircle className="h-12 w-12 text-red-500" />;
     }
@@ -37,23 +42,27 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const getTitle = () => {
     switch (status) {
-      case 'verified':
-        return 'Document Verified';
-      case 'expired':
-        return 'Document Expired';
-      case 'not_found':
+      case "verified":
+        return "Document Verified";
+      case "expired":
+        return "Document Expired";
+      case "not_found":
       default:
-        return 'Document Not Found';
+        return "Document Not Found";
     }
   };
 
   const getStatusBadge = () => {
     switch (status) {
-      case 'verified':
-        return <Badge variant="default" className="bg-green-500">Valid</Badge>;
-      case 'expired':
+      case "verified":
+        return (
+          <Badge variant="default" className="bg-green-500">
+            Valid
+          </Badge>
+        );
+      case "expired":
         return <Badge variant="destructive">Expired</Badge>;
-      case 'not_found':
+      case "not_found":
       default:
         return <Badge variant="destructive">Invalid</Badge>;
     }
@@ -61,23 +70,23 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const getTemplateDisplayName = (templateType: string) => {
     const templateNames: { [key: string]: string } = {
-      'bonafide-1': 'Bonafide Certificate',
-      'character-1': 'Character Certificate',
-      'completion-certificate-1': 'Completion Certificate',
-      'experience-1': 'Experience Certificate',
-      'income-certificate-1': 'Income Certificate',
-      'address-proof-1': 'Address Proof',
-      'bank-verification-1': 'Bank Verification',
-      'nda-1': 'Non-Disclosure Agreement',
-      'maternity-leave-1': 'Maternity Leave Certificate'
+      "bonafide-1": "Bonafide Certificate",
+      "character-1": "Character Certificate",
+      "completion-certificate-1": "Completion Certificate",
+      "experience-1": "Experience Certificate",
+      "income-certificate-1": "Income Certificate",
+      "address-proof-1": "Address Proof",
+      "bank-verification-1": "Bank Verification",
+      "nda-1": "Non-Disclosure Agreement",
+      "maternity-leave-1": "Maternity Leave Certificate",
     };
-    return templateNames[templateType] || templateType.replace(/-/g, ' ');
+    return templateNames[templateType] || templateType.replace(/-/g, " ");
   };
 
   const getDocumentDisplayName = () => {
-    if (!document) return '';
+    if (!document) return "";
     const templateName = getTemplateDisplayName(document.template_type);
-    const fullName = document.document_data?.fullName || 'Unknown';
+    const fullName = document.document_data?.fullName || "Unknown";
     return `${templateName} for ${fullName}`;
   };
 
@@ -87,7 +96,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
         <DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             {getIcon()}
-            <DialogTitle className="text-xl text-center">{getTitle()}</DialogTitle>
+            <DialogTitle className="text-xl text-center">
+              {getTitle()}
+            </DialogTitle>
           </div>
         </DialogHeader>
         <div className="space-y-4">
@@ -99,12 +110,20 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
             <div className="space-y-2 text-sm">
               <div className="bg-gray-50 p-3 rounded flex flex-col md:grid md:grid-cols-2 md:gap-4">
                 <div>
-                  <p><strong>Document:</strong> {getDocumentDisplayName()}</p>
+                  <p>
+                    <strong>Document:</strong> {getDocumentDisplayName()}
+                  </p>
                 </div>
                 <div>
-                  <p><strong>Generated:</strong> {new Date(document.generated_at).toLocaleDateString()}</p>
+                  <p>
+                    <strong>Generated:</strong>{" "}
+                    {new Date(document.generated_at).toLocaleDateString()}
+                  </p>
                   {document.expires_at && (
-                    <p><strong>Expires:</strong> {new Date(document.expires_at).toLocaleDateString()}</p>
+                    <p>
+                      <strong>Expires:</strong>{" "}
+                      {new Date(document.expires_at).toLocaleDateString()}
+                    </p>
                   )}
                 </div>
               </div>

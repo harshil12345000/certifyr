@@ -1,17 +1,26 @@
-
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FileText, Download, Eye } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Document } from '@/types/document';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FileText, Download, Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Document } from "@/types/document";
 
 interface RecentDocumentsProps {
   documents: Document[];
   loading?: boolean;
 }
 
-export function RecentDocuments({ documents, loading = false }: RecentDocumentsProps) {
+export function RecentDocuments({
+  documents,
+  loading = false,
+}: RecentDocumentsProps) {
   return (
     <div className="glass-card overflow-hidden">
       <div className="p-6">
@@ -26,7 +35,9 @@ export function RecentDocuments({ documents, loading = false }: RecentDocumentsP
           <div className="p-8 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-2">No documents yet</p>
-            <p className="text-sm text-muted-foreground">Create your first document to see it here</p>
+            <p className="text-sm text-muted-foreground">
+              Create your first document to see it here
+            </p>
           </div>
         ) : (
           <Table>
@@ -52,16 +63,19 @@ export function RecentDocuments({ documents, loading = false }: RecentDocumentsP
                     <Badge
                       variant="outline"
                       className={cn(
-                        doc.status === 'Signed' && 'border-green-500/50 text-green-600 bg-green-50',
-                        doc.status === 'Sent' && 'border-blue-500/50 text-blue-600 bg-blue-50',
-                        doc.status === 'Created' && 'border-yellow-500/50 text-yellow-600 bg-yellow-50',
+                        doc.status === "Signed" &&
+                          "border-green-500/50 text-green-600 bg-green-50",
+                        doc.status === "Sent" &&
+                          "border-blue-500/50 text-blue-600 bg-blue-50",
+                        doc.status === "Created" &&
+                          "border-yellow-500/50 text-yellow-600 bg-yellow-50",
                       )}
                     >
                       {doc.status}
                     </Badge>
                   </TableCell>
                   <TableCell>{doc.date}</TableCell>
-                  <TableCell>{doc.recipient || '—'}</TableCell>
+                  <TableCell>{doc.recipient || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" title="View">

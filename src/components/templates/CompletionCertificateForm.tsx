@@ -1,14 +1,26 @@
-
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { CompletionCertificateData } from '@/types/templates';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CompletionCertificateData } from "@/types/templates";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -33,7 +45,9 @@ interface CompletionCertificateFormProps {
   initialData: CompletionCertificateData;
 }
 
-export const CompletionCertificateForm: React.FC<CompletionCertificateFormProps> = ({ onSubmit, initialData }) => {
+export const CompletionCertificateForm: React.FC<
+  CompletionCertificateFormProps
+> = ({ onSubmit, initialData }) => {
   const form = useForm<CompletionCertificateData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
@@ -161,7 +175,10 @@ export const CompletionCertificateForm: React.FC<CompletionCertificateFormProps>
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Program Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select program type" />

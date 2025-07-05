@@ -1,19 +1,38 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Moon, Sun, User, Palette, Shield, Globe } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -26,7 +45,7 @@ const Settings = () => {
     jobTitle: "",
     bio: "",
     phone: "",
-    location: ""
+    location: "",
   });
 
   const [preferences, setPreferences] = useState({
@@ -35,7 +54,7 @@ const Settings = () => {
     pushNotifications: false,
     marketingEmails: false,
     language: "en",
-    timezone: "UTC"
+    timezone: "UTC",
   });
 
   // Modal state for change password
@@ -51,24 +70,24 @@ const Settings = () => {
 
   useEffect(() => {
     if (!user) return;
-    
+
     const loadUserProfile = async () => {
       try {
-        console.log('Loading user profile for user:', user.id);
-        
+        console.log("Loading user profile for user:", user.id);
+
         const { data: profile, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_id', user.id)
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (error) {
-          console.error('Error loading user profile:', error);
-          toast.error('Failed to load profile data');
+          console.error("Error loading user profile:", error);
+          toast.error("Failed to load profile data");
           return;
         }
 
-        console.log('Loaded profile data:', profile);
+        console.log("Loaded profile data:", profile);
 
         if (profile) {
           setFormData({
@@ -78,18 +97,18 @@ const Settings = () => {
             jobTitle: (profile as any).job_title || "",
             bio: (profile as any).bio || "",
             phone: profile.phone_number || "",
-            location: (profile as any).location || ""
+            location: (profile as any).location || "",
           });
         } else {
           // If no profile exists, just set email from user
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            email: user.email || ""
+            email: user.email || "",
           }));
         }
       } catch (error) {
-        console.error('Unexpected error loading profile:', error);
-        toast.error('Failed to load profile data');
+        console.error("Unexpected error loading profile:", error);
+        toast.error("Failed to load profile data");
       } finally {
         setLoading(false);
       }
@@ -103,10 +122,10 @@ const Settings = () => {
     if (!user) return;
 
     setSaving(true);
-    
+
     try {
-      console.log('Saving profile data:', formData);
-      
+      console.log("Saving profile data:", formData);
+
       const profileData = {
         user_id: user.id,
         first_name: formData.firstName.trim() || null,
@@ -116,33 +135,33 @@ const Settings = () => {
         bio: formData.bio.trim() || null,
         phone_number: formData.phone.trim() || null,
         location: formData.location.trim() || null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from("user_profiles")
         .upsert(profileData, {
-          onConflict: 'user_id'
+          onConflict: "user_id",
         });
 
       if (error) {
-        console.error('Error saving profile:', error);
-        toast.error('Failed to save profile');
+        console.error("Error saving profile:", error);
+        toast.error("Failed to save profile");
         return;
       }
 
-      console.log('Profile saved successfully');
-      toast.success('Profile updated successfully');
+      console.log("Profile saved successfully");
+      toast.success("Profile updated successfully");
     } catch (error) {
-      console.error('Unexpected error saving profile:', error);
-      toast.error('Failed to save profile');
+      console.error("Unexpected error saving profile:", error);
+      toast.error("Failed to save profile");
     } finally {
       setSaving(false);
     }
   };
 
   const handlePreferencesChange = (key: string, value: any) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
+    setPreferences((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleChangePassword = async (e?: React.FormEvent) => {
@@ -166,7 +185,7 @@ const Settings = () => {
       }
       // Update password
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       });
       if (error) {
         toast.error("Failed to change password");
@@ -232,7 +251,9 @@ const Settings = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Settings</h1>
-          <p className="text-muted-foreground">Manage your account settings and preferences</p>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences
+          </p>
         </div>
 
         <div className="grid gap-6">
@@ -255,7 +276,9 @@ const Settings = () => {
                     <Input
                       id="firstName"
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, firstName: e.target.value })
+                      }
                       placeholder="Enter your first name"
                     />
                   </div>
@@ -264,7 +287,9 @@ const Settings = () => {
                     <Input
                       id="lastName"
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastName: e.target.value })
+                      }
                       placeholder="Enter your last name"
                     />
                   </div>
@@ -276,7 +301,9 @@ const Settings = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter your email"
                   />
                 </div>
@@ -286,7 +313,9 @@ const Settings = () => {
                   <Input
                     id="jobTitle"
                     value={formData.jobTitle}
-                    onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, jobTitle: e.target.value })
+                    }
                     placeholder="Enter your job title"
                   />
                 </div>
@@ -296,7 +325,9 @@ const Settings = () => {
                   <Textarea
                     id="bio"
                     value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bio: e.target.value })
+                    }
                     placeholder="Tell us about yourself"
                     rows={3}
                   />
@@ -308,7 +339,9 @@ const Settings = () => {
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       placeholder="Enter your phone number"
                     />
                   </div>
@@ -317,14 +350,16 @@ const Settings = () => {
                     <Input
                       id="location"
                       value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, location: e.target.value })
+                      }
                       placeholder="Enter your location"
                     />
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full md:w-auto"
                   disabled={saving}
                 >
@@ -350,9 +385,16 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base">Theme</Label>
-                  <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
+                  <p className="text-sm text-muted-foreground">
+                    Choose your preferred theme
+                  </p>
                 </div>
-                <Select value={preferences.theme} onValueChange={(value) => handlePreferencesChange("theme", value)}>
+                <Select
+                  value={preferences.theme}
+                  onValueChange={(value) =>
+                    handlePreferencesChange("theme", value)
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -373,9 +415,16 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-base">Language</Label>
-                  <p className="text-sm text-muted-foreground">Select your preferred language</p>
+                  <p className="text-sm text-muted-foreground">
+                    Select your preferred language
+                  </p>
                 </div>
-                <Select value={preferences.language} onValueChange={(value) => handlePreferencesChange("language", value)}>
+                <Select
+                  value={preferences.language}
+                  onValueChange={(value) =>
+                    handlePreferencesChange("language", value)
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -391,7 +440,6 @@ const Settings = () => {
               </div>
 
               <Separator />
-
             </CardContent>
           </Card>
 
@@ -427,7 +475,9 @@ const Settings = () => {
 
               {/* Delete Account */}
               <div>
-                <Label className="text-base text-destructive">Delete Account</Label>
+                <Label className="text-base text-destructive">
+                  Delete Account
+                </Label>
                 <p className="text-sm text-muted-foreground mb-2">
                   Permanently delete your account. This action cannot be undone.
                 </p>
@@ -460,7 +510,7 @@ const Settings = () => {
                 id="current-password"
                 type="password"
                 value={oldPassword}
-                onChange={e => setOldPassword(e.target.value)}
+                onChange={(e) => setOldPassword(e.target.value)}
                 placeholder="Enter current password"
                 required
               />
@@ -471,7 +521,7 @@ const Settings = () => {
                 id="new-password"
                 type="password"
                 value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
+                onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
                 required
               />
@@ -481,11 +531,12 @@ const Settings = () => {
                 type="button"
                 variant="secondary"
                 onClick={() => setShowPasswordDialog(false)}
-              >Cancel</Button>
-              <Button
-                type="submit"
-                disabled={changingPassword}
-              >{changingPassword ? "Updating..." : "Update Password"}</Button>
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={changingPassword}>
+                {changingPassword ? "Updating..." : "Update Password"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -497,7 +548,8 @@ const Settings = () => {
           <DialogHeader>
             <DialogTitle>Delete Account</DialogTitle>
             <DialogDescription>
-              This will permanently delete your account and all data. Please enter your password to confirm.
+              This will permanently delete your account and all data. Please
+              enter your password to confirm.
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleDeleteAccount}>
@@ -507,7 +559,7 @@ const Settings = () => {
                 id="delete-password"
                 type="password"
                 value={deletePassword}
-                onChange={e => setDeletePassword(e.target.value)}
+                onChange={(e) => setDeletePassword(e.target.value)}
                 placeholder="Enter your password"
                 required
               />
@@ -517,12 +569,12 @@ const Settings = () => {
                 type="button"
                 variant="secondary"
                 onClick={() => setShowDeleteDialog(false)}
-              >Cancel</Button>
-              <Button
-                type="submit"
-                variant="destructive"
-                disabled={deleting}
-              >{deleting ? "Deleting..." : "Delete Account"}</Button>
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="destructive" disabled={deleting}>
+                {deleting ? "Deleting..." : "Delete Account"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

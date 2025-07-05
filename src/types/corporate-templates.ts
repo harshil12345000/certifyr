@@ -93,9 +93,9 @@ export interface EmploymentAgreementData {
   jobTitle: string;
   department: string;
   startDate: string;
-  employmentType: 'full-time' | 'part-time' | 'contract';
+  employmentType: "full-time" | "part-time" | "contract";
   salary: string;
-  payFrequency: 'monthly' | 'bi-weekly' | 'weekly';
+  payFrequency: "monthly" | "bi-weekly" | "weekly";
   benefits: string;
   workLocation: string;
   workHours: string;

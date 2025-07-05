@@ -1,6 +1,5 @@
-
 import { BonafideData } from "./templates";
-import { Json } from "@/integrations/supabase/types"; 
+import { Json } from "@/integrations/supabase/types";
 
 export interface DocumentDraft {
   id: string;
@@ -35,7 +34,7 @@ export interface DocumentRequest {
   id: string;
   template_id: string;
   template_data: Json;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   requested_at: string;
   processed_at?: string | null;
   employee_id: string;

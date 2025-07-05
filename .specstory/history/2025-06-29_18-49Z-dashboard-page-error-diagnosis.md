@@ -58,272 +58,272 @@ ProtectedRoute.tsx:13 ProtectedRoute - loading: false user: true
 Sidebar.tsx:41 [Sidebar] logoUrl: null
 Sidebar.tsx:42 [Sidebar] organizationDetails: Object
 Sidebar.tsx:43 [Sidebar] user: Object
-yjeeamhahyhfawwgebtd.supabase.co/rest/v1/user_statistics?select=*&user_id=eq.41649545-05db-4aaf-9fdf-e9dd5b1a699c:1 
-            
-            
+yjeeamhahyhfawwgebtd.supabase.co/rest/v1/user_statistics?select=\*&user_id=eq.41649545-05db-4aaf-9fdf-e9dd5b1a699c:1
+
            Failed to load resource: the server responded with a status of 406 ()Understand this error
+
 Sidebar.tsx:41 [Sidebar] logoUrl: null
 Sidebar.tsx:42 [Sidebar] organizationDetails: Object
 Sidebar.tsx:43 [Sidebar] user: Object
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FileText />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FilePenLine />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FileClock />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FileClock />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 Sidebar.tsx:41 [Sidebar] logoUrl: null
 Sidebar.tsx:42 [Sidebar] organizationDetails: Object
 Sidebar.tsx:43 [Sidebar] user: Object
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FileText />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FilePenLine />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FileClock />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 react_jsx-dev-runtime.js?v=d395520a:64 Warning: React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: <FileClock />. Did you accidentally export a JSX literal instead of a component?
-    at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
-    at div
-    at div
-    at main
-    at div
-    at div
-    at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
-    at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
-    at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
-    at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
-    at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
-    at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
-    at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
-    at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
-    at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
-    at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
-    at App
+at StatsCard (http://localhost:8087/src/components/dashboard/StatsCard.tsx:11:29)
+at div
+at div
+at main
+at div
+at div
+at DashboardLayout (http://localhost:8087/src/components/dashboard/DashboardLayout.tsx:12:35)
+at Index (http://localhost:8087/src/pages/Index.tsx:25:22)
+at ProtectedRoute (http://localhost:8087/src/components/auth/ProtectedRoute.tsx:14:34)
+at RenderedRoute (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4069:5)
+at Routes (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4508:5)
+at BrandingProvider (http://localhost:8087/src/contexts/BrandingContext.tsx:22:36)
+at AuthProvider (http://localhost:8087/src/contexts/AuthContext.tsx:23:32)
+at Router (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:4451:15)
+at BrowserRouter (http://localhost:8087/node_modules/.vite/deps/react-router-dom.js?v=d395520a:5196:5)
+at QueryClientProvider (http://localhost:8087/node_modules/.vite/deps/@tanstack_react-query.js?v=d395520a:2794:3)
+at App
 printWarning @ react_jsx-dev-runtime.js?v=d395520a:64Understand this error
 chunk-FJ2A54M7.js?v=d395520a:20442 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
-    at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
-    at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at HTMLUnknownElement.callCallback2 (chunk-FJ2A54M7.js?v=d395520a:3674:22)
+at Object.invokeGuardedCallbackDev (chunk-FJ2A54M7.js?v=d395520a:3699:24)
+at invokeGuardedCallback (chunk-FJ2A54M7.js?v=d395520a:3733:39)Understand this error
 4chunk-FJ2A54M7.js?v=d395520a:14032 The above error occurred in the <div> component:
 
     at div
@@ -353,16 +353,16 @@ logCapturedError @ chunk-FJ2A54M7.js?v=d395520a:14032Understand this error
 chunk-FJ2A54M7.js?v=d395520a:19413 Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.
 
 Check the render method of `StatsCard`.
-    at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
-    at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
-    at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
-    at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
-    at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
-    at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
-    at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
-    at beginWork$1 (chunk-FJ2A54M7.js?v=d395520a:19753:22)
-    at performUnitOfWork (chunk-FJ2A54M7.js?v=d395520a:19198:20)
-    at workLoopSync (chunk-FJ2A54M7.js?v=d395520a:19137:13)Understand this error
+at createFiberFromTypeAndProps (chunk-FJ2A54M7.js?v=d395520a:20442:23)
+at createFiberFromElement (chunk-FJ2A54M7.js?v=d395520a:20463:23)
+at reconcileSingleElement (chunk-FJ2A54M7.js?v=d395520a:10513:31)
+at reconcileChildFibers2 (chunk-FJ2A54M7.js?v=d395520a:10550:43)
+at reconcileChildren (chunk-FJ2A54M7.js?v=d395520a:14290:37)
+at updateHostComponent (chunk-FJ2A54M7.js?v=d395520a:14807:11)
+at beginWork (chunk-FJ2A54M7.js?v=d395520a:15935:22)
+at beginWork$1 (chunk-FJ2A54M7.js?v=d395520a:19753:22)
+at performUnitOfWork (chunk-FJ2A54M7.js?v=d395520a:19198:20)
+at workLoopSync (chunk-FJ2A54M7.js?v=d395520a:19137:13)Understand this error
 @supabase_supabase-js.js?v=d395520a:2646 WebSocket connection to 'wss://yjeeamhahyhfawwgebtd.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZWVhbWhhaHloZmF3d2dlYnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMTgwMzksImV4cCI6MjA2NDU5NDAzOX0.E_lUcp7LvnIa-pxXMatxlyzMGLgn0QXLlNosUjOdfDM&vsn=1.0.0' failed: WebSocket is closed before the connection is established.
 disconnect @ @supabase_supabase-js.js?v=d395520a:2646Understand this warning
 
@@ -531,4 +531,3 @@ You can now reload your dashboard page and it should work as intended. If you en
 Let me know if you need help with any other errors or want to address the 406 error from Supabase!
 
 ---
-

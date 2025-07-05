@@ -4,7 +4,7 @@
 
 _**User**_
 
-Help me connect to Supabase cloud MCP. Use this guide @https://github.com/supabase-community/supabase-mcp?tab=readme-ov-file#tools 
+Help me connect to Supabase cloud MCP. Use this guide @https://github.com/supabase-community/supabase-mcp?tab=readme-ov-file#tools
 
 I have the access token ready.
 
@@ -13,7 +13,6 @@ I have the access token ready.
 _**Assistant**_
 
 I'll help you connect to Supabase cloud MCP using the guide you provided. Let me first check your current project structure to understand how to best integrate this.
-
 
 ---
 
@@ -55,7 +54,6 @@ I'll help you connect to Supabase cloud MCP using the guide you provided. Let me
 
 I can see you already have a Supabase setup in your project. Let me check your current Supabase configuration and then help you set up the MCP connection.
 
-
 ---
 
 Read file: package.json
@@ -63,7 +61,6 @@ Read file: package.json
 ---
 
 Great! I can see you already have `@supabase/supabase-js` installed. Now let me check your current Supabase configuration:
-
 
 ---
 
@@ -75,11 +72,10 @@ Perfect! Now I'll help you set up the Supabase MCP connection. Based on the guid
 
 First, let me create a configuration file for the MCP server:
 
-
 ---
 
 ```diff
-- 
+-
 + {
 +   "mcpServers": {
 +     "supabase": {
@@ -94,18 +90,17 @@ First, let me create a configuration file for the MCP server:
 +       ]
 +     }
 +   }
-+ } 
++ }
 ```
 
 ---
 
 Now let me create a Windows-specific configuration since you're on Windows:
 
-
 ---
 
 ```diff
-- 
+-
 + {
 +   "mcpServers": {
 +     "supabase": {
@@ -122,28 +117,27 @@ Now let me create a Windows-specific configuration since you're on Windows:
 +       ]
 +     }
 +   }
-+ } 
++ }
 ```
 
 ---
 
 Now let me create a setup script to help you configure the MCP connection:
 
-
 ---
 
 ```diff
-- 
+-
 + #!/usr/bin/env node
-+ 
++
 + const fs = require('fs');
 + const path = require('path');
-+ 
++
 + console.log('🔧 Setting up Supabase MCP Configuration...\n');
-+ 
++
 + // Get access token from command line argument or prompt
 + const accessToken = process.argv[2];
-+ 
++
 + if (!accessToken) {
 +   console.log('❌ Please provide your Supabase personal access token as an argument.');
 +   console.log('Usage: node scripts/setup-mcp.js <your-access-token>');
@@ -153,10 +147,10 @@ Now let me create a setup script to help you configure the MCP connection:
 +   console.log('3. Copy the token and use it in this command');
 +   process.exit(1);
 + }
-+ 
++
 + // Project reference from your existing config
 + const projectRef = 'yjeeamhahyhfawwgebtd';
-+ 
++
 + // Create MCP configuration
 + const mcpConfig = {
 +   mcpServers: {
@@ -175,11 +169,11 @@ Now let me create a setup script to help you configure the MCP connection:
 +     }
 +   }
 + };
-+ 
++
 + // Write configuration to file
 + const configPath = path.join(__dirname, '..', 'mcp-config.json');
 + fs.writeFileSync(configPath, JSON.stringify(mcpConfig, null, 2));
-+ 
++
 + console.log('✅ MCP configuration created successfully!');
 + console.log(`📁 Configuration saved to: ${configPath}`);
 + console.log('\n📋 Next steps:');
@@ -193,98 +187,97 @@ Now let me create a setup script to help you configure the MCP connection:
 + console.log('- Project management (get_project, list_migrations, etc.)');
 + console.log('- Edge functions (list_edge_functions, deploy_edge_function)');
 + console.log('- Documentation search (search_docs)');
-+ console.log('- TypeScript type generation (generate_typescript_types)'); 
++ console.log('- TypeScript type generation (generate_typescript_types)');
 ```
 
 ---
 
 Now let me create a README file with detailed instructions:
 
-
 ---
 
-```diff
-- 
+````diff
+-
 + # Supabase MCP Setup Guide
-+ 
++
 + This guide will help you connect your Certifyr project to Supabase using the Model Context Protocol (MCP).
-+ 
++
 + ## Prerequisites
-+ 
++
 + - Node.js installed on your machine
 + - Supabase personal access token
 + - Cursor IDE
-+ 
++
 + ## Step 1: Get Your Supabase Personal Access Token
-+ 
++
 + 1. Go to [Supabase Dashboard](https://supabase.com/dashboard/account/tokens)
 + 2. Click "Generate new token"
 + 3. Give it a name like "Cursor MCP Server"
 + 4. Copy the token (you won't be able to see it again)
-+ 
++
 + ## Step 2: Run the Setup Script
-+ 
++
 + Since you have your access token ready, run:
-+ 
++
 + ```bash
 + node scripts/setup-mcp.js <your-personal-access-token>
 + ```
-+ 
++
 + Replace `<your-personal-access-token>` with the token you copied in Step 1.
-+ 
++
 + ## Step 3: Configure Cursor
-+ 
++
 + 1. Open Cursor settings (`Ctrl + ,`)
 + 2. Search for "MCP" or "Model Context Protocol"
 + 3. Add the configuration from the generated `mcp-config.json` file
 + 4. Restart Cursor
-+ 
++
 + ## Step 4: Verify Connection
-+ 
++
 + Once configured, you can test the connection by asking Cursor to:
 + - List your database tables
 + - Execute SQL queries
 + - Search Supabase documentation
 + - Generate TypeScript types
-+ 
++
 + ## Available MCP Tools
-+ 
++
 + Your MCP server will have access to these Supabase tools:
-+ 
++
 + ### Database Operations
 + - `list_tables` - Lists all tables in your database
 + - `execute_sql` - Execute raw SQL queries
 + - `apply_migration` - Apply schema migrations
 + - `list_migrations` - List all migrations
 + - `list_extensions` - List database extensions
-+ 
++
 + ### Project Management
 + - `get_project` - Get project details
 + - `get_project_url` - Get API URL
 + - `get_anon_key` - Get anonymous API key
 + - `get_logs` - Get service logs
 + - `get_advisors` - Get advisory notices
-+ 
++
 + ### Edge Functions
 + - `list_edge_functions` - List all edge functions
 + - `deploy_edge_function` - Deploy new functions
-+ 
++
 + ### Development Tools
 + - `search_docs` - Search Supabase documentation
 + - `generate_typescript_types` - Generate TypeScript types
-+ 
++
 + ## Troubleshooting
-+ 
++
 + ### Windows PATH Issues
 + If you encounter PATH issues on Windows:
-+ 
++
 + 1. Get npm path: `npm config get prefix`
 + 2. Add to PATH: `setx PATH "%PATH%;<path-to-dir>"`
 + 3. Restart Cursor
-+ 
++
 + ### Alternative Configuration
 + If the setup script doesn't work, you can manually create the configuration:
-+ 
++
 + ```json
 + {
 +   "mcpServers": {
@@ -304,25 +297,24 @@ Now let me create a README file with detailed instructions:
 +   }
 + }
 + ```
-+ 
++
 + ## Security Notes
-+ 
++
 + - Keep your access token secure
 + - Consider using environment variables for the token
 + - The MCP server is scoped to your specific project
 + - You can add `--read-only` flag for read-only access
-+ 
++
 + ## Project Reference
-+ 
++
 + Your project reference: `yjeeamhahyhfawwgebtd`
-+ 
-+ This is extracted from your existing Supabase configuration in `src/integrations/supabase/client.ts`. 
-```
++
++ This is extracted from your existing Supabase configuration in `src/integrations/supabase/client.ts`.
+````
 
 ---
 
 Now let me run the setup script to create your MCP configuration. Since you mentioned you have the access token ready, I'll create a placeholder that you can easily replace:
-
 
 ---
 
@@ -351,21 +343,20 @@ stead
 
 I need to fix the script to work with ES modules. Let me update it:
 
-
 ---
 
 ```diff
   #!/usr/bin/env node
-  
+
 - const fs = require('fs');
 - const path = require('path');
 + import fs from 'fs';
 + import path from 'path';
 + import { fileURLToPath } from 'url';
-+ 
++
 + const __filename = fileURLToPath(import.meta.url);
 + const __dirname = path.dirname(__filename);
-  
+
   console.log('🔧 Setting up Supabase MCP Configuration...\n');
 ```
 
@@ -382,11 +373,10 @@ I need to fix the script to work with ES modules. Let me update it:
 
 Now let me create a simple configuration file that you can use directly. Since you have your access token ready, I'll create a template:
 
-
 ---
 
 ```diff
-- 
+-
 + {
 +   "mcpServers": {
 +     "supabase": {
@@ -403,64 +393,63 @@ Now let me create a simple configuration file that you can use directly. Since y
 +       ]
 +     }
 +   }
-+ } 
++ }
 ```
 
 ---
 
 Perfect! Now let me create a quick setup guide for you:
 
-
 ---
 
 ```diff
-- 
+-
 + # Quick Supabase MCP Setup
-+ 
++
 + ## You're Ready to Connect! 🚀
-+ 
++
 + Since you have your access token ready, follow these steps:
-+ 
++
 + ### Step 1: Create Your MCP Configuration
-+ 
++
 + 1. Copy the contents of `mcp-config-template.json`
 + 2. Replace `REPLACE_WITH_YOUR_ACCESS_TOKEN` with your actual access token
 + 3. Save it as `mcp-config.json` in your project root
-+ 
++
 + ### Step 2: Configure Cursor
-+ 
++
 + 1. Open Cursor settings (`Ctrl + ,`)
 + 2. Search for "MCP" or "Model Context Protocol"
 + 3. Add the configuration from your `mcp-config.json` file
 + 4. Restart Cursor
-+ 
++
 + ### Step 3: Test the Connection
-+ 
++
 + Once configured, try asking Cursor:
 + - "List all tables in my Supabase database"
 + - "Show me my project details"
 + - "Search Supabase docs for authentication"
-+ 
++
 + ## Your Project Details
-+ 
++
 + - **Project Reference**: `yjeeamhahyhfawwgebtd`
 + - **Current Supabase URL**: `https://yjeeamhahyhfawwgebtd.supabase.co`
 + - **Configuration File**: `src/integrations/supabase/client.ts`
-+ 
++
 + ## Available Tools
-+ 
++
 + Your MCP server will give Cursor access to:
 + - ✅ Database operations (SQL queries, migrations)
 + - ✅ Project management (logs, settings)
 + - ✅ Edge functions (deploy, list)
 + - ✅ Documentation search
 + - ✅ TypeScript type generation
-+ 
++
 + ## Need Help?
-+ 
++
 + - Check `MCP_SETUP.md` for detailed instructions
 + - Run `node scripts/setup-mcp.js <your-token>` for automated setup
-+ - Visit [Supabase MCP Documentation](https://github.com/supabase-community/supabase-mcp) 
++ - Visit [Supabase MCP Documentation](https://github.com/supabase-community/supabase-mcp)
 ```
 
 ---
@@ -470,6 +459,7 @@ Perfect! Now let me create a quick setup guide for you:
 I've successfully set up everything you need to connect your Certifyr project to Supabase MCP! Here's what I've created for you:
 
 ### 📁 Files Created:
+
 1. **`mcp-config-template.json`** - Template configuration file
 2. **`mcp-config-windows.json`** - Windows-specific configuration
 3. **`scripts/setup-mcp.js`** - Automated setup script
@@ -480,18 +470,21 @@ I've successfully set up everything you need to connect your Certifyr project to
 
 1. **Copy the template**: Use `mcp-config-template.json` as your starting point
 2. **Replace the token**: Replace `REPLACE_WITH_YOUR_ACCESS_TOKEN` with your actual Supabase personal access token
-3. **Configure Cursor**: 
+3. **Configure Cursor**:
    - Open Cursor settings (`Ctrl + ,`)
    - Search for "MCP" or "Model Context Protocol"
    - Add your configuration
    - Restart Cursor
 
 ### 🔧 Your Project Details:
+
 - **Project Reference**: `yjeeamhahyhfawwgebtd` (extracted from your existing config)
 - **Supabase URL**: `https://yjeeamhahyhfawwgebtd.supabase.co`
 
 ### 🛠️ Available MCP Tools:
+
 Once connected, Cursor will have access to:
+
 - Database operations (SQL queries, migrations, table management)
 - Project management (logs, settings, advisors)
 - Edge functions (deploy, list)
@@ -506,7 +499,8 @@ Would you like me to help you with any specific aspect of the setup or test the 
 
 _**User**_
 
-Configured! 
+Configured!
+
 - "List all tables in my Supabase database"
 - "Show me my project details"
 - "Search Supabase docs for authentication"
@@ -517,15 +511,9 @@ Ensure functionality
 
 _**Assistant**_
 
-
-
 ---
 
-
-
 ---
-
-
 
 ---
 
@@ -538,6 +526,7 @@ Here are the results for your requested checks:
 ### 1. List all tables in your Supabase database
 
 Your database contains the following tables (public schema):
+
 - `documents`
 - `user_announcement_reads`
 - `organization_invites`
@@ -564,8 +553,9 @@ Your database contains the following tables (public schema):
 ### 3. Search Supabase docs for "authentication"
 
 Top results:
+
 - [Auth: Use Supabase to authenticate and authorize your users](https://supabase.com/docs/guides/auth)  
-  Supabase Auth makes it easy to implement authentication and authorization in your app. Supports password, magic link, OTP, social login, SSO, and more.  
+  Supabase Auth makes it easy to implement authentication and authorization in your app. Supports password, magic link, OTP, social login, SSO, and more.
 - [Glossary: Authentication](https://supabase.com/docs/guides/resources/glossary)  
   Definitions and concepts for authentication, authorization, JWT, MFA, OAuth, SSO, and more.
 - [Features: Auth](https://supabase.com/docs/guides/getting-started/features)  
@@ -757,7 +747,7 @@ Read file: index.html
   import AdminTemplateBuilder from '@/pages/admin/templates/TemplateBuilder';
   import NotFound from '@/pages/NotFound';
 + import VerifyDocument from '@/pages/VerifyDocument';
-  
+
   const queryClient = new QueryClient();
 ```
 
@@ -772,7 +762,7 @@ Read file: index.html
 ---
 
 ```diff
-  
+
   export const createVerificationUrl = (verificationHash: string): string => {
 -   const baseUrl = "https://certifyr.lovable.app";
 +   let baseUrl = "";
@@ -835,7 +825,7 @@ If you want to further enhance the experience (e.g., add a fallback for mobile, 
 
 _**User**_
 
-The QR code verification feature is not up and running yet. When I open a local host and update preview for a document I dont see the QR code on the bottom right of the document below the signatory details. If it is not visible, it cannot be scanned and hence users cannot visit the verification link. 
+The QR code verification feature is not up and running yet. When I open a local host and update preview for a document I dont see the QR code on the bottom right of the document below the signatory details. If it is not visible, it cannot be scanned and hence users cannot visit the verification link.
 
 Can you ensure that the real, accurate (no dummy) QR is visible whenever a document preview is generated/updated so that it is present to be scanned.
 
@@ -901,9 +891,11 @@ Here’s a summary of what’s happening and what needs to be fixed to ensure th
 - **QR Code Generation:**  
   Each preview component (e.g., `BankVerificationPreview`, `AddressProofPreview`, etc.) uses a `useEffect` to call `generateDocumentQRCode` and sets the result to `qrCodeUrl`.
 - **QR Code Rendering:**  
-  The QR code is rendered only if `qrCodeUrl` is truthy:  
+  The QR code is rendered only if `qrCodeUrl` is truthy:
   ```jsx
-  {qrCodeUrl && <QRCode value={qrCodeUrl} size={80} />}
+  {
+    qrCodeUrl && <QRCode value={qrCodeUrl} size={80} />;
+  }
   ```
 - **QR Code Generation Conditions:**  
   The QR code is only generated if certain required fields are present (e.g., `fullName`, `bankName`, `accountNumber` for Bank Verification).
@@ -927,13 +919,13 @@ Here’s a summary of what’s happening and what needs to be fixed to ensure th
 
 1. **Show a Placeholder or Error if QR Fails:**  
    Always reserve space for the QR code, and show a loading spinner or error if it fails to generate.
-2. **Make QR Generation More Robust:**  
+2. **Make QR Generation More Robust:**
    - Ensure all required fields are present before rendering the preview.
    - Add a retry or error message if Supabase insert fails.
-3. **Improve Responsiveness:**  
+3. **Improve Responsiveness:**
    - Show a spinner while QR is being generated.
    - Ensure the QR code is always at the bottom right, regardless of content.
-4. **Debug Logging:**  
+4. **Debug Logging:**
    - Add more visible error messages in the UI if QR code generation fails.
 
 ---
@@ -941,6 +933,7 @@ Here’s a summary of what’s happening and what needs to be fixed to ensure th
 ### 4. Implementation
 
 I will:
+
 - Add a loading spinner while the QR code is being generated.
 - Show an error message if QR code generation fails.
 - Always reserve space for the QR code at the bottom right, even if it’s not ready yet.
@@ -955,7 +948,7 @@ Let’s implement this for all preview components by updating the QR code sectio
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 +   const [qrLoading, setQrLoading] = useState(true);
 +   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 +       setQrLoading(true);
@@ -979,7 +972,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 ```
 
 ```diff
-  
+
         {/* QR Code positioned at bottom right */}
 -       <div className="absolute bottom-8 right-8">
 -         <QRCode value={qrCodeUrl || ''} size={80} />
@@ -992,7 +985,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 +           <QRCode value={qrCodeUrl} size={80} />
 +         ) : null}
         </div>
-  
+
 ```
 
 ---
@@ -1002,7 +995,7 @@ Let’s implement this for all preview components by updating the QR code sectio
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 +   const [qrLoading, setQrLoading] = useState(true);
 +   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 +       setQrLoading(true);
@@ -1026,7 +1019,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 ```
 
 ```diff
-  
+
         {/* QR Code positioned at bottom right */}
 -       <div className="absolute bottom-8 right-8">
 -         <QRCode value={qrCodeUrl || ''} size={80} />
@@ -1039,13 +1032,13 @@ Let’s implement this for all preview components by updating the QR code sectio
 +           <QRCode value={qrCodeUrl} size={80} />
 +         ) : null}
         </div>
-  
+
 ```
 
 ---
 
 ```diff
-- 
+-
   import React, { useState, useEffect } from 'react';
   import { BonafidePreviewProps } from '@/types/templates';
 ```
@@ -1055,7 +1048,7 @@ Let’s implement this for all preview components by updating the QR code sectio
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 +   const [qrLoading, setQrLoading] = useState(true);
 +   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 +       setQrLoading(true);
@@ -1079,7 +1072,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 ```
 
 ```diff
-            
+
             {/* QR Code positioned below institution name */}
 -           {qrCodeUrl && (
 -             <div className="flex justify-end">
@@ -1104,7 +1097,7 @@ Let’s implement this for all preview components by updating the QR code sectio
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 +   const [qrLoading, setQrLoading] = useState(true);
 +   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 +       setQrLoading(true);
@@ -1128,7 +1121,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 ```
 
 ```diff
-            
+
             {/* QR Code positioned below institution name */}
 -           {qrCodeUrl && (
 -             <div className="flex justify-end">
@@ -1153,7 +1146,7 @@ Let’s implement this for all preview components by updating the QR code sectio
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 +   const [qrLoading, setQrLoading] = useState(true);
 +   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 +       setQrLoading(true);
@@ -1177,7 +1170,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 ```
 
 ```diff
-            
+
             {/* QR Code positioned below institution name */}
 -           {qrCodeUrl && (
 -             <div className="flex justify-end">
@@ -1202,9 +1195,9 @@ Let’s implement this for all preview components by updating the QR code sectio
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 +   const [qrLoading, setQrLoading] = useState(true);
 +   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";
-  
+
     useEffect(() => {
       const generateQR = async () => {
 +       setQrLoading(true);
@@ -1228,7 +1221,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 ```
 
 ```diff
-  
+
           {/* QR Code positioned at bottom right */}
 -         <div className="absolute bottom-8 right-8">
 -           <QRCode value={qrCodeUrl || ''} size={80} />
@@ -1241,7 +1234,7 @@ Let’s implement this for all preview components by updating the QR code sectio
 +             <QRCode value={qrCodeUrl} size={80} />
 +           ) : null}
           </div>
-  
+
 ```
 
 ---
@@ -1253,6 +1246,7 @@ I've updated the document preview components to ensure the QR code area is alway
 - The area is always reserved, so the layout remains consistent and users know where to look.
 
 **What you should do next:**
+
 - Try generating or updating a document preview on localhost.
 - You should now always see either a QR code, a spinner, or an error message in the reserved area.
 - If you see an error, check the browser console for more details (e.g., Supabase errors, missing required fields).
@@ -1320,20 +1314,25 @@ Here’s a thorough diagnosis of why the QR code feature may not be working on l
 ## 2. **Potential Causes for Insert Failure**
 
 ### a. **Row Level Security (RLS)**
+
 - If RLS is enabled on the `verified_documents` table and your local session/user does not have permission to insert, the insert will silently fail (Supabase returns an error, but the UI just doesn't show the QR).
 - On Lovable, you may be authenticated as a user with the right permissions, but on localhost, you may not be.
 
 ### b. **Required Fields / Schema Mismatch**
+
 - The `verified_documents` table may require fields that are not being provided by the local app (e.g., `is_active`, `generated_at`, etc.).
 - If the local app is missing a required field or the field type is wrong, the insert will fail.
 
 ### c. **Duplicate Primary Key**
+
 - If the `id` generated for the document is not unique (e.g., if the same preview is generated multiple times quickly), the insert will fail due to a primary key conflict.
 
 ### d. **Supabase Client Auth**
+
 - If the Supabase client on localhost is not authenticated as the correct user (or is using an anon key with limited permissions), the insert may fail due to lack of permissions.
 
 ### e. **Network/Environment Issues**
+
 - If localhost cannot reach the Supabase cloud instance due to network/firewall issues, the insert will fail.
 
 ---
@@ -1359,13 +1358,13 @@ Here’s a thorough diagnosis of why the QR code feature may not be working on l
 
 ## 4. **Summary Table of Most Likely Issues**
 
-| Issue Type         | Symptom on Localhost | Symptom on Lovable | How to Check/Fix                |
-|--------------------|---------------------|--------------------|---------------------------------|
-| RLS Policy         | QR not shown        | QR works           | Check Supabase RLS policies     |
-| Schema Mismatch    | QR not shown        | QR works           | Compare schema & payload        |
-| Auth/Anon Key      | QR not shown        | QR works           | Check Supabase client auth      |
-| Duplicate ID       | QR not shown        | QR works           | Check for unique document IDs   |
-| Network Issue      | QR not shown        | QR works           | Check browser/network console   |
+| Issue Type      | Symptom on Localhost | Symptom on Lovable | How to Check/Fix              |
+| --------------- | -------------------- | ------------------ | ----------------------------- |
+| RLS Policy      | QR not shown         | QR works           | Check Supabase RLS policies   |
+| Schema Mismatch | QR not shown         | QR works           | Compare schema & payload      |
+| Auth/Anon Key   | QR not shown         | QR works           | Check Supabase client auth    |
+| Duplicate ID    | QR not shown         | QR works           | Check for unique document IDs |
+| Network Issue   | QR not shown         | QR works           | Check browser/network console |
 
 ---
 
@@ -1394,7 +1393,7 @@ _**Assistant**_
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 -   const [qrLoading, setQrLoading] = useState(true);
 -   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 -       setQrLoading(true);
@@ -1418,7 +1417,7 @@ _**Assistant**_
 ```
 
 ```diff
-  
+
         {/* QR Code positioned at bottom right */}
 -       <div className="absolute bottom-8 right-8 w-24 h-24 flex items-center justify-center bg-white rounded shadow">
 -         {qrLoading ? (
@@ -1432,7 +1431,7 @@ _**Assistant**_
 -         ) : null}
           </div>
 +       )}
-  
+
         {/* Seal */}
 ```
 
@@ -1443,7 +1442,7 @@ _**Assistant**_
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 -   const [qrLoading, setQrLoading] = useState(true);
 -   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 -       setQrLoading(true);
@@ -1467,7 +1466,7 @@ _**Assistant**_
 ```
 
 ```diff
-  
+
         {/* QR Code positioned at bottom right */}
 -       <div className="absolute bottom-8 right-8 w-24 h-24 flex items-center justify-center bg-white rounded shadow">
 -         {qrLoading ? (
@@ -1481,7 +1480,7 @@ _**Assistant**_
 -         ) : null}
           </div>
 +       )}
-  
+
         {/* Seal */}
 ```
 
@@ -1492,7 +1491,7 @@ _**Assistant**_
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 -   const [qrLoading, setQrLoading] = useState(true);
 -   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 -       setQrLoading(true);
@@ -1516,7 +1515,7 @@ _**Assistant**_
 ```
 
 ```diff
-            
+
             {/* QR Code positioned below institution name */}
 -           <div className="flex justify-end w-24 h-24 items-center bg-white rounded shadow mt-2">
 -             {qrLoading ? (
@@ -1541,7 +1540,7 @@ _**Assistant**_
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 -   const [qrLoading, setQrLoading] = useState(true);
 -   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 -       setQrLoading(true);
@@ -1565,7 +1564,7 @@ _**Assistant**_
 ```
 
 ```diff
-            
+
             {/* QR Code positioned below institution name */}
 -           <div className="flex justify-end w-24 h-24 items-center bg-white rounded shadow mt-2">
 -             {qrLoading ? (
@@ -1590,7 +1589,7 @@ _**Assistant**_
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 -   const [qrLoading, setQrLoading] = useState(true);
 -   const [qrError, setQrError] = useState<string | null>(null);
-  
+
     useEffect(() => {
       const generateQR = async () => {
 -       setQrLoading(true);
@@ -1614,7 +1613,7 @@ _**Assistant**_
 ```
 
 ```diff
-            
+
             {/* QR Code positioned below institution name */}
 -           <div className="flex justify-end w-24 h-24 items-center bg-white rounded shadow mt-2">
 -             {qrLoading ? (
@@ -1643,10 +1642,10 @@ The QR code logic has now been reverted to the original, correct behavior:
 This ensures that only a real, working, document-unique QR code is visible to the user.
 
 **You can now test document previews on localhost:**
+
 - If the QR code is visible, it is working and functional.
 - If it is not visible, QR generation failed (see previous diagnosis for likely causes).
 
 Let me know if you want to debug a specific error message or need further help!
 
 ---
-

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ExperienceData } from "@/types/templates";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
@@ -16,19 +23,29 @@ interface ExperienceFormProps {
 }
 
 const formSchema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  fullName: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" }),
   employeeId: z.string().min(1, { message: "Employee ID is required" }),
   designation: z.string().min(2, { message: "Designation is required" }),
   department: z.string().min(2, { message: "Department is required" }),
   joinDate: z.string().min(1, { message: "Join date is required" }),
-  resignationDate: z.string().min(1, { message: "Resignation date is required" }),
-  workDescription: z.string().min(2, { message: "Work description is required" }),
+  resignationDate: z
+    .string()
+    .min(1, { message: "Resignation date is required" }),
+  workDescription: z
+    .string()
+    .min(2, { message: "Work description is required" }),
   salary: z.string().min(1, { message: "Salary is required" }),
-  institutionName: z.string().min(2, { message: "Institution name is required" }),
+  institutionName: z
+    .string()
+    .min(2, { message: "Institution name is required" }),
   date: z.string().min(1, { message: "Date is required" }),
   place: z.string().min(2, { message: "Place is required" }),
   signatoryName: z.string().min(2, { message: "Signatory name is required" }),
-  signatoryDesignation: z.string().min(2, { message: "Designation is required" }),
+  signatoryDesignation: z
+    .string()
+    .min(2, { message: "Designation is required" }),
   includeDigitalSignature: z.boolean().default(false),
 });
 
@@ -44,12 +61,15 @@ export function ExperienceForm({ onSubmit, initialData }: ExperienceFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit(handleFormSubmit)}
+        className="space-y-6"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Employee Details Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Employee Details</h3>
-            
+
             <FormField
               control={form.control}
               name="fullName"
@@ -180,8 +200,8 @@ export function ExperienceForm({ onSubmit, initialData }: ExperienceFormProps) {
               <FormItem>
                 <FormLabel>Work Description</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    {...field} 
+                  <Textarea
+                    {...field}
                     placeholder="Describe the employee's work responsibilities and achievements"
                   />
                 </FormControl>
@@ -253,7 +273,7 @@ export function ExperienceForm({ onSubmit, initialData }: ExperienceFormProps) {
               )}
             />
           </div>
-          
+
           {/* Digital Signature Toggle */}
           <FormField
             control={form.control}
@@ -277,7 +297,9 @@ export function ExperienceForm({ onSubmit, initialData }: ExperienceFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full">Update Preview</Button>
+        <Button type="submit" className="w-full">
+          Update Preview
+        </Button>
       </form>
     </Form>
   );

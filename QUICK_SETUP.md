@@ -20,6 +20,7 @@ Since you have your access token ready, follow these steps:
 ### Step 3: Test the Connection
 
 Once configured, try asking Cursor:
+
 - "List all tables in my Supabase database"
 - "Show me my project details"
 - "Search Supabase docs for authentication"
@@ -33,6 +34,7 @@ Once configured, try asking Cursor:
 ## Available Tools
 
 Your MCP server will give Cursor access to:
+
 - ✅ Database operations (SQL queries, migrations)
 - ✅ Project management (logs, settings)
 - ✅ Edge functions (deploy, list)
@@ -43,4 +45,4 @@ Your MCP server will give Cursor access to:
 
 - Check `MCP_SETUP.md` for detailed instructions
 - Run `node scripts/setup-mcp.js <your-token>` for automated setup
-- Visit [Supabase MCP Documentation](https://github.com/supabase-community/supabase-mcp) 
+- Visit [Supabase MCP Documentation](https://github.com/supabase-community/supabase-mcp)

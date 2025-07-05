@@ -1,31 +1,39 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EmploymentAgreementData } from '@/types/corporate-templates';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EmploymentAgreementData } from "@/types/corporate-templates";
 
 interface EmploymentAgreementFormProps {
   initialData: EmploymentAgreementData;
   onSubmit: (data: EmploymentAgreementData) => void;
 }
 
-export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = ({
-  initialData,
-  onSubmit,
-}) => {
-  const [formData, setFormData] = useState<EmploymentAgreementData>(initialData);
+export const EmploymentAgreementForm: React.FC<
+  EmploymentAgreementFormProps
+> = ({ initialData, onSubmit }) => {
+  const [formData, setFormData] =
+    useState<EmploymentAgreementData>(initialData);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof EmploymentAgreementData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (
+    field: keyof EmploymentAgreementData,
+    value: string | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -36,7 +44,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="employeeName"
             value={formData.employeeName}
-            onChange={(e) => handleChange('employeeName', e.target.value)}
+            onChange={(e) => handleChange("employeeName", e.target.value)}
             required
           />
         </div>
@@ -46,7 +54,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="employerName"
             value={formData.employerName}
-            onChange={(e) => handleChange('employerName', e.target.value)}
+            onChange={(e) => handleChange("employerName", e.target.value)}
             required
           />
         </div>
@@ -56,7 +64,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="jobTitle"
             value={formData.jobTitle}
-            onChange={(e) => handleChange('jobTitle', e.target.value)}
+            onChange={(e) => handleChange("jobTitle", e.target.value)}
             required
           />
         </div>
@@ -66,7 +74,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="department"
             value={formData.department}
-            onChange={(e) => handleChange('department', e.target.value)}
+            onChange={(e) => handleChange("department", e.target.value)}
           />
         </div>
 
@@ -76,14 +84,22 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
             id="startDate"
             type="date"
             value={formData.startDate}
-            onChange={(e) => handleChange('startDate', e.target.value)}
+            onChange={(e) => handleChange("startDate", e.target.value)}
             required
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="employmentType">Employment Type *</Label>
-          <Select value={formData.employmentType} onValueChange={(value) => handleChange('employmentType', value as 'full-time' | 'part-time' | 'contract')}>
+          <Select
+            value={formData.employmentType}
+            onValueChange={(value) =>
+              handleChange(
+                "employmentType",
+                value as "full-time" | "part-time" | "contract",
+              )
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -100,7 +116,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="salary"
             value={formData.salary}
-            onChange={(e) => handleChange('salary', e.target.value)}
+            onChange={(e) => handleChange("salary", e.target.value)}
             placeholder="e.g., $75,000 annually"
             required
           />
@@ -108,7 +124,15 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
 
         <div className="space-y-2">
           <Label htmlFor="payFrequency">Pay Frequency *</Label>
-          <Select value={formData.payFrequency} onValueChange={(value) => handleChange('payFrequency', value as 'monthly' | 'bi-weekly' | 'weekly')}>
+          <Select
+            value={formData.payFrequency}
+            onValueChange={(value) =>
+              handleChange(
+                "payFrequency",
+                value as "monthly" | "bi-weekly" | "weekly",
+              )
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
@@ -125,7 +149,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Textarea
             id="benefits"
             value={formData.benefits}
-            onChange={(e) => handleChange('benefits', e.target.value)}
+            onChange={(e) => handleChange("benefits", e.target.value)}
             placeholder="Describe health insurance, retirement, vacation, etc."
             rows={3}
           />
@@ -136,7 +160,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="workLocation"
             value={formData.workLocation}
-            onChange={(e) => handleChange('workLocation', e.target.value)}
+            onChange={(e) => handleChange("workLocation", e.target.value)}
             placeholder="e.g., Remote, Office address, Hybrid"
             required
           />
@@ -147,7 +171,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="workHours"
             value={formData.workHours}
-            onChange={(e) => handleChange('workHours', e.target.value)}
+            onChange={(e) => handleChange("workHours", e.target.value)}
             placeholder="e.g., 9 AM - 5 PM, Monday - Friday"
             required
           />
@@ -158,7 +182,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="probationPeriod"
             value={formData.probationPeriod}
-            onChange={(e) => handleChange('probationPeriod', e.target.value)}
+            onChange={(e) => handleChange("probationPeriod", e.target.value)}
             placeholder="e.g., 90 days"
           />
         </div>
@@ -168,7 +192,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="governingLaw"
             value={formData.governingLaw}
-            onChange={(e) => handleChange('governingLaw', e.target.value)}
+            onChange={(e) => handleChange("governingLaw", e.target.value)}
             placeholder="e.g., State of California"
             required
           />
@@ -179,7 +203,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Textarea
             id="terminationClause"
             value={formData.terminationClause}
-            onChange={(e) => handleChange('terminationClause', e.target.value)}
+            onChange={(e) => handleChange("terminationClause", e.target.value)}
             placeholder="Terms for termination of employment"
             rows={3}
             required
@@ -187,11 +211,15 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="confidentialityClause">Confidentiality Clause *</Label>
+          <Label htmlFor="confidentialityClause">
+            Confidentiality Clause *
+          </Label>
           <Textarea
             id="confidentialityClause"
             value={formData.confidentialityClause}
-            onChange={(e) => handleChange('confidentialityClause', e.target.value)}
+            onChange={(e) =>
+              handleChange("confidentialityClause", e.target.value)
+            }
             placeholder="Confidentiality obligations"
             rows={3}
             required
@@ -203,7 +231,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Textarea
             id="nonCompeteClause"
             value={formData.nonCompeteClause}
-            onChange={(e) => handleChange('nonCompeteClause', e.target.value)}
+            onChange={(e) => handleChange("nonCompeteClause", e.target.value)}
             placeholder="Non-compete restrictions (if applicable)"
             rows={3}
           />
@@ -214,7 +242,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="place"
             value={formData.place}
-            onChange={(e) => handleChange('place', e.target.value)}
+            onChange={(e) => handleChange("place", e.target.value)}
             placeholder="City, State"
             required
           />
@@ -225,7 +253,7 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Input
             id="signatoryName"
             value={formData.signatoryName}
-            onChange={(e) => handleChange('signatoryName', e.target.value)}
+            onChange={(e) => handleChange("signatoryName", e.target.value)}
             required
           />
         </div>
@@ -234,9 +262,13 @@ export const EmploymentAgreementForm: React.FC<EmploymentAgreementFormProps> = (
           <Switch
             id="includeDigitalSignature"
             checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) => handleChange('includeDigitalSignature', checked)}
+            onCheckedChange={(checked) =>
+              handleChange("includeDigitalSignature", checked)
+            }
           />
-          <Label htmlFor="includeDigitalSignature">Include Digital Signatures</Label>
+          <Label htmlFor="includeDigitalSignature">
+            Include Digital Signatures
+          </Label>
         </div>
       </div>
 

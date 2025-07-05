@@ -1,4 +1,3 @@
-
 import React from "react";
 import { CharacterData } from "@/types/templates";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
@@ -16,16 +23,24 @@ interface CharacterFormProps {
 }
 
 const formSchema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  parentName: z.string().min(2, { message: "Parent name must be at least 2 characters" }),
+  fullName: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" }),
+  parentName: z
+    .string()
+    .min(2, { message: "Parent name must be at least 2 characters" }),
   address: z.string().min(5, { message: "Address is required" }),
   duration: z.string().min(1, { message: "Duration is required" }),
   conduct: z.string().min(2, { message: "Conduct description is required" }),
-  institutionName: z.string().min(2, { message: "Institution name is required" }),
+  institutionName: z
+    .string()
+    .min(2, { message: "Institution name is required" }),
   date: z.string().min(1, { message: "Date is required" }),
   place: z.string().min(2, { message: "Place is required" }),
   signatoryName: z.string().min(2, { message: "Signatory name is required" }),
-  signatoryDesignation: z.string().min(2, { message: "Designation is required" }),
+  signatoryDesignation: z
+    .string()
+    .min(2, { message: "Designation is required" }),
   includeDigitalSignature: z.boolean().default(false),
 });
 
@@ -41,12 +56,15 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
+      <form
+        onSubmit={form.handleSubmit(handleFormSubmit)}
+        className="space-y-3"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Personal Details Section */}
           <div className="space-y-2">
             <h3 className="text-lg font-medium">Personal Details</h3>
-            
+
             <FormField
               control={form.control}
               name="fullName"
@@ -82,7 +100,10 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Complete residential address" />
+                    <Textarea
+                      {...field}
+                      placeholder="Complete residential address"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -115,8 +136,8 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
                 <FormItem>
                   <FormLabel>Character & Conduct</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      {...field} 
+                    <Textarea
+                      {...field}
                       placeholder="Describe the person's character, behavior, and moral conduct"
                     />
                   </FormControl>
@@ -208,7 +229,7 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
               )}
             />
           </div>
-          
+
           {/* Digital Signature Toggle */}
           <FormField
             control={form.control}
@@ -232,7 +253,9 @@ export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full">Update Preview</Button>
+        <Button type="submit" className="w-full">
+          Update Preview
+        </Button>
       </form>
     </Form>
   );

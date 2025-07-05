@@ -1,9 +1,9 @@
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FileText, ArrowRight, Bookmark, BookmarkCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useBookmarks } from '@/hooks/useBookmarks';
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FileText, ArrowRight, Bookmark, BookmarkCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useBookmarks } from "@/hooks/useBookmarks";
 
 export interface TemplateCardProps {
   id: string;
@@ -25,7 +25,7 @@ export function TemplateCard({
   className,
   isAdmin = false,
   forceBookmarked = false,
-  onBookmarkClick
+  onBookmarkClick,
 }: TemplateCardProps) {
   const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
   const bookmarked = forceBookmarked || isBookmarked(id);
@@ -41,9 +41,9 @@ export function TemplateCard({
           </Badge>
           {isAdmin && (
             <button
-              aria-label={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
+              aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
               className="ml-2 p-1 rounded hover:bg-primary-100 transition-colors"
-              onClick={e => {
+              onClick={(e) => {
                 if (onBookmarkClick) return onBookmarkClick(e);
                 e.stopPropagation();
                 e.preventDefault();

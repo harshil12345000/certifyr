@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -81,11 +80,11 @@
   .glass-card {
     @apply bg-white/80 backdrop-blur-glass border border-white/20 rounded-lg shadow-glass transition-all;
   }
-  
+
   .glass-card:hover {
     @apply shadow-glass-hover;
   }
-  
+
   .gradient-blue {
     @apply bg-gradient-to-br from-certifyr-blue-light via-certifyr-blue to-certifyr-blue-dark text-white;
   }

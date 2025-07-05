@@ -1,4 +1,3 @@
-
 export interface BonafideData {
   fullName: string;
   gender: "male" | "female" | "other";
@@ -227,7 +226,13 @@ export interface AddressProofData {
   currentAddress: string;
   permanentAddress: string;
   residenceDuration: string;
-  relationshipWithApplicant: "self" | "father" | "mother" | "guardian" | "spouse" | "other";
+  relationshipWithApplicant:
+    | "self"
+    | "father"
+    | "mother"
+    | "guardian"
+    | "spouse"
+    | "other";
   idProofType: "aadhar" | "passport" | "voter_id" | "driving_license" | "other";
   idProofNumber: string;
   purpose: string;
@@ -405,7 +410,7 @@ export interface NDAData {
 }
 
 // Corporate FormData union type
-export type CorporateFormData = 
+export type CorporateFormData =
   | ArticlesOfIncorporationData
   | CorporateBylawsData
   | FoundersAgreementData
@@ -415,7 +420,7 @@ export type CorporateFormData =
   | NDAData;
 
 // Update the main FormData type to include corporate templates
-export type FormData = 
+export type FormData =
   | BonafideData
   | CharacterData
   | ExperienceData

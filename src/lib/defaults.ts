@@ -1,5 +1,4 @@
-
-import { ElementStyle } from '@/types/template-builder';
+import { ElementStyle } from "@/types/template-builder";
 
 export const defaultElementStyle: ElementStyle = {
   x: 50,
@@ -7,14 +6,13 @@ export const defaultElementStyle: ElementStyle = {
   width: 150,
   height: 50,
   fontSize: 12,
-  fontFamily: 'Arial',
-  color: '#000000',
-  backgroundColor: 'transparent',
+  fontFamily: "Arial",
+  color: "#000000",
+  backgroundColor: "transparent",
   borderWidth: 0,
-  borderStyle: 'none',
-  borderColor: '#000000',
+  borderStyle: "none",
+  borderColor: "#000000",
   padding: 0,
-  alignment: 'left',
+  alignment: "left",
   opacity: 1,
 };
-

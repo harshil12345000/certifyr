@@ -1,6 +1,5 @@
-
-import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { LucideIcon } from "lucide-react";
 
 interface StatsCardProps {
   title: string;
@@ -20,7 +19,7 @@ export function StatsCard({
   icon: Icon,
   description,
   trend,
-  className
+  className,
 }: StatsCardProps) {
   return (
     <div className={cn("glass-card p-6 flex flex-col", className)}>
@@ -38,7 +37,7 @@ export function StatsCard({
               <span
                 className={cn(
                   "text-xs font-medium mr-2",
-                  trend.positive ? "text-green-600" : "text-red-600"
+                  trend.positive ? "text-green-600" : "text-red-600",
                 )}
               >
                 {trend.value}

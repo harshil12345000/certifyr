@@ -1,25 +1,29 @@
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
-const A4_WIDTH_PX = 794;  // A4 width in pixels at 96 DPI
+const A4_WIDTH_PX = 794; // A4 width in pixels at 96 DPI
 const A4_HEIGHT_PX = 1123; // A4 height in pixels at 96 DPI
 
 const getPreviewElement = () => {
-  const previewElement = document.querySelector('.a4-document') as HTMLElement;
+  const previewElement = document.querySelector(".a4-document") as HTMLElement;
   if (!previewElement) {
-    throw new Error('Preview element not found');
+    throw new Error("Preview element not found");
   }
   return previewElement;
 };
 
 const waitForImagesToLoad = async (element: HTMLElement) => {
-  const images = Array.from(element.querySelectorAll('img')) as HTMLImageElement[];
-  await Promise.all(images.map(img => {
-    if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
-    return new Promise(resolve => {
-      img.onload = img.onerror = resolve;
-    });
-  }));
+  const images = Array.from(
+    element.querySelectorAll("img"),
+  ) as HTMLImageElement[];
+  await Promise.all(
+    images.map((img) => {
+      if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = img.onerror = resolve;
+      });
+    }),
+  );
 };
 
 const toDataUrl = async (url: string): Promise<string> => {
@@ -34,13 +38,15 @@ const toDataUrl = async (url: string): Promise<string> => {
 };
 
 const replaceImagesWithDataUrls = async (element: HTMLElement) => {
-  const images = Array.from(element.querySelectorAll('img')) as HTMLImageElement[];
+  const images = Array.from(
+    element.querySelectorAll("img"),
+  ) as HTMLImageElement[];
   const originalSrcs: string[] = [];
   for (const img of images) {
     originalSrcs.push(img.src);
-    if (img.src.startsWith('http')) {
+    if (img.src.startsWith("http")) {
       try {
-        img.crossOrigin = 'anonymous';
+        img.crossOrigin = "anonymous";
         img.src = await toDataUrl(img.src);
       } catch (e) {
         // If fetch fails, keep original src
@@ -61,7 +67,7 @@ const generateCanvas = async (element: HTMLElement) => {
     scale: 2,
     useCORS: true,
     allowTaint: true,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     width: A4_WIDTH_PX,
     height: A4_HEIGHT_PX,
   });
@@ -69,7 +75,7 @@ const generateCanvas = async (element: HTMLElement) => {
   return canvas;
 };
 
-export const downloadPDF = async (filename: string = 'document.pdf') => {
+export const downloadPDF = async (filename: string = "document.pdf") => {
   try {
     const previewElement = getPreviewElement();
     // Save original styles
@@ -79,10 +85,10 @@ export const downloadPDF = async (filename: string = 'document.pdf') => {
     const originalMinHeight = previewElement.style.minHeight;
 
     // Force A4 size in px
-    previewElement.style.width = A4_WIDTH_PX + 'px';
-    previewElement.style.height = A4_HEIGHT_PX + 'px';
-    previewElement.style.maxWidth = 'none';
-    previewElement.style.minHeight = '0';
+    previewElement.style.width = A4_WIDTH_PX + "px";
+    previewElement.style.height = A4_HEIGHT_PX + "px";
+    previewElement.style.maxWidth = "none";
+    previewElement.style.minHeight = "0";
 
     const canvas = await generateCanvas(previewElement);
 
@@ -94,15 +100,15 @@ export const downloadPDF = async (filename: string = 'document.pdf') => {
 
     // PDF export: use mm units and fit image to A4
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
     });
     const pageWidth = 210; // mm
     const pageHeight = 297; // mm
 
     // Get image data and scale
-    const imgData = canvas.toDataURL('image/png', 1.0);
+    const imgData = canvas.toDataURL("image/png", 1.0);
     const imgProps = {
       width: canvas.width,
       height: canvas.height,
@@ -110,15 +116,29 @@ export const downloadPDF = async (filename: string = 'document.pdf') => {
     // Calculate dimensions in mm
     const pxPerMm = imgProps.width / pageWidth;
     const imgHeightMm = imgProps.height / pxPerMm;
-    let x = 0, y = 0, w = pageWidth, h = imgHeightMm;
-    console.log('PDF Export:', { imgProps, pxPerMm, imgHeightMm, pageWidth, pageHeight });
-    if (!isFinite(pxPerMm) || !isFinite(imgHeightMm) || imgProps.width === 0 || imgProps.height === 0) {
+    let x = 0,
+      y = 0,
+      w = pageWidth,
+      h = imgHeightMm;
+    console.log("PDF Export:", {
+      imgProps,
+      pxPerMm,
+      imgHeightMm,
+      pageWidth,
+      pageHeight,
+    });
+    if (
+      !isFinite(pxPerMm) ||
+      !isFinite(imgHeightMm) ||
+      imgProps.width === 0 ||
+      imgProps.height === 0
+    ) {
       // Fallback: fit to page
       w = pageWidth;
       h = pageHeight;
       x = 0;
       y = 0;
-      console.warn('Falling back to full page size for PDF export.');
+      console.warn("Falling back to full page size for PDF export.");
     } else if (imgHeightMm > pageHeight) {
       // Scale down to fit page height
       h = pageHeight;
@@ -129,15 +149,15 @@ export const downloadPDF = async (filename: string = 'document.pdf') => {
       // Center vertically
       y = (pageHeight - h) / 2;
     }
-    pdf.addImage(imgData, 'PNG', x, y, w, h);
+    pdf.addImage(imgData, "PNG", x, y, w, h);
     pdf.save(filename);
   } catch (err) {
-    console.error('Failed to generate PDF:', err);
-    alert('Failed to generate PDF. See console for details.');
+    console.error("Failed to generate PDF:", err);
+    alert("Failed to generate PDF. See console for details.");
   }
 };
 
-export const downloadJPG = async (filename: string = 'document.jpg') => {
+export const downloadJPG = async (filename: string = "document.jpg") => {
   const previewElement = getPreviewElement();
   // Save original styles
   const originalWidth = previewElement.style.width;
@@ -146,10 +166,10 @@ export const downloadJPG = async (filename: string = 'document.jpg') => {
   const originalMinHeight = previewElement.style.minHeight;
 
   // Force A4 size in px
-  previewElement.style.width = A4_WIDTH_PX + 'px';
-  previewElement.style.height = A4_HEIGHT_PX + 'px';
-  previewElement.style.maxWidth = 'none';
-  previewElement.style.minHeight = '0';
+  previewElement.style.width = A4_WIDTH_PX + "px";
+  previewElement.style.height = A4_HEIGHT_PX + "px";
+  previewElement.style.maxWidth = "none";
+  previewElement.style.minHeight = "0";
 
   const canvas = await generateCanvas(previewElement);
 
@@ -160,9 +180,9 @@ export const downloadJPG = async (filename: string = 'document.jpg') => {
   previewElement.style.minHeight = originalMinHeight;
 
   // Create a temporary link element
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.download = filename;
-  link.href = canvas.toDataURL('image/jpeg', 1.0);
+  link.href = canvas.toDataURL("image/jpeg", 1.0);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -172,13 +192,15 @@ export const printDocument = async () => {
   const previewElement = getPreviewElement();
 
   // Create a new window for printing
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    throw new Error('Failed to open print window. Please allow popups for this site.');
+    throw new Error(
+      "Failed to open print window. Please allow popups for this site.",
+    );
   }
 
   // Copy all <link rel="stylesheet"> and <style> tags
-  let headContent = '';
+  let headContent = "";
   document.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => {
     headContent += el.outerHTML;
   });
@@ -218,4 +240,4 @@ export const printDocument = async () => {
     </html>
   `);
   printWindow.document.close();
-}; 
+};

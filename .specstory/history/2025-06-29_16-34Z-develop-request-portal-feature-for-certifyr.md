@@ -6,130 +6,85 @@ _**User**_
 
 Let’s develop the request portal feature for Certifyr! Follow this guide.
 
-
 Request Portal Feature
-1. Sidebar Integration
-Add a new main sidebar tab called Request Portal.
 
+1. Sidebar Integration
+   Add a new main sidebar tab called Request Portal.
 
 Use an open door icon.
 
-
-
 2. Request Portal → Settings Tab
-Inside the Request Portal, add a Settings tab.
-
+   Inside the Request Portal, add a Settings tab.
 
 When enabled, generate a unique URL per organization that is functional with Supabase:
 certifyr.co/{organization-id}/request-portal
 
 This gives employees direct access to request official documents without contacting HR or the admin office.
 
-
-
 3. Security & Access
-Admin sets a unique password for their organization's request portal.
-
+   Admin sets a unique password for their organization's request portal.
 
 Only users with the correct password can access the portal.
 
-
 Two-step verification - After entering the correct password, users must be manually approved by the admin before accessing the portal.
 
-
-
 4. Employee Experience
-Once approved, employees register with:
-
+   Once approved, employees register with:
 
 Name
 
-
 Phone number
-
 
 Employee ID
 
-
 Employee email (must confirm email)
-
 
 Manager name
 
-
 The employee portal sidebar shows only:
-
 
 Templates
 
-
 Account Info
 
-
-
 5. Document Request Flow
-Employees browse and preview document templates as usual.
-
+   Employees browse and preview document templates as usual.
 
 On the preview screen, instead of export options (Print, JPG, PDF), only a Request Approval button is shown.
 
-
 After clicking, a success message is displayed.
-
 
 Admin receives a notification in a new Requests tab.
 
-
-
 6. Admin Request Management → Requests Tab
-In the Request Portal, a Requests tab is available for the admin.
-
+   In the Request Portal, a Requests tab is available for the admin.
 
 It displays a list of all document requests with associated employee info.
 
-
 Admin can take one of two actions:
-
 
 Approve Request
 
-
 Reject Request
-
 
 If approved:
 
-
 Request is removed from the list.
-
 
 Employee is notified via email and portal notification.
 
-
-
 7. Document Rendering Logic
-Before approval:
-
+   Before approval:
 
 Signature and QR code are not rendered.
 
-
 Export buttons (Print, JPG, PDF) are hidden.
-
 
 After approval:
 
-
 Signature and QR code are rendered.
 
-
 Export buttons become visible.
-
-
-
-
-
-
 
 ---
 
@@ -141,7 +96,7 @@ Great! Here’s a high-level breakdown and plan for implementing the Request Por
 
 ## 1. Sidebar Integration
 
-- **Add a new main sidebar tab:**  
+- **Add a new main sidebar tab:**
   - Label: “Request Portal”
   - Icon: Open door (can use [Lucide](https://lucide.dev/icons/door-open) or similar)
   - Visible to: Admins (full portal), Employees (limited view after approval)
@@ -159,10 +114,10 @@ Great! Here’s a high-level breakdown and plan for implementing the Request Por
 
 ## 3. Security & Access
 
-- **Password protection:**  
+- **Password protection:**
   - Admin sets a password (stored hashed in Supabase).
   - Employees must enter the password to access the portal.
-- **Two-step verification:**  
+- **Two-step verification:**
   - After password, employee submits registration info.
   - Admin must manually approve each employee (pending list in Supabase).
 
@@ -170,27 +125,27 @@ Great! Here’s a high-level breakdown and plan for implementing the Request Por
 
 ## 4. Employee Experience
 
-- **Registration fields:**  
+- **Registration fields:**
   - Name, Phone, Employee ID, Email (with confirmation), Manager Name
-- **Sidebar for employees:**  
+- **Sidebar for employees:**
   - Only “Templates” and “Account Info” tabs visible.
 
 ---
 
 ## 5. Document Request Flow
 
-- **Templates:**  
+- **Templates:**
   - Employees can browse/preview templates.
   - On preview, only “Request Approval” button is shown.
   - On request, show success message and create a request record in Supabase.
-- **Admin notification:**  
+- **Admin notification:**
   - New “Requests” tab for admins with pending requests.
 
 ---
 
 ## 6. Admin Request Management → Requests Tab
 
-- **Requests tab:**  
+- **Requests tab:**
   - List of all requests with employee info.
   - Actions: Approve / Reject
   - On approval: remove from list, notify employee (email + portal notification).
@@ -199,40 +154,48 @@ Great! Here’s a high-level breakdown and plan for implementing the Request Por
 
 ## 7. Document Rendering Logic
 
-- **Before approval:**  
+- **Before approval:**
   - Signature & QR code hidden, export buttons hidden.
-- **After approval:**  
+- **After approval:**
   - Signature & QR code shown, export buttons visible.
 
 ---
 
 # Implementation Plan
 
-**Step 1:**  
+**Step 1:**
+
 - Add “Request Portal” to the sidebar (with icon).
 
-**Step 2:**  
+**Step 2:**
+
 - Scaffold the Request Portal page with Settings and Requests tabs (admin view).
 
-**Step 3:**  
+**Step 3:**
+
 - Set up Supabase tables:
   - `request_portal_settings` (org_id, enabled, password_hash, url)
   - `request_portal_employees` (org_id, employee info, status: pending/approved/rejected)
   - `document_requests` (employee_id, template_id, status, timestamps)
 
-**Step 4:**  
+**Step 4:**
+
 - Implement the Settings tab (enable/disable, password, URL generation).
 
-**Step 5:**  
+**Step 5:**
+
 - Implement employee registration and approval flow.
 
-**Step 6:**  
+**Step 6:**
+
 - Implement employee portal UI (sidebar, template browsing, request flow).
 
-**Step 7:**  
+**Step 7:**
+
 - Implement Requests tab for admin (list, approve/reject, notifications).
 
-**Step 8:**  
+**Step 8:**
+
 - Update document rendering logic based on request status.
 
 ---
@@ -241,4 +204,3 @@ Great! Here’s a high-level breakdown and plan for implementing the Request Por
 Would you like this to appear for all users, or only for admins? And do you have a preferred icon library (e.g., Lucide, Material Icons), or should I use Lucide’s “door-open” by default?
 
 ---
-

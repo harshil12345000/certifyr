@@ -1,5 +1,5 @@
-import React from 'react';
-import { DoorOpen } from 'lucide-react';
+import React from "react";
+import { DoorOpen } from "lucide-react";
 
 export default function NoAccess() {
   return (
@@ -9,9 +9,12 @@ export default function NoAccess() {
       </div>
       <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
       <p className="text-muted-foreground mb-4 max-w-md text-center">
-        You no longer have access to this organization's employee portal. If you believe this is a mistake, please contact your administrator.
+        You no longer have access to this organization's employee portal. If you
+        believe this is a mistake, please contact your administrator.
       </p>
-      <a href="/" className="text-primary font-medium underline">Return to Home</a>
+      <a href="/" className="text-primary font-medium underline">
+        Return to Home
+      </a>
     </div>
   );
-} 
+}

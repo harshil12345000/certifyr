@@ -1,13 +1,13 @@
 // Element Types
-export type ElementType = 
-  | 'text' 
-  | 'heading' 
-  | 'placeholder'
-  | 'image'
-  | 'signature'
-  | 'table'
-  | 'qr'
-  | 'divider';
+export type ElementType =
+  | "text"
+  | "heading"
+  | "placeholder"
+  | "image"
+  | "signature"
+  | "table"
+  | "qr"
+  | "divider";
 
 // Element Style Properties
 export interface ElementStyle {
@@ -20,41 +20,41 @@ export interface ElementStyle {
   color?: string;
   backgroundColor?: string;
   borderWidth?: number;
-  borderStyle?: 'solid' | 'dashed' | 'dotted' | 'none';
+  borderStyle?: "solid" | "dashed" | "dotted" | "none";
   borderColor?: string;
   padding?: number;
-  alignment?: 'left' | 'center' | 'right';
+  alignment?: "left" | "center" | "right";
   opacity?: number;
 }
 
 // Field Validation Rules
 export interface ValidationRule {
-  type: 'required' | 'regex' | 'minLength' | 'maxLength' | 'min' | 'max';
+  type: "required" | "regex" | "minLength" | "maxLength" | "min" | "max";
   value?: string | number;
   message: string;
 }
 
 export type FieldType =
-  | 'text'
-  | 'number'
-  | 'email'
-  | 'phone'
-  | 'date'
-  | 'dropdown'
-  | 'checkbox'
-  | 'radio'
-  | 'textarea'
-  | 'file'
-  | 'image'
-  | 'signature'
-  | 'table'
-  | 'qr'
-  | 'barcode'
-  | 'richtext'
-  | 'institution'
-  | 'userprofile'
-  | 'calculated'
-  | 'dynamiclist';
+  | "text"
+  | "number"
+  | "email"
+  | "phone"
+  | "date"
+  | "dropdown"
+  | "checkbox"
+  | "radio"
+  | "textarea"
+  | "file"
+  | "image"
+  | "signature"
+  | "table"
+  | "qr"
+  | "barcode"
+  | "richtext"
+  | "institution"
+  | "userprofile"
+  | "calculated"
+  | "dynamiclist";
 
 export interface Field {
   id: string;
@@ -95,10 +95,10 @@ export interface TemplateDocument {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  status: 'draft' | 'review' | 'published';
+  status: "draft" | "review" | "published";
   isPublic: boolean;
   accessRoles: string[];
   regions: string[];
-  orientation: 'portrait' | 'landscape';
-  size: 'A4' | 'Letter' | 'Legal';
+  orientation: "portrait" | "landscape";
+  size: "A4" | "Letter" | "Legal";
 }

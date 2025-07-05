@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import {
   BonafideForm,
   CharacterForm,
@@ -25,7 +25,7 @@ import {
   NDAForm,
   AcademicTranscriptForm,
   EmbassyAttestationLetterForm,
-} from '@/components/templates/forms';
+} from "@/components/templates/forms";
 import {
   BonafidePreview,
   CharacterPreview,
@@ -47,7 +47,7 @@ import {
   NDAPreview,
   AcademicTranscriptPreview,
   EmbassyAttestationLetterPreview,
-} from '@/components/templates';
+} from "@/components/templates";
 import {
   BonafideData,
   CharacterData,
@@ -62,7 +62,7 @@ import {
   OfferLetterData,
   AddressProofData,
   FormData,
-} from '@/types/templates';
+} from "@/types/templates";
 import {
   ArticlesOfIncorporationData,
   CorporateBylawsData,
@@ -72,429 +72,439 @@ import {
   NDAData,
   AcademicTranscriptData,
   EmbassyAttestationLetterData,
-} from '@/types/corporate-templates';
-import { Download, FileDown, ImageDown, Printer } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { generateAndDownloadPdf } from '@/lib/pdf-utils';
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from '@/components/ui/tabs';
-import { downloadPDF, downloadJPG, printDocument } from '@/lib/document-utils';
+} from "@/types/corporate-templates";
+import { Download, FileDown, ImageDown, Printer } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { generateAndDownloadPdf } from "@/lib/pdf-utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 
 const TEMPLATE_NAMES: Record<string, string> = {
-  'academic-transcript-1': 'Academic Transcript',
-  'embassy-attestation-letter-1': 'Embassy Attestation Letter',
-  'employment-agreement-1': 'Employment Agreement',
-  'nda-1': 'Non-Disclosure Agreement',
-  'founders-agreement-1': 'Founders Agreement',
-  'stock-purchase-agreement-1': 'Stock Purchase Agreement',
-  'articles-incorporation-1': 'Articles of Incorporation',
-  'corporate-bylaws-1': 'Corporate Bylaws',
-  'bonafide-1': 'Bonafide Certificate',
-  'character-1': 'Character Certificate',
-  'experience-1': 'Experience Certificate',
-  'embassy-attestation-1': 'Embassy Attestation',
-  'completion-certificate-1': 'Completion Certificate',
-  'transfer-certificate-1': 'Transfer Certificate',
-  'noc-visa-1': 'NOC for Visa',
-  'income-certificate-1': 'Income Certificate',
-  'maternity-leave-1': 'Maternity Leave Certificate',
-  'bank-verification-1': 'Bank Verification Letter',
-  'offer-letter-1': 'Offer Letter',
-  'address-proof-1': 'Address Proof',
+  "academic-transcript-1": "Academic Transcript",
+  "embassy-attestation-letter-1": "Embassy Attestation Letter",
+  "employment-agreement-1": "Employment Agreement",
+  "nda-1": "Non-Disclosure Agreement",
+  "founders-agreement-1": "Founders Agreement",
+  "stock-purchase-agreement-1": "Stock Purchase Agreement",
+  "articles-incorporation-1": "Articles of Incorporation",
+  "corporate-bylaws-1": "Corporate Bylaws",
+  "bonafide-1": "Bonafide Certificate",
+  "character-1": "Character Certificate",
+  "experience-1": "Experience Certificate",
+  "embassy-attestation-1": "Embassy Attestation",
+  "completion-certificate-1": "Completion Certificate",
+  "transfer-certificate-1": "Transfer Certificate",
+  "noc-visa-1": "NOC for Visa",
+  "income-certificate-1": "Income Certificate",
+  "maternity-leave-1": "Maternity Leave Certificate",
+  "bank-verification-1": "Bank Verification Letter",
+  "offer-letter-1": "Offer Letter",
+  "address-proof-1": "Address Proof",
 };
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
-  'academic-transcript-1': "Official record of a student's academic performance.",
-  'embassy-attestation-letter-1': 'Letter for embassy attestation and verification.',
-  'employment-agreement-1': 'Contract outlining terms of employment.',
-  'nda-1': 'Agreement to protect confidential information.',
-  'founders-agreement-1': 'Agreement between company founders.',
-  'stock-purchase-agreement-1': 'Agreement for the purchase of company stock.',
-  'articles-incorporation-1': 'Legal document to form a corporation.',
-  'corporate-bylaws-1': 'Rules governing the management of a corporation.',
-  'bonafide-1': "Certificate confirming a person's association with an institution.",
-  'character-1': "Certificate attesting to a person's character.",
-  'experience-1': 'Certificate of work experience.',
-  'embassy-attestation-1': 'Document for embassy attestation purposes.',
-  'completion-certificate-1': 'Certificate for successful course or program completion.',
-  'transfer-certificate-1': 'Certificate for transfer between institutions.',
-  'noc-visa-1': 'No Objection Certificate for visa applications.',
-  'income-certificate-1': 'Certificate stating income details.',
-  'maternity-leave-1': 'Certificate for maternity leave approval.',
-  'bank-verification-1': 'Letter for bank account verification.',
-  'offer-letter-1': 'Official job offer letter.',
-  'address-proof-1': 'Document to verify address.'
+  "academic-transcript-1":
+    "Official record of a student's academic performance.",
+  "embassy-attestation-letter-1":
+    "Letter for embassy attestation and verification.",
+  "employment-agreement-1": "Contract outlining terms of employment.",
+  "nda-1": "Agreement to protect confidential information.",
+  "founders-agreement-1": "Agreement between company founders.",
+  "stock-purchase-agreement-1": "Agreement for the purchase of company stock.",
+  "articles-incorporation-1": "Legal document to form a corporation.",
+  "corporate-bylaws-1": "Rules governing the management of a corporation.",
+  "bonafide-1":
+    "Certificate confirming a person's association with an institution.",
+  "character-1": "Certificate attesting to a person's character.",
+  "experience-1": "Certificate of work experience.",
+  "embassy-attestation-1": "Document for embassy attestation purposes.",
+  "completion-certificate-1":
+    "Certificate for successful course or program completion.",
+  "transfer-certificate-1": "Certificate for transfer between institutions.",
+  "noc-visa-1": "No Objection Certificate for visa applications.",
+  "income-certificate-1": "Certificate stating income details.",
+  "maternity-leave-1": "Certificate for maternity leave approval.",
+  "bank-verification-1": "Letter for bank account verification.",
+  "offer-letter-1": "Official job offer letter.",
+  "address-proof-1": "Document to verify address.",
 };
 
-export const getInitialData = (templateId: string): FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData => {
+export const getInitialData = (
+  templateId: string,
+):
+  | FormData
+  | ArticlesOfIncorporationData
+  | CorporateBylawsData
+  | FoundersAgreementData
+  | StockPurchaseAgreementData
+  | EmploymentAgreementData
+  | NDAData
+  | AcademicTranscriptData
+  | EmbassyAttestationLetterData => {
   const commonFields = {
-    institutionName: '',
-    date: new Date().toISOString().split('T')[0],
-    place: '',
-    signatoryName: '',
-    signatoryDesignation: '',
+    institutionName: "",
+    date: new Date().toISOString().split("T")[0],
+    place: "",
+    signatoryName: "",
+    signatoryDesignation: "",
     includeDigitalSignature: false,
   };
 
   switch (templateId) {
-    case 'academic-transcript-1':
+    case "academic-transcript-1":
       return {
-        studentName: '',
-        studentId: '',
-        fatherName: '',
-        motherName: '',
-        dateOfBirth: '',
-        courseTitle: '',
-        academicYear: '',
-        semester: '',
-        subjects: '',
-        grades: '',
-        cgpa: '',
-        percentage: '',
-        class: '',
+        studentName: "",
+        studentId: "",
+        fatherName: "",
+        motherName: "",
+        dateOfBirth: "",
+        courseTitle: "",
+        academicYear: "",
+        semester: "",
+        subjects: "",
+        grades: "",
+        cgpa: "",
+        percentage: "",
+        class: "",
         ...commonFields,
       } as AcademicTranscriptData;
 
-    case 'embassy-attestation-letter-1':
+    case "embassy-attestation-letter-1":
       return {
-        applicantName: '',
-        passportNumber: '',
-        nationality: '',
-        dateOfBirth: '',
-        placeOfBirth: '',
-        fatherName: '',
-        motherName: '',
-        documentType: '',
-        documentNumber: '',
-        issuingAuthority: '',
-        documentIssueDate: '',
-        purposeOfAttestation: '',
-        destinationCountry: '',
-        embassyName: '',
-        applicantAddress: '',
-        phoneNumber: '',
-        emailAddress: '',
+        applicantName: "",
+        passportNumber: "",
+        nationality: "",
+        dateOfBirth: "",
+        placeOfBirth: "",
+        fatherName: "",
+        motherName: "",
+        documentType: "",
+        documentNumber: "",
+        issuingAuthority: "",
+        documentIssueDate: "",
+        purposeOfAttestation: "",
+        destinationCountry: "",
+        embassyName: "",
+        applicantAddress: "",
+        phoneNumber: "",
+        emailAddress: "",
         ...commonFields,
       } as EmbassyAttestationLetterData;
 
-    case 'employment-agreement-1':
+    case "employment-agreement-1":
       return {
-        employeeName: '',
-        employerName: '',
-        jobTitle: '',
-        department: '',
-        startDate: new Date().toISOString().split('T')[0],
-        employmentType: 'full-time' as const,
-        salary: '',
-        payFrequency: 'monthly' as const,
-        benefits: '',
-        workLocation: '',
-        workHours: '',
-        probationPeriod: '',
-        terminationClause: '',
-        confidentialityClause: '',
-        nonCompeteClause: '',
-        governingLaw: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
+        employeeName: "",
+        employerName: "",
+        jobTitle: "",
+        department: "",
+        startDate: new Date().toISOString().split("T")[0],
+        employmentType: "full-time" as const,
+        salary: "",
+        payFrequency: "monthly" as const,
+        benefits: "",
+        workLocation: "",
+        workHours: "",
+        probationPeriod: "",
+        terminationClause: "",
+        confidentialityClause: "",
+        nonCompeteClause: "",
+        governingLaw: "",
+        effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as EmploymentAgreementData;
 
-    case 'nda-1':
+    case "nda-1":
       return {
-        disclosingParty: '',
-        receivingParty: '',
-        purposeOfDisclosure: '',
-        confidentialInformation: '',
-        exclusions: '',
-        obligations: '',
-        termLength: '',
-        returnOfInformation: '',
-        remedies: '',
-        governingLaw: '',
-        disclosingPartyAddress: '',
-        receivingPartyAddress: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
+        disclosingParty: "",
+        receivingParty: "",
+        purposeOfDisclosure: "",
+        confidentialInformation: "",
+        exclusions: "",
+        obligations: "",
+        termLength: "",
+        returnOfInformation: "",
+        remedies: "",
+        governingLaw: "",
+        disclosingPartyAddress: "",
+        receivingPartyAddress: "",
+        effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as NDAData;
 
-    case 'founders-agreement-1':
+    case "founders-agreement-1":
       return {
-        founderNames: '',
-        companyName: '',
-        businessDescription: '',
-        equityDistribution: '',
-        vestingSchedule: '',
-        roles: '',
-        capitalContributions: '',
-        intellectualProperty: '',
-        confidentiality: '',
-        nonCompete: '',
-        disputeResolution: '',
-        governingLaw: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
+        founderNames: "",
+        companyName: "",
+        businessDescription: "",
+        equityDistribution: "",
+        vestingSchedule: "",
+        roles: "",
+        capitalContributions: "",
+        intellectualProperty: "",
+        confidentiality: "",
+        nonCompete: "",
+        disputeResolution: "",
+        governingLaw: "",
+        effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as FoundersAgreementData;
 
-    case 'stock-purchase-agreement-1':
+    case "stock-purchase-agreement-1":
       return {
-        purchaserName: '',
-        sellerName: '',
-        companyName: '',
-        numberOfShares: '',
-        sharePrice: '',
-        totalPurchasePrice: '',
-        shareClass: '',
-        restrictionsOnTransfer: '',
-        representationsWarranties: '',
-        closingDate: new Date().toISOString().split('T')[0],
-        governingLaw: '',
-        purchaserAddress: '',
-        sellerAddress: '',
-        effectiveDate: new Date().toISOString().split('T')[0],
+        purchaserName: "",
+        sellerName: "",
+        companyName: "",
+        numberOfShares: "",
+        sharePrice: "",
+        totalPurchasePrice: "",
+        shareClass: "",
+        restrictionsOnTransfer: "",
+        representationsWarranties: "",
+        closingDate: new Date().toISOString().split("T")[0],
+        governingLaw: "",
+        purchaserAddress: "",
+        sellerAddress: "",
+        effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as StockPurchaseAgreementData;
 
-    case 'articles-incorporation-1':
+    case "articles-incorporation-1":
       return {
-        corporationName: '',
-        stateOfIncorporation: '',
-        businessPurpose: '',
-        corporateAddress: '',
-        registeredAgent: '',
-        registeredAgentAddress: '',
-        authorizedShares: '',
-        shareValue: '',
-        incorporatorName: '',
-        incorporatorAddress: '',
-        incorporatorSignature: '',
-        filingDate: new Date().toISOString().split('T')[0],
+        corporationName: "",
+        stateOfIncorporation: "",
+        businessPurpose: "",
+        corporateAddress: "",
+        registeredAgent: "",
+        registeredAgentAddress: "",
+        authorizedShares: "",
+        shareValue: "",
+        incorporatorName: "",
+        incorporatorAddress: "",
+        incorporatorSignature: "",
+        filingDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as ArticlesOfIncorporationData;
 
-    case 'corporate-bylaws-1':
+    case "corporate-bylaws-1":
       return {
-        corporationName: '',
-        stateOfIncorporation: '',
-        principalOffice: '',
-        boardMeetingFrequency: '',
-        shareholderMeetingDate: '',
-        fiscalYearEnd: '',
-        numberOfDirectors: '',
-        directorTermLength: '',
-        officerTitles: '',
-        votingRights: '',
-        dividendPolicy: '',
-        amendmentProcess: '',
-        adoptionDate: new Date().toISOString().split('T')[0],
+        corporationName: "",
+        stateOfIncorporation: "",
+        principalOffice: "",
+        boardMeetingFrequency: "",
+        shareholderMeetingDate: "",
+        fiscalYearEnd: "",
+        numberOfDirectors: "",
+        directorTermLength: "",
+        officerTitles: "",
+        votingRights: "",
+        dividendPolicy: "",
+        amendmentProcess: "",
+        adoptionDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as CorporateBylawsData;
 
-    case 'bonafide-1':
+    case "bonafide-1":
       return {
-        fullName: '',
-        gender: 'male' as const,
-        parentName: '',
-        type: 'student' as const,
-        startDate: '',
-        courseOrDesignation: '',
-        department: '',
-        purpose: '',
+        fullName: "",
+        gender: "male" as const,
+        parentName: "",
+        type: "student" as const,
+        startDate: "",
+        courseOrDesignation: "",
+        department: "",
+        purpose: "",
         ...commonFields,
       } as BonafideData;
 
-    case 'character-1':
+    case "character-1":
       return {
-        fullName: '',
-        parentName: '',
-        address: '',
-        duration: '',
-        conduct: '',
+        fullName: "",
+        parentName: "",
+        address: "",
+        duration: "",
+        conduct: "",
         ...commonFields,
       } as CharacterData;
 
-    case 'experience-1':
+    case "experience-1":
       return {
-        fullName: '',
-        employeeId: '',
-        designation: '',
-        department: '',
-        joinDate: '',
-        resignationDate: '',
-        workDescription: '',
-        salary: '',
+        fullName: "",
+        employeeId: "",
+        designation: "",
+        department: "",
+        joinDate: "",
+        resignationDate: "",
+        workDescription: "",
+        salary: "",
         ...commonFields,
       } as ExperienceData;
 
-    case 'embassy-attestation-1':
+    case "embassy-attestation-1":
       return {
-        fullName: '',
-        passportNumber: '',
-        nationality: '',
-        dateOfBirth: '',
-        placeOfBirth: '',
-        fatherName: '',
-        motherName: '',
-        documentType: '',
-        documentNumber: '',
-        issuingAuthority: '',
-        documentIssueDate: '',
-        purposeOfAttestation: '',
-        destinationCountry: '',
-        embassyName: '',
-        applicantAddress: '',
-        phoneNumber: '',
-        emailAddress: '',
+        fullName: "",
+        passportNumber: "",
+        nationality: "",
+        dateOfBirth: "",
+        placeOfBirth: "",
+        fatherName: "",
+        motherName: "",
+        documentType: "",
+        documentNumber: "",
+        issuingAuthority: "",
+        documentIssueDate: "",
+        purposeOfAttestation: "",
+        destinationCountry: "",
+        embassyName: "",
+        applicantAddress: "",
+        phoneNumber: "",
+        emailAddress: "",
         ...commonFields,
       } as EmbassyAttestationData;
 
-    case 'completion-certificate-1':
+    case "completion-certificate-1":
       return {
-        fullName: '',
-        fatherName: '',
-        registrationNumber: '',
-        courseTitle: '',
-        courseDuration: '',
-        completionDate: '',
-        grade: '',
-        percentage: '',
-        programType: 'course' as const,
+        fullName: "",
+        fatherName: "",
+        registrationNumber: "",
+        courseTitle: "",
+        courseDuration: "",
+        completionDate: "",
+        grade: "",
+        percentage: "",
+        programType: "course" as const,
         ...commonFields,
       } as CompletionCertificateData;
 
-    case 'transfer-certificate-1':
+    case "transfer-certificate-1":
       return {
-        fullName: '',
-        fatherName: '',
-        motherName: '',
-        dateOfBirth: '',
-        admissionNumber: '',
-        class: '',
-        section: '',
-        academicYear: '',
-        dateOfAdmission: '',
-        dateOfLeaving: '',
-        reasonForLeaving: '',
-        conduct: '',
-        subjects: '',
+        fullName: "",
+        fatherName: "",
+        motherName: "",
+        dateOfBirth: "",
+        admissionNumber: "",
+        class: "",
+        section: "",
+        academicYear: "",
+        dateOfAdmission: "",
+        dateOfLeaving: "",
+        reasonForLeaving: "",
+        conduct: "",
+        subjects: "",
         ...commonFields,
       } as TransferCertificateData;
 
-    case 'noc-visa-1':
+    case "noc-visa-1":
       return {
-        fullName: '',
-        designation: '',
-        employeeId: '',
-        department: '',
-        passportNumber: '',
-        visaType: '',
-        destinationCountry: '',
-        travelPurpose: '',
-        travelDates: '',
-        returnDate: '',
-        sponsorDetails: '',
+        fullName: "",
+        designation: "",
+        employeeId: "",
+        department: "",
+        passportNumber: "",
+        visaType: "",
+        destinationCountry: "",
+        travelPurpose: "",
+        travelDates: "",
+        returnDate: "",
+        sponsorDetails: "",
         ...commonFields,
       } as NocVisaData;
 
-    case 'income-certificate-1':
+    case "income-certificate-1":
       return {
-        fullName: '',
-        fatherName: '',
-        designation: '',
-        employeeId: '',
-        department: '',
-        basicSalary: '',
-        allowances: '',
-        totalIncome: '',
-        incomeFrequency: 'monthly' as const,
-        purpose: '',
+        fullName: "",
+        fatherName: "",
+        designation: "",
+        employeeId: "",
+        department: "",
+        basicSalary: "",
+        allowances: "",
+        totalIncome: "",
+        incomeFrequency: "monthly" as const,
+        purpose: "",
         ...commonFields,
       } as IncomeCertificateData;
 
-    case 'maternity-leave-1':
+    case "maternity-leave-1":
       return {
-        fullName: '',
-        employeeId: '',
-        designation: '',
-        department: '',
-        expectedDeliveryDate: '',
-        leaveStartDate: '',
-        leaveEndDate: '',
-        totalLeaveDays: '',
-        medicalCertificateNumber: '',
-        doctorName: '',
-        hospitalName: '',
-        emergencyContact: '',
-        emergencyContactPhone: '',
+        fullName: "",
+        employeeId: "",
+        designation: "",
+        department: "",
+        expectedDeliveryDate: "",
+        leaveStartDate: "",
+        leaveEndDate: "",
+        totalLeaveDays: "",
+        medicalCertificateNumber: "",
+        doctorName: "",
+        hospitalName: "",
+        emergencyContact: "",
+        emergencyContactPhone: "",
         ...commonFields,
       } as MaternityLeaveData;
 
-    case 'bank-verification-1':
+    case "bank-verification-1":
       return {
-        fullName: '',
-        employeeId: '',
-        designation: '',
-        department: '',
-        bankName: '',
-        accountNumber: '',
-        accountType: 'savings' as const,
-        ifscCode: '',
-        branchName: '',
-        branchAddress: '',
-        accountHolderName: '',
-        joinDate: '',
-        currentSalary: '',
-        purpose: '',
+        fullName: "",
+        employeeId: "",
+        designation: "",
+        department: "",
+        bankName: "",
+        accountNumber: "",
+        accountType: "savings" as const,
+        ifscCode: "",
+        branchName: "",
+        branchAddress: "",
+        accountHolderName: "",
+        joinDate: "",
+        currentSalary: "",
+        purpose: "",
         ...commonFields,
       } as BankVerificationData;
 
-    case 'offer-letter-1':
+    case "offer-letter-1":
       return {
-        candidateName: '',
-        candidateAddress: '',
-        dateOfOffer: new Date().toISOString().split('T')[0],
-        jobTitle: '',
-        department: '',
-        reportingManager: '',
-        startDate: '',
-        probationPeriod: '',
-        salaryAmount: '',
-        salaryCurrency: 'INR',
-        salaryFrequency: 'monthly' as const,
-        benefits: '',
-        workHours: '',
-        workLocation: '',
-        acceptanceDeadline: '',
+        candidateName: "",
+        candidateAddress: "",
+        dateOfOffer: new Date().toISOString().split("T")[0],
+        jobTitle: "",
+        department: "",
+        reportingManager: "",
+        startDate: "",
+        probationPeriod: "",
+        salaryAmount: "",
+        salaryCurrency: "INR",
+        salaryFrequency: "monthly" as const,
+        benefits: "",
+        workHours: "",
+        workLocation: "",
+        acceptanceDeadline: "",
         ...commonFields,
       } as OfferLetterData;
 
-    case 'address-proof-1':
+    case "address-proof-1":
       return {
-        fullName: '',
-        fatherName: '',
-        currentAddress: '',
-        permanentAddress: '',
-        residenceDuration: '',
-        relationshipWithApplicant: 'self' as const,
-        idProofType: 'aadhar' as const,
-        idProofNumber: '',
-        purpose: '',
+        fullName: "",
+        fatherName: "",
+        currentAddress: "",
+        permanentAddress: "",
+        residenceDuration: "",
+        relationshipWithApplicant: "self" as const,
+        idProofType: "aadhar" as const,
+        idProofNumber: "",
+        purpose: "",
         ...commonFields,
       } as AddressProofData;
 
     default:
       return {
-        fullName: '',
-        gender: 'male' as const,
-        parentName: '',
-        type: 'student' as const,
-        startDate: '',
-        courseOrDesignation: '',
-        department: '',
-        purpose: '',
+        fullName: "",
+        gender: "male" as const,
+        parentName: "",
+        type: "student" as const,
+        startDate: "",
+        courseOrDesignation: "",
+        department: "",
+        purpose: "",
         ...commonFields,
       } as BonafideData;
   }
@@ -505,159 +515,180 @@ const TemplateDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [formData, setFormData] = useState<FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData>(() => getInitialData(templateId || ''));
+  const [formData, setFormData] = useState<
+    | FormData
+    | ArticlesOfIncorporationData
+    | CorporateBylawsData
+    | FoundersAgreementData
+    | StockPurchaseAgreementData
+    | EmploymentAgreementData
+    | NDAData
+    | AcademicTranscriptData
+    | EmbassyAttestationLetterData
+  >(() => getInitialData(templateId || ""));
 
   useEffect(() => {
     if (!templateId) {
       toast({
-        title: 'Error',
-        description: 'Template ID is missing.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Template ID is missing.",
+        variant: "destructive",
       });
-      navigate('/templates');
+      navigate("/templates");
     }
   }, [templateId, navigate, toast]);
 
-  const handleFormSubmit = (data: FormData | ArticlesOfIncorporationData | CorporateBylawsData | FoundersAgreementData | StockPurchaseAgreementData | EmploymentAgreementData | NDAData | AcademicTranscriptData | EmbassyAttestationLetterData) => {
+  const handleFormSubmit = (
+    data:
+      | FormData
+      | ArticlesOfIncorporationData
+      | CorporateBylawsData
+      | FoundersAgreementData
+      | StockPurchaseAgreementData
+      | EmploymentAgreementData
+      | NDAData
+      | AcademicTranscriptData
+      | EmbassyAttestationLetterData,
+  ) => {
     setFormData(data);
   };
 
   const renderForm = () => {
     switch (templateId) {
-      case 'academic-transcript-1':
+      case "academic-transcript-1":
         return (
           <AcademicTranscriptForm
             initialData={formData as AcademicTranscriptData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'embassy-attestation-letter-1':
+      case "embassy-attestation-letter-1":
         return (
           <EmbassyAttestationLetterForm
             initialData={formData as EmbassyAttestationLetterData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'employment-agreement-1':
+      case "employment-agreement-1":
         return (
           <EmploymentAgreementForm
             initialData={formData as EmploymentAgreementData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'nda-1':
+      case "nda-1":
         return (
           <NDAForm
             initialData={formData as NDAData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'founders-agreement-1':
+      case "founders-agreement-1":
         return (
           <FoundersAgreementForm
             initialData={formData as FoundersAgreementData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'stock-purchase-agreement-1':
+      case "stock-purchase-agreement-1":
         return (
           <StockPurchaseAgreementForm
             initialData={formData as StockPurchaseAgreementData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'articles-incorporation-1':
+      case "articles-incorporation-1":
         return (
           <ArticlesOfIncorporationForm
             initialData={formData as ArticlesOfIncorporationData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'corporate-bylaws-1':
+      case "corporate-bylaws-1":
         return (
           <CorporateBylawsForm
             initialData={formData as CorporateBylawsData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'bonafide-1':
+      case "bonafide-1":
         return (
           <BonafideForm
             initialData={formData as BonafideData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'character-1':
+      case "character-1":
         return (
           <CharacterForm
             initialData={formData as CharacterData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'experience-1':
+      case "experience-1":
         return (
           <ExperienceForm
             initialData={formData as ExperienceData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'embassy-attestation-1':
+      case "embassy-attestation-1":
         return (
           <EmbassyAttestationForm
             initialData={formData as EmbassyAttestationData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'completion-certificate-1':
+      case "completion-certificate-1":
         return (
           <CompletionCertificateForm
             initialData={formData as CompletionCertificateData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'transfer-certificate-1':
+      case "transfer-certificate-1":
         return (
           <TransferCertificateForm
             initialData={formData as TransferCertificateData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'noc-visa-1':
+      case "noc-visa-1":
         return (
           <NocVisaForm
             initialData={formData as NocVisaData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'income-certificate-1':
+      case "income-certificate-1":
         return (
           <IncomeCertificateForm
             initialData={formData as IncomeCertificateData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'maternity-leave-1':
+      case "maternity-leave-1":
         return (
           <MaternityLeaveForm
             initialData={formData as MaternityLeaveData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'bank-verification-1':
+      case "bank-verification-1":
         return (
           <BankVerificationForm
             initialData={formData as BankVerificationData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'offer-letter-1':
+      case "offer-letter-1":
         return (
           <OfferLetterForm
             initialData={formData as OfferLetterData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
-      case 'address-proof-1':
+      case "address-proof-1":
         return (
           <AddressProofForm
             initialData={formData as AddressProofData}
@@ -676,15 +707,27 @@ const TemplateDetail = () => {
 
   const renderPreview = () => {
     switch (templateId) {
-      case 'academic-transcript-1':
-        return <AcademicTranscriptPreview data={formData as AcademicTranscriptData} />;
-      case 'embassy-attestation-letter-1':
-        return <EmbassyAttestationLetterPreview data={formData as EmbassyAttestationLetterData} />;
-      case 'employment-agreement-1':
-        return <EmploymentAgreementPreview data={formData as EmploymentAgreementData} />;
-      case 'nda-1':
+      case "academic-transcript-1":
+        return (
+          <AcademicTranscriptPreview
+            data={formData as AcademicTranscriptData}
+          />
+        );
+      case "embassy-attestation-letter-1":
+        return (
+          <EmbassyAttestationLetterPreview
+            data={formData as EmbassyAttestationLetterData}
+          />
+        );
+      case "employment-agreement-1":
+        return (
+          <EmploymentAgreementPreview
+            data={formData as EmploymentAgreementData}
+          />
+        );
+      case "nda-1":
         return <NDAPreview data={formData as NDAData} />;
-      case 'founders-agreement-1':
+      case "founders-agreement-1":
         // Convert corporate template data to preview template data
         const foundersData = formData as FoundersAgreementData;
         const foundersPreviewData = {
@@ -704,7 +747,7 @@ const TemplateDetail = () => {
           includeDigitalSignature: foundersData.includeDigitalSignature,
         };
         return <FoundersAgreementPreview data={foundersPreviewData} />;
-      case 'stock-purchase-agreement-1':
+      case "stock-purchase-agreement-1":
         // Convert corporate template data to preview template data
         const stockData = formData as StockPurchaseAgreementData;
         const stockPreviewData = {
@@ -737,7 +780,7 @@ const TemplateDetail = () => {
           includeDigitalSignature: stockData.includeDigitalSignature,
         };
         return <StockPurchaseAgreementPreview data={stockPreviewData} />;
-      case 'articles-incorporation-1':
+      case "articles-incorporation-1":
         // Convert corporate template data to preview template data
         const articlesData = formData as ArticlesOfIncorporationData;
         const articlesPreviewData = {
@@ -748,11 +791,13 @@ const TemplateDetail = () => {
           purpose: articlesData.businessPurpose,
           authorizedShares: articlesData.authorizedShares,
           shareClasses: articlesData.shareValue,
-          incorporators: [{
-            name: articlesData.incorporatorName,
-            address: articlesData.incorporatorAddress,
-            place: articlesData.place,
-          }],
+          incorporators: [
+            {
+              name: articlesData.incorporatorName,
+              address: articlesData.incorporatorAddress,
+              place: articlesData.place,
+            },
+          ],
           date: articlesData.date,
           place: articlesData.place,
           signatoryName: articlesData.signatoryName,
@@ -760,7 +805,7 @@ const TemplateDetail = () => {
           includeDigitalSignature: articlesData.includeDigitalSignature,
         };
         return <ArticlesOfIncorporationPreview data={articlesPreviewData} />;
-      case 'corporate-bylaws-1':
+      case "corporate-bylaws-1":
         // Convert corporate template data to preview template data
         const bylawsData = formData as CorporateBylawsData;
         const bylawsPreviewData = {
@@ -798,29 +843,45 @@ const TemplateDetail = () => {
           includeDigitalSignature: bylawsData.includeDigitalSignature,
         };
         return <CorporateBylawsPreview data={bylawsPreviewData} />;
-      case 'bonafide-1':
+      case "bonafide-1":
         return <BonafidePreview data={formData as BonafideData} />;
-      case 'character-1':
+      case "character-1":
         return <CharacterPreview data={formData as CharacterData} />;
-      case 'experience-1':
+      case "experience-1":
         return <ExperiencePreview data={formData as ExperienceData} />;
-      case 'embassy-attestation-1':
-        return <EmbassyAttestationPreview data={formData as EmbassyAttestationData} />;
-      case 'completion-certificate-1':
-        return <CompletionCertificatePreview data={formData as CompletionCertificateData} />;
-      case 'transfer-certificate-1':
-        return <TransferCertificatePreview data={formData as TransferCertificateData} />;
-      case 'noc-visa-1':
+      case "embassy-attestation-1":
+        return (
+          <EmbassyAttestationPreview
+            data={formData as EmbassyAttestationData}
+          />
+        );
+      case "completion-certificate-1":
+        return (
+          <CompletionCertificatePreview
+            data={formData as CompletionCertificateData}
+          />
+        );
+      case "transfer-certificate-1":
+        return (
+          <TransferCertificatePreview
+            data={formData as TransferCertificateData}
+          />
+        );
+      case "noc-visa-1":
         return <NocVisaPreview data={formData as NocVisaData} />;
-      case 'income-certificate-1':
-        return <IncomeCertificatePreview data={formData as IncomeCertificateData} />;
-      case 'maternity-leave-1':
+      case "income-certificate-1":
+        return (
+          <IncomeCertificatePreview data={formData as IncomeCertificateData} />
+        );
+      case "maternity-leave-1":
         return <MaternityLeavePreview data={formData as MaternityLeaveData} />;
-      case 'bank-verification-1':
-        return <BankVerificationPreview data={formData as BankVerificationData} />;
-      case 'offer-letter-1':
+      case "bank-verification-1":
+        return (
+          <BankVerificationPreview data={formData as BankVerificationData} />
+        );
+      case "offer-letter-1":
         return <OfferLetterPreview data={formData as OfferLetterData} />;
-      case 'address-proof-1':
+      case "address-proof-1":
         return <AddressProofPreview data={formData as AddressProofData} />;
       default:
         return <BonafidePreview data={formData as BonafideData} />;
@@ -832,9 +893,9 @@ const TemplateDetail = () => {
       await downloadPDF(`${templateId}.pdf`);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to download PDF. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -843,9 +904,9 @@ const TemplateDetail = () => {
       await downloadJPG(`${templateId}.jpg`);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to download JPG. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to download JPG. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -854,9 +915,9 @@ const TemplateDetail = () => {
       await printDocument();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to print document. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to print document. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -866,30 +927,52 @@ const TemplateDetail = () => {
       <div className="container space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-semibold">{TEMPLATE_NAMES[templateId || ''] || 'Template Details'}</h1>
-            <p className="text-muted-foreground text-sm mt-1">{TEMPLATE_DESCRIPTIONS[templateId || ''] || ''}</p>
+            <h1 className="text-2xl font-semibold">
+              {TEMPLATE_NAMES[templateId || ""] || "Template Details"}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {TEMPLATE_DESCRIPTIONS[templateId || ""] || ""}
+            </p>
           </div>
         </div>
         <Separator />
         <div>
           <Tabs defaultValue="form" className="w-full">
             <TabsList className="w-full mb-4">
-              <TabsTrigger value="form" className="w-1/2">Form</TabsTrigger>
-              <TabsTrigger value="preview" className="w-1/2">Preview</TabsTrigger>
+              <TabsTrigger value="form" className="w-1/2">
+                Form
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="w-1/2">
+                Preview
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="form" className="bg-secondary rounded-md p-4">
               <h2 className="text-lg font-semibold mb-4">Form</h2>
               {renderForm()}
             </TabsContent>
-            <TabsContent value="preview" className="bg-secondary rounded-md p-4">
+            <TabsContent
+              value="preview"
+              className="bg-secondary rounded-md p-4"
+            >
               <div className="flex justify-end gap-2 mb-4">
-                <Button onClick={handlePrint} variant="secondary" className="gap-2 border border-gray-400">
+                <Button
+                  onClick={handlePrint}
+                  variant="secondary"
+                  className="gap-2 border border-gray-400"
+                >
                   Print <Printer className="h-4 w-4" />
                 </Button>
-                <Button onClick={handleDownloadJPG} variant="secondary" className="gap-2 border border-gray-400">
+                <Button
+                  onClick={handleDownloadJPG}
+                  variant="secondary"
+                  className="gap-2 border border-gray-400"
+                >
                   Download JPG <ImageDown className="h-4 w-4" />
                 </Button>
-                <Button onClick={handleDownloadPDF} className="gradient-blue gap-2">
+                <Button
+                  onClick={handleDownloadPDF}
+                  className="gradient-blue gap-2"
+                >
                   Download PDF <FileDown className="h-4 w-4" />
                 </Button>
               </div>

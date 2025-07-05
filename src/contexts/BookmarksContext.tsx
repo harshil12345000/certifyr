@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 
-const BOOKMARKS_KEY = 'certifyr_template_bookmarks';
+const BOOKMARKS_KEY = "certifyr_template_bookmarks";
 
 interface BookmarksContextType {
   bookmarks: string[];
@@ -9,9 +15,13 @@ interface BookmarksContextType {
   isBookmarked: (id: string) => boolean;
 }
 
-const BookmarksContext = createContext<BookmarksContextType | undefined>(undefined);
+const BookmarksContext = createContext<BookmarksContextType | undefined>(
+  undefined,
+);
 
-export const BookmarksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const BookmarksProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [bookmarks, setBookmarks] = useState<string[]>([]);
 
   useEffect(() => {
@@ -33,10 +43,15 @@ export const BookmarksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setBookmarks((prev) => prev.filter((b) => b !== id));
   }, []);
 
-  const isBookmarked = useCallback((id: string) => bookmarks.includes(id), [bookmarks]);
+  const isBookmarked = useCallback(
+    (id: string) => bookmarks.includes(id),
+    [bookmarks],
+  );
 
   return (
-    <BookmarksContext.Provider value={{ bookmarks, addBookmark, removeBookmark, isBookmarked }}>
+    <BookmarksContext.Provider
+      value={{ bookmarks, addBookmark, removeBookmark, isBookmarked }}
+    >
       {children}
     </BookmarksContext.Provider>
   );
@@ -45,7 +60,7 @@ export const BookmarksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export function useBookmarks() {
   const context = useContext(BookmarksContext);
   if (!context) {
-    throw new Error('useBookmarks must be used within a BookmarksProvider');
+    throw new Error("useBookmarks must be used within a BookmarksProvider");
   }
   return context;
-} 
+}

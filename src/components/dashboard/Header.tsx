@@ -1,15 +1,30 @@
-import { useEffect, useState } from 'react';
-import { Bell, Search, Settings, User, LogOut, CircleHelp } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from "react";
+import { Bell, Search, Settings, User, LogOut, CircleHelp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
@@ -21,26 +36,126 @@ interface Notification {
 
 // Import templates data for search functionality
 const allTemplates = [
-  { id: "bonafide-1", title: "Bonafide Certificate", description: "Student verification certificate", category: "Academic" },
-  { id: "character-1", title: "Character Certificate", description: "Character verification document", category: "Academic" },
-  { id: "experience-1", title: "Experience Certificate", description: "Work experience verification", category: "Employment" },
-  { id: "embassy-attestation-1", title: "Embassy Attestation", description: "Letter for document attestation at embassies", category: "Travel" },
-  { id: "completion-certificate-1", title: "Completion Certificate", description: "Certificate for courses, training programs, internships", category: "Educational" },
-  { id: "transfer-certificate-1", title: "Transfer Certificate", description: "Certificate for students moving between institutions", category: "Educational" },
-  { id: "noc-visa-1", title: "NOC for Visa Application", description: "No Objection Certificate for visa applications", category: "Travel" },
-  { id: "income-certificate-1", title: "Income Certificate", description: "Certificate stating employee income details", category: "Employment" },
-  { id: "maternity-leave-1", title: "Maternity Leave Application", description: "Application for maternity leave benefits", category: "Employment" },
-  { id: "bank-verification-1", title: "Bank Account Verification", description: "Letter confirming account details for banks", category: "Financial" },
-  { id: "offer-letter-1", title: "Offer Letter", description: "Formal job offer letter to candidates", category: "Employment" },
-  { id: "address-proof-1", title: "Address Proof Certificate", description: "Certificate verifying residential address", category: "Legal" },
-  { id: "articles-incorporation-1", title: "Articles of Incorporation", description: "Certificate of Incorporation for new corporations", category: "Corporate" },
-  { id: "corporate-bylaws-1", title: "Corporate Bylaws", description: "Corporate governance and operating procedures", category: "Corporate" },
-  { id: "founders-agreement-1", title: "Founders' Agreement", description: "Agreement between company founders", category: "Corporate" },
-  { id: "stock-purchase-agreement-1", title: "Stock Purchase Agreement", description: "Agreement for purchasing company shares", category: "Corporate" },
-  { id: "employment-agreement-1", title: "Employment Agreement", description: "Comprehensive employment contract", category: "Corporate" },
-  { id: "nda-1", title: "Non-Disclosure Agreement (NDA)", description: "Confidentiality agreement between parties", category: "Corporate" },
-  { id: "academic-transcript-1", title: "Academic Transcript / Marksheet", description: "Official academic record and transcript", category: "Academic" },
-  { id: "embassy-attestation-letter-1", title: "Embassy Attestation Letter", description: "Official letter for embassy document attestation", category: "Travel" }
+  {
+    id: "bonafide-1",
+    title: "Bonafide Certificate",
+    description: "Student verification certificate",
+    category: "Academic",
+  },
+  {
+    id: "character-1",
+    title: "Character Certificate",
+    description: "Character verification document",
+    category: "Academic",
+  },
+  {
+    id: "experience-1",
+    title: "Experience Certificate",
+    description: "Work experience verification",
+    category: "Employment",
+  },
+  {
+    id: "embassy-attestation-1",
+    title: "Embassy Attestation",
+    description: "Letter for document attestation at embassies",
+    category: "Travel",
+  },
+  {
+    id: "completion-certificate-1",
+    title: "Completion Certificate",
+    description: "Certificate for courses, training programs, internships",
+    category: "Educational",
+  },
+  {
+    id: "transfer-certificate-1",
+    title: "Transfer Certificate",
+    description: "Certificate for students moving between institutions",
+    category: "Educational",
+  },
+  {
+    id: "noc-visa-1",
+    title: "NOC for Visa Application",
+    description: "No Objection Certificate for visa applications",
+    category: "Travel",
+  },
+  {
+    id: "income-certificate-1",
+    title: "Income Certificate",
+    description: "Certificate stating employee income details",
+    category: "Employment",
+  },
+  {
+    id: "maternity-leave-1",
+    title: "Maternity Leave Application",
+    description: "Application for maternity leave benefits",
+    category: "Employment",
+  },
+  {
+    id: "bank-verification-1",
+    title: "Bank Account Verification",
+    description: "Letter confirming account details for banks",
+    category: "Financial",
+  },
+  {
+    id: "offer-letter-1",
+    title: "Offer Letter",
+    description: "Formal job offer letter to candidates",
+    category: "Employment",
+  },
+  {
+    id: "address-proof-1",
+    title: "Address Proof Certificate",
+    description: "Certificate verifying residential address",
+    category: "Legal",
+  },
+  {
+    id: "articles-incorporation-1",
+    title: "Articles of Incorporation",
+    description: "Certificate of Incorporation for new corporations",
+    category: "Corporate",
+  },
+  {
+    id: "corporate-bylaws-1",
+    title: "Corporate Bylaws",
+    description: "Corporate governance and operating procedures",
+    category: "Corporate",
+  },
+  {
+    id: "founders-agreement-1",
+    title: "Founders' Agreement",
+    description: "Agreement between company founders",
+    category: "Corporate",
+  },
+  {
+    id: "stock-purchase-agreement-1",
+    title: "Stock Purchase Agreement",
+    description: "Agreement for purchasing company shares",
+    category: "Corporate",
+  },
+  {
+    id: "employment-agreement-1",
+    title: "Employment Agreement",
+    description: "Comprehensive employment contract",
+    category: "Corporate",
+  },
+  {
+    id: "nda-1",
+    title: "Non-Disclosure Agreement (NDA)",
+    description: "Confidentiality agreement between parties",
+    category: "Corporate",
+  },
+  {
+    id: "academic-transcript-1",
+    title: "Academic Transcript / Marksheet",
+    description: "Official academic record and transcript",
+    category: "Academic",
+  },
+  {
+    id: "embassy-attestation-letter-1",
+    title: "Embassy Attestation Letter",
+    description: "Official letter for embassy document attestation",
+    category: "Travel",
+  },
 ];
 
 export function Header() {
@@ -76,10 +191,10 @@ export function Header() {
     const fetchNotifications = async () => {
       // 1. Fetch admin's organization
       const { data: orgs, error: orgsError } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
         .single();
       if (orgsError || !orgs?.organization_id) {
         setNotifications([]);
@@ -102,7 +217,7 @@ export function Header() {
       }
       setNotifications(data ?? []);
       // Optionally, implement unread logic if you have a read-tracking table
-      setUnread((data ?? []).map(n => n.id)); // Mark all as unread for now
+      setUnread((data ?? []).map((n) => n.id)); // Mark all as unread for now
       setLoadingNotifications(false);
     };
     fetchNotifications();
@@ -110,7 +225,7 @@ export function Header() {
 
   // Mark as read (optional, if you have a read-tracking table)
   const markAsRead = async (notificationId: string) => {
-    setUnread(prev => prev.filter(id => id !== notificationId));
+    setUnread((prev) => prev.filter((id) => id !== notificationId));
     // Optionally, update a read-tracking table here
   };
 
@@ -130,7 +245,7 @@ export function Header() {
         <div className="flex items-center flex-1 max-w-2xl">
           <div className="flex items-center space-x-2 w-full">
             <Search className="h-4 w-4 text-muted-foreground" />
-            <div 
+            <div
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background cursor-pointer items-center gap-2 text-muted-foreground hover:bg-accent/50 transition-colors"
               onClick={() => setOpen(true)}
             >
@@ -144,20 +259,26 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                {unread.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />}
+                {unread.length > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {loadingNotifications ? (
-                <div className="py-8 text-center text-muted-foreground">Loading...</div>
+                <div className="py-8 text-center text-muted-foreground">
+                  Loading...
+                </div>
               ) : notifications.length === 0 ? (
                 <div className="py-12 text-center">
-                  <p className="text-sm text-muted-foreground">No notifications yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    No notifications yet
+                  </p>
                 </div>
               ) : (
-                notifications.map(n => (
+                notifications.map((n) => (
                   <DropdownMenuItem
                     key={n.id}
                     className="cursor-pointer p-3 relative"
@@ -170,8 +291,12 @@ export function Header() {
                           <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
                         )}
                       </p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{n.body}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{dayjs(n.created_at).format("MMM D, YYYY HH:mm")}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">
+                        {n.body}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {dayjs(n.created_at).format("MMM D, YYYY HH:mm")}
+                      </p>
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -186,7 +311,13 @@ export function Header() {
               size="icon"
               className="ml-1"
               aria-label="Support Center"
-              onClick={() => window.open('https://certifyr.featurebase.app/', '_blank', 'noopener,noreferrer')}
+              onClick={() =>
+                window.open(
+                  "https://certifyr.featurebase.app/",
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
             >
               <CircleHelp className="h-5 w-5 text-black group-hover:text-black transition-colors" />
             </Button>
@@ -200,7 +331,7 @@ export function Header() {
               <Button variant="ghost" className="flex items-center gap-2 px-3">
                 <Avatar className="h-7 w-7">
                   <AvatarFallback className="text-xs">
-                    {user?.email ? getInitials(user.email) : 'U'}
+                    {user?.email ? getInitials(user.email) : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden md:block text-sm">{user?.email}</span>
@@ -210,13 +341,19 @@ export function Header() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
+                <Link
+                  to="/settings"
+                  className="flex items-center cursor-pointer"
+                >
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
+                <Link
+                  to="/settings"
+                  className="flex items-center cursor-pointer"
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </Link>
@@ -228,7 +365,7 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleSignOut}
                 className="cursor-pointer text-red-600 focus:text-red-600"
               >
@@ -258,32 +395,50 @@ export function Header() {
                   </div>
                   <div>
                     <div className="font-medium">{template.title}</div>
-                    <div className="text-sm text-muted-foreground">{template.description}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {template.description}
+                    </div>
                   </div>
                 </div>
               </CommandItem>
             ))}
           </CommandGroup>
           <CommandGroup heading="Quick Actions">
-            <CommandItem onSelect={() => { setOpen(false); navigate('/templates'); }} className="cursor-pointer">
+            <CommandItem
+              onSelect={() => {
+                setOpen(false);
+                navigate("/templates");
+              }}
+              className="cursor-pointer"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center">
                   <Search className="h-4 w-4 text-blue-500" />
                 </div>
                 <div>
                   <div className="font-medium">Browse All Templates</div>
-                  <div className="text-sm text-muted-foreground">View the complete template library</div>
+                  <div className="text-sm text-muted-foreground">
+                    View the complete template library
+                  </div>
                 </div>
               </div>
             </CommandItem>
-            <CommandItem onSelect={() => { setOpen(false); navigate('/dashboard'); }} className="cursor-pointer">
+            <CommandItem
+              onSelect={() => {
+                setOpen(false);
+                navigate("/dashboard");
+              }}
+              className="cursor-pointer"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center">
                   <Search className="h-4 w-4 text-green-500" />
                 </div>
                 <div>
                   <div className="font-medium">Go to Dashboard</div>
-                  <div className="text-sm text-muted-foreground">View your documents and activity</div>
+                  <div className="text-sm text-muted-foreground">
+                    View your documents and activity
+                  </div>
                 </div>
               </div>
             </CommandItem>
@@ -293,4 +448,3 @@ export function Header() {
     </>
   );
 }
-

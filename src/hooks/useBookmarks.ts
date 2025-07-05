@@ -1,1 +1,1 @@
-export { useBookmarks } from '../contexts/BookmarksContext'; 
+export { useBookmarks } from "../contexts/BookmarksContext";

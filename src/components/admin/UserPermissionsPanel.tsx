@@ -3,8 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +42,11 @@ interface OrganizationInvite {
   invited_by: string | null;
 }
 
-export function UserPermissionsPanel({ organizationId }: { organizationId: string | null }) {
+export function UserPermissionsPanel({
+  organizationId,
+}: {
+  organizationId: string | null;
+}) {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
@@ -38,7 +54,7 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
   const [loading, setLoading] = useState(true);
   const [inviteForm, setInviteForm] = useState({
     email: "",
-    role: "member"
+    role: "member",
   });
   const [isInviting, setIsInviting] = useState(false);
 
@@ -52,15 +68,15 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
       try {
         // Get user's role in the organization
         const { data: memberData, error: memberError } = await supabase
-          .from('organization_members')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('organization_id', organizationId)
+          .from("organization_members")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("organization_id", organizationId)
           .maybeSingle();
         if (memberError) {
           setIsAdmin(false);
         } else {
-          setIsAdmin(memberData?.role === 'admin');
+          setIsAdmin(memberData?.role === "admin");
         }
         // Fetch members and invites
         await fetchMembers(organizationId);
@@ -76,10 +92,10 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
 
   const fetchMembers = async (orgId: string) => {
     const { data, error } = await supabase
-      .from('organization_members')
-      .select('id, user_id, role, status, invited_email, created_at')
-      .eq('organization_id', orgId)
-      .order('created_at', { ascending: false });
+      .from("organization_members")
+      .select("id, user_id, role, status, invited_email, created_at")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false });
     if (!error && data) {
       setMembers(data);
     }
@@ -87,10 +103,10 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
 
   const fetchInvites = async (orgId: string) => {
     const { data, error } = await supabase
-      .from('organization_invites')
-      .select('id, email, role, invited_at, expires_at, status, invited_by')
-      .eq('organization_id', orgId)
-      .order('invited_at', { ascending: false });
+      .from("organization_invites")
+      .select("id, email, role, invited_at, expires_at, status, invited_by")
+      .eq("organization_id", orgId)
+      .order("invited_at", { ascending: false });
     if (!error && data) {
       setInvites(data);
     }
@@ -103,16 +119,20 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
       return;
     }
     setIsInviting(true);
-    const { error } = await supabase
-      .from('organization_invites')
-      .insert([{
+    const { error } = await supabase.from("organization_invites").insert([
+      {
         organization_id: organizationId,
         email: inviteForm.email.toLowerCase().trim(),
         role: inviteForm.role,
         invited_by: user?.id,
-      }]);
+      },
+    ]);
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     } else {
       toast({ title: "Invitation sent successfully!" });
       setInviteForm({ email: "", role: "member" });
@@ -123,9 +143,9 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
 
   const handleDeleteInvite = async (inviteId: string) => {
     const { error } = await supabase
-      .from('organization_invites')
+      .from("organization_invites")
       .delete()
-      .eq('id', inviteId);
+      .eq("id", inviteId);
     if (!error && organizationId) {
       await fetchInvites(organizationId);
     }
@@ -136,7 +156,7 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
       pending: "secondary",
       active: "default",
       inactive: "destructive",
-      expired: "outline"
+      expired: "outline",
     } as const;
     return (
       <Badge variant={variants[status as keyof typeof variants] || "outline"}>
@@ -159,7 +179,8 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Please complete your organization information in the Organization tab to enable user management features.
+            Please complete your organization information in the Organization
+            tab to enable user management features.
           </p>
         </CardContent>
       </Card>
@@ -177,7 +198,9 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
           <CardDescription>Loading...</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Please wait while we load your organization data.</p>
+          <p className="text-muted-foreground">
+            Please wait while we load your organization data.
+          </p>
         </CardContent>
       </Card>
     );
@@ -197,7 +220,8 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Contact your organization administrator if you need to invite users or change permissions.
+            Contact your organization administrator if you need to invite users
+            or change permissions.
           </p>
         </CardContent>
       </Card>
@@ -227,14 +251,21 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
                     id="email"
                     type="email"
                     value={inviteForm.email}
-                    onChange={(e) => setInviteForm(f => ({ ...f, email: e.target.value }))}
+                    onChange={(e) =>
+                      setInviteForm((f) => ({ ...f, email: e.target.value }))
+                    }
                     placeholder="user@example.com"
                     required
                   />
                 </div>
                 <div>
                   <Label htmlFor="role">Role</Label>
-                  <Select value={inviteForm.role} onValueChange={(value) => setInviteForm(f => ({ ...f, role: value }))}>
+                  <Select
+                    value={inviteForm.role}
+                    onValueChange={(value) =>
+                      setInviteForm((f) => ({ ...f, role: value }))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -245,12 +276,18 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
                   </Select>
                 </div>
               </div>
-              <Button type="submit" disabled={!organizationId || isInviting} className="w-full md:w-auto">
+              <Button
+                type="submit"
+                disabled={!organizationId || isInviting}
+                className="w-full md:w-auto"
+              >
                 {isInviting ? "Sending..." : "Send Invitation"}
               </Button>
             </form>
             {!organizationId && (
-              <p className="text-xs text-red-500 mt-2">You must be part of an organization to send invitations.</p>
+              <p className="text-xs text-red-500 mt-2">
+                You must be part of an organization to send invitations.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -268,11 +305,16 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
           </CardHeader>
           <CardContent>
             {invites.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No pending invitations.</p>
+              <p className="text-muted-foreground text-sm">
+                No pending invitations.
+              </p>
             ) : (
               <div className="space-y-3">
-                {invites.map(invite => (
-                  <div key={invite.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {invites.map((invite) => (
+                  <div
+                    key={invite.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{invite.email}</span>
@@ -280,8 +322,9 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
                         <Badge variant="outline">{invite.role}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Invited {dayjs(invite.invited_at).format("MMM D, YYYY")} • 
-                        Expires {dayjs(invite.expires_at).format("MMM D, YYYY")}
+                        Invited {dayjs(invite.invited_at).format("MMM D, YYYY")}{" "}
+                        • Expires{" "}
+                        {dayjs(invite.expires_at).format("MMM D, YYYY")}
                       </p>
                     </div>
                     <Button
@@ -315,18 +358,24 @@ export function UserPermissionsPanel({ organizationId }: { organizationId: strin
               <p className="text-muted-foreground text-sm">No members found.</p>
             ) : (
               <div className="space-y-3">
-                {members.map(member => (
-                  <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {member.invited_email || 'Active User'}
+                          {member.invited_email || "Active User"}
                         </span>
                         {member.status && getStatusBadge(member.status)}
                         <Badge variant="outline">{member.role}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Joined {member.created_at ? dayjs(member.created_at).format("MMM D, YYYY") : 'Unknown'}
+                        Joined{" "}
+                        {member.created_at
+                          ? dayjs(member.created_at).format("MMM D, YYYY")
+                          : "Unknown"}
                       </p>
                     </div>
                   </div>

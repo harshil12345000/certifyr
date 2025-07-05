@@ -1,11 +1,10 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { FoundersAgreementData } from '@/types/corporate-templates';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { FoundersAgreementData } from "@/types/corporate-templates";
 
 interface FoundersAgreementFormProps {
   initialData: FoundersAgreementData;
@@ -23,19 +22,24 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof FoundersAgreementData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (
+    field: keyof FoundersAgreementData,
+    value: string | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="founderNames">Founder Names (comma-separated) *</Label>
+          <Label htmlFor="founderNames">
+            Founder Names (comma-separated) *
+          </Label>
           <Textarea
             id="founderNames"
             value={formData.founderNames}
-            onChange={(e) => handleChange('founderNames', e.target.value)}
+            onChange={(e) => handleChange("founderNames", e.target.value)}
             placeholder="e.g., John Doe, Jane Smith, Bob Johnson"
             rows={2}
             required
@@ -47,7 +51,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Input
             id="companyName"
             value={formData.companyName}
-            onChange={(e) => handleChange('companyName', e.target.value)}
+            onChange={(e) => handleChange("companyName", e.target.value)}
             placeholder="e.g., Startup Inc."
             required
           />
@@ -59,7 +63,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
             id="effectiveDate"
             type="date"
             value={formData.effectiveDate}
-            onChange={(e) => handleChange('effectiveDate', e.target.value)}
+            onChange={(e) => handleChange("effectiveDate", e.target.value)}
             required
           />
         </div>
@@ -69,7 +73,9 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="businessDescription"
             value={formData.businessDescription}
-            onChange={(e) => handleChange('businessDescription', e.target.value)}
+            onChange={(e) =>
+              handleChange("businessDescription", e.target.value)
+            }
             placeholder="Describe the business and its purpose"
             rows={3}
             required
@@ -81,7 +87,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="equityDistribution"
             value={formData.equityDistribution}
-            onChange={(e) => handleChange('equityDistribution', e.target.value)}
+            onChange={(e) => handleChange("equityDistribution", e.target.value)}
             placeholder="e.g., John Doe: 40%, Jane Smith: 35%, Bob Johnson: 25%"
             rows={3}
             required
@@ -93,7 +99,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="vestingSchedule"
             value={formData.vestingSchedule}
-            onChange={(e) => handleChange('vestingSchedule', e.target.value)}
+            onChange={(e) => handleChange("vestingSchedule", e.target.value)}
             placeholder="e.g., 4-year vesting with 1-year cliff"
             rows={2}
             required
@@ -105,7 +111,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="roles"
             value={formData.roles}
-            onChange={(e) => handleChange('roles', e.target.value)}
+            onChange={(e) => handleChange("roles", e.target.value)}
             placeholder="Define each founder's role and responsibilities"
             rows={4}
             required
@@ -117,7 +123,9 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="capitalContributions"
             value={formData.capitalContributions}
-            onChange={(e) => handleChange('capitalContributions', e.target.value)}
+            onChange={(e) =>
+              handleChange("capitalContributions", e.target.value)
+            }
             placeholder="Initial capital contributions by each founder"
             rows={3}
             required
@@ -125,11 +133,15 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="intellectualProperty">Intellectual Property Assignment *</Label>
+          <Label htmlFor="intellectualProperty">
+            Intellectual Property Assignment *
+          </Label>
           <Textarea
             id="intellectualProperty"
             value={formData.intellectualProperty}
-            onChange={(e) => handleChange('intellectualProperty', e.target.value)}
+            onChange={(e) =>
+              handleChange("intellectualProperty", e.target.value)
+            }
             placeholder="How intellectual property will be assigned to the company"
             rows={3}
             required
@@ -141,7 +153,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="confidentiality"
             value={formData.confidentiality}
-            onChange={(e) => handleChange('confidentiality', e.target.value)}
+            onChange={(e) => handleChange("confidentiality", e.target.value)}
             placeholder="Confidentiality obligations of founders"
             rows={3}
             required
@@ -153,7 +165,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Textarea
             id="nonCompete"
             value={formData.nonCompete}
-            onChange={(e) => handleChange('nonCompete', e.target.value)}
+            onChange={(e) => handleChange("nonCompete", e.target.value)}
             placeholder="Non-compete restrictions during and after involvement"
             rows={3}
             required
@@ -165,7 +177,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Input
             id="disputeResolution"
             value={formData.disputeResolution}
-            onChange={(e) => handleChange('disputeResolution', e.target.value)}
+            onChange={(e) => handleChange("disputeResolution", e.target.value)}
             placeholder="e.g., Binding arbitration"
             required
           />
@@ -176,7 +188,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Input
             id="governingLaw"
             value={formData.governingLaw}
-            onChange={(e) => handleChange('governingLaw', e.target.value)}
+            onChange={(e) => handleChange("governingLaw", e.target.value)}
             placeholder="e.g., State of Delaware"
             required
           />
@@ -187,7 +199,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Input
             id="place"
             value={formData.place}
-            onChange={(e) => handleChange('place', e.target.value)}
+            onChange={(e) => handleChange("place", e.target.value)}
             placeholder="City, State"
             required
           />
@@ -198,7 +210,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Input
             id="signatoryName"
             value={formData.signatoryName}
-            onChange={(e) => handleChange('signatoryName', e.target.value)}
+            onChange={(e) => handleChange("signatoryName", e.target.value)}
             placeholder="Name of witness or notary"
           />
         </div>
@@ -207,9 +219,13 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
           <Switch
             id="includeDigitalSignature"
             checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) => handleChange('includeDigitalSignature', checked)}
+            onCheckedChange={(checked) =>
+              handleChange("includeDigitalSignature", checked)
+            }
           />
-          <Label htmlFor="includeDigitalSignature">Include Digital Signatures</Label>
+          <Label htmlFor="includeDigitalSignature">
+            Include Digital Signatures
+          </Label>
         </div>
       </div>
 

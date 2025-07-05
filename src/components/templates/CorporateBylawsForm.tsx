@@ -1,12 +1,17 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CorporateBylawsData } from '@/types/corporate-templates';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CorporateBylawsData } from "@/types/corporate-templates";
 
 interface CorporateBylawsFormProps {
   initialData: CorporateBylawsData;
@@ -24,8 +29,11 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof CorporateBylawsData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (
+    field: keyof CorporateBylawsData,
+    value: string | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -36,7 +44,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Input
             id="corporationName"
             value={formData.corporationName}
-            onChange={(e) => handleChange('corporationName', e.target.value)}
+            onChange={(e) => handleChange("corporationName", e.target.value)}
             placeholder="e.g., ABC Corporation"
             required
           />
@@ -44,7 +52,12 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="stateOfIncorporation">State of Incorporation *</Label>
-          <Select value={formData.stateOfIncorporation} onValueChange={(value) => handleChange('stateOfIncorporation', value)}>
+          <Select
+            value={formData.stateOfIncorporation}
+            onValueChange={(value) =>
+              handleChange("stateOfIncorporation", value)
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
@@ -63,7 +76,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Textarea
             id="principalOffice"
             value={formData.principalOffice}
-            onChange={(e) => handleChange('principalOffice', e.target.value)}
+            onChange={(e) => handleChange("principalOffice", e.target.value)}
             placeholder="Principal office address"
             rows={2}
             required
@@ -71,8 +84,15 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="boardMeetingFrequency">Board Meeting Frequency *</Label>
-          <Select value={formData.boardMeetingFrequency} onValueChange={(value) => handleChange('boardMeetingFrequency', value)}>
+          <Label htmlFor="boardMeetingFrequency">
+            Board Meeting Frequency *
+          </Label>
+          <Select
+            value={formData.boardMeetingFrequency}
+            onValueChange={(value) =>
+              handleChange("boardMeetingFrequency", value)
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
@@ -86,11 +106,15 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="shareholderMeetingDate">Annual Shareholder Meeting Date *</Label>
+          <Label htmlFor="shareholderMeetingDate">
+            Annual Shareholder Meeting Date *
+          </Label>
           <Input
             id="shareholderMeetingDate"
             value={formData.shareholderMeetingDate}
-            onChange={(e) => handleChange('shareholderMeetingDate', e.target.value)}
+            onChange={(e) =>
+              handleChange("shareholderMeetingDate", e.target.value)
+            }
             placeholder="e.g., Second Tuesday of May"
             required
           />
@@ -101,7 +125,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Input
             id="fiscalYearEnd"
             value={formData.fiscalYearEnd}
-            onChange={(e) => handleChange('fiscalYearEnd', e.target.value)}
+            onChange={(e) => handleChange("fiscalYearEnd", e.target.value)}
             placeholder="e.g., December 31"
             required
           />
@@ -109,7 +133,10 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="numberOfDirectors">Number of Directors *</Label>
-          <Select value={formData.numberOfDirectors} onValueChange={(value) => handleChange('numberOfDirectors', value)}>
+          <Select
+            value={formData.numberOfDirectors}
+            onValueChange={(value) => handleChange("numberOfDirectors", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select number" />
             </SelectTrigger>
@@ -125,7 +152,10 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="directorTermLength">Director Term Length *</Label>
-          <Select value={formData.directorTermLength} onValueChange={(value) => handleChange('directorTermLength', value)}>
+          <Select
+            value={formData.directorTermLength}
+            onValueChange={(value) => handleChange("directorTermLength", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select term" />
             </SelectTrigger>
@@ -142,7 +172,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Textarea
             id="officerTitles"
             value={formData.officerTitles}
-            onChange={(e) => handleChange('officerTitles', e.target.value)}
+            onChange={(e) => handleChange("officerTitles", e.target.value)}
             placeholder="e.g., President, Secretary, Treasurer"
             rows={2}
             required
@@ -154,7 +184,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Textarea
             id="votingRights"
             value={formData.votingRights}
-            onChange={(e) => handleChange('votingRights', e.target.value)}
+            onChange={(e) => handleChange("votingRights", e.target.value)}
             placeholder="Describe voting rights of shareholders"
             rows={3}
             required
@@ -166,7 +196,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Textarea
             id="dividendPolicy"
             value={formData.dividendPolicy}
-            onChange={(e) => handleChange('dividendPolicy', e.target.value)}
+            onChange={(e) => handleChange("dividendPolicy", e.target.value)}
             placeholder="Describe dividend distribution policy"
             rows={3}
             required
@@ -178,7 +208,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Textarea
             id="amendmentProcess"
             value={formData.amendmentProcess}
-            onChange={(e) => handleChange('amendmentProcess', e.target.value)}
+            onChange={(e) => handleChange("amendmentProcess", e.target.value)}
             placeholder="Describe how bylaws can be amended"
             rows={3}
             required
@@ -191,7 +221,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
             id="adoptionDate"
             type="date"
             value={formData.adoptionDate}
-            onChange={(e) => handleChange('adoptionDate', e.target.value)}
+            onChange={(e) => handleChange("adoptionDate", e.target.value)}
             required
           />
         </div>
@@ -201,7 +231,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Input
             id="place"
             value={formData.place}
-            onChange={(e) => handleChange('place', e.target.value)}
+            onChange={(e) => handleChange("place", e.target.value)}
             placeholder="City, State"
             required
           />
@@ -212,7 +242,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Input
             id="signatoryName"
             value={formData.signatoryName}
-            onChange={(e) => handleChange('signatoryName', e.target.value)}
+            onChange={(e) => handleChange("signatoryName", e.target.value)}
             placeholder="Name of corporate secretary"
             required
           />
@@ -223,7 +253,9 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Input
             id="signatoryDesignation"
             value={formData.signatoryDesignation}
-            onChange={(e) => handleChange('signatoryDesignation', e.target.value)}
+            onChange={(e) =>
+              handleChange("signatoryDesignation", e.target.value)
+            }
             placeholder="e.g., Corporate Secretary"
             required
           />
@@ -233,9 +265,13 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           <Switch
             id="includeDigitalSignature"
             checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) => handleChange('includeDigitalSignature', checked)}
+            onCheckedChange={(checked) =>
+              handleChange("includeDigitalSignature", checked)
+            }
           />
-          <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
+          <Label htmlFor="includeDigitalSignature">
+            Include Digital Signature
+          </Label>
         </div>
       </div>
 

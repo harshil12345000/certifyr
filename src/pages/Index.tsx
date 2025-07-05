@@ -8,12 +8,12 @@ import { TemplateCard } from "@/components/dashboard/TemplateCard";
 import { Button } from "@/components/ui/button";
 import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
 import { Document } from "@/types/document";
-import { useAuth } from '@/contexts/AuthContext';
-import { useUserStats } from '@/hooks/useUserStats';
-import { useUserActivity } from '@/hooks/useUserActivity';
-import { useUserDocuments } from '@/hooks/useUserDocuments';
-import { useBookmarks } from '@/hooks/useBookmarks';
-import { uniqueTemplates } from './Templates';
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserStats } from "@/hooks/useUserStats";
+import { useUserActivity } from "@/hooks/useUserActivity";
+import { useUserDocuments } from "@/hooks/useUserDocuments";
+import { useBookmarks } from "@/hooks/useBookmarks";
+import { uniqueTemplates } from "./Templates";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -24,8 +24,8 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import { BookmarkCheck } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { BookmarkCheck } from "lucide-react";
 
 const Index = () => {
   const { user } = useAuth();
@@ -39,65 +39,62 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const {
-    stats,
-    loading: statsLoading,
-    error
-  } = useUserStats(refreshIndex);
-  const {
-    activityData,
-    loading: activityLoading
-  } = useUserActivity(refreshIndex);
-  const {
-    documents,
-    loading: documentsLoading
-  } = useUserDocuments(5, refreshIndex);
+  const { stats, loading: statsLoading, error } = useUserStats(refreshIndex);
+  const { activityData, loading: activityLoading } =
+    useUserActivity(refreshIndex);
+  const { documents, loading: documentsLoading } = useUserDocuments(
+    5,
+    refreshIndex,
+  );
 
-  console.log('[Dashboard] stats:', stats);
+  console.log("[Dashboard] stats:", stats);
 
   const statsCards = [
     {
-      label: 'Documents Created',
+      label: "Documents Created",
       value: stats.documentsCreated,
       icon: FileText,
       loading: statsLoading,
     },
     {
-      label: 'Documents Signed',
+      label: "Documents Signed",
       value: stats.documentsSigned,
       icon: FileSignature,
       loading: statsLoading,
     },
     {
-      label: 'Pending Documents',
+      label: "Pending Documents",
       value: stats.pendingDocuments,
       icon: FileClock,
       loading: statsLoading,
     },
     {
-      label: 'Total Verifications',
+      label: "Total Verifications",
       value: stats.totalVerifications,
       icon: BarChart,
       loading: statsLoading,
     },
   ];
-  return <DashboardLayout>
+  return (
+    <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold mb-1">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back! Here's your document activity</p>
+            <p className="text-muted-foreground">
+              Welcome back! Here's your document activity
+            </p>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statsCards.map((stat, index) => (
-            <StatsCard 
-              key={index} 
-              title={stat.label} 
-              value={stat.loading ? 'Loading...' : stat.value.toString()} 
+            <StatsCard
+              key={index}
+              title={stat.label}
+              value={stat.loading ? "Loading..." : stat.value.toString()}
               icon={stat.icon}
             />
           ))}
@@ -108,28 +105,45 @@ const Index = () => {
           {/* Activity Chart - 4/7 width */}
           <div className="glass-card p-6 lg:col-span-4">
             <h2 className="text-lg font-medium mb-4">Activity Overview</h2>
-            {activityLoading ? <div className="h-64 flex items-center justify-center">
-                <p className="text-muted-foreground">Loading activity data...</p>
-              </div> : <ActivityChart data={activityData} />}
+            {activityLoading ? (
+              <div className="h-64 flex items-center justify-center">
+                <p className="text-muted-foreground">
+                  Loading activity data...
+                </p>
+              </div>
+            ) : (
+              <ActivityChart data={activityData} />
+            )}
           </div>
 
           {/* Popular Templates - 3/7 width */}
           <div className="glass-card p-6 lg:col-span-3">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium">Popular Templates</h2>
-              <Button variant="ghost" size="sm" className="text-primary">View All</Button>
+              <Button variant="ghost" size="sm" className="text-primary">
+                View All
+              </Button>
             </div>
             <div className="space-y-4">
-              {popularTemplates.slice(0, 3).map(template => <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+              {popularTemplates.slice(0, 3).map((template) => (
+                <div
+                  key={template.id}
+                  className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0"
+                >
                   <div className="rounded-full w-9 h-9 bg-primary-500/10 text-primary-500 flex items-center justify-center">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium mb-1">{template.title}</h3>
-                    <p className="text-xs text-muted-foreground">{template.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {template.description}
+                    </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-primary">Use</Button>
-                </div>)}
+                  <Button variant="ghost" size="sm" className="text-primary">
+                    Use
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -138,16 +152,21 @@ const Index = () => {
         <RecentDocuments documents={documents} loading={documentsLoading} />
 
         {/* Recent Templates */}
-        
       </div>
-    </DashboardLayout>;
+    </DashboardLayout>
+  );
 };
 
 export function BookmarksPage() {
   const { bookmarks, removeBookmark } = useBookmarks();
-  const bookmarkedTemplates = uniqueTemplates.filter(t => bookmarks.includes(t.id));
+  const bookmarkedTemplates = uniqueTemplates.filter((t) =>
+    bookmarks.includes(t.id),
+  );
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
-  const [pendingRemove, setPendingRemove] = useState<{id: string, title: string} | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   return (
     <DashboardLayout>
@@ -156,32 +175,57 @@ export function BookmarksPage() {
           <span>Bookmarks</span>
         </h1>
         {bookmarkedTemplates.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground">No bookmarks yet. Click the bookmark icon on any template to add it here.</div>
+          <div className="py-12 text-center text-muted-foreground">
+            No bookmarks yet. Click the bookmark icon on any template to add it
+            here.
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {bookmarkedTemplates.map(template => (
+            {bookmarkedTemplates.map((template) => (
               <div key={template.id} className="relative group">
-                <TemplateCard {...template} isAdmin={true} forceBookmarked={true} onBookmarkClick={e => {
-                  e.preventDefault();
-                  setPendingRemove({id: template.id, title: template.title});
-                  setDialogOpen(template.id);
-                }} />
+                <TemplateCard
+                  {...template}
+                  isAdmin={true}
+                  forceBookmarked={true}
+                  onBookmarkClick={(e) => {
+                    e.preventDefault();
+                    setPendingRemove({
+                      id: template.id,
+                      title: template.title,
+                    });
+                    setDialogOpen(template.id);
+                  }}
+                />
                 {/* Modal for confirming removal */}
-                <AlertDialog open={dialogOpen === template.id} onOpenChange={open => { if (!open) setDialogOpen(null); }}>
+                <AlertDialog
+                  open={dialogOpen === template.id}
+                  onOpenChange={(open) => {
+                    if (!open) setDialogOpen(null);
+                  }}
+                >
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Confirm to Remove {template.title} from Bookmarks</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Confirm to Remove {template.title} from Bookmarks
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to remove this template from your bookmarks?
+                        Are you sure you want to remove this template from your
+                        bookmarks?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setDialogOpen(null)}>No</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => {
-                        if (pendingRemove) removeBookmark(pendingRemove.id);
-                        setDialogOpen(null);
-                        setPendingRemove(null);
-                      }}>Yes</AlertDialogAction>
+                      <AlertDialogCancel onClick={() => setDialogOpen(null)}>
+                        No
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          if (pendingRemove) removeBookmark(pendingRemove.id);
+                          setDialogOpen(null);
+                          setPendingRemove(null);
+                        }}
+                      >
+                        Yes
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

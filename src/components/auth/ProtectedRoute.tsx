@@ -1,7 +1,6 @@
-
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,7 +9,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
 
-  console.log('ProtectedRoute - loading:', loading, 'user:', !!user);
+  console.log("ProtectedRoute - loading:", loading, "user:", !!user);
 
   if (loading) {
     return (
@@ -24,7 +23,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    console.log('No user found, redirecting to auth');
+    console.log("No user found, redirecting to auth");
     return <Navigate to="/auth" replace />;
   }
 

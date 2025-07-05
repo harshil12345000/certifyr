@@ -349,7 +349,7 @@ _**Assistant**_
       return stored ? JSON.parse(stored) : null;
     });
 +   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
+
     useEffect(() => {
 -     if (!organizationId) return;
 +     if (!organizationId) {
@@ -357,13 +357,13 @@ _**Assistant**_
 +       setLoading(false);
 +       return;
 +     }
-  
+
       const fetchPortalSettings = async () => {
 ```
 
 ```diff
             .single();
-  
+
 -         if (error || !data) {
 +         if (error) {
 +           setErrorMsg('Error fetching portal settings. Please try again later.');
@@ -384,7 +384,7 @@ _**Assistant**_
 ```diff
       );
     }
-+ 
++
 +   if (errorMsg) {
 +     return (
 +       <div className="min-h-screen flex flex-col items-center justify-center text-center p-4">
@@ -398,7 +398,7 @@ _**Assistant**_
 +       </div>
 +     );
 +   }
-  
+
     if (!portalSettings) {
 -     return <Navigate to="/auth" replace />;
 +     // This should be unreachable, but fallback just in case
@@ -408,7 +408,7 @@ _**Assistant**_
 +       </div>
 +     );
     }
-  
+
 ```
 
 ---
@@ -446,19 +446,23 @@ With the new error handling, you should now see a specific error message if the 
 ### Next Steps to Diagnose
 
 #### 1. **Check the Browser Console**
-- Are there any errors in the browser console (red text)?  
+
+- Are there any errors in the browser console (red text)?
   - Look for CORS errors, Supabase errors, or JavaScript exceptions.
 
 #### 2. **Check the Network Tab**
+
 - In your browser’s DevTools, go to the “Network” tab and look for the request to Supabase for `request_portal_settings`.
   - Does it complete? Does it fail? Is it pending forever?
 
 #### 3. **Check the URL**
+
 - Is your URL in the format:  
   `http://localhost:xxxx/<organizationId>/request-portal`
 - The `<organizationId>` must be a valid UUID for an organization that has the portal enabled.
 
 #### 4. **Check for Infinite Loading Logic**
+
 - If `organizationId` is missing, the new code should show an error.
 - If the Supabase query never returns, it could be a network or configuration issue.
 
@@ -490,7 +494,7 @@ git status
 PS C:\Users\harsh\OneDrive\Desktop\Certifyr\Cursor AI V2\certifyr> git status
 On branch main
 nothing to commit, working tree cleann/main'.
-PS C:\Users\harsh\OneDrive\Desktop\Certifyr\Cursor AI V2\certifyr> git status 
+PS C:\Users\harsh\OneDrive\Desktop\Certifyr\Cursor AI V2\certifyr> git status
 On branch main
 Your branch is up to date with 'origin/main'.
 
@@ -542,17 +546,21 @@ Thank you for the update. If **Vercel, localhost, and Netlify** (and possibly �
 ## 1. **Check for Common Causes**
 
 ### a. **Supabase Outage or Credentials Issue**
+
 - If your app relies on Supabase and it’s down, or your API keys/config changed, all environments will break.
 - Check the [Supabase status page](https://status.supabase.com/) and your project’s API keys.
 
 ### b. **Network Issues**
+
 - If your internet connection is unstable, or if there’s a DNS or firewall issue, all environments may fail to connect to Supabase or other APIs.
 
 ### c. **Recent Code or Config Change**
+
 - Did you change any environment variables, Supabase settings, or deploy a breaking change?
 - Even if git is clean, a config change in the dashboard or a secret rotation could break all environments.
 
 ### d. **Browser/Cache Issues**
+
 - Try a hard refresh (Ctrl+Shift+R) or open in incognito mode.
 - Clear localStorage/sessionStorage if the app stores sessions there.
 
@@ -561,15 +569,18 @@ Thank you for the update. If **Vercel, localhost, and Netlify** (and possibly �
 ## 2. **What to Check Next**
 
 ### **A. Check Console and Network Tab**
+
 - Open DevTools (F12) in your browser.
 - Look for errors in the **Console** (red text).
 - In the **Network** tab, look for failed requests (red) to Supabase or your backend.
 
 ### **B. Check Environment Variables**
+
 - Make sure your Supabase URL and anon/public keys are correct in all environments.
 - If you rotated keys or changed project settings, update them everywhere.
 
 ### **C. Check Supabase Dashboard**
+
 - Go to your Supabase project dashboard.
 - Check for:
   - Project status (should be “active”)
@@ -577,6 +588,7 @@ Thank you for the update. If **Vercel, localhost, and Netlify** (and possibly �
   - RLS (Row Level Security) or table changes that could block access
 
 ### **D. Check Deployment Logs**
+
 - For Vercel/Netlify, check the latest deployment logs for errors.
 - For localhost, check your terminal for errors when running the dev server.
 
@@ -593,6 +605,7 @@ Thank you for the update. If **Vercel, localhost, and Netlify** (and possibly �
 ## 4. **Next Steps**
 
 Would you like to:
+
 - Share a screenshot or copy-paste of the error from the browser console?
 - Run a test request to Supabase from your terminal to check connectivity?
 - Add more debug output to the app to see where it’s failing?
@@ -625,27 +638,35 @@ Thank you for sharing the screenshot. Since the app is stuck on the loading spin
 ## Next Steps: Debugging Checklist
 
 ### 1. **Check Browser Console and Network Tab**
+
 - Open DevTools (F12) → Console: Are there any red errors?
 - Go to the Network tab, reload the page, and look for requests to Supabase. Are they pending, failing, or returning errors?
 
 ### 2. **Check Supabase Project Status**
+
 - Go to your [Supabase dashboard](https://app.supabase.com/).
 - Is your project “active”? Are there any warnings or errors?
 - Check the “API” section for your project URL and anon/public key.
 
 ### 3. **Check Environment Variables**
+
 - In Vercel/Netlify, go to your project settings and verify that:
   - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (or similar) are set and correct.
 - In local `.env` or config, check the same.
 
 ### 4. **Test Supabase Connectivity**
+
 - Try running a simple fetch to your Supabase API from your terminal or browser console:
   ```js
-  fetch('https://YOUR_PROJECT.supabase.co/rest/v1/', { headers: { apikey: 'YOUR_ANON_KEY' } })
+  fetch("https://YOUR_PROJECT.supabase.co/rest/v1/", {
+    headers: { apikey: "YOUR_ANON_KEY" },
+  });
   ```
+
   - Does it return a response or hang/fail?
 
 ### 5. **Check for RLS or Table Issues**
+
 - Did you recently change Row Level Security (RLS) or table schemas?
 - If RLS is too strict or a table is missing, all queries will hang or fail.
 
@@ -710,29 +731,35 @@ Thank you for providing the browser logs. Here’s what they reveal:
 ## What To Do Next
 
 ### 1. **Check Supabase Environment Variables**
+
 - In Vercel/Netlify, go to your project settings and verify:
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
 - Make sure they match the values in your Supabase dashboard.
 
 ### 2. **Check Supabase Project Status**
+
 - Go to your [Supabase dashboard](https://app.supabase.com/).
 - Make sure your project is “active” and not paused or suspended.
 
 ### 3. **Test Supabase Auth Directly**
+
 - Open your browser console and run:
   ```js
-  fetch('https://YOUR_PROJECT.supabase.co/auth/v1/health')
-    .then(r => r.json())
-    .then(console.log)
+  fetch("https://YOUR_PROJECT.supabase.co/auth/v1/health")
+    .then((r) => r.json())
+    .then(console.log);
   ```
+
   - Replace `YOUR_PROJECT` with your actual Supabase project ref.
   - You should get `{ "status": "ok" }`. If not, your project is down or unreachable.
 
 ### 4. **Check for Auth Changes**
+
 - Did you change any Supabase Auth settings, delete users, or rotate keys recently?
 
 ### 5. **Try Logging In Again**
+
 - If you have a login page, try logging in again. If you get an error, note the message.
 
 ---
@@ -768,23 +795,28 @@ When an app that was working fine suddenly starts taking a long time (or never l
 ---
 
 ## 1. **Supabase Service Issue**
+
 - **Supabase is down, slow, or unreachable** (network, DNS, or their servers are having issues).
 - **Your Supabase project is paused, suspended, or rate-limited** (this can happen if you hit free tier limits or there’s a billing issue).
 - **Supabase API keys or project ref changed** (if you rotated keys or recreated the project).
 
 ## 2. **Environment Variable/Config Issue**
+
 - **Environment variables (Supabase URL/key) are missing or incorrect** in your deployment or local `.env`.
 - If you or a teammate changed these in Vercel/Netlify or locally, the app can’t connect to Supabase.
 
 ## 3. **Auth or RLS Policy Change**
+
 - **Row Level Security (RLS) or auth settings were changed** in Supabase, blocking all queries.
 - If you enabled RLS without proper policies, or changed user roles, all data fetches can hang or fail.
 
 ## 4. **Network/Browser Issues**
+
 - **Your network is blocking requests** (VPN, firewall, DNS, etc.).
 - **Browser extensions** (like ad blockers) can sometimes interfere, but this is less likely if it’s happening everywhere.
 
 ## 5. **Supabase Table/Schema Change**
+
 - If a required table or column was deleted/renamed, queries can hang or error.
 
 ---
@@ -859,30 +891,39 @@ Thank you for clarifying that the **whole app** (not just the portal) is intermi
 ## What You Should Do
 
 ### 1. **Check Supabase Status**
+
 - Visit [Supabase Status](https://status.supabase.com/) to see if there are ongoing incidents.
 - Check your project dashboard for any warnings, limits, or errors.
 
 ### 2. **Check for Rate Limiting**
+
 - In your Supabase dashboard, check your usage and quotas.
 - If you’re on the free tier and have a lot of users or requests, you may be throttled.
 
 ### 3. **Check Network Tab When It Hangs**
+
 - Open DevTools → Network tab.
 - Reload the app and watch for requests to Supabase that are “pending” for a long time or fail.
 - Click on a stuck request and check the “Timing” and “Response” tabs for clues.
 
 ### 4. **Check Console for Errors**
+
 - Sometimes, errors are only visible in the console (e.g., CORS, 429 Too Many Requests, 500 errors).
 
 ### 5. **Test Supabase Health**
+
 - In your browser console, run:
   ```js
-  fetch('https://YOUR_PROJECT.supabase.co/auth/v1/health').then(r => r.json()).then(console.log)
+  fetch("https://YOUR_PROJECT.supabase.co/auth/v1/health")
+    .then((r) => r.json())
+    .then(console.log);
   ```
+
   - Replace `YOUR_PROJECT` with your actual project ref.
   - If this is slow or fails, Supabase is the bottleneck.
 
 ### 6. **Check for Recent Changes**
+
 - Did you or anyone on your team:
   - Change RLS policies?
   - Add heavy queries or new features?
@@ -910,25 +951,17 @@ Would you like help interpreting your Supabase dashboard, or do you want to shar
 
 _**User**_
 
-Diagnose for me. 
+Diagnose for me.
 
 ---
 
 _**Assistant**_
 
-
+---
 
 ---
 
-
-
 ---
-
-
-
----
-
-
 
 ---
 
@@ -1040,27 +1073,15 @@ find the root issue of what has happened. its not working on either local host, 
 
 _**Assistant**_
 
-
+---
 
 ---
 
-
+---
 
 ---
 
-
-
 ---
-
-
-
----
-
-
-
----
-
-
 
 ---
 
@@ -1069,15 +1090,18 @@ Here’s a diagnosis based on your Supabase logs and advisor reports:
 ---
 
 ## 1. **No Critical Errors in Supabase Logs**
+
 - The API, Auth, and Realtime services show **no recent errors**.
 - The Postgres logs show only normal connection activity.
 
 ## 2. **Performance Warnings**
+
 - **Unindexed foreign keys**: Several tables (including `document_requests`, `request_portal_employees`, etc.) have foreign keys without indexes. This can slow down queries, especially as your data grows.
 - **RLS (Row Level Security) Policy Inefficiencies**: Many RLS policies are written in a way that causes them to be re-evaluated for every row, which can severely degrade performance at scale.
 - **Multiple permissive RLS policies**: Some tables have multiple permissive policies for the same action/role, which can slow down queries.
 
 ## 3. **Security Warnings**
+
 - **RLS Not Enabled on Some Tables**: Some tables (e.g., `organization_members`, `organizations`, `notifications`, `user_statistics`) have RLS policies but RLS is not enabled. This is a security risk, but not likely the cause of your loading issue.
 - **Leaked Password Protection Disabled**: Not a performance issue, but a security best practice.
 
@@ -1097,6 +1121,7 @@ Here’s a diagnosis based on your Supabase logs and advisor reports:
 ---
 
 ## 5. **Why Did It Suddenly Get Worse?**
+
 - As your data grows, the impact of missing indexes and inefficient RLS policies increases.
 - If you recently added more data, users, or activity, the database may have hit a “tipping point” where previously tolerable inefficiencies now cause major slowdowns.
 - If you recently changed RLS policies or added new ones, this could also have made queries much slower.
@@ -1106,8 +1131,9 @@ Here’s a diagnosis based on your Supabase logs and advisor reports:
 ## 6. **What Should You Do?**
 
 ### **A. Add Indexes to Foreign Keys**
+
 - Add indexes to all foreign key columns in your main tables (especially `document_requests`, `request_portal_employees`, etc.).
-  - Example:  
+  - Example:
     ```sql
     CREATE INDEX ON public.document_requests(employee_id);
     CREATE INDEX ON public.document_requests(organization_id);
@@ -1116,27 +1142,30 @@ Here’s a diagnosis based on your Supabase logs and advisor reports:
 - This will dramatically speed up queries involving these columns.
 
 ### **B. Optimize RLS Policies**
+
 - Refactor RLS policies to use the recommended pattern:
   - Replace `auth.uid()` with `(select auth.uid())` in policies.
   - Avoid policies that are re-evaluated per row if possible.
   - See [Supabase RLS performance docs](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select).
 
 ### **C. Remove Duplicate Permissive Policies**
+
 - Consolidate multiple permissive policies for the same action/role into a single policy per table/action.
 
 ### **D. Monitor Query Performance**
+
 - Use Supabase’s query performance tools to identify slow queries and optimize them.
 
 ---
 
 ## 7. **Summary Table**
 
-| Issue Type         | Impact                | Fix/Action                                                                 |
-|--------------------|----------------------|----------------------------------------------------------------------------|
-| Unindexed FKs      | Slow queries         | Add indexes to all foreign key columns                                     |
-| Inefficient RLS    | Slow queries         | Refactor RLS policies to use `(select auth.uid())` pattern                 |
-| Multiple policies  | Slow queries         | Merge duplicate permissive RLS policies                                    |
-| RLS not enabled    | Security risk        | Enable RLS on all public tables with policies                              |
+| Issue Type        | Impact        | Fix/Action                                                 |
+| ----------------- | ------------- | ---------------------------------------------------------- |
+| Unindexed FKs     | Slow queries  | Add indexes to all foreign key columns                     |
+| Inefficient RLS   | Slow queries  | Refactor RLS policies to use `(select auth.uid())` pattern |
+| Multiple policies | Slow queries  | Merge duplicate permissive RLS policies                    |
+| RLS not enabled   | Security risk | Enable RLS on all public tables with policies              |
 
 ---
 
@@ -1163,10 +1192,11 @@ Here’s an aggressive, step-by-step approach to diagnose and fix the root cause
 - Sometimes, corrupted node_modules, lockfiles, or build caches can break local dev and all deployments.
 
 ### Steps:
+
 1. **Delete `node_modules` and lock files:**
    - Delete `node_modules`, `package-lock.json`, and `bun.lockb` (if present).
 2. **Reinstall dependencies:**
-   - Run:  
+   - Run:
      ```
      npm install
      ```
@@ -1175,11 +1205,11 @@ Here’s an aggressive, step-by-step approach to diagnose and fix the root cause
      bun install
      ```
 3. **Clear Vite/Next/React build cache:**
-   - If you use Vite:  
+   - If you use Vite:
      ```
      rm -rf node_modules/.vite
      ```
-   - If you use Next.js:  
+   - If you use Next.js:
      ```
      rm -rf .next
      ```
@@ -1251,6 +1281,7 @@ Here’s an aggressive, step-by-step approach to diagnose and fix the root cause
 ## Next Steps
 
 Would you like me to:
+
 - Propose the exact terminal commands to clear everything and reinstall?
 - Help you debug a specific error message you see in the terminal or browser?
 - Guide you through checking for infinite loops or broken imports?
@@ -1289,6 +1320,7 @@ If the app **works on Netlify but not on localhost or Vercel**, the problem is a
   - Your Vercel project’s environment variables (in the Vercel dashboard).
 
 **Common issues:**
+
 - Missing `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, or other required keys.
 - Typos in variable names (must match exactly, including `VITE_` prefix for Vite).
 - Old or invalid values.
@@ -1347,7 +1379,7 @@ This will almost certainly resolve the difference!
 
 _**User**_
 
-Yes check and implement a fix. Complete on auto run. Ensure functionality. 
+Yes check and implement a fix. Complete on auto run. Ensure functionality.
 
 Also, the request portal isn't working on netlify
 
@@ -1440,7 +1472,7 @@ ls -a
 ```
 
 ```
-Get-ChildItem : Parameter cannot be processed because the parameter name 'a' is ambiguous. Possible 
+Get-ChildItem : Parameter cannot be processed because the parameter name 'a' is ambiguous. Possible
 matches include: -Attributes -Directory -File -Hidden -ReadOnly -System.
 At line:1 char:4
 + ls -a
@@ -1544,11 +1576,13 @@ There are **no `.env` or environment variable files** present in your project ro
 ## How to Fix
 
 ### 1. **Get Your Working Environment Variables from Netlify**
+
 - Go to your Netlify project dashboard.
 - Find the list of environment variables (Settings → Build & deploy → Environment).
 - Copy all variables (especially `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and any others your app uses).
 
 ### 2. **Create a `.env` File in Your Project Root**
+
 - In your project root, create a file named `.env`.
 - Paste the variables you copied from Netlify into this file.
 - Example:
@@ -1559,6 +1593,7 @@ There are **no `.env` or environment variable files** present in your project ro
   ```
 
 ### 3. **Restart Your Local Dev Server**
+
 - Stop your dev server if it’s running.
 - Run:
   ```
@@ -1570,6 +1605,7 @@ There are **no `.env` or environment variable files** present in your project ro
   ```
 
 ### 4. **Set the Same Variables in Vercel**
+
 - Go to your Vercel project dashboard.
 - Add the same environment variables under Project Settings → Environment Variables.
 - Redeploy your project.
@@ -1599,17 +1635,13 @@ Let me know if you want me to generate the `.env` template for you!
 
 _**User**_
 
-The issue has arised between the git commit 9 hours and 13 hours ago. The 13 hours ago one was working fine and had the git commit hash "2be8f41" and the 9 hours ago is "a59bb63".  Please compare both changes in the code and diagnose the issue.
+The issue has arised between the git commit 9 hours and 13 hours ago. The 13 hours ago one was working fine and had the git commit hash "2be8f41" and the 9 hours ago is "a59bb63". Please compare both changes in the code and diagnose the issue.
 
 ---
 
 _**Assistant**_
 
-
-
 ---
-
-
 
 ---
 
@@ -1658,6 +1690,7 @@ index 0000000..3621a52
 The diff between the last working commit (`2be8f41`) and the first broken commit (`a59bb63`) shows that **the file `.env.production` was deleted**.
 
 This file contained critical environment variables, such as:
+
 ```
 VITE_APP_BASE_URL=https://certifyr.netlify.app
 VITE_APP_BASE_URL=https://certifyr.vercel.app
@@ -1706,8 +1739,8 @@ git checkout 2be8f41 -- .env.production
 PS C:\Users\harsh\OneDrive\Desktop\Certifyr\Cursor AI V2\certifyr> cmgit checkout 2be8f41 -- .env.produ
                                                                    cmgit checkout 2be8f41 -- .env.produ
 ction
-cmgit : The term 'cmgit' is not recognized as the name of a cmdlet, function, script file, or 
-operable program. Check the spelling of the name, or if a path was included, verify that the path is 
+cmgit : The term 'cmgit' is not recognized as the name of a cmdlet, function, script file, or
+operable program. Check the spelling of the name, or if a path was included, verify that the path is
 correct and try again.
 At line:1 char:1
 + cmgit checkout 2be8f41 -- .env.production
@@ -1755,6 +1788,7 @@ The `.env.production` file has been successfully restored from the last working 
 ---
 
 ## 1. **Localhost Fix**
+
 - **Create a `.env` file** in your project root (if it doesn’t already exist).
 - **Copy the contents** of `.env.production` into `.env`:
   ```
@@ -1767,6 +1801,7 @@ The `.env.production` file has been successfully restored from the last working 
 ---
 
 ## 2. **Vercel Fix**
+
 - **Go to your Vercel project dashboard.**
 - **Add the same environment variables** (`VITE_APP_BASE_URL` and any others you use) in the Environment Variables section.
 - **Redeploy your project** on Vercel.
@@ -1774,11 +1809,13 @@ The `.env.production` file has been successfully restored from the last working 
 ---
 
 ## 3. **Netlify**
+
 - Netlify is already working, but double-check that all required variables are present in its dashboard.
 
 ---
 
 ## 4. **Restart Local Dev Server**
+
 - After creating/updating your `.env` file, restart your local dev server:
   ```
   npm run dev
@@ -1791,6 +1828,7 @@ The `.env.production` file has been successfully restored from the last working 
 ---
 
 ## 5. **Request Portal**
+
 - Once the environment variables are restored, the request portal should also work on all platforms.
 
 ---
@@ -1814,6 +1852,7 @@ The `.env.production` file has been restored. To fully resolve your issues on lo
 ---
 
 ### 1. **Create a `.env` File Locally**
+
 - In your project root, create a file named `.env`.
 - Add the following lines (copied from `.env.production`):
   ```
@@ -1826,6 +1865,7 @@ The `.env.production` file has been restored. To fully resolve your issues on lo
 ---
 
 ### 2. **Update Vercel Environment Variables**
+
 - Go to your Vercel project dashboard.
 - Add the same variables (`VITE_APP_BASE_URL` and any others you use) in the Environment Variables section.
 - Redeploy your project.
@@ -1833,6 +1873,7 @@ The `.env.production` file has been restored. To fully resolve your issues on lo
 ---
 
 ### 3. **Restart Your Local Dev Server**
+
 - After creating/updating your `.env` file, restart your dev server:
   ```
   npm run dev
@@ -1845,6 +1886,7 @@ The `.env.production` file has been restored. To fully resolve your issues on lo
 ---
 
 ### 4. **Test All Environments**
+
 - Localhost, Vercel, and Netlify should now all work as expected.
 - The request portal should also function correctly.
 
@@ -1856,7 +1898,7 @@ If you encounter any further issues, please let me know the exact error message 
 
 _**User**_
 
-employee request portal is taking too long to load. Diagnose the issue and implement a fix. Ensure functionality. Complete on auto run. 
+employee request portal is taking too long to load. Diagnose the issue and implement a fix. Ensure functionality. Complete on auto run.
 
 ---
 
@@ -1883,6 +1925,7 @@ Read file: src/components/employee-portal/EmployeePortalAuth.tsx
 ---
 
 **Diagnosis:**
+
 - The Supabase client is hardcoded with the correct URL and anon key, so environment variables are not the issue for the employee portal.
 - The employee request portal is stuck on loading, which means the initial Supabase query (to fetch portal settings or employee data) is either:
   - Not returning (hanging)
@@ -1890,6 +1933,7 @@ Read file: src/components/employee-portal/EmployeePortalAuth.tsx
   - Or there is a logic bug in the loading/error state handling
 
 **Key Observations:**
+
 - The code for the employee portal fetches portal settings and employee data on load.
 - If the organization ID is invalid, or the portal is not enabled for that org, it should show an error (with the latest error handling).
 - If the Supabase query hangs (e.g., due to a network issue, RLS, or a bug), the spinner will show forever.
@@ -1899,19 +1943,20 @@ Read file: src/components/employee-portal/EmployeePortalAuth.tsx
 ## Aggressive Fix Plan
 
 ### 1. **Add a Timeout to the Initial Fetch**
+
 - If the fetch takes longer than 10 seconds, show a user-friendly error and a retry button.
 
 ### 2. **Add Debug Logging to the UI**
+
 - Show the current organization ID, fetch status, and any error messages directly on the loading screen.
 
 ### 3. **Ensure Error Handling is Robust**
+
 - Make sure any Supabase/network error is surfaced to the user, not just stuck in a spinner.
 
 ---
 
 I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure you always see what’s wrong and can retry, and to prevent infinite loading.
-
-
 
 ---
 
@@ -1919,7 +1964,7 @@ I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure 
     });
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 +   const [debugInfo, setDebugInfo] = useState<any>(null);
-  
+
     useEffect(() => {
       if (!organizationId) {
         setErrorMsg('Invalid organization link. Please check your URL.');
@@ -1927,7 +1972,7 @@ I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure 
 +       setDebugInfo({ organizationId, reason: 'Missing orgId param' });
         return;
       }
-+ 
++
 +     let didTimeout = false;
 +     const timeout = setTimeout(() => {
 +       didTimeout = true;
@@ -1935,7 +1980,7 @@ I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure 
 +       setLoading(false);
 +       setDebugInfo({ organizationId, reason: 'Timeout after 10s' });
 +     }, 10000);
-  
+
       const fetchPortalSettings = async () => {
         try {
 +         setDebugInfo({ organizationId, status: 'fetching portal settings' });
@@ -1945,10 +1990,10 @@ I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure 
 
 ```diff
             .single();
-  
+
 +         if (didTimeout) return;
 +         clearTimeout(timeout);
-+ 
++
           if (error) {
             setErrorMsg('Error fetching portal settings. Please try again later.');
             setPortalSettings(null);
@@ -1972,12 +2017,12 @@ I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure 
 +         if (!didTimeout) setLoading(false);
         }
       };
-  
+
       fetchPortalSettings();
 +     // Cleanup timeout on unmount
 +     return () => clearTimeout(timeout);
     }, [organizationId]);
-  
+
 ```
 
 ```diff
@@ -2005,18 +2050,19 @@ I will implement these improvements in `src/pages/EmployeePortal.tsx` to ensure 
 
 I've implemented the following aggressive fixes in the employee request portal:
 
-1. **Timeout Handling:**  
+1. **Timeout Handling:**
    - If the initial fetch for portal settings takes longer than 10 seconds, a clear error message is shown with a retry button.
 
-2. **Debug Info on Screen:**  
+2. **Debug Info on Screen:**
    - The loading and error screens now display debug information (organization ID, loading state, error message, and fetch status) to help you instantly diagnose what’s happening.
 
-3. **Robust Error Handling:**  
+3. **Robust Error Handling:**
    - Any Supabase/network error or missing portal settings will now be clearly surfaced to the user, never leaving you stuck on a spinner.
 
 ---
 
 **What to do next:**
+
 - Reload the employee request portal page.
 - If it still hangs or errors, you’ll see a debug info box on the screen.  
   **Copy and paste that debug info here** for instant diagnosis of the next step.
@@ -2050,8 +2096,6 @@ Yes
 
 _**Assistant**_
 
-
-
 ---
 
 ```bash
@@ -2062,7 +2106,7 @@ git checkout a59bb63 -- src/pages/EmployeePortal.tsx
 PS C:\Users\harsh\OneDrive\Desktop\Certifyr\Cursor AI V2\certifyr> git checkout
 a59bb63 -- src/pages/Em
 ployeePortal.tsx
-                       
+
 ```
 
 ---
@@ -2075,7 +2119,7 @@ If you need a different fix or want to try another approach to resolve the loadi
 
 _**User**_
 
-List in detail, all the changes you made between the 13 hours ago and 9 hours ago file. 
+List in detail, all the changes you made between the 13 hours ago and 9 hours ago file.
 
 ---
 
@@ -2099,9 +2143,7 @@ Cancelled
 
 _**User**_
 
-Here you  go: here's the history
-
-
+Here you go: here's the history
 
 ---
 
@@ -2114,6 +2156,7 @@ Thank you for providing the commit hashes and the context. Here is a **detailed 
 ## **Summary of Changes**
 
 ### 1. **Deleted File**
+
 - `.env.production` was **deleted**.
   - This file contained:
     ```
@@ -2126,6 +2169,7 @@ Thank you for providing the commit hashes and the context. Here is a **detailed 
 ---
 
 ### 2. **Added Files**
+
 - Two new specstory markdown files were added:
   - `.specstory/history/2025-07-03_17-03Z-remove-logo-from-bottom-left-corner.md`
   - `.specstory/history/2025-07-03_18-10Z-render-signatures-and-qr-codes-after-approval.md`
@@ -2134,15 +2178,18 @@ Thank you for providing the commit hashes and the context. Here is a **detailed 
 ---
 
 ### 3. **Modified Files**
+
 A number of source files were modified. Here are the most relevant ones (based on the fast diff and your attached history):
 
 #### **Employee Portal & Request Portal**
+
 - `src/components/employee-portal/EmployeePendingRequests.tsx`
 - `src/components/employee-portal/EmployeePortalAuth.tsx`
 - `src/components/employee-portal/EmployeePortalDashboard.tsx`
 - `src/components/request-portal/RequestPortalRequests.tsx`
 
 #### **Template Previews and Forms**
+
 - `src/components/templates/AcademicTranscriptForm.tsx`
 - `src/components/templates/AcademicTranscriptPreview.tsx`
 - `src/components/templates/AddressProofForm.tsx`
@@ -2152,6 +2199,7 @@ A number of source files were modified. Here are the most relevant ones (based o
 - ...and several other template-related files.
 
 #### **Dashboard/Header**
+
 - `src/components/dashboard/Header.tsx`
 
 ---
@@ -2237,11 +2285,11 @@ The **request portal is not working on Vercel** because the required environment
 
 ## **Summary Table**
 
-| Platform   | Has Env Vars? | Works? | Why/Why Not?                |
-|------------|---------------|--------|-----------------------------|
-| Netlify    | Yes           | Yes    | Env vars set in dashboard   |
-| Localhost  | No            | No     | .env/.env.production missing|
-| Vercel     | No            | No     | Env vars missing in dashboard|
+| Platform  | Has Env Vars? | Works? | Why/Why Not?                  |
+| --------- | ------------- | ------ | ----------------------------- |
+| Netlify   | Yes           | Yes    | Env vars set in dashboard     |
+| Localhost | No            | No     | .env/.env.production missing  |
+| Vercel    | No            | No     | Env vars missing in dashboard |
 
 ---
 
@@ -2285,9 +2333,7 @@ Create a file called `vercel.json` in your project root (if it doesn’t exist) 
 
 ```json
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
 ```
 
@@ -2321,9 +2367,9 @@ This tells Vercel to serve `index.html` for all routes, letting React Router han
 
 ## Summary Table
 
-| Problem                  | Solution                        |
-|--------------------------|---------------------------------|
-| 404 on nested routes     | Add `vercel.json` rewrite rule  |
+| Problem                    | Solution                          |
+| -------------------------- | --------------------------------- |
+| 404 on nested routes       | Add `vercel.json` rewrite rule    |
 | React Router SPA on Vercel | Serve `index.html` for all routes |
 
 ---
@@ -2342,12 +2388,12 @@ Yes
 _**Assistant**_
 
 ```diff
-- 
+-
 + {
 +   "rewrites": [
 +     { "source": "/(.*)", "destination": "/" }
 +   ]
-+ } 
++ }
 ```
 
 ---
@@ -2355,6 +2401,7 @@ _**Assistant**_
 The `vercel.json` file has been created to enable proper client-side routing for your React app on Vercel. This will ensure that all routes—including `/[orgId]/request-portal`—are handled by your app, fixing the 404 error.
 
 **Next steps:**
+
 1. Commit and push this change to your repository.
 2. Redeploy your project on Vercel.
 
@@ -2479,6 +2526,7 @@ The sidebar in the employee request portal (`EmployeePortalLayout.tsx`) is likel
 ### Solution
 
 **To fix the sidebar being cut off:**
+
 - Make the sidebar `fixed` on the left (like the dashboard sidebar), or ensure the parent container always fills the viewport and does not restrict the sidebar's height.
 - Remove either `min-h-screen` or `h-screen` (prefer just `h-screen` for a fixed sidebar).
 - Ensure the main content area (`<main>`) uses `overflow-y-auto` if it needs to scroll, so the sidebar remains full height.
@@ -2486,6 +2534,7 @@ The sidebar in the employee request portal (`EmployeePortalLayout.tsx`) is likel
 ---
 
 ## I will implement the following improvements:
+
 1. Make the sidebar `fixed` on the left for consistent behavior.
 2. Use only `h-screen` for the sidebar height.
 3. Ensure the main content area scrolls independently if needed.
@@ -2497,7 +2546,7 @@ Proceeding to implement the fix.
 ---
 
 ```diff
-- 
+-
   import { ReactNode, useState } from 'react';
   import { useEmployeePortal } from '@/contexts/EmployeePortalContext';
 ```
@@ -2536,7 +2585,7 @@ Please refresh the employee request portal and confirm the sidebar now displays 
 
 _**User**_
 
-why isnt the code working in like certifyr.vercel.app but works in @https://certifyr-mqt6u44yv-harshil12345000s-projects.vercel.app/auth 
+why isnt the code working in like certifyr.vercel.app but works in @https://certifyr-mqt6u44yv-harshil12345000s-projects.vercel.app/auth
 
 ---
 
@@ -2554,19 +2603,23 @@ This is a classic deployment/routing/environment issue that often happens with V
 ## Here’s Why This Happens
 
 ### 1. **Environment Variables**
+
 - Vercel allows you to set environment variables per project, per environment (Production, Preview, Development).
 - If you set variables (like Supabase keys, API URLs, or OAuth redirect URIs) only for preview deployments or only for the main domain, the other will break.
 - **Check:** Go to your Vercel dashboard → Project → Settings → Environment Variables. Make sure all required variables are set for both “Production” and “Preview”.
 
 ### 2. **Supabase / Auth Redirect URLs**
+
 - If your Supabase project or OAuth provider is configured to only allow one domain (e.g., `certifyr-mqt6u44yv-harshil12345000s-projects.vercel.app`), then `certifyr.vercel.app` will fail authentication or API requests.
 - **Check:** In your Supabase dashboard, under Authentication → URL Configuration, make sure both domains are listed as allowed redirect URLs.
 
 ### 3. **Vercel Routing/Rewrites**
+
 - If you have a `vercel.json` or rewrites set up, but only for one domain, the other may 404 or not serve the SPA correctly.
 - **Check:** Your `vercel.json` should apply to all domains in the project.
 
 ### 4. **DNS/Propagation**
+
 - If you recently changed your custom domain or DNS, it may not have propagated everywhere yet.
 
 ---
@@ -2583,9 +2636,7 @@ This is a classic deployment/routing/environment issue that often happens with V
    - Make sure your SPA rewrite rule is present and correct:
      ```json
      {
-       "rewrites": [
-         { "source": "/(.*)", "destination": "/" }
-       ]
+       "rewrites": [{ "source": "/(.*)", "destination": "/" }]
      }
      ```
 
@@ -2596,10 +2647,10 @@ This is a classic deployment/routing/environment issue that often happens with V
 
 ## **Summary Table**
 
-| Domain                                      | Works? | Why/What to Check                        |
-|----------------------------------------------|--------|------------------------------------------|
-| `certifyr.vercel.app`                        | ❌     | Missing env vars, redirect, or rewrite   |
-| `certifyr-mqt6u44yv-harshil12345000s-projects.vercel.app` | ✅     | Has correct env vars, allowed in Supabase|
+| Domain                                                    | Works? | Why/What to Check                         |
+| --------------------------------------------------------- | ------ | ----------------------------------------- |
+| `certifyr.vercel.app`                                     | ❌     | Missing env vars, redirect, or rewrite    |
+| `certifyr-mqt6u44yv-harshil12345000s-projects.vercel.app` | ✅     | Has correct env vars, allowed in Supabase |
 
 ---
 
@@ -2620,6 +2671,7 @@ Here’s how I’ll fix the issue so that **certifyr.vercel.app** works just lik
 ---
 
 ## 1. **Environment Variables**
+
 - Go to your Vercel dashboard → Your Project → Settings → Environment Variables.
 - **Copy all environment variables** (especially Supabase keys, API URLs, and any secrets) from the working preview deployment to the “Production” environment.
 - Make sure both “Production” and “Preview” have the same required variables.
@@ -2627,6 +2679,7 @@ Here’s how I’ll fix the issue so that **certifyr.vercel.app** works just lik
 ---
 
 ## 2. **Supabase Auth Redirect URLs**
+
 - Go to your Supabase dashboard → Authentication → URL Configuration.
 - **Add both** of these to the list of allowed redirect URLs:
   - `https://certifyr.vercel.app`
@@ -2636,12 +2689,11 @@ Here’s how I’ll fix the issue so that **certifyr.vercel.app** works just lik
 ---
 
 ## 3. **vercel.json SPA Routing**
+
 - You already have a correct `vercel.json`:
   ```json
   {
-    "rewrites": [
-      { "source": "/(.*)", "destination": "/" }
-    ]
+    "rewrites": [{ "source": "/(.*)", "destination": "/" }]
   }
   ```
 - This ensures all routes are handled by your React app.
@@ -2649,11 +2701,13 @@ Here’s how I’ll fix the issue so that **certifyr.vercel.app** works just lik
 ---
 
 ## 4. **Redeploy**
+
 - After making the above changes, **trigger a redeploy** of your project on Vercel.
 
 ---
 
 ## 5. **Test**
+
 - Visit `https://certifyr.vercel.app` and ensure:
   - The app loads.
   - Authentication works.
@@ -2662,6 +2716,7 @@ Here’s how I’ll fix the issue so that **certifyr.vercel.app** works just lik
 ---
 
 ### **What I Need From You**
+
 - If you want me to do this 100% hands-off, I’ll need access to your Vercel and Supabase dashboards (which I don’t have for privacy/security).
 - If you want, I can provide exact step-by-step screenshots or commands for you to copy-paste.
 
@@ -2669,17 +2724,16 @@ Here’s how I’ll fix the issue so that **certifyr.vercel.app** works just lik
 
 ### **Summary Table**
 
-| Step                | What to Do                                                                 |
-|---------------------|----------------------------------------------------------------------------|
-| Env Vars            | Copy all from Preview to Production in Vercel                              |
-| Supabase Redirects  | Add both Vercel domains to allowed URLs in Supabase                        |
-| SPA Routing         | Confirm `vercel.json` is present (already done)                            |
-| Redeploy            | Trigger a new deploy on Vercel                                             |
-| Test                | Visit `https://certifyr.vercel.app` and verify everything works            |
+| Step               | What to Do                                                      |
+| ------------------ | --------------------------------------------------------------- |
+| Env Vars           | Copy all from Preview to Production in Vercel                   |
+| Supabase Redirects | Add both Vercel domains to allowed URLs in Supabase             |
+| SPA Routing        | Confirm `vercel.json` is present (already done)                 |
+| Redeploy           | Trigger a new deploy on Vercel                                  |
+| Test               | Visit `https://certifyr.vercel.app` and verify everything works |
 
 ---
 
 **If you want, paste your current environment variable list (redact secrets) and I’ll check for missing ones. Or, let me know if you want a step-by-step for either Vercel or Supabase!**
 
 ---
-

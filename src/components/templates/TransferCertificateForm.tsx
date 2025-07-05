@@ -1,14 +1,20 @@
-
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { TransferCertificateData } from '@/types/templates';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { TransferCertificateData } from "@/types/templates";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -37,7 +43,9 @@ interface TransferCertificateFormProps {
   initialData: TransferCertificateData;
 }
 
-export const TransferCertificateForm: React.FC<TransferCertificateFormProps> = ({ onSubmit, initialData }) => {
+export const TransferCertificateForm: React.FC<
+  TransferCertificateFormProps
+> = ({ onSubmit, initialData }) => {
   const form = useForm<TransferCertificateData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
@@ -194,7 +202,10 @@ export const TransferCertificateForm: React.FC<TransferCertificateFormProps> = (
               <FormItem>
                 <FormLabel>Reason for Leaving</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Transfer to another school" {...field} />
+                  <Input
+                    placeholder="e.g., Transfer to another school"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -223,7 +234,7 @@ export const TransferCertificateForm: React.FC<TransferCertificateFormProps> = (
             <FormItem>
               <FormLabel>Subjects Studied</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="List all subjects studied (e.g., English, Mathematics, Science, Social Studies, etc.)"
                   className="min-h-[100px]"
                   {...field}

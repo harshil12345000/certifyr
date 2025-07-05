@@ -1,12 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Trash2, Users } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, XCircle, Trash2, Users } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 interface PortalEmployee {
   id: string;
@@ -15,7 +21,7 @@ interface PortalEmployee {
   employee_id: string;
   phone_number: string | null;
   manager_name: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   registered_at: string;
 }
 
@@ -34,10 +40,10 @@ export function RequestPortalMembers() {
     try {
       // Get user's organization
       const { data: orgData } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
         .single();
 
       if (!orgData) {
@@ -47,51 +53,54 @@ export function RequestPortalMembers() {
 
       // Get portal employees
       const { data: employeesData, error } = await supabase
-        .from('request_portal_employees')
-        .select('*')
-        .eq('organization_id', orgData.organization_id)
-        .order('registered_at', { ascending: false });
+        .from("request_portal_employees")
+        .select("*")
+        .eq("organization_id", orgData.organization_id)
+        .order("registered_at", { ascending: false });
 
       if (error) throw error;
 
       setEmployees(employeesData || []);
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error("Error fetching employees:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load portal members',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to load portal members",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const updateEmployeeStatus = async (employeeId: string, status: 'approved' | 'rejected') => {
+  const updateEmployeeStatus = async (
+    employeeId: string,
+    status: "approved" | "rejected",
+  ) => {
     try {
       const { error } = await supabase
-        .from('request_portal_employees')
+        .from("request_portal_employees")
         .update({
           status,
-          approved_at: status === 'approved' ? new Date().toISOString() : null,
-          approved_by: status === 'approved' ? user?.id : null
+          approved_at: status === "approved" ? new Date().toISOString() : null,
+          approved_by: status === "approved" ? user?.id : null,
         })
-        .eq('id', employeeId);
+        .eq("id", employeeId);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: `Employee ${status} successfully`
+        title: "Success",
+        description: `Employee ${status} successfully`,
       });
 
       fetchEmployees();
     } catch (error) {
-      console.error('Error updating employee status:', error);
+      console.error("Error updating employee status:", error);
       toast({
-        title: 'Error',
+        title: "Error",
         description: `Failed to ${status} employee`,
-        variant: 'destructive'
+        variant: "destructive",
       });
     }
   };
@@ -99,35 +108,39 @@ export function RequestPortalMembers() {
   const removeEmployee = async (employeeId: string) => {
     try {
       const { error } = await supabase
-        .from('request_portal_employees')
+        .from("request_portal_employees")
         .delete()
-        .eq('id', employeeId);
+        .eq("id", employeeId);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Employee removed successfully'
+        title: "Success",
+        description: "Employee removed successfully",
       });
 
       fetchEmployees();
     } catch (error) {
-      console.error('Error removing employee:', error);
+      console.error("Error removing employee:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to remove employee',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to remove employee",
+        variant: "destructive",
       });
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Badge variant="secondary">Pending</Badge>;
-      case 'approved':
-        return <Badge variant="default" className="bg-green-600">Approved</Badge>;
-      case 'rejected':
+      case "approved":
+        return (
+          <Badge variant="default" className="bg-green-600">
+            Approved
+          </Badge>
+        );
+      case "rejected":
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
@@ -162,7 +175,10 @@ export function RequestPortalMembers() {
         ) : (
           <div className="space-y-4">
             {employees.map((employee) => (
-              <div key={employee.id} className="border rounded-lg p-4 space-y-3">
+              <div
+                key={employee.id}
+                className="border rounded-lg p-4 space-y-3"
+              >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <h3 className="font-medium">{employee.full_name}</h3>
@@ -180,18 +196,23 @@ export function RequestPortalMembers() {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Registered {formatDistanceToNow(new Date(employee.registered_at), { addSuffix: true })}
+                      Registered{" "}
+                      {formatDistanceToNow(new Date(employee.registered_at), {
+                        addSuffix: true,
+                      })}
                     </p>
                   </div>
                   {getStatusBadge(employee.status)}
                 </div>
 
                 <div className="flex gap-2">
-                  {employee.status === 'pending' && (
+                  {employee.status === "pending" && (
                     <>
                       <Button
                         size="sm"
-                        onClick={() => updateEmployeeStatus(employee.id, 'approved')}
+                        onClick={() =>
+                          updateEmployeeStatus(employee.id, "approved")
+                        }
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
@@ -200,7 +221,9 @@ export function RequestPortalMembers() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => updateEmployeeStatus(employee.id, 'rejected')}
+                        onClick={() =>
+                          updateEmployeeStatus(employee.id, "rejected")
+                        }
                       >
                         <XCircle className="h-4 w-4 mr-2" />
                         Reject

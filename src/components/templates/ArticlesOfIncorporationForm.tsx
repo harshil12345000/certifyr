@@ -1,31 +1,39 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArticlesOfIncorporationData } from '@/types/corporate-templates';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArticlesOfIncorporationData } from "@/types/corporate-templates";
 
 interface ArticlesOfIncorporationFormProps {
   initialData: ArticlesOfIncorporationData;
   onSubmit: (data: ArticlesOfIncorporationData) => void;
 }
 
-export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormProps> = ({
-  initialData,
-  onSubmit,
-}) => {
-  const [formData, setFormData] = useState<ArticlesOfIncorporationData>(initialData);
+export const ArticlesOfIncorporationForm: React.FC<
+  ArticlesOfIncorporationFormProps
+> = ({ initialData, onSubmit }) => {
+  const [formData, setFormData] =
+    useState<ArticlesOfIncorporationData>(initialData);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof ArticlesOfIncorporationData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (
+    field: keyof ArticlesOfIncorporationData,
+    value: string | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -36,7 +44,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="corporationName"
             value={formData.corporationName}
-            onChange={(e) => handleChange('corporationName', e.target.value)}
+            onChange={(e) => handleChange("corporationName", e.target.value)}
             placeholder="e.g., ABC Corporation"
             required
           />
@@ -44,7 +52,12 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
 
         <div className="space-y-2">
           <Label htmlFor="stateOfIncorporation">State of Incorporation *</Label>
-          <Select value={formData.stateOfIncorporation} onValueChange={(value) => handleChange('stateOfIncorporation', value)}>
+          <Select
+            value={formData.stateOfIncorporation}
+            onValueChange={(value) =>
+              handleChange("stateOfIncorporation", value)
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
@@ -63,7 +76,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Textarea
             id="businessPurpose"
             value={formData.businessPurpose}
-            onChange={(e) => handleChange('businessPurpose', e.target.value)}
+            onChange={(e) => handleChange("businessPurpose", e.target.value)}
             placeholder="Describe the general business purpose of the corporation"
             rows={3}
             required
@@ -75,7 +88,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Textarea
             id="corporateAddress"
             value={formData.corporateAddress}
-            onChange={(e) => handleChange('corporateAddress', e.target.value)}
+            onChange={(e) => handleChange("corporateAddress", e.target.value)}
             placeholder="Principal office address"
             rows={2}
             required
@@ -87,18 +100,22 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="registeredAgent"
             value={formData.registeredAgent}
-            onChange={(e) => handleChange('registeredAgent', e.target.value)}
+            onChange={(e) => handleChange("registeredAgent", e.target.value)}
             placeholder="Name of registered agent"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="registeredAgentAddress">Registered Agent Address *</Label>
+          <Label htmlFor="registeredAgentAddress">
+            Registered Agent Address *
+          </Label>
           <Textarea
             id="registeredAgentAddress"
             value={formData.registeredAgentAddress}
-            onChange={(e) => handleChange('registeredAgentAddress', e.target.value)}
+            onChange={(e) =>
+              handleChange("registeredAgentAddress", e.target.value)
+            }
             placeholder="Address of registered agent"
             rows={2}
             required
@@ -110,7 +127,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="authorizedShares"
             value={formData.authorizedShares}
-            onChange={(e) => handleChange('authorizedShares', e.target.value)}
+            onChange={(e) => handleChange("authorizedShares", e.target.value)}
             placeholder="e.g., 1,000,000"
             required
           />
@@ -121,7 +138,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="shareValue"
             value={formData.shareValue}
-            onChange={(e) => handleChange('shareValue', e.target.value)}
+            onChange={(e) => handleChange("shareValue", e.target.value)}
             placeholder="e.g., $0.001"
           />
         </div>
@@ -131,7 +148,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="incorporatorName"
             value={formData.incorporatorName}
-            onChange={(e) => handleChange('incorporatorName', e.target.value)}
+            onChange={(e) => handleChange("incorporatorName", e.target.value)}
             placeholder="Name of incorporator"
             required
           />
@@ -142,7 +159,9 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Textarea
             id="incorporatorAddress"
             value={formData.incorporatorAddress}
-            onChange={(e) => handleChange('incorporatorAddress', e.target.value)}
+            onChange={(e) =>
+              handleChange("incorporatorAddress", e.target.value)
+            }
             placeholder="Address of incorporator"
             rows={2}
             required
@@ -155,7 +174,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
             id="filingDate"
             type="date"
             value={formData.filingDate}
-            onChange={(e) => handleChange('filingDate', e.target.value)}
+            onChange={(e) => handleChange("filingDate", e.target.value)}
             required
           />
         </div>
@@ -165,7 +184,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="place"
             value={formData.place}
-            onChange={(e) => handleChange('place', e.target.value)}
+            onChange={(e) => handleChange("place", e.target.value)}
             placeholder="City, State"
             required
           />
@@ -176,7 +195,7 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="signatoryName"
             value={formData.signatoryName}
-            onChange={(e) => handleChange('signatoryName', e.target.value)}
+            onChange={(e) => handleChange("signatoryName", e.target.value)}
             placeholder="Name of person signing"
             required
           />
@@ -187,7 +206,9 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Input
             id="signatoryDesignation"
             value={formData.signatoryDesignation}
-            onChange={(e) => handleChange('signatoryDesignation', e.target.value)}
+            onChange={(e) =>
+              handleChange("signatoryDesignation", e.target.value)
+            }
             placeholder="e.g., Incorporator"
             required
           />
@@ -197,9 +218,13 @@ export const ArticlesOfIncorporationForm: React.FC<ArticlesOfIncorporationFormPr
           <Switch
             id="includeDigitalSignature"
             checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) => handleChange('includeDigitalSignature', checked)}
+            onCheckedChange={(checked) =>
+              handleChange("includeDigitalSignature", checked)
+            }
           />
-          <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
+          <Label htmlFor="includeDigitalSignature">
+            Include Digital Signature
+          </Label>
         </div>
       </div>
 

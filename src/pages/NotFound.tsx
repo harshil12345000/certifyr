@@ -1,4 +1,3 @@
-
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ const NotFound = () => {
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
-      location.pathname
+      location.pathname,
     );
   }, [location.pathname]);
 
@@ -21,9 +20,12 @@ const NotFound = () => {
           <FileText className="h-10 w-10 text-certifyr-blue" />
         </div>
         <h1 className="text-4xl font-bold mb-4 text-certifyr-blue-dark">404</h1>
-        <p className="text-xl text-gray-600 mb-6">This document doesn't exist</p>
+        <p className="text-xl text-gray-600 mb-6">
+          This document doesn't exist
+        </p>
         <p className="text-muted-foreground mb-8">
-          The document you are looking for might have been removed, renamed, or is temporarily unavailable.
+          The document you are looking for might have been removed, renamed, or
+          is temporarily unavailable.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button className="gradient-blue gap-2" asChild>

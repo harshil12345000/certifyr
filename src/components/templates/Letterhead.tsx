@@ -6,13 +6,16 @@ interface LetterheadProps {
   className?: string;
 }
 
-export const Letterhead: React.FC<LetterheadProps> = ({ children, className = "" }) => {
+export const Letterhead: React.FC<LetterheadProps> = ({
+  children,
+  className = "",
+}) => {
   const { logoUrl, organizationDetails, isLoading } = useBranding();
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchLogoDataUrl() {
-      if (logoUrl && logoUrl.startsWith('http')) {
+      if (logoUrl && logoUrl.startsWith("http")) {
         try {
           const response = await fetch(logoUrl);
           const blob = await response.blob();
@@ -56,7 +59,7 @@ export const Letterhead: React.FC<LetterheadProps> = ({ children, className = ""
             className="h-16 object-contain"
             crossOrigin="anonymous"
             onError={(e) => {
-              console.error('Error loading logo image:', e);
+              console.error("Error loading logo image:", e);
               (e.target as HTMLImageElement).style.display = "none";
             }}
           />

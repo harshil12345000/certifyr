@@ -10,45 +10,52 @@ import { generateDocumentQRCode } from "@/lib/qr-utils";
 
 interface ExtendedExperiencePreviewProps extends ExperiencePreviewProps {
   isEmployeePreview?: boolean;
-  requestStatus?: 'pending' | 'approved' | 'rejected';
+  requestStatus?: "pending" | "approved" | "rejected";
 }
 
-export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({ 
-  data, 
+export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
+  data,
   isEmployeePreview = false,
-  requestStatus = 'pending'
+  requestStatus = "pending",
 }) => {
-  const { signatureUrl, sealUrl, organizationDetails, isLoading } = useBranding();
+  const { signatureUrl, sealUrl, organizationDetails, isLoading } =
+    useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
-  const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";
+  const institutionNameToDisplay =
+    organizationDetails?.name || data.institutionName || "[Institution Name]";
 
   useEffect(() => {
     if (data.fullName && data.designation && data.department) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
-          'experience-1',
+          "experience-1",
           data,
           organizationDetails?.name,
-          user?.id
+          user?.id,
         );
         setQrCodeUrl(url);
         if (!url) {
-          console.error('QR code URL generation failed for Experience Preview.');
+          console.error(
+            "QR code URL generation failed for Experience Preview.",
+          );
         }
       };
       generateQR();
     }
   }, [data, organizationDetails?.name, user?.id]);
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
+  const handleImageError = (
+    e: React.SyntheticEvent<HTMLImageElement>,
+    type: string,
+  ) => {
     console.error(`Error loading ${type}:`, e);
-    (e.target as HTMLImageElement).style.display = 'none';
+    (e.target as HTMLImageElement).style.display = "none";
   };
 
   // Determine if content should be blurred for employee preview
-  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
+  const shouldBlur = isEmployeePreview && requestStatus !== "approved";
 
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
@@ -66,19 +73,44 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
         {/* Certificate content */}
         <div className="space-y-6 text-base md:text-lg leading-relaxed">
           <p className="text-justify">
-            This is to certify that <strong>{data.fullName || "[Full Name]"}</strong> (Employee ID: <strong>{data.employeeId || "[Employee ID]"}</strong>) was employed with <strong>{institutionNameToDisplay}</strong> as a <strong>{data.designation || "[Designation]"}</strong> in the <strong>{data.department || "[Department]"}</strong> department.
+            This is to certify that{" "}
+            <strong>{data.fullName || "[Full Name]"}</strong> (Employee ID:{" "}
+            <strong>{data.employeeId || "[Employee ID]"}</strong>) was employed
+            with <strong>{institutionNameToDisplay}</strong> as a{" "}
+            <strong>{data.designation || "[Designation]"}</strong> in the{" "}
+            <strong>{data.department || "[Department]"}</strong> department.
           </p>
 
           <p className="text-justify">
-            {data.fullName ? "His/Her" : "[His/Her]"} period of employment was from <strong>{data.joinDate ? formatDate(new Date(data.joinDate)) : "[Join Date]"}</strong> to <strong>{data.resignationDate ? formatDate(new Date(data.resignationDate)) : "[Resignation Date]"}</strong>.
+            {data.fullName ? "His/Her" : "[His/Her]"} period of employment was
+            from{" "}
+            <strong>
+              {data.joinDate
+                ? formatDate(new Date(data.joinDate))
+                : "[Join Date]"}
+            </strong>{" "}
+            to{" "}
+            <strong>
+              {data.resignationDate
+                ? formatDate(new Date(data.resignationDate))
+                : "[Resignation Date]"}
+            </strong>
+            .
           </p>
 
           <p className="text-justify">
-            During the tenure, {data.fullName ? "he/she" : "[he/she]"} was responsible for <strong>{data.workDescription || "[Work Description]"}</strong>. {data.fullName ? "His/Her" : "[His/Her]"} last drawn salary was <strong>{data.salary || "[Salary]"}</strong> per month.
+            During the tenure, {data.fullName ? "he/she" : "[he/she]"} was
+            responsible for{" "}
+            <strong>{data.workDescription || "[Work Description]"}</strong>.{" "}
+            {data.fullName ? "His/Her" : "[His/Her]"} last drawn salary was{" "}
+            <strong>{data.salary || "[Salary]"}</strong> per month.
           </p>
 
           <p className="text-justify">
-            We found {data.fullName ? "him/her" : "[him/her]"} to be hardworking, sincere, and dedicated to duties. We wish {data.fullName ? "him/her" : "[him/her]"} all the best for future endeavors.
+            We found {data.fullName ? "him/her" : "[him/her]"} to be
+            hardworking, sincere, and dedicated to duties. We wish{" "}
+            {data.fullName ? "him/her" : "[him/her]"} all the best for future
+            endeavors.
           </p>
         </div>
 
@@ -86,27 +118,30 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
         <div className="flex flex-col md:flex-row justify-between pt-8 mt-16">
           <div>
             <p>
-              <strong>Date:</strong> {data.date ? formatDate(new Date(data.date)) : "[Date]"}
+              <strong>Date:</strong>{" "}
+              {data.date ? formatDate(new Date(data.date)) : "[Date]"}
             </p>
             <p>
               <strong>Place:</strong> {data.place || "[Place]"}
             </p>
           </div>
-          
+
           <div className="text-right mt-8 md:mt-0">
             {data.includeDigitalSignature && signatureUrl ? (
               <div className="h-16 mb-4 flex justify-end relative">
                 <div className="border-b border-gray-800 px-6">
-                  <img 
+                  <img
                     src={signatureUrl}
-                    alt="Digital Signature" 
-                    className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                    alt="Digital Signature"
+                    className={`h-12 object-contain ${shouldBlur ? "blur-sm" : ""}`}
                     onError={(e) => handleImageError(e, "signature")}
                   />
                 </div>
                 {shouldBlur && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
-                    <span className="text-xs text-gray-500">Signature pending approval</span>
+                    <span className="text-xs text-gray-500">
+                      Signature pending approval
+                    </span>
                   </div>
                 )}
               </div>
@@ -115,7 +150,9 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
                 {/* Space for manual signature */}
               </div>
             )}
-            <p className="font-bold">{data.signatoryName || "[Authorized Signatory Name]"}</p>
+            <p className="font-bold">
+              {data.signatoryName || "[Authorized Signatory Name]"}
+            </p>
             <p>{data.signatoryDesignation || "[Designation]"}</p>
             <p>{institutionNameToDisplay}</p>
           </div>
@@ -125,12 +162,14 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
         <div className="absolute bottom-8 right-8">
           {qrCodeUrl && (
             <div className="relative">
-              <div className={shouldBlur ? 'blur-sm' : ''}>
+              <div className={shouldBlur ? "blur-sm" : ""}>
                 <QRCode value={qrCodeUrl} size={80} />
               </div>
               {shouldBlur && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400 w-20 h-20">
-                  <span className="text-xs text-gray-500 text-center">QR pending approval</span>
+                  <span className="text-xs text-gray-500 text-center">
+                    QR pending approval
+                  </span>
                 </div>
               )}
             </div>
@@ -139,9 +178,9 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
 
         {sealUrl && (
           <div className="absolute bottom-8 left-8">
-            <img 
+            <img
               src={sealUrl}
-              alt="Organization Seal" 
+              alt="Organization Seal"
               className="h-20 w-20 object-contain opacity-75"
               onError={(e) => handleImageError(e, "seal")}
             />
@@ -150,4 +189,4 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
       </div>
     </div>
   );
-}
+};

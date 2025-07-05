@@ -1,5 +1,12 @@
-
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface ActivityChartProps {
   data?: Array<{ name: string; documents: number }>;
@@ -8,13 +15,13 @@ interface ActivityChartProps {
 export function ActivityChart({ data }: ActivityChartProps) {
   // Generate default empty data for the last 7 months if no data provided
   const defaultData = [
-    { name: 'Jan', documents: 0 },
-    { name: 'Feb', documents: 0 },
-    { name: 'Mar', documents: 0 },
-    { name: 'Apr', documents: 0 },
-    { name: 'May', documents: 0 },
-    { name: 'Jun', documents: 0 },
-    { name: 'Jul', documents: 0 },
+    { name: "Jan", documents: 0 },
+    { name: "Feb", documents: 0 },
+    { name: "Mar", documents: 0 },
+    { name: "Apr", documents: 0 },
+    { name: "May", documents: 0 },
+    { name: "Jun", documents: 0 },
+    { name: "Jul", documents: 0 },
   ];
 
   const chartData = data && data.length > 0 ? data : defaultData;
@@ -39,16 +46,12 @@ export function ActivityChart({ data }: ActivityChartProps) {
             tickLine={false}
             tick={{ fontSize: 12 }}
           />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 12 }}
-          />
+          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
           <Tooltip
             contentStyle={{
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              border: 'none',
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+              border: "none",
             }}
           />
           <Area

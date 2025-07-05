@@ -1,31 +1,39 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { StockPurchaseAgreementData } from '@/types/corporate-templates';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StockPurchaseAgreementData } from "@/types/corporate-templates";
 
 interface StockPurchaseAgreementFormProps {
   initialData: StockPurchaseAgreementData;
   onSubmit: (data: StockPurchaseAgreementData) => void;
 }
 
-export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProps> = ({
-  initialData,
-  onSubmit,
-}) => {
-  const [formData, setFormData] = useState<StockPurchaseAgreementData>(initialData);
+export const StockPurchaseAgreementForm: React.FC<
+  StockPurchaseAgreementFormProps
+> = ({ initialData, onSubmit }) => {
+  const [formData, setFormData] =
+    useState<StockPurchaseAgreementData>(initialData);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof StockPurchaseAgreementData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (
+    field: keyof StockPurchaseAgreementData,
+    value: string | boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -36,7 +44,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="purchaserName"
             value={formData.purchaserName}
-            onChange={(e) => handleChange('purchaserName', e.target.value)}
+            onChange={(e) => handleChange("purchaserName", e.target.value)}
             required
           />
         </div>
@@ -46,7 +54,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="sellerName"
             value={formData.sellerName}
-            onChange={(e) => handleChange('sellerName', e.target.value)}
+            onChange={(e) => handleChange("sellerName", e.target.value)}
             required
           />
         </div>
@@ -56,14 +64,17 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="companyName"
             value={formData.companyName}
-            onChange={(e) => handleChange('companyName', e.target.value)}
+            onChange={(e) => handleChange("companyName", e.target.value)}
             required
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="shareClass">Share Class *</Label>
-          <Select value={formData.shareClass} onValueChange={(value) => handleChange('shareClass', value)}>
+          <Select
+            value={formData.shareClass}
+            onValueChange={(value) => handleChange("shareClass", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select share class" />
             </SelectTrigger>
@@ -81,7 +92,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="numberOfShares"
             value={formData.numberOfShares}
-            onChange={(e) => handleChange('numberOfShares', e.target.value)}
+            onChange={(e) => handleChange("numberOfShares", e.target.value)}
             placeholder="e.g., 10,000"
             required
           />
@@ -92,7 +103,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="sharePrice"
             value={formData.sharePrice}
-            onChange={(e) => handleChange('sharePrice', e.target.value)}
+            onChange={(e) => handleChange("sharePrice", e.target.value)}
             placeholder="e.g., $10.00"
             required
           />
@@ -103,7 +114,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="totalPurchasePrice"
             value={formData.totalPurchasePrice}
-            onChange={(e) => handleChange('totalPurchasePrice', e.target.value)}
+            onChange={(e) => handleChange("totalPurchasePrice", e.target.value)}
             placeholder="e.g., $100,000"
             required
           />
@@ -115,7 +126,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
             id="closingDate"
             type="date"
             value={formData.closingDate}
-            onChange={(e) => handleChange('closingDate', e.target.value)}
+            onChange={(e) => handleChange("closingDate", e.target.value)}
             required
           />
         </div>
@@ -125,7 +136,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Textarea
             id="purchaserAddress"
             value={formData.purchaserAddress}
-            onChange={(e) => handleChange('purchaserAddress', e.target.value)}
+            onChange={(e) => handleChange("purchaserAddress", e.target.value)}
             rows={2}
             required
           />
@@ -136,18 +147,22 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Textarea
             id="sellerAddress"
             value={formData.sellerAddress}
-            onChange={(e) => handleChange('sellerAddress', e.target.value)}
+            onChange={(e) => handleChange("sellerAddress", e.target.value)}
             rows={2}
             required
           />
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="restrictionsOnTransfer">Restrictions on Transfer *</Label>
+          <Label htmlFor="restrictionsOnTransfer">
+            Restrictions on Transfer *
+          </Label>
           <Textarea
             id="restrictionsOnTransfer"
             value={formData.restrictionsOnTransfer}
-            onChange={(e) => handleChange('restrictionsOnTransfer', e.target.value)}
+            onChange={(e) =>
+              handleChange("restrictionsOnTransfer", e.target.value)
+            }
             placeholder="Describe any restrictions on transferring the shares"
             rows={3}
             required
@@ -155,11 +170,15 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="representationsWarranties">Representations and Warranties *</Label>
+          <Label htmlFor="representationsWarranties">
+            Representations and Warranties *
+          </Label>
           <Textarea
             id="representationsWarranties"
             value={formData.representationsWarranties}
-            onChange={(e) => handleChange('representationsWarranties', e.target.value)}
+            onChange={(e) =>
+              handleChange("representationsWarranties", e.target.value)
+            }
             placeholder="Key representations and warranties"
             rows={4}
             required
@@ -171,7 +190,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="governingLaw"
             value={formData.governingLaw}
-            onChange={(e) => handleChange('governingLaw', e.target.value)}
+            onChange={(e) => handleChange("governingLaw", e.target.value)}
             placeholder="e.g., State of Delaware"
             required
           />
@@ -182,7 +201,7 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Input
             id="place"
             value={formData.place}
-            onChange={(e) => handleChange('place', e.target.value)}
+            onChange={(e) => handleChange("place", e.target.value)}
             placeholder="City, State"
             required
           />
@@ -192,9 +211,13 @@ export const StockPurchaseAgreementForm: React.FC<StockPurchaseAgreementFormProp
           <Switch
             id="includeDigitalSignature"
             checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) => handleChange('includeDigitalSignature', checked)}
+            onCheckedChange={(checked) =>
+              handleChange("includeDigitalSignature", checked)
+            }
           />
-          <Label htmlFor="includeDigitalSignature">Include Digital Signatures</Label>
+          <Label htmlFor="includeDigitalSignature">
+            Include Digital Signatures
+          </Label>
         </div>
       </div>
 

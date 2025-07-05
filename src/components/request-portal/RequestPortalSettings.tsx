@@ -1,15 +1,20 @@
-
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Copy, Eye, EyeOff } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Copy, Eye, EyeOff } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface PortalSettings {
   enabled: boolean;
@@ -21,8 +26,8 @@ export function RequestPortalSettings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<PortalSettings>({
     enabled: false,
-    password: '',
-    portalUrl: ''
+    password: "",
+    portalUrl: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,14 +44,14 @@ export function RequestPortalSettings() {
     try {
       // Get user's organization
       const { data: orgData, error: orgError } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
         .single();
 
       if (orgError || !orgData) {
-        console.error('Error fetching organization:', orgError);
+        console.error("Error fetching organization:", orgError);
         setLoading(false);
         return;
       }
@@ -55,13 +60,13 @@ export function RequestPortalSettings() {
 
       // Get portal settings
       const { data: settingsData, error: settingsError } = await supabase
-        .from('request_portal_settings')
-        .select('*')
-        .eq('organization_id', orgData.organization_id)
+        .from("request_portal_settings")
+        .select("*")
+        .eq("organization_id", orgData.organization_id)
         .maybeSingle();
 
       if (settingsError) {
-        console.error('Error fetching settings:', settingsError);
+        console.error("Error fetching settings:", settingsError);
       }
 
       // Always generate the portal URL dynamically
@@ -69,15 +74,15 @@ export function RequestPortalSettings() {
 
       setSettings({
         enabled: settingsData ? settingsData.enabled : false,
-        password: '', // Don't display stored password
-        portalUrl
+        password: "", // Don't display stored password
+        portalUrl,
       });
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      console.error("Error fetching settings:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load portal settings',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to load portal settings",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -87,18 +92,18 @@ export function RequestPortalSettings() {
   const saveSettings = async () => {
     if (!user || !organizationId) {
       toast({
-        title: 'Error',
-        description: 'User or organization not found',
-        variant: 'destructive'
+        title: "Error",
+        description: "User or organization not found",
+        variant: "destructive",
       });
       return;
     }
 
     if (!settings.password.trim()) {
       toast({
-        title: 'Error',
-        description: 'Password is required',
-        variant: 'destructive'
+        title: "Error",
+        description: "Password is required",
+        variant: "destructive",
       });
       return;
     }
@@ -110,32 +115,33 @@ export function RequestPortalSettings() {
       const passwordHash = btoa(settings.password);
 
       // Upsert portal settings
-      const { error } = await supabase
-        .from('request_portal_settings')
-        .upsert({
+      const { error } = await supabase.from("request_portal_settings").upsert(
+        {
           organization_id: organizationId,
           enabled: settings.enabled,
           password_hash: passwordHash,
-          portal_url: settings.portalUrl
-        }, {
-          onConflict: 'organization_id'
-        });
+          portal_url: settings.portalUrl,
+        },
+        {
+          onConflict: "organization_id",
+        },
+      );
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error("Supabase error:", error);
         throw error;
       }
 
       toast({
-        title: 'Success',
-        description: 'Portal settings saved successfully'
+        title: "Success",
+        description: "Portal settings saved successfully",
       });
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error("Error saving settings:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to save portal settings',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to save portal settings",
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -145,8 +151,8 @@ export function RequestPortalSettings() {
   const copyUrl = () => {
     navigator.clipboard.writeText(settings.portalUrl);
     toast({
-      title: 'Copied',
-      description: 'Portal URL copied to clipboard'
+      title: "Copied",
+      description: "Portal URL copied to clipboard",
     });
   };
 
@@ -174,7 +180,9 @@ export function RequestPortalSettings() {
           <Switch
             id="portal-enabled"
             checked={settings.enabled}
-            onCheckedChange={(enabled) => setSettings(prev => ({ ...prev, enabled }))}
+            onCheckedChange={(enabled) =>
+              setSettings((prev) => ({ ...prev, enabled }))
+            }
           />
           <Label htmlFor="portal-enabled">Enable Request Portal</Label>
         </div>
@@ -186,9 +194,14 @@ export function RequestPortalSettings() {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={settings.password}
-                  onChange={(e) => setSettings(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
                   placeholder="Enter a secure password"
                 />
                 <Button
@@ -198,7 +211,11 @@ export function RequestPortalSettings() {
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -225,15 +242,16 @@ export function RequestPortalSettings() {
 
             <Alert>
               <AlertDescription>
-                Share this URL with your employees to allow them to request documents. 
-                They will need to enter the portal password and be approved by an admin.
+                Share this URL with your employees to allow them to request
+                documents. They will need to enter the portal password and be
+                approved by an admin.
               </AlertDescription>
             </Alert>
           </>
         )}
 
         <Button onClick={saveSettings} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Settings'}
+          {saving ? "Saving..." : "Save Settings"}
         </Button>
       </CardContent>
     </Card>

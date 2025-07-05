@@ -1,7 +1,6 @@
-
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface Template {
   id: string;
@@ -14,23 +13,23 @@ interface Template {
 // Mock templates data since templates table doesn't exist
 const mockTemplates: Template[] = [
   {
-    id: '1',
-    title: 'Bonafide Certificate',
-    description: 'Official bonafide certificate template',
+    id: "1",
+    title: "Bonafide Certificate",
+    description: "Official bonafide certificate template",
     fields: [],
     created_at: new Date().toISOString(),
   },
   {
-    id: '2',
-    title: 'Character Certificate',
-    description: 'Character certificate template',
+    id: "2",
+    title: "Character Certificate",
+    description: "Character certificate template",
     fields: [],
     created_at: new Date().toISOString(),
   },
   {
-    id: '3',
-    title: 'Experience Certificate',
-    description: 'Experience certificate template',
+    id: "3",
+    title: "Experience Certificate",
+    description: "Experience certificate template",
     fields: [],
     created_at: new Date().toISOString(),
   },
@@ -55,7 +54,7 @@ export default function TemplatesDashboard() {
   };
 
   const handleCreate = () => {
-    navigate('/admin/templates/builder');
+    navigate("/admin/templates/builder");
   };
 
   const handleEdit = (tpl: Template) => {
@@ -63,9 +62,9 @@ export default function TemplatesDashboard() {
   };
 
   const handleDelete = async (tpl: Template) => {
-    if (!window.confirm('Delete this template?')) return;
+    if (!window.confirm("Delete this template?")) return;
     // Remove from mock data
-    setTemplates(prev => prev.filter(t => t.id !== tpl.id));
+    setTemplates((prev) => prev.filter((t) => t.id !== tpl.id));
   };
 
   // Pseudo-auth: Only show if user is admin (replace with real auth check)
@@ -95,10 +94,25 @@ export default function TemplatesDashboard() {
               <tr key={tpl.id}>
                 <td className="py-2 px-4 border-b">{tpl.title}</td>
                 <td className="py-2 px-4 border-b">{tpl.description}</td>
-                <td className="py-2 px-4 border-b">{new Date(tpl.created_at).toLocaleString()}</td>
                 <td className="py-2 px-4 border-b">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(tpl)}>Edit</Button>
-                  <Button size="sm" variant="destructive" className="ml-2" onClick={() => handleDelete(tpl)}>Delete</Button>
+                  {new Date(tpl.created_at).toLocaleString()}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(tpl)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="ml-2"
+                    onClick={() => handleDelete(tpl)}
+                  >
+                    Delete
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -107,4 +121,4 @@ export default function TemplatesDashboard() {
       )}
     </div>
   );
-} 
+}

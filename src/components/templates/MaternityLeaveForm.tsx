@@ -1,34 +1,37 @@
-
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { MaternityLeaveData } from '@/types/templates';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MaternityLeaveData } from "@/types/templates";
 
 const maternityLeaveSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
-  employeeId: z.string().min(1, 'Employee ID is required'),
-  designation: z.string().min(1, 'Designation is required'),
-  department: z.string().min(1, 'Department is required'),
-  expectedDeliveryDate: z.string().min(1, 'Expected delivery date is required'),
-  leaveStartDate: z.string().min(1, 'Leave start date is required'),
-  leaveEndDate: z.string().min(1, 'Leave end date is required'),
-  totalLeaveDays: z.string().min(1, 'Total leave days is required'),
-  medicalCertificateNumber: z.string().min(1, 'Medical certificate number is required'),
-  doctorName: z.string().min(1, 'Doctor name is required'),
-  hospitalName: z.string().min(1, 'Hospital name is required'),
-  emergencyContact: z.string().min(1, 'Emergency contact is required'),
-  emergencyContactPhone: z.string().min(1, 'Emergency contact phone is required'),
-  institutionName: z.string().min(1, 'Institution name is required'),
-  date: z.string().min(1, 'Date is required'),
-  place: z.string().min(1, 'Place is required'),
-  signatoryName: z.string().min(1, 'Signatory name is required'),
-  signatoryDesignation: z.string().min(1, 'Signatory designation is required'),
+  fullName: z.string().min(1, "Full name is required"),
+  employeeId: z.string().min(1, "Employee ID is required"),
+  designation: z.string().min(1, "Designation is required"),
+  department: z.string().min(1, "Department is required"),
+  expectedDeliveryDate: z.string().min(1, "Expected delivery date is required"),
+  leaveStartDate: z.string().min(1, "Leave start date is required"),
+  leaveEndDate: z.string().min(1, "Leave end date is required"),
+  totalLeaveDays: z.string().min(1, "Total leave days is required"),
+  medicalCertificateNumber: z
+    .string()
+    .min(1, "Medical certificate number is required"),
+  doctorName: z.string().min(1, "Doctor name is required"),
+  hospitalName: z.string().min(1, "Hospital name is required"),
+  emergencyContact: z.string().min(1, "Emergency contact is required"),
+  emergencyContactPhone: z
+    .string()
+    .min(1, "Emergency contact phone is required"),
+  institutionName: z.string().min(1, "Institution name is required"),
+  date: z.string().min(1, "Date is required"),
+  place: z.string().min(1, "Place is required"),
+  signatoryName: z.string().min(1, "Signatory name is required"),
+  signatoryDesignation: z.string().min(1, "Signatory designation is required"),
   includeDigitalSignature: z.boolean(),
 });
 
@@ -37,28 +40,31 @@ interface MaternityLeaveFormProps {
   initialData?: Partial<MaternityLeaveData>;
 }
 
-export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit, initialData }) => {
+export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({
+  onSubmit,
+  initialData,
+}) => {
   const form = useForm<MaternityLeaveData>({
     resolver: zodResolver(maternityLeaveSchema),
     defaultValues: {
-      fullName: '',
-      employeeId: '',
-      designation: '',
-      department: '',
-      expectedDeliveryDate: '',
-      leaveStartDate: '',
-      leaveEndDate: '',
-      totalLeaveDays: '',
-      medicalCertificateNumber: '',
-      doctorName: '',
-      hospitalName: '',
-      emergencyContact: '',
-      emergencyContactPhone: '',
-      institutionName: '',
-      date: new Date().toISOString().split('T')[0],
-      place: '',
-      signatoryName: '',
-      signatoryDesignation: '',
+      fullName: "",
+      employeeId: "",
+      designation: "",
+      department: "",
+      expectedDeliveryDate: "",
+      leaveStartDate: "",
+      leaveEndDate: "",
+      totalLeaveDays: "",
+      medicalCertificateNumber: "",
+      doctorName: "",
+      hospitalName: "",
+      emergencyContact: "",
+      emergencyContactPhone: "",
+      institutionName: "",
+      date: new Date().toISOString().split("T")[0],
+      place: "",
+      signatoryName: "",
+      signatoryDesignation: "",
       includeDigitalSignature: false,
       ...initialData,
     },
@@ -75,11 +81,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="fullName">Full Name *</Label>
           <Input
             id="fullName"
-            {...form.register('fullName')}
+            {...form.register("fullName")}
             placeholder="Enter full name"
           />
           {form.formState.errors.fullName && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.fullName.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.fullName.message}
+            </p>
           )}
         </div>
 
@@ -87,11 +95,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="employeeId">Employee ID *</Label>
           <Input
             id="employeeId"
-            {...form.register('employeeId')}
+            {...form.register("employeeId")}
             placeholder="Enter employee ID"
           />
           {form.formState.errors.employeeId && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.employeeId.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.employeeId.message}
+            </p>
           )}
         </div>
 
@@ -99,11 +109,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="designation">Designation *</Label>
           <Input
             id="designation"
-            {...form.register('designation')}
+            {...form.register("designation")}
             placeholder="Enter designation"
           />
           {form.formState.errors.designation && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.designation.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.designation.message}
+            </p>
           )}
         </div>
 
@@ -111,11 +123,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="department">Department *</Label>
           <Input
             id="department"
-            {...form.register('department')}
+            {...form.register("department")}
             placeholder="Enter department"
           />
           {form.formState.errors.department && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.department.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.department.message}
+            </p>
           )}
         </div>
 
@@ -124,10 +138,12 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Input
             id="expectedDeliveryDate"
             type="date"
-            {...form.register('expectedDeliveryDate')}
+            {...form.register("expectedDeliveryDate")}
           />
           {form.formState.errors.expectedDeliveryDate && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.expectedDeliveryDate.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.expectedDeliveryDate.message}
+            </p>
           )}
         </div>
 
@@ -136,10 +152,12 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Input
             id="leaveStartDate"
             type="date"
-            {...form.register('leaveStartDate')}
+            {...form.register("leaveStartDate")}
           />
           {form.formState.errors.leaveStartDate && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.leaveStartDate.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.leaveStartDate.message}
+            </p>
           )}
         </div>
 
@@ -148,10 +166,12 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Input
             id="leaveEndDate"
             type="date"
-            {...form.register('leaveEndDate')}
+            {...form.register("leaveEndDate")}
           />
           {form.formState.errors.leaveEndDate && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.leaveEndDate.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.leaveEndDate.message}
+            </p>
           )}
         </div>
 
@@ -159,23 +179,29 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="totalLeaveDays">Total Leave Days *</Label>
           <Input
             id="totalLeaveDays"
-            {...form.register('totalLeaveDays')}
+            {...form.register("totalLeaveDays")}
             placeholder="Enter total leave days"
           />
           {form.formState.errors.totalLeaveDays && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.totalLeaveDays.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.totalLeaveDays.message}
+            </p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="medicalCertificateNumber">Medical Certificate Number *</Label>
+          <Label htmlFor="medicalCertificateNumber">
+            Medical Certificate Number *
+          </Label>
           <Input
             id="medicalCertificateNumber"
-            {...form.register('medicalCertificateNumber')}
+            {...form.register("medicalCertificateNumber")}
             placeholder="Enter medical certificate number"
           />
           {form.formState.errors.medicalCertificateNumber && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.medicalCertificateNumber.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.medicalCertificateNumber.message}
+            </p>
           )}
         </div>
 
@@ -183,11 +209,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="doctorName">Doctor Name *</Label>
           <Input
             id="doctorName"
-            {...form.register('doctorName')}
+            {...form.register("doctorName")}
             placeholder="Enter doctor's name"
           />
           {form.formState.errors.doctorName && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.doctorName.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.doctorName.message}
+            </p>
           )}
         </div>
 
@@ -195,11 +223,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="hospitalName">Hospital Name *</Label>
           <Input
             id="hospitalName"
-            {...form.register('hospitalName')}
+            {...form.register("hospitalName")}
             placeholder="Enter hospital name"
           />
           {form.formState.errors.hospitalName && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.hospitalName.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.hospitalName.message}
+            </p>
           )}
         </div>
 
@@ -207,23 +237,29 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="emergencyContact">Emergency Contact *</Label>
           <Input
             id="emergencyContact"
-            {...form.register('emergencyContact')}
+            {...form.register("emergencyContact")}
             placeholder="Enter emergency contact name"
           />
           {form.formState.errors.emergencyContact && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.emergencyContact.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.emergencyContact.message}
+            </p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="emergencyContactPhone">Emergency Contact Phone *</Label>
+          <Label htmlFor="emergencyContactPhone">
+            Emergency Contact Phone *
+          </Label>
           <Input
             id="emergencyContactPhone"
-            {...form.register('emergencyContactPhone')}
+            {...form.register("emergencyContactPhone")}
             placeholder="Enter emergency contact phone"
           />
           {form.formState.errors.emergencyContactPhone && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.emergencyContactPhone.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.emergencyContactPhone.message}
+            </p>
           )}
         </div>
 
@@ -231,23 +267,23 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="institutionName">Institution Name *</Label>
           <Input
             id="institutionName"
-            {...form.register('institutionName')}
+            {...form.register("institutionName")}
             placeholder="Enter institution name"
           />
           {form.formState.errors.institutionName && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.institutionName.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.institutionName.message}
+            </p>
           )}
         </div>
 
         <div>
           <Label htmlFor="date">Date *</Label>
-          <Input
-            id="date"
-            type="date"
-            {...form.register('date')}
-          />
+          <Input id="date" type="date" {...form.register("date")} />
           {form.formState.errors.date && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.date.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.date.message}
+            </p>
           )}
         </div>
 
@@ -255,11 +291,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="place">Place *</Label>
           <Input
             id="place"
-            {...form.register('place')}
+            {...form.register("place")}
             placeholder="Enter place"
           />
           {form.formState.errors.place && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.place.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.place.message}
+            </p>
           )}
         </div>
 
@@ -267,11 +305,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="signatoryName">Signatory Name *</Label>
           <Input
             id="signatoryName"
-            {...form.register('signatoryName')}
+            {...form.register("signatoryName")}
             placeholder="Enter signatory name"
           />
           {form.formState.errors.signatoryName && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.signatoryName.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.signatoryName.message}
+            </p>
           )}
         </div>
 
@@ -279,11 +319,13 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
           <Label htmlFor="signatoryDesignation">Signatory Designation *</Label>
           <Input
             id="signatoryDesignation"
-            {...form.register('signatoryDesignation')}
+            {...form.register("signatoryDesignation")}
             placeholder="Enter signatory designation"
           />
           {form.formState.errors.signatoryDesignation && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.signatoryDesignation.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.signatoryDesignation.message}
+            </p>
           )}
         </div>
       </div>
@@ -291,12 +333,14 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({ onSubmit
       <div className="flex items-center space-x-2">
         <Checkbox
           id="includeDigitalSignature"
-          checked={form.watch('includeDigitalSignature')}
+          checked={form.watch("includeDigitalSignature")}
           onCheckedChange={(checked) =>
-            form.setValue('includeDigitalSignature', checked as boolean)
+            form.setValue("includeDigitalSignature", checked as boolean)
           }
         />
-        <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
+        <Label htmlFor="includeDigitalSignature">
+          Include Digital Signature
+        </Label>
       </div>
 
       <Button type="submit" className="w-full">

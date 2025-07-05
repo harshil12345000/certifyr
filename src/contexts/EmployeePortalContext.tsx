@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmployeePortalContextType {
   organizationId: string;
@@ -10,12 +10,16 @@ interface EmployeePortalContextType {
   refreshEmployee: () => Promise<void>;
 }
 
-const EmployeePortalContext = createContext<EmployeePortalContextType | undefined>(undefined);
+const EmployeePortalContext = createContext<
+  EmployeePortalContextType | undefined
+>(undefined);
 
 export function useEmployeePortal() {
   const context = useContext(EmployeePortalContext);
   if (!context) {
-    throw new Error('useEmployeePortal must be used within EmployeePortalProvider');
+    throw new Error(
+      "useEmployeePortal must be used within EmployeePortalProvider",
+    );
   }
   return context;
 }
@@ -25,7 +29,10 @@ interface EmployeePortalProviderProps {
   organizationId: string;
 }
 
-export function EmployeePortalProvider({ children, organizationId }: EmployeePortalProviderProps) {
+export function EmployeePortalProvider({
+  children,
+  organizationId,
+}: EmployeePortalProviderProps) {
   const [employee, setEmployee] = useState<any>(null);
   const [organization, setOrganization] = useState<any>(null);
 
@@ -33,14 +40,14 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
     const fetchOrganization = async () => {
       try {
         const { data } = await supabase
-          .from('organizations')
-          .select('*')
-          .eq('id', organizationId)
+          .from("organizations")
+          .select("*")
+          .eq("id", organizationId)
           .single();
 
         setOrganization(data);
       } catch (error) {
-        console.error('Error fetching organization:', error);
+        console.error("Error fetching organization:", error);
       }
     };
 
@@ -49,15 +56,17 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
 
   const refreshEmployee = async () => {
     // Check if there's employee data in localStorage (from authentication)
-    const storedEmployee = localStorage.getItem(`employee_portal_${organizationId}`);
+    const storedEmployee = localStorage.getItem(
+      `employee_portal_${organizationId}`,
+    );
     if (storedEmployee) {
       try {
         const employeeData = JSON.parse(storedEmployee);
         // Check if employee still exists in DB
         const { data: dbEmployee } = await supabase
-          .from('request_portal_employees')
-          .select('*')
-          .eq('id', employeeData.id)
+          .from("request_portal_employees")
+          .select("*")
+          .eq("id", employeeData.id)
           .single();
         if (!dbEmployee) {
           // Employee was deleted, clear session and reload to portal auth
@@ -67,7 +76,7 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
         }
         setEmployee(employeeData);
       } catch (error) {
-        console.error('Error parsing stored employee data:', error);
+        console.error("Error parsing stored employee data:", error);
         localStorage.removeItem(`employee_portal_${organizationId}`);
       }
     }
@@ -78,11 +87,14 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
   }, [organizationId]);
 
   const handleSetEmployee = (emp: any) => {
-    console.log('Setting employee in context:', emp);
+    console.log("Setting employee in context:", emp);
     setEmployee(emp);
     // Store in localStorage for persistence with org-specific key
     if (emp) {
-      localStorage.setItem(`employee_portal_${organizationId}`, JSON.stringify(emp));
+      localStorage.setItem(
+        `employee_portal_${organizationId}`,
+        JSON.stringify(emp),
+      );
     } else {
       localStorage.removeItem(`employee_portal_${organizationId}`);
     }
@@ -93,8 +105,8 @@ export function EmployeePortalProvider({ children, organizationId }: EmployeePor
     organization,
     employee,
     setEmployee: handleSetEmployee,
-    isAuthenticated: !!employee && employee.status === 'approved',
-    refreshEmployee
+    isAuthenticated: !!employee && employee.status === "approved",
+    refreshEmployee,
   };
 
   return (

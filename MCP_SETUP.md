@@ -35,6 +35,7 @@ Replace `<your-personal-access-token>` with the token you copied in Step 1.
 ## Step 4: Verify Connection
 
 Once configured, you can test the connection by asking Cursor to:
+
 - List your database tables
 - Execute SQL queries
 - Search Supabase documentation
@@ -45,6 +46,7 @@ Once configured, you can test the connection by asking Cursor to:
 Your MCP server will have access to these Supabase tools:
 
 ### Database Operations
+
 - `list_tables` - Lists all tables in your database
 - `execute_sql` - Execute raw SQL queries
 - `apply_migration` - Apply schema migrations
@@ -52,6 +54,7 @@ Your MCP server will have access to these Supabase tools:
 - `list_extensions` - List database extensions
 
 ### Project Management
+
 - `get_project` - Get project details
 - `get_project_url` - Get API URL
 - `get_anon_key` - Get anonymous API key
@@ -59,16 +62,19 @@ Your MCP server will have access to these Supabase tools:
 - `get_advisors` - Get advisory notices
 
 ### Edge Functions
+
 - `list_edge_functions` - List all edge functions
 - `deploy_edge_function` - Deploy new functions
 
 ### Development Tools
+
 - `search_docs` - Search Supabase documentation
 - `generate_typescript_types` - Generate TypeScript types
 
 ## Troubleshooting
 
 ### Windows PATH Issues
+
 If you encounter PATH issues on Windows:
 
 1. Get npm path: `npm config get prefix`
@@ -76,6 +82,7 @@ If you encounter PATH issues on Windows:
 3. Restart Cursor
 
 ### Alternative Configuration
+
 If the setup script doesn't work, you can manually create the configuration:
 
 ```json
@@ -109,4 +116,4 @@ If the setup script doesn't work, you can manually create the configuration:
 
 Your project reference: `yjeeamhahyhfawwgebtd`
 
-This is extracted from your existing Supabase configuration in `src/integrations/supabase/client.ts`. 
+This is extracted from your existing Supabase configuration in `src/integrations/supabase/client.ts`.
