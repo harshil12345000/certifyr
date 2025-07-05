@@ -131,7 +131,7 @@ export default function EmployeeTemplateDetail() {
           if (error) throw error;
 
           if (request) {
-            setFormData(request.template_data as FormData);
+            setFormData(request.template_data as unknown as FormData);
             setRequestStatus(request.status as 'pending' | 'approved' | 'rejected');
             if (request.status === 'approved') {
               setTab('preview');
@@ -266,8 +266,7 @@ export default function EmployeeTemplateDetail() {
               <FormComponent 
                 onSubmit={handleFormSubmit as any}
                 onDataChange={handleFormDataChange as any}
-                initialData={formData as any} 
-                disabled={!!requestId} // Disable form if viewing existing request
+                initialData={formData as any}
               />
             </div>
           </TabsContent>

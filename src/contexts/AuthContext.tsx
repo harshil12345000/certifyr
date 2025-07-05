@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           user_id: user.id,
           role: 'admin',
           status: 'active'
-        }, { onConflict: ['organization_id', 'user_id'] });
+        }, { onConflict: 'organization_id,user_id' });
       if (upsertError) {
         console.error('Error upserting user to organization_members:', upsertError);
       }
