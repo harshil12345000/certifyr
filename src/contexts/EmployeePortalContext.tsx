@@ -87,8 +87,6 @@ export function EmployeePortalProvider({
   }, [organizationId]);
 
   const handleSetEmployee = (emp: any) => {
-    console.log("Setting employee in context:", emp);
-    setEmployee(emp);
     // Store in localStorage for persistence with org-specific key
     if (emp) {
       localStorage.setItem(

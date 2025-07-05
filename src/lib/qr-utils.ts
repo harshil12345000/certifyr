@@ -33,18 +33,12 @@ export const createVerificationUrl = (verificationHash: string): string => {
     import.meta.env.VITE_APP_BASE_URL
   ) {
     baseUrl = import.meta.env.VITE_APP_BASE_URL;
-    console.log("[QR] Using VITE_APP_BASE_URL:", baseUrl);
   } else if (typeof window !== "undefined" && window.location) {
     baseUrl = window.location.origin;
-    console.log("[QR] Using window.location.origin as base URL:", baseUrl);
   } else {
-    console.error(
-      "[QR] Could not determine base URL for QR verification. window.location and VITE_APP_BASE_URL unavailable.",
-    );
     return "";
   }
   const url = `${baseUrl}/verify/${verificationHash}`;
-  console.log("[QR] Generated verification URL:", url);
   return url;
 };
 
@@ -85,27 +79,15 @@ export const saveVerifiedDocument = async (
     Object.keys(payload).forEach(
       (key) => payload[key] === undefined && delete payload[key],
     );
-    console.log("[QR] Supabase insert payload:", payload);
-    Object.entries(payload).forEach(([k, v]) =>
-      console.log(`[QR] Type of ${k}:`, typeof v, v),
-    );
     const { error } = await supabase.from("verified_documents").insert(payload);
     if (error) {
-      console.error("[QR] Error saving verified document to Supabase:", error);
       if (error.code === "42501" || error.code === "PGRST301") {
-        console.error(
-          "[QR] RLS policy or permission denied. Check Supabase Row Level Security and user authentication.",
-        );
+        return null;
       }
       return null;
     }
-    console.log(
-      "[QR] Successfully saved verified document. Hash:",
-      verificationHash,
-    );
     return verificationHash;
   } catch (error) {
-    console.error("[QR] Exception in saveVerifiedDocument:", error);
     return null;
   }
 };
@@ -125,25 +107,16 @@ export const generateDocumentQRCode = async (
       userId,
       documentData: formData,
     };
-    console.log("[QR] Generating QR code for document:", verificationData);
     const verificationHash = await saveVerifiedDocument(verificationData);
     if (!verificationHash) {
-      console.error(
-        "[QR] QR code generation failed: Could not save verified document.",
-      );
       return null;
     }
     const url = createVerificationUrl(verificationHash);
     if (!url) {
-      console.error(
-        "[QR] QR code generation failed: Could not create verification URL.",
-      );
       return null;
     }
-    console.log("[QR] QR code URL generated:", url);
     return url;
   } catch (error) {
-    console.error("[QR] Exception generating QR code:", error);
     return null;
   }
 };
@@ -157,14 +130,6 @@ export const logQRVerification = async (
   userId?: string,
 ): Promise<void> => {
   try {
-    console.log("[QR] Logging QR verification event:", {
-      verificationHash,
-      result,
-      documentId,
-      templateType,
-      organizationId,
-      userId,
-    });
     await supabase.from("qr_verification_logs").insert({
       verification_hash: verificationHash,
       verification_result: result,
@@ -176,6 +141,5 @@ export const logQRVerification = async (
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     });
   } catch (error) {
-    console.error("[QR] Error logging QR verification:", error);
   }
 };

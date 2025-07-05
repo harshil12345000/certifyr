@@ -182,9 +182,6 @@ export default function EmployeeTemplateDetail() {
   };
 
   const handleRequestApproval = async () => {
-    console.log("Employee context:", employee);
-    console.log("Organization ID:", organizationId);
-
     if (!employee || !organizationId) {
       toast({
         title: "Error",

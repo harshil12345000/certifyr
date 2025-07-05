@@ -47,8 +47,6 @@ const Index = () => {
     refreshIndex,
   );
 
-  console.log("[Dashboard] stats:", stats);
-
   const statsCards = [
     {
       label: "Documents Created",

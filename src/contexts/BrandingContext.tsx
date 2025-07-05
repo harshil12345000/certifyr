@@ -54,7 +54,6 @@ export function BrandingProvider({ children, organizationId }: { children: React
     })() : null);
 
     if (!orgIdToUse) {
-      console.log("[BrandingContext] No organization found for user");
       setLogoUrl(null);
       setSealUrl(null);
       setSignatureUrl(null);
@@ -66,21 +65,12 @@ export function BrandingProvider({ children, organizationId }: { children: React
     setIsLoading(true);
 
     try {
-      console.log("[BrandingContext] Loading branding data for user:", user.id);
-
       // Fetch organization details
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("name, address, phone, email")
         .eq("id", orgIdToUse)
         .single();
-
-      console.log(
-        "[BrandingContext] Organization data:",
-        orgData,
-        "Error:",
-        orgError,
-      );
 
       if (!orgError && orgData) {
         const orgDetails = {
@@ -89,16 +79,8 @@ export function BrandingProvider({ children, organizationId }: { children: React
           phone: orgData.phone,
           email: orgData.email,
         };
-        console.log(
-          "[BrandingContext] Setting organization details:",
-          orgDetails,
-        );
         setOrganizationDetails(orgDetails);
       } else {
-        console.error(
-          "[BrandingContext] Failed to fetch organization details:",
-          orgError,
-        );
         setOrganizationDetails(null);
       }
 
@@ -107,13 +89,6 @@ export function BrandingProvider({ children, organizationId }: { children: React
         .from("branding_files")
         .select("name, path")
         .eq("organization_id", orgIdToUse);
-
-      console.log(
-        "[BrandingContext] Branding files:",
-        filesData,
-        "Error:",
-        filesError,
-      );
 
       if (!filesError && filesData) {
         let newLogoUrl: string | null = null;
@@ -126,9 +101,6 @@ export function BrandingProvider({ children, organizationId }: { children: React
               .from("branding-assets")
               .getPublicUrl(file.path);
             const publicUrl = urlData.publicUrl;
-            console.log(
-              `[BrandingContext] File: ${file.name}, URL: ${publicUrl}`,
-            );
 
             if (file.name === "logo") newLogoUrl = publicUrl;
             if (file.name === "seal") newSealUrl = publicUrl;
@@ -136,28 +108,15 @@ export function BrandingProvider({ children, organizationId }: { children: React
           }
         });
 
-        console.log(
-          "[BrandingContext] Setting URLs - Logo:",
-          newLogoUrl,
-          "Seal:",
-          newSealUrl,
-          "Signature:",
-          newSignatureUrl,
-        );
         setLogoUrl(newLogoUrl);
         setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
       } else {
-        console.error(
-          "[BrandingContext] Failed to fetch branding files:",
-          filesError,
-        );
         setLogoUrl(null);
         setSealUrl(null);
         setSignatureUrl(null);
       }
     } catch (error) {
-      console.error("[BrandingContext] Exception in loadBrandingData:", error);
       setLogoUrl(null);
       setSealUrl(null);
       setSignatureUrl(null);
