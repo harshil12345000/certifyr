@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { CharacterPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -6,7 +7,16 @@ import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
 
-export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
+interface ExtendedCharacterPreviewProps extends CharacterPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({ 
+  data, 
+  isEmployeePreview = false,
+  requestStatus = 'pending'
+}) => {
   const {
     fullName,
     parentName,
@@ -26,8 +36,8 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const generateQR = async () => {
-      if (fullName && parentName && duration) {
+    if (requestStatus === 'approved' && fullName && parentName && duration) {
+      const generateQR = async () => {
         const url = await generateDocumentQRCode(
           'character-1',
           data,
@@ -38,10 +48,10 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
         if (!url) {
           console.error('QR code URL generation failed for Character Preview.');
         }
-      }
-    };
-    generateQR();
-  }, [data, organizationDetails?.name, user?.id, fullName, parentName, duration]);
+      };
+      generateQR();
+    }
+  }, [data, organizationDetails?.name, user?.id, fullName, parentName, duration, requestStatus]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -88,24 +98,20 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
         </div>
         
         <div className="text-right">
-          {includeDigitalSignature ? (
+          {requestStatus === 'approved' && includeDigitalSignature && signatureUrl ? (
             <div className="h-16 mb-4 flex justify-end">
-              {signatureUrl ? (
-                <div className="border-b border-gray-800 px-6">
-                  <img 
-                    src={signatureUrl}
-                    alt="Digital Signature" 
-                    className="h-12 object-contain"
-                    onError={(e) => handleImageError(e, "signature")}
-                  />
-                </div>
-              ) : (
-                <div className="border-b border-gray-800 px-6 py-3">
-                  <div className="h-8 w-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                    [Signature]
-                  </div>
-                </div>
-              )}
+              <div className="border-b border-gray-800 px-6">
+                <img 
+                  src={signatureUrl}
+                  alt="Digital Signature" 
+                  className="h-12 object-contain"
+                  onError={(e) => handleImageError(e, "signature")}
+                />
+              </div>
+            </div>
+          ) : isEmployeePreview && requestStatus !== 'approved' ? (
+            <div className="h-16 mb-4 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic w-48 mx-auto">
+              [Signature will appear after approval]
             </div>
           ) : (
             <div className="h-16 mb-4">
@@ -117,9 +123,16 @@ export const CharacterPreview: React.FC<CharacterPreviewProps> = ({ data }) => {
           <p className="mb-4">{institutionName || '[Institution Name]'}</p>
           
           {/* QR Code positioned below institution name */}
-          {qrCodeUrl && (
+          {requestStatus === 'approved' && qrCodeUrl && (
             <div className="flex justify-end">
               <QRCode value={qrCodeUrl} size={75} />
+            </div>
+          )}
+          {isEmployeePreview && requestStatus !== 'approved' && (
+            <div className="flex justify-end">
+              <div className="w-[75px] h-[75px] border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
+                QR Code
+              </div>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import * as Forms from '@/components/templates/forms';
 import * as Previews from '@/components/templates';
 import { Button } from '@/components/ui/button';
@@ -85,8 +85,10 @@ const getTemplateName = (templateId: string) => {
 
 export default function EmployeeTemplateDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const { employee, organizationId } = useEmployeePortal();
   const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>(() => {
@@ -111,6 +113,43 @@ export default function EmployeeTemplateDetail() {
       includeDigitalSignature: false,
     };
   });
+
+  // Check if we're viewing an existing request
+  const requestId = searchParams.get('requestId');
+
+  useEffect(() => {
+    if (requestId && employee) {
+      const fetchRequestData = async () => {
+        try {
+          const { data: request, error } = await supabase
+            .from('document_requests')
+            .select('*')
+            .eq('id', requestId)
+            .eq('employee_id', employee.id)
+            .single();
+
+          if (error) throw error;
+
+          if (request) {
+            setFormData(request.template_data as FormData);
+            setRequestStatus(request.status as 'pending' | 'approved' | 'rejected');
+            if (request.status === 'approved') {
+              setTab('preview');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching request data:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load request data",
+            variant: "destructive"
+          });
+        }
+      };
+
+      fetchRequestData();
+    }
+  }, [requestId, employee, toast]);
 
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
@@ -201,7 +240,22 @@ export default function EmployeeTemplateDetail() {
   return (
     <EmployeePortalLayout activeTab="templates">
       <div className="max-w-3xl mx-auto p-0 m-0 mt-0 !mt-0">
-        <h1 className="text-2xl font-bold m-0 p-0 mt-0 !mt-0">Fill Out Template</h1>
+        <h1 className="text-2xl font-bold m-0 p-0 mt-0 !mt-0">
+          {requestId ? `View ${getTemplateName(id)}` : 'Fill Out Template'}
+        </h1>
+        
+        {requestStatus === 'approved' && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+            <p className="text-green-800 font-medium">✓ This document has been approved</p>
+          </div>
+        )}
+        
+        {requestStatus === 'rejected' && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+            <p className="text-red-800 font-medium">✗ This document request was rejected</p>
+          </div>
+        )}
+
         <Tabs value={tab} onValueChange={setTab} className="m-0 p-0 mt-0 !mt-0">
           <TabsList>
             <TabsTrigger value="form">Form</TabsTrigger>
@@ -213,24 +267,28 @@ export default function EmployeeTemplateDetail() {
                 onSubmit={handleFormSubmit as any}
                 onDataChange={handleFormDataChange as any}
                 initialData={formData as any} 
+                disabled={!!requestId} // Disable form if viewing existing request
               />
             </div>
           </TabsContent>
           <TabsContent value="preview">
             <div className="bg-card p-4 rounded shadow relative">
-              <div className="flex justify-end mb-2">
-                <Button 
-                  onClick={handleRequestApproval}
-                  disabled={isSubmitting}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {isSubmitting ? "Submitting..." : "Request Approval"}
-                </Button>
-              </div>
+              {!requestId && (
+                <div className="flex justify-end mb-2">
+                  <Button 
+                    onClick={handleRequestApproval}
+                    disabled={isSubmitting}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    {isSubmitting ? "Submitting..." : "Request Approval"}
+                  </Button>
+                </div>
+              )}
               <PreviewComponent 
                 data={formData as any} 
                 isEmployeePreview={true}
-                showExportButtons={false}
+                showExportButtons={requestStatus === 'approved'}
+                requestStatus={requestStatus}
               />
             </div>
           </TabsContent>

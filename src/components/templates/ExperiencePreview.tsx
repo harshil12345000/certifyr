@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";
@@ -8,7 +9,16 @@ import { Letterhead } from "./Letterhead";
 import { QRCode } from "./QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
 
-export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) => {
+interface ExtendedExperiencePreviewProps extends ExperiencePreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({ 
+  data, 
+  isEmployeePreview = false,
+  requestStatus = 'pending'
+}) => {
   const { signatureUrl, sealUrl, organizationDetails, isLoading } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -16,8 +26,8 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
   const institutionNameToDisplay = organizationDetails?.name || data.institutionName || "[Institution Name]";
 
   useEffect(() => {
-    const generateQR = async () => {
-      if (data.fullName && data.designation && data.department) {
+    if (requestStatus === 'approved' && data.fullName && data.designation && data.department) {
+      const generateQR = async () => {
         const url = await generateDocumentQRCode(
           'experience-1',
           data,
@@ -28,10 +38,10 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
         if (!url) {
           console.error('QR code URL generation failed for Experience Preview.');
         }
-      }
-    };
-    generateQR();
-  }, [data, organizationDetails?.name, user?.id]);
+      };
+      generateQR();
+    }
+  }, [data, organizationDetails?.name, user?.id, requestStatus]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -82,22 +92,20 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
           </div>
           
           <div className="text-right mt-8 md:mt-0">
-            {data.includeDigitalSignature ? (
+            {requestStatus === 'approved' && data.includeDigitalSignature && signatureUrl ? (
               <div className="h-16 mb-4 flex justify-end">
-                {signatureUrl ? (
-                  <div className="border-b border-gray-800 px-6">
-                    <img 
-                      src={signatureUrl}
-                      alt="Digital Signature" 
-                      className="h-12 object-contain"
-                      onError={(e) => handleImageError(e, "signature")}
-                    />
-                  </div>
-                ) : (
-                  <div className="border-b border-gray-800 px-6 py-3">
-                    <SignatureIcon className="h-8 w-8 text-primary" />
-                  </div>
-                )}
+                <div className="border-b border-gray-800 px-6">
+                  <img 
+                    src={signatureUrl}
+                    alt="Digital Signature" 
+                    className="h-12 object-contain"
+                    onError={(e) => handleImageError(e, "signature")}
+                  />
+                </div>
+              </div>
+            ) : isEmployeePreview && requestStatus !== 'approved' ? (
+              <div className="h-16 mb-4 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic w-48 ml-auto">
+                [Signature will appear after approval]
               </div>
             ) : (
               <div className="h-16 mb-4">
@@ -112,7 +120,13 @@ export const ExperiencePreview: React.FC<ExperiencePreviewProps> = ({ data }) =>
 
         {/* QR Code positioned at bottom right */}
         <div className="absolute bottom-8 right-8">
-          <QRCode value={qrCodeUrl || ''} size={80} />
+          {requestStatus === 'approved' && qrCodeUrl ? (
+            <QRCode value={qrCodeUrl} size={80} />
+          ) : isEmployeePreview && requestStatus !== 'approved' ? (
+            <div className="w-20 h-20 border border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500">
+              QR Code
+            </div>
+          ) : null}
         </div>
 
         {sealUrl && (
