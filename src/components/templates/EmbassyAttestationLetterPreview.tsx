@@ -18,7 +18,12 @@ export interface EmbassyAttestationLetterPreviewProps {
   data: EmbassyAttestationLetterData;
 }
 
-export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterPreviewProps> = ({ data }) => {
+interface ExtendedEmbassyAttestationLetterPreviewProps extends EmbassyAttestationLetterPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const EmbassyAttestationLetterPreview: React.FC<ExtendedEmbassyAttestationLetterPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const {
     applicantName,
     passportNumber,
@@ -55,6 +60,8 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
   });
   const { user } = useAuth();
   const { signatureUrl: brandingSignatureUrl, sealUrl: brandingSealUrl } = useBranding();
+
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   useEffect(() => {
     const fetchBranding = async () => {
@@ -213,11 +220,20 @@ export const EmbassyAttestationLetterPreview: React.FC<EmbassyAttestationLetterP
       <div className="flex justify-end items-end">
         <div className="text-right">
           {includeDigitalSignature && brandingSignatureUrl && (
-            <img src={brandingSignatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !brandingSignatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
+            <div className="h-16 mb-4 flex justify-end relative">
+              <div className="border-b border-gray-800 px-6">
+                <img
+                  src={brandingSignatureUrl}
+                  alt="Digital Signature"
+                  className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                  onError={(e) => handleImageError(e, "signature")}
+                />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
+                </div>
+              )}
             </div>
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}

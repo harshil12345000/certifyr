@@ -7,7 +7,12 @@ export interface AcademicTranscriptPreviewProps {
   data: AcademicTranscriptData;
 }
 
-export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps> = ({ data }) => {
+interface ExtendedAcademicTranscriptPreviewProps extends AcademicTranscriptPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const AcademicTranscriptPreview: React.FC<ExtendedAcademicTranscriptPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const {
     studentName,
     studentId,
@@ -36,6 +41,8 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
   const formattedIssueDate = issueDate ? new Date(issueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Issue Date]';
 
   const displayInstitutionName = organizationDetails?.name || institutionName || '[INSTITUTION NAME]';
+
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -120,13 +127,24 @@ export const AcademicTranscriptPreview: React.FC<AcademicTranscriptPreviewProps>
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && signatureUrl && (
-            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain ml-auto" />
-          )}
-          {includeDigitalSignature && !signatureUrl && (
-            <div className="h-16 w-48 mb-2 border border-dashed border-gray-400 flex items-center justify-center text-gray-500 italic ml-auto">
-              [Digital Signature Placeholder]
+          {includeDigitalSignature && signatureUrl ? (
+            <div className="h-16 mb-4 flex justify-end relative">
+              <div className="border-b border-gray-800 px-6">
+                <img
+                  src={signatureUrl}
+                  alt="Digital Signature"
+                  className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                  onError={(e) => handleImageError(e, "signature")}
+                />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
+                </div>
+              )}
             </div>
+          ) : (
+            <div className="h-16 mb-4"></div>
           )}
           {!includeDigitalSignature && <div className="h-16"></div>}
           <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>

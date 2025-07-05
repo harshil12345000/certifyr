@@ -6,7 +6,12 @@ import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
 import { Letterhead } from './Letterhead';
 
-export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = ({ data }) => {
+interface ExtendedBankVerificationPreviewProps extends BankVerificationPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const BankVerificationPreview: React.FC<ExtendedBankVerificationPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const {
     fullName,
     employeeId,
@@ -33,6 +38,9 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
   const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  // Determine if content should be blurred for employee preview
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   useEffect(() => {
     const generateQR = async () => {
@@ -145,10 +153,24 @@ export const BankVerificationPreview: React.FC<BankVerificationPreviewProps> = (
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && signatureUrl && (
-            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" />
+          {includeDigitalSignature && signatureUrl ? (
+            <div className="h-16 mb-2 flex justify-center relative">
+              <div className="border-b border-gray-800 px-6">
+                <img
+                  src={signatureUrl}
+                  alt="Signatory Signature"
+                  className={`h-16 object-contain mx-auto ${shouldBlur ? 'blur-sm' : ''}`}
+                />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-16 mb-2"></div>
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
             <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
             <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>

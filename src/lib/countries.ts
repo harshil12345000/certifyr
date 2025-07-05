@@ -10,5 +10,6 @@ export const countries = [
   { code: 'JP', name: 'Japan' },
   { code: 'CN', name: 'China' },
   { code: 'BR', name: 'Brazil' },
+  { code: 'OT', name: 'Other' },
   // Add more countries as needed
 ];

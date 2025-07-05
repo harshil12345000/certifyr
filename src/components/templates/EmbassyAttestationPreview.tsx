@@ -6,7 +6,12 @@ import { Letterhead } from './Letterhead';
 import { QRCode } from './QRCode';
 import { generateDocumentQRCode } from '@/lib/qr-utils';
 
-export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps> = ({ data }) => {
+interface ExtendedEmbassyAttestationPreviewProps extends EmbassyAttestationPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const EmbassyAttestationPreview: React.FC<ExtendedEmbassyAttestationPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const {
     fullName,
     passportNumber,
@@ -36,6 +41,8 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
   const { signatureUrl, sealUrl, organizationDetails } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   useEffect(() => {
     const generateQR = async () => {
@@ -150,29 +157,24 @@ export const EmbassyAttestationPreview: React.FC<EmbassyAttestationPreviewProps>
         </div>
         
         <div className="text-right mt-8 md:mt-0">
-          {includeDigitalSignature ? (
-            <div className="h-16 mb-4 flex justify-end">
-              {signatureUrl ? (
-                <div className="border-b border-gray-800 px-6">
-                  <img 
-                    src={signatureUrl}
-                    alt="Digital Signature" 
-                    className="h-12 object-contain"
-                    onError={(e) => handleImageError(e, "signature")}
-                  />
-                </div>
-              ) : (
-                <div className="border-b border-gray-800 px-6 py-3">
-                  <div className="h-8 w-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                    [Signature]
-                  </div>
+          {includeDigitalSignature && signatureUrl ? (
+            <div className="h-16 mb-4 flex justify-end relative">
+              <div className="border-b border-gray-800 px-6">
+                <img
+                  src={signatureUrl}
+                  alt="Digital Signature"
+                  className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                  onError={(e) => handleImageError(e, "signature")}
+                />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
                 </div>
               )}
             </div>
           ) : (
-            <div className="h-16 mb-4">
-              {/* Space for manual signature */}
-            </div>
+            <div className="h-16 mb-4"></div>
           )}
           <p className="font-bold">{signatoryName || "[Authorized Signatory Name]"}</p>
           <p>{signatoryDesignation || "[Designation]"}</p>

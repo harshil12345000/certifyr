@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ExperienceData, ExperiencePreviewProps } from "@/types/templates";
 import { formatDate } from "@/lib/utils";

@@ -14,7 +14,12 @@ interface BrandingAssets {
   organizationEmail: string | null;
 }
 
-export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) => {
+interface ExtendedOfferLetterPreviewProps extends OfferLetterPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const OfferLetterPreview: React.FC<ExtendedOfferLetterPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const {
     candidateName,
     candidateAddress,
@@ -50,6 +55,8 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
     organizationPhone: null,
     organizationEmail: null,
   });
+
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   useEffect(() => {
     const fetchBranding = async () => {
@@ -220,10 +227,25 @@ export const OfferLetterPreview: React.FC<OfferLetterPreviewProps> = ({ data }) 
       {/* Signatory Section */}
       <div className="flex justify-end items-end mt-16">
         <div className="text-center">
-          {includeDigitalSignature && signatureUrl && (
-            <img src={signatureUrl} alt="Signatory Signature" className="h-16 mb-2 object-contain mx-auto" onError={(e) => handleImageError(e, 'signature')} />
+          {includeDigitalSignature && signatureUrl ? (
+            <div className="h-16 mb-4 flex justify-end relative">
+              <div className="border-b border-gray-800 px-6">
+                <img
+                  src={signatureUrl}
+                  alt="Digital Signature"
+                  className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                  onError={(e) => handleImageError(e, "signature")}
+                />
+              </div>
+              {shouldBlur && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                  <span className="text-xs text-gray-500">Signature pending approval</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-16 mb-4"></div>
           )}
-          {!includeDigitalSignature && <div className="h-16"></div>}
           <div className="border-t border-black pt-2 min-w-[200px]">
             <p className="font-semibold">{signatoryName || '[Authorized Signatory Name]'}</p>
             <p className="text-sm">{signatoryDesignation || '[Designation]'}</p>

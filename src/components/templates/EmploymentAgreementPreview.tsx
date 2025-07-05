@@ -7,8 +7,15 @@ interface EmploymentAgreementPreviewProps {
   data: EmploymentAgreementData;
 }
 
-export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProps> = ({ data }) => {
+interface ExtendedEmploymentAgreementPreviewProps extends EmploymentAgreementPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const EmploymentAgreementPreview: React.FC<ExtendedEmploymentAgreementPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -87,12 +94,21 @@ export const EmploymentAgreementPreview: React.FC<EmploymentAgreementPreviewProp
           </div>
           <div className="text-center">
             {data.includeDigitalSignature && signatureUrl && (
-              <img 
-                src={signatureUrl}
-                alt="Digital Signature" 
-                className="h-16 mb-2 object-contain mx-auto"
-                onError={(e) => handleImageError(e, "signature")}
-              />
+              <div className="h-16 mb-4 flex justify-end relative">
+                <div className="border-b border-gray-800 px-6">
+                  <img
+                    src={signatureUrl}
+                    alt="Digital Signature"
+                    className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                    onError={(e) => handleImageError(e, "signature")}
+                  />
+                </div>
+                {shouldBlur && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                    <span className="text-xs text-gray-500">Signature pending approval</span>
+                  </div>
+                )}
+              </div>
             )}
             <div className="border-b border-gray-400 w-full mb-2"></div>
             <p className="text-sm font-semibold">{data.signatoryName || '[HR Representative]'}</p>

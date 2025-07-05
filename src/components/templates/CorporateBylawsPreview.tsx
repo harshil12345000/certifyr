@@ -3,7 +3,12 @@ import { CorporateBylawsPreviewProps } from '@/types/templates';
 import { useBranding } from '@/contexts/BrandingContext';
 import { Letterhead } from './Letterhead';
 
-export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ data }) => {
+interface ExtendedCorporateBylawsPreviewProps extends CorporateBylawsPreviewProps {
+  isEmployeePreview?: boolean;
+  requestStatus?: 'pending' | 'approved' | 'rejected';
+}
+
+export const CorporateBylawsPreview: React.FC<ExtendedCorporateBylawsPreviewProps> = ({ data, isEmployeePreview = false, requestStatus = 'pending' }) => {
   const {
     companyName,
     stateOfIncorporation,
@@ -24,6 +29,8 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
   } = data;
 
   const { signatureUrl, sealUrl } = useBranding();
+
+  const shouldBlur = isEmployeePreview && requestStatus !== 'approved';
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, type: string) => {
     console.error(`Error loading ${type}:`, e);
@@ -106,13 +113,24 @@ export const CorporateBylawsPreview: React.FC<CorporateBylawsPreviewProps> = ({ 
           </div>
           
           <div className="text-right">
-            {includeDigitalSignature && signatureUrl && (
-              <img 
-                src={signatureUrl}
-                alt="Digital Signature" 
-                className="h-16 mb-2 object-contain ml-auto"
-                onError={(e) => handleImageError(e, "signature")}
-              />
+            {includeDigitalSignature && signatureUrl ? (
+              <div className="h-16 mb-4 flex justify-end relative">
+                <div className="border-b border-gray-800 px-6">
+                  <img
+                    src={signatureUrl}
+                    alt="Digital Signature"
+                    className={`h-12 object-contain ${shouldBlur ? 'blur-sm' : ''}`}
+                    onError={(e) => handleImageError(e, "signature")}
+                  />
+                </div>
+                {shouldBlur && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
+                    <span className="text-xs text-gray-500">Signature pending approval</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-16 mb-4"></div>
             )}
             <div className="border-b border-gray-400 w-64 mb-2"></div>
             <p className="text-sm"><strong>{signatoryName || '[Secretary Name]'}</strong></p>
