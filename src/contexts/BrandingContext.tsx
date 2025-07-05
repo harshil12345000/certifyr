@@ -33,7 +33,7 @@ const BrandingContext = createContext<BrandingContextType>({
   refreshBranding: async () => {},
 });
 
-export function BrandingProvider({ children }: { children: ReactNode }) {
+export function BrandingProvider({ children, organizationId }: { children: ReactNode; organizationId?: string }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [sealUrl, setSealUrl] = useState<string | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
@@ -43,8 +43,18 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   const loadBrandingData = async () => {
-    if (!user?.id) {
-      console.log("[BrandingContext] No user found, clearing branding data");
+    // If organizationId is provided, use it directly (for employee portal)
+    const orgIdToUse = organizationId || (user?.id ? await (async () => {
+      const { data: memberData } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .single();
+      return memberData?.organization_id;
+    })() : null);
+
+    if (!orgIdToUse) {
+      console.log("[BrandingContext] No organization found for user");
       setLogoUrl(null);
       setSealUrl(null);
       setSignatureUrl(null);
@@ -58,38 +68,11 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     try {
       console.log("[BrandingContext] Loading branding data for user:", user.id);
 
-      // Get user's organization_id
-      const { data: memberData, error: memberError } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .single();
-
-      console.log(
-        "[BrandingContext] Member data:",
-        memberData,
-        "Error:",
-        memberError,
-      );
-
-      if (memberError || !memberData?.organization_id) {
-        console.log("[BrandingContext] No organization found for user");
-        setLogoUrl(null);
-        setSealUrl(null);
-        setSignatureUrl(null);
-        setOrganizationDetails(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const organizationId = memberData.organization_id;
-      console.log("[BrandingContext] Organization ID:", organizationId);
-
       // Fetch organization details
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("name, address, phone, email")
-        .eq("id", organizationId)
+        .eq("id", orgIdToUse)
         .single();
 
       console.log(
@@ -123,7 +106,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       const { data: filesData, error: filesError } = await supabase
         .from("branding_files")
         .select("name, path")
-        .eq("organization_id", organizationId);
+        .eq("organization_id", orgIdToUse);
 
       console.log(
         "[BrandingContext] Branding files:",
@@ -186,7 +169,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadBrandingData();
-  }, [user?.id]);
+    // Only depend on user.id if orgId is not provided
+  }, [user?.id, organizationId]);
 
   const refreshBranding = async () => {
     await loadBrandingData();

@@ -278,27 +278,32 @@ export function Header() {
                   </p>
                 </div>
               ) : (
-                notifications.map((n) => (
-                  <DropdownMenuItem
-                    key={n.id}
-                    className="cursor-pointer p-3 relative"
-                    onClick={() => markAsRead(n.id)}
-                  >
-                    <div>
-                      <p className="font-medium flex items-center">
-                        {n.subject}
-                        {unread.includes(n.id) && (
-                          <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
-                        )}
-                      </p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">
-                        {n.body}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {dayjs(n.created_at).format("MMM D, YYYY HH:mm")}
-                      </p>
-                    </div>
-                  </DropdownMenuItem>
+                notifications.map((n, i) => (
+                  <>
+                    <DropdownMenuItem
+                      key={n.id}
+                      className="cursor-pointer p-3 relative"
+                      onClick={() => markAsRead(n.id)}
+                    >
+                      <div>
+                        <p className="font-medium flex items-center">
+                          {n.subject}
+                          {unread.includes(n.id) && (
+                            <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">
+                          {n.body}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {dayjs(n.created_at).format("MMM D, YYYY HH:mm")}
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                    {i < notifications.length - 1 && (
+                      <div className="border-t border-gray-200 my-2 mx-2" />
+                    )}
+                  </>
                 ))
               )}
             </DropdownMenuContent>

@@ -10,6 +10,7 @@ import { FormData } from "@/types/templates";
 import { useEmployeePortal } from "@/contexts/EmployeePortalContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 
 const TEMPLATE_FORM_MAP: Record<string, keyof typeof Forms> = {
   "bonafide-1": "BonafideForm",
@@ -295,11 +296,15 @@ export default function EmployeeTemplateDetail() {
                 </div>
               )}
               <div className="p-4">
-                <PreviewComponent
-                  data={formData as any}
-                  isEmployeePreview={true}
-                  requestStatus={requestStatus}
-                />
+                <BrandingProvider organizationId={organizationId}>
+                  {PreviewComponent && (
+                    <PreviewComponent
+                      data={formData as any}
+                      isEmployeePreview={false}
+                      requestStatus={requestStatus}
+                    />
+                  )}
+                </BrandingProvider>
               </div>
             </div>
           </TabsContent>
