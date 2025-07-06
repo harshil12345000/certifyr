@@ -13,7 +13,7 @@ export function IntroStage({ onNext }: IntroStageProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto"
+      className="max-w-2xl mx-auto pt-3"
     >
       <Card className="p-12 text-center bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3">
         <div className="space-y-8">

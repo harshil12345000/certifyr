@@ -71,7 +71,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       animate={{ opacity: 1, x: 0 }}
       className="max-w-5xl mx-auto w-full"
     >
-      <div className="text-center mb-8">
+      <div className="text-center mb-8 pt-3">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">
           Choose Your Plan to Continue
         </h2>
@@ -101,10 +101,10 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid md:grid-cols-2 gap-8 mb-8">
+      <div className="flex flex-row justify-center gap-x-4 mb-4 pt-3">
         {/* Basic Plan */}
         <Card className={cn(
-          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3",
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-sm w-full",
           data.selectedPlan === 'basic' 
             ? "ring-2 ring-blue-600 bg-blue-50/50 backdrop-blur-sm" 
             : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
@@ -133,7 +133,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
               className={cn(
                 "w-full mb-6 h-12 transition-all duration-200",
                 data.selectedPlan === 'basic'
-                  ? "bg-[#1b80ff] text-white border border-[#1b80ff] hover:bg-[#f3f4f6] hover:text-[#1b80ff] hover:border-[#1b80ff]"
+                  ? "bg-[#1b80ff] text-white border border-[#1b80ff]"
                   : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
               )}
             >
@@ -153,7 +153,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
         {/* Pro Plan */}
         <Card className={cn(
-          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3",
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-sm w-full",
           data.selectedPlan === 'pro' 
             ? "ring-2 ring-[#1b80ff] bg-[#eaf4ff] backdrop-blur-sm" 
             : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
@@ -189,7 +189,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
               className={cn(
                 "w-full mb-6 h-12 transition-all duration-200",
                 data.selectedPlan === 'pro'
-                  ? "bg-[#1b80ff] text-white border border-[#1b80ff] hover:bg-[#f3f4f6] hover:text-[#1b80ff] hover:border-[#1b80ff]"
+                  ? "bg-[#1b80ff] text-white border border-[#1b80ff]"
                   : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
               )}
             >
@@ -261,7 +261,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         <Button
           onClick={handlePayment}
           disabled={loading}
-          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg font-semibold"
+          className="px-8 py-3 bg-[#1b80ff] hover:bg-blue-700 text-lg font-semibold text-white transition-transform duration-200 hover:scale-105"
         >
           {loading ? (
             <>

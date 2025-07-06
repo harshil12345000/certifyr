@@ -56,7 +56,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="max-w-3xl mx-auto w-full"
+      className="max-w-3xl mx-auto w-full pt-3"
     >
       <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3">
         <CardHeader className="text-center pb-6">
