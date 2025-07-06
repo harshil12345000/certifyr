@@ -238,7 +238,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
               <div>
                 <h4 className="font-semibold text-gray-800">Do you offer refunds?</h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  We offer a 30-day money-back guarantee if you're not satisfied with our service.
+                  We don't offer refunds at the moment.
                 </p>
               </div>
             </div>
