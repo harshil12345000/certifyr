@@ -95,27 +95,6 @@ export function useUserActivity(refreshIndex?: number) {
 
     fetchActivityData();
 
-    // Set up real-time subscription for live activity updates
-    const channel = supabase
-      .channel("activity-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "documents",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // Refetch activity data when documents change
-          fetchActivityData();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [user, refreshIndex]);
 
   return { activityData, loading, error };
