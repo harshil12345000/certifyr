@@ -40,15 +40,6 @@ export async function incrementUserStat({
   if (error) console.error("Error incrementing user stat:", error);
 }
 
-// Add helper to track monthly document creation
-export async function trackMonthlyDocumentCreation(userId: string, organizationId: string) {
-  const { error } = await supabase.rpc("track_monthly_document_creation", {
-    p_user_id: userId,
-    p_organization_id: organizationId,
-  });
-  if (error) console.error("Error tracking monthly document creation:", error);
-}
-
 export function useUserStats(refreshIndex?: number) {
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats>({
