@@ -273,6 +273,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // This is handled by configuring the storage in the client
       }
 
+      // Immediately update user and session state after successful sign in
+      if (!error) {
+        const { data: { session: newSession } } = await supabase.auth.getSession();
+        let validUser = newSession?.user ?? null;
+        // Extra check: verify user still exists in Supabase
+        if (validUser) {
+          const { data: userCheck, error: userCheckError } = await supabase
+            .from('user_profiles')
+            .select('email')
+            .eq('user_id', validUser.id)
+            .single();
+          if (userCheckError || !userCheck) {
+            // User profile missing, force sign out
+            await supabase.auth.signOut();
+            validUser = null;
+          }
+        }
+        setSession(newSession);
+        setUser(validUser);
+      }
+
       return { error };
     } catch (error) {
       return { error };

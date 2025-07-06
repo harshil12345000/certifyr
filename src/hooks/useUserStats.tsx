@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -75,11 +74,13 @@ export function useUserStats(refreshIndex?: number) {
           return;
         }
 
-        // Fetch documents created count
-        const { count: documentsCreated } = await supabase
-          .from("documents")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
+        // Fetch user statistics from user_statistics table
+        const { data: userStats, error: statsError } = await supabase
+          .from("user_statistics")
+          .select("documents_created, total_verifications")
+          .eq("user_id", user.id)
+          .eq("organization_id", orgId)
+          .single();
 
         // Fetch portal members count (approved employees)
         const { count: portalMembers } = await supabase
@@ -94,17 +95,11 @@ export function useUserStats(refreshIndex?: number) {
           .select("*", { count: "exact", head: true })
           .eq("organization_id", orgId);
 
-        // Fetch total verifications count
-        const { count: totalVerifications } = await supabase
-          .from("qr_verification_logs")
-          .select("*", { count: "exact", head: true })
-          .eq("organization_id", orgId);
-
         setStats({
-          documentsCreated: documentsCreated || 0,
+          documentsCreated: userStats?.documents_created || 0,
           portalMembers: portalMembers || 0,
           requestedDocuments: requestedDocuments || 0,
-          totalVerifications: totalVerifications || 0,
+          totalVerifications: userStats?.total_verifications || 0,
         });
 
       } catch (err) {

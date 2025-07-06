@@ -22,7 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!user) {
+  if (!user && !loading) {
     console.log("No user found, redirecting to auth");
     return <Navigate to="/auth" replace />;
   }

@@ -5,6 +5,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrganizationIdForUser, incrementUserStat } from "@/hooks/useUserStats";
 
 export interface DocumentVerificationData {
   documentId: string;
@@ -140,6 +141,18 @@ export const logQRVerification = async (
       ip_address: "0.0.0.0", // Would be handled server-side in production
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     });
+    // Increment user_statistics for total_verifications if org and user are present
+    if (organizationId && userId) {
+      try {
+        await incrementUserStat({
+          userId,
+          organizationId,
+          statField: "total_verifications", // Make sure this matches your DB field
+        });
+      } catch (statError) {
+        console.error("Error incrementing total_verifications stat:", statError);
+      }
+    }
   } catch (error) {
   }
 };

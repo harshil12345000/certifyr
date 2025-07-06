@@ -1,7 +1,6 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getOrganizationIdForUser } from "./useUserStats";
+import { getOrganizationIdForUser, incrementUserStat } from "./useUserStats";
 
 export function useDocumentTracking() {
   const { user } = useAuth();
@@ -27,6 +26,17 @@ export function useDocumentTracking() {
         console.error("Error tracking document creation:", error);
       } else {
         console.log("Document creation tracked successfully");
+        // Increment user_statistics for documentsCreated
+        try {
+          // Use the incrementUserStat helper
+          await incrementUserStat({
+            userId: user.id,
+            organizationId: orgId,
+            statField: "documents_created", // Make sure this matches your DB field
+          });
+        } catch (statError) {
+          console.error("Error incrementing user statistics:", statError);
+        }
       }
     } catch (error) {
       console.error("Error tracking document creation:", error);
