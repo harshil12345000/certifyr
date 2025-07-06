@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,7 +10,7 @@ import Index from "@/pages/Index";
 import Templates from "@/pages/Templates";
 import TemplateDetail from "@/pages/TemplateDetail";
 import TemplateBuilder from "@/pages/TemplateBuilder";
-import Auth from "@/pages/Auth";
+import Onboarding from "@/pages/Onboarding";
 import Admin from "@/pages/Admin";
 import Settings from "@/pages/Settings";
 import RequestPortal from "@/pages/RequestPortal";
@@ -75,7 +76,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth" element={<Onboarding />} />
                 <Route
                   path="/request-portal"
                   element={

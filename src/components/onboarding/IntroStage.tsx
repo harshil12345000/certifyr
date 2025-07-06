@@ -1,0 +1,65 @@
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Play } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface IntroStageProps {
+  onNext: () => void;
+}
+
+export function IntroStage({ onNext }: IntroStageProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-2xl mx-auto"
+    >
+      <Card className="p-12 text-center bg-white/70 backdrop-blur-sm border-0 shadow-2xl">
+        <div className="space-y-8">
+          {/* Logo and Title */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center space-x-3">
+              <img
+                src="/uploads/Certifyr Logo.png"
+                alt="Certifyr Logo"
+                className="w-12 h-12 object-contain"
+              />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Certifyr
+              </h1>
+            </div>
+            <p className="text-lg text-gray-600 max-w-md mx-auto">
+              Simplifying the way your organization does official documentation.
+            </p>
+          </div>
+
+          {/* Demo Video Placeholder */}
+          <div className="relative">
+            <Card className="aspect-video max-w-md mx-auto bg-gradient-to-br from-gray-100 to-gray-200 border-0 flex items-center justify-center group hover:shadow-lg transition-all duration-300 cursor-pointer">
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto group-hover:bg-blue-700 transition-colors">
+                  <Play className="w-8 h-8 text-white ml-1" />
+                </div>
+                <p className="text-xl font-semibold text-gray-700">Demo Video</p>
+                <p className="text-sm text-gray-500">See how Certifyr works</p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Get Started Button */}
+          <div className="pt-4">
+            <Button
+              onClick={onNext}
+              size="lg"
+              className="px-12 py-4 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Get Started
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
