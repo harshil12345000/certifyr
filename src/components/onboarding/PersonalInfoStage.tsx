@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -14,10 +15,50 @@ interface PersonalInfoStageProps {
 }
 
 export function PersonalInfoStage({ data, updateData, onNext, onPrev }: PersonalInfoStageProps) {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [verifying, setVerifying] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleVerifyEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (data.fullName && data.email && data.phoneNumber) {
-      onNext();
+    setError(null);
+    if (!data.fullName || !data.email || !data.phoneNumber) return;
+    setVerifying(true);
+    try {
+      // Send a sign up request to Supabase to trigger email verification (do not create user yet)
+      const { error } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: { shouldCreateUser: true }
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setVerificationSent(true);
+      }
+    } catch (err: any) {
+      setError("Failed to send verification email.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleCheckVerified = async () => {
+    setVerifying(true);
+    setError(null);
+    try {
+      // Check if the user is confirmed in Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && user.email_confirmed_at) {
+        setEmailVerified(true);
+        onNext();
+      } else {
+        setError("Email not verified yet. Please check your inbox and click the confirmation link.");
+      }
+    } catch (err: any) {
+      setError("Could not check verification status.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -38,7 +79,7 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={emailVerified ? (e) => { e.preventDefault(); onNext(); } : handleVerifyEmail} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
                 Full Name *
@@ -84,6 +125,8 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
               />
             </div>
 
+            {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+
             <div className="flex justify-between pt-6">
               <Button
                 type="button"
@@ -94,13 +137,32 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
                 Back
               </Button>
               
-              <Button
-                type="submit"
-                disabled={!isValid}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
-              >
-                Next
-              </Button>
+              {emailVerified ? (
+                <Button
+                  type="submit"
+                  disabled={!isValid}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
+                >
+                  Next
+                </Button>
+              ) : verificationSent ? (
+                <Button
+                  type="button"
+                  onClick={handleCheckVerified}
+                  disabled={verifying}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
+                >
+                  {verifying ? "Checking..." : "I've Verified My Email"}
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={!isValid || verifying}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
+                >
+                  {verifying ? "Sending..." : "Verify Email"}
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>

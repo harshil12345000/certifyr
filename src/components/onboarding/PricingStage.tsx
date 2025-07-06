@@ -7,6 +7,9 @@ import { Check, Star, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface PricingStageProps {
   data: OnboardingData;
@@ -33,7 +36,12 @@ const proFeatures = [
 ];
 
 export function PricingStage({ data, updateData, onNext, onPrev, loading }: PricingStageProps) {
+  const { signUp } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const pricing = {
     basic: {
@@ -59,10 +67,44 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
   const selectedPrice = pricing[data.selectedPlan][data.billingPeriod];
 
-  const handlePayment = () => {
-    // This will trigger the signup process
-    // In a real implementation, you would integrate with Razorpay here
-    onNext();
+  const handlePayment = async () => {
+    setLocalLoading(true);
+    setError(null);
+    try {
+      const { error } = await signUp(data.email, data.password, {
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
+        organizationName: data.organizationName,
+        organizationType: data.organizationType,
+        organizationTypeOther: data.organizationTypeOther,
+        organizationSize: data.organizationSize,
+        organizationWebsite: data.organizationWebsite,
+        organizationLocation: data.organizationLocation,
+      });
+      if (error) {
+        setError(error.message);
+        toast({
+          title: "Sign Up Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Welcome to Certifyr! Setting up your dashboard...",
+        });
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      setError("An unexpected error occurred");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLocalLoading(false);
+    }
   };
 
   return (
@@ -260,10 +302,10 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         
         <Button
           onClick={handlePayment}
-          disabled={loading}
+          disabled={loading || localLoading}
           className="px-8 py-3 bg-[#1b80ff] hover:bg-blue-700 text-lg font-semibold text-white transition-transform duration-200 hover:scale-105"
         >
-          {loading ? (
+          {(loading || localLoading) ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               Creating Account...
@@ -273,6 +315,10 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
           )}
         </Button>
       </div>
+
+      {error && (
+        <div className="text-center text-red-500 mt-4">{error}</div>
+      )}
     </motion.div>
   );
 }
