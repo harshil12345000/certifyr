@@ -94,7 +94,6 @@ export default function SignUp() {
           description:
             "Account created successfully! Please check your email to verify your account.",
         });
-        navigate("/dashboard");
       }
     } catch (error) {
       toast({

@@ -58,12 +58,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           data: { session: initialSession },
         } = await supabase.auth.getSession();
 
+        let validUser = initialSession?.user ?? null;
+        // Extra check: verify user still exists in Supabase
+        if (validUser) {
+          const { data: userCheck, error: userCheckError } = await supabase
+            .from('user_profiles')
+            .select('email')
+            .eq('user_id', validUser.id)
+            .single();
+          if (userCheckError || !userCheck) {
+            // User profile missing, force sign out
+            await supabase.auth.signOut();
+            validUser = null;
+          }
+        }
+
         if (mounted) {
           setSession(initialSession);
-          setUser(initialSession?.user ?? null);
+          setUser(validUser);
 
-          if (initialSession?.user) {
-            await ensureUserHasOrganization(initialSession.user);
+          if (validUser) {
+            await ensureUserHasOrganization(validUser);
           }
         }
       } catch (error) {
@@ -81,13 +96,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
+      let validUser = session?.user ?? null;
+      // Extra check: verify user still exists in Supabase
+      if (validUser) {
+        const { data: userCheck, error: userCheckError } = await supabase
+          .from('user_profiles')
+          .select('email')
+          .eq('user_id', validUser.id)
+          .single();
+        if (userCheckError || !userCheck) {
+          // User profile missing, force sign out
+          await supabase.auth.signOut();
+          validUser = null;
+        }
+      }
+
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(validUser);
 
       // When user signs in, check if they need to be added to an organization
-      if (event === "SIGNED_IN" && session?.user) {
+      if (event === "SIGNED_IN" && validUser) {
         setTimeout(() => {
-          ensureUserHasOrganization(session.user);
+          ensureUserHasOrganization(validUser);
         }, 0);
       }
 
@@ -170,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/auth/signup`;
 
       // Create a clean metadata object - ensure we're using the exact field names the database expects
       const metaData: Record<string, any> = {

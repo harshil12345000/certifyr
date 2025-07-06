@@ -25,6 +25,7 @@ import NoAccess from "@/pages/employee-portal/NoAccess";
 import { BookmarksPage } from "./pages/Index";
 import { BookmarksProvider } from "./contexts/BookmarksContext";
 import Auth from "@/pages/Auth";
+import ResetPassword from "@/pages/auth/reset-password";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ function App() {
                 />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/signup" element={<Onboarding />} />
+                <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route
                   path="/request-portal"
                   element={

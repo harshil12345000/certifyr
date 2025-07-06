@@ -102,9 +102,8 @@ export default function Onboarding() {
       } else {
         toast({
           title: "Account Created!",
-          description: "Welcome to Certifyr! Setting up your dashboard...",
+          description: "Welcome to Certifyr! Continue onboarding to finish setup.",
         });
-        navigate("/dashboard");
       }
     } catch (error) {
       toast({
