@@ -10,7 +10,7 @@ export function SidebarLogo({ collapsed = false }: SidebarLogoProps) {
       <div className="flex items-center">
         <div className="w-8 h-8 rounded-md flex items-center justify-center relative">
           <img
-            src="/uploads/30a6a699-ff30-486d-8225-816f6de9650e.png"
+            src="/uploads/Certifyr Logo.png"
             alt="Certifyr Logo"
             className="w-full h-full object-contain"
             onError={(e) => {
