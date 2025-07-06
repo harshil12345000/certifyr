@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { CheckCircle } from "lucide-react";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -15,29 +17,78 @@ interface PersonalInfoStageProps {
 }
 
 export function PersonalInfoStage({ data, updateData, onNext, onPrev }: PersonalInfoStageProps) {
+  const { signUp, signIn, user } = useAuth(); // Use user from context
   const [verifying, setVerifying] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [emailSentState, setEmailSentState] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if user is already verified on component mount
+  useEffect(() => {
+    if (user && (user.email_confirmed_at || user.confirmed_at)) {
+      setEmailVerified(true);
+    }
+  }, [user]);
 
   const handleVerifyEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!data.fullName || !data.email || !data.phoneNumber) return;
+    
+    if (!data.fullName || !data.email || !data.phoneNumber) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
     setVerifying(true);
+    setVerificationSent(true);
+    setEmailSentState(true);
+    
+    // Reset email sent state after 3 seconds
+    setTimeout(() => setEmailSentState(false), 3000);
+
     try {
-      // Send a sign up request to Supabase to trigger email verification (do not create user yet)
-      const { error } = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: { shouldCreateUser: true }
+      const { error } = await signUp(data.email, data.password || Math.random().toString(36).slice(-8), {
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
+        organizationName: data.organizationName,
+        organizationType: data.organizationType,
+        organizationTypeOther: data.organizationTypeOther,
+        organizationSize: data.organizationSize,
+        organizationWebsite: data.organizationWebsite,
+        organizationLocation: data.organizationLocation,
       });
+      
+      if (error) {
+        setError(error.message);
+        setVerificationSent(false);
+      }
+    } catch (err: any) {
+      setError("Failed to send confirmation email.");
+      setVerificationSent(false);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    setError(null);
+    setVerifying(true);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: data.email,
+      });
+      
       if (error) {
         setError(error.message);
       } else {
-        setVerificationSent(true);
+        setEmailSentState(true);
+        setTimeout(() => setEmailSentState(false), 3000);
       }
     } catch (err: any) {
-      setError("Failed to send verification email.");
+      setError("Failed to resend confirmation email.");
     } finally {
       setVerifying(false);
     }
@@ -46,10 +97,17 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
   const handleCheckVerified = async () => {
     setVerifying(true);
     setError(null);
+    
     try {
-      // Check if the user is confirmed in Supabase
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && user.email_confirmed_at) {
+      // Use the more efficient session refresh method
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        setError("Could not check verification status. Please try again.");
+        return;
+      }
+      
+      if (session?.user && (session.user.email_confirmed_at || session.user.confirmed_at)) {
         setEmailVerified(true);
         onNext();
       } else {
@@ -125,7 +183,11 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
               />
             </div>
 
-            {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+            {error && (
+              <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md">
+                {error}
+              </div>
+            )}
 
             <div className="flex justify-between pt-6">
               <Button
@@ -144,6 +206,14 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
                   className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
                 >
                   Next
+                </Button>
+              ) : emailSentState ? (
+                <Button
+                  type="button"
+                  disabled
+                  className="px-8 py-3 bg-green-600 text-white flex items-center gap-2 cursor-default"
+                >
+                  <CheckCircle className="w-5 h-5" /> Email Sent
                 </Button>
               ) : verificationSent ? (
                 <Button
@@ -164,6 +234,20 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
                 </Button>
               )}
             </div>
+            
+            {!emailVerified && verificationSent && (
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleResendEmail}
+                  disabled={verifying || emailSentState}
+                  className="px-6 py-2 text-base font-medium border border-blue-600 text-blue-600 bg-white hover:bg-blue-50 hover:text-blue-700 transition-all"
+                >
+                  {verifying ? "Sending..." : "Resend Confirmation Email"}
+                </Button>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

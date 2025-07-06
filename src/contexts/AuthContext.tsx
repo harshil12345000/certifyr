@@ -200,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
-      const redirectUrl = `${window.location.origin}/auth/signup`;
+      const redirectUrl = `${window.location.origin}/auth/email-confirmed`;
 
       // Create a clean metadata object - ensure we're using the exact field names the database expects
       const metaData: Record<string, any> = {
