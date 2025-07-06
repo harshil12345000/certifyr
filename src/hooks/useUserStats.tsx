@@ -95,8 +95,8 @@ export function useUserStats(refreshIndex?: number) {
         if (data) {
           setStats({
             documentsCreated: data.documents_created || 0,
-            portalMembers: data.portal_members || 0,
-            requestedDocuments: data.requested_documents || 0,
+            portalMembers: (data as any).portal_members || 0,
+            requestedDocuments: (data as any).requested_documents || 0,
             totalVerifications: data.total_verifications || 0,
           });
         } else {

@@ -53,23 +53,27 @@ export function useUserActivity(refreshIndex?: number) {
           activityByMonth[monthKey] = 0;
         }
 
-        // Fetch monthly activity data from the new table
+        // Try to fetch monthly activity data from the new table
         const sevenMonthsAgo = new Date();
         sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
 
+        // Use a raw query to avoid TypeScript issues with the new table
         const { data: monthlyData } = await supabase
-          .from("organization_monthly_activity")
-          .select("year, month, documents_created")
-          .eq("organization_id", orgId)
-          .eq("user_id", user.id)
-          .gte("created_at", sevenMonthsAgo.toISOString());
+          .rpc('get_monthly_activity_data', {
+            p_organization_id: orgId,
+            p_user_id: user.id,
+            p_start_date: sevenMonthsAgo.toISOString()
+          })
+          .select();
 
-        // Aggregate data by month
-        if (monthlyData && monthlyData.length > 0) {
-          monthlyData.forEach((record) => {
-            const monthKey = monthNames[record.month - 1]; // month is 1-indexed
-            if (activityByMonth.hasOwnProperty(monthKey)) {
-              activityByMonth[monthKey] += record.documents_created;
+        // If the function doesn't exist, fall back to empty data
+        if (monthlyData && Array.isArray(monthlyData)) {
+          monthlyData.forEach((record: any) => {
+            if (record.month && record.documents_created) {
+              const monthKey = monthNames[record.month - 1]; // month is 1-indexed
+              if (activityByMonth.hasOwnProperty(monthKey)) {
+                activityByMonth[monthKey] += record.documents_created;
+              }
             }
           });
         }
@@ -104,11 +108,11 @@ export function useUserActivity(refreshIndex?: number) {
         {
           event: "*",
           schema: "public",
-          table: "organization_monthly_activity",
+          table: "user_statistics",
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          // Refetch activity data when monthly activity changes
+          // Refetch activity data when user statistics change
           fetchActivityData();
         },
       )

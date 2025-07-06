@@ -1,6 +1,6 @@
 
 import { useAuth } from "@/contexts/AuthContext";
-import { getOrganizationIdForUser, trackMonthlyDocumentCreation } from "./useUserStats";
+import { getOrganizationIdForUser, incrementUserStat } from "./useUserStats";
 
 export function useDocumentTracking() {
   const { user } = useAuth();
@@ -11,7 +11,11 @@ export function useDocumentTracking() {
     try {
       const orgId = await getOrganizationIdForUser(user.id);
       if (orgId) {
-        await trackMonthlyDocumentCreation(user.id, orgId);
+        await incrementUserStat({
+          userId: user.id,
+          organizationId: orgId,
+          statField: "documents_created"
+        });
         console.log("Document creation tracked successfully");
       }
     } catch (error) {

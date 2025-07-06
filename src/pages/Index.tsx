@@ -73,6 +73,7 @@ const Index = () => {
       loading: statsLoading,
     },
   ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
