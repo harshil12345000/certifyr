@@ -52,28 +52,23 @@ export function useUserActivity(refreshIndex?: number) {
           activityByMonth[monthKey] = 0;
         }
 
-        // For now, we'll use the current documents_created count
-        // This is a simplified approach until we have proper monthly tracking
-        const { data: statsData } = await supabase
-          .from("user_statistics")
-          .select("documents_created")
-          .eq("user_id", user.id)
-          .eq("organization_id", orgId)
-          .single();
+        // Fetch actual document creation data for the last 7 months
+        const sevenMonthsAgo = new Date();
+        sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
 
-        // Distribute the total documents across months for visualization
-        // This is a temporary solution to show activity
-        if (statsData && statsData.documents_created > 0) {
-          const totalDocs = statsData.documents_created;
-          const currentMonth = monthNames[new Date().getMonth()];
-          activityByMonth[currentMonth] = Math.max(1, Math.floor(totalDocs * 0.4));
-          
-          // Distribute remaining across other months
-          const remaining = totalDocs - activityByMonth[currentMonth];
-          const otherMonths = Object.keys(activityByMonth).filter(m => m !== currentMonth);
-          otherMonths.forEach((month, index) => {
-            if (remaining > 0) {
-              activityByMonth[month] = Math.floor(remaining / otherMonths.length) + (index < remaining % otherMonths.length ? 1 : 0);
+        const { data: documents } = await supabase
+          .from("documents")
+          .select("created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", sevenMonthsAgo.toISOString());
+
+        // Count documents by month
+        if (documents && documents.length > 0) {
+          documents.forEach((doc) => {
+            const docDate = new Date(doc.created_at);
+            const monthKey = monthNames[docDate.getMonth()];
+            if (activityByMonth.hasOwnProperty(monthKey)) {
+              activityByMonth[monthKey]++;
             }
           });
         }
@@ -108,11 +103,11 @@ export function useUserActivity(refreshIndex?: number) {
         {
           event: "*",
           schema: "public",
-          table: "user_statistics",
+          table: "documents",
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          // Refetch activity data when user statistics change
+          // Refetch activity data when documents change
           fetchActivityData();
         },
       )

@@ -75,30 +75,38 @@ export function useUserStats(refreshIndex?: number) {
           return;
         }
 
-        // Fetch stats from user_statistics table for this organization
-        const { data, error: statsError } = await supabase
-          .from("user_statistics")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("organization_id", orgId)
-          .single();
+        // Fetch documents created count
+        const { count: documentsCreated } = await supabase
+          .from("documents")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
 
-        if (data) {
-          setStats({
-            documentsCreated: data.documents_created || 0,
-            portalMembers: (data as any).portal_members || 0,
-            requestedDocuments: (data as any).requested_documents || 0,
-            totalVerifications: data.total_verifications || 0,
-          });
-        } else {
-          // Initialize stats if they don't exist
-          setStats({
-            documentsCreated: 0,
-            portalMembers: 0,
-            requestedDocuments: 0,
-            totalVerifications: 0,
-          });
-        }
+        // Fetch portal members count (approved employees)
+        const { count: portalMembers } = await supabase
+          .from("request_portal_employees")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", orgId)
+          .eq("status", "approved");
+
+        // Fetch requested documents count
+        const { count: requestedDocuments } = await supabase
+          .from("document_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", orgId);
+
+        // Fetch total verifications count
+        const { count: totalVerifications } = await supabase
+          .from("qr_verification_logs")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", orgId);
+
+        setStats({
+          documentsCreated: documentsCreated || 0,
+          portalMembers: portalMembers || 0,
+          requestedDocuments: requestedDocuments || 0,
+          totalVerifications: totalVerifications || 0,
+        });
+
       } catch (err) {
         console.error("Error fetching stats:", err);
         setError("Failed to fetch statistics");
@@ -115,15 +123,15 @@ export function useUserStats(refreshIndex?: number) {
 
     fetchStats();
     
-    // Set up real-time subscription for user_statistics changes
-    const channel = supabase
-      .channel("user-stats-changes")
+    // Set up real-time subscriptions for live updates
+    const documentsChannel = supabase
+      .channel("documents-changes")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "user_statistics",
+          table: "documents",
           filter: `user_id=eq.${user.id}`,
         },
         () => {
@@ -132,8 +140,56 @@ export function useUserStats(refreshIndex?: number) {
       )
       .subscribe();
 
+    const employeesChannel = supabase
+      .channel("employees-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "request_portal_employees",
+        },
+        () => {
+          fetchStats();
+        },
+      )
+      .subscribe();
+
+    const requestsChannel = supabase
+      .channel("requests-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "document_requests",
+        },
+        () => {
+          fetchStats();
+        },
+      )
+      .subscribe();
+
+    const verificationsChannel = supabase
+      .channel("verifications-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "qr_verification_logs",
+        },
+        () => {
+          fetchStats();
+        },
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(documentsChannel);
+      supabase.removeChannel(employeesChannel);
+      supabase.removeChannel(requestsChannel);
+      supabase.removeChannel(verificationsChannel);
     };
   }, [user, refreshIndex]);
 

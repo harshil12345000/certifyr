@@ -33,10 +33,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const [isEditingBody, setIsEditingBody] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Track document creation when component mounts (preview is generated)
+  // Track document creation when component mounts AND when preview is updated
   useEffect(() => {
     trackDocumentCreation();
-  }, []);
+  }, [elements, templateName]); // Track when elements or template name changes
 
   useEffect(() => {
     const data: Record<string, any> = {
@@ -82,6 +82,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       );
       // Track document creation on download
       trackDocumentCreation();
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully!",
+      });
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast({
@@ -99,6 +103,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       );
       // Track document creation on download
       trackDocumentCreation();
+      toast({
+        title: "Success",
+        description: "JPG downloaded successfully!",
+      });
     } catch (error) {
       console.error("Error downloading JPG:", error);
       toast({
@@ -114,6 +122,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       await printDocument();
       // Track document creation on print
       trackDocumentCreation();
+      toast({
+        title: "Success",
+        description: "Document printed successfully!",
+      });
     } catch (error) {
       console.error("Error printing document:", error);
       toast({
