@@ -15,7 +15,7 @@ export function IntroStage({ onNext }: IntroStageProps) {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-2xl mx-auto pt-3"
     >
-      <Card className="p-12 text-center bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3">
+      <Card className="p-12 text-center bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3 mt-10">
         <div className="space-y-8">
           {/* Logo and Title */}
           <div className="space-y-4">
@@ -49,7 +49,7 @@ export function IntroStage({ onNext }: IntroStageProps) {
             <Button
               onClick={onNext}
               size="lg"
-              className="px-12 py-4 text-lg bg-[#1b80ff] hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 text-white"
+              className="px-12 py-4 text-lg bg-[#1b80ff] hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 text-white transition-transform hover:scale-105"
             >
               Get Started
             </Button>

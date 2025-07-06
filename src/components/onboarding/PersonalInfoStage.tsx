@@ -29,7 +29,7 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
       animate={{ opacity: 1, x: 0 }}
       className="max-w-2xl mx-auto w-full pt-3"
     >
-      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3">
+      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3 mt-10">
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-2xl font-semibold text-gray-800">
             Personal Information
@@ -89,7 +89,7 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
                 type="button"
                 variant="outline"
                 onClick={onPrev}
-                className="px-8 py-3 border-gray-300 hover:bg-gray-50"
+                className="px-8 py-3 border-gray-300 hover:bg-gray-50 transition-transform hover:scale-105"
               >
                 Back
               </Button>
@@ -97,7 +97,7 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
               <Button
                 type="submit"
                 disabled={!isValid}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
               >
                 Next
               </Button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Card,
@@ -38,6 +38,10 @@ export default function SignUp() {
     organizationWebsite: "",
     organizationLocation: "",
   });
+
+  useEffect(() => {
+    navigate("/auth/signup", { replace: true });
+  }, [navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,6 +24,7 @@ import { EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
 import NoAccess from "@/pages/employee-portal/NoAccess";
 import { BookmarksPage } from "./pages/Index";
 import { BookmarksProvider } from "./contexts/BookmarksContext";
+import Auth from "@/pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -76,7 +76,8 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/auth" element={<Onboarding />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/signup" element={<Onboarding />} />
                 <Route
                   path="/request-portal"
                   element={

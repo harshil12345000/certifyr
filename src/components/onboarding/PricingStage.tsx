@@ -71,7 +71,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       animate={{ opacity: 1, x: 0 }}
       className="max-w-5xl mx-auto w-full"
     >
-      <div className="text-center mb-8 pt-3">
+      <div className="text-center mb-8 pt-2 mt-10">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">
           Choose Your Plan to Continue
         </h2>
@@ -101,7 +101,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       </div>
 
       {/* Pricing Cards */}
-      <div className="flex flex-row justify-center gap-x-4 mb-4 pt-3">
+      <div className="flex flex-row justify-center gap-x-4 mb-4 pt-3 mt-x-5">
         {/* Basic Plan */}
         <Card className={cn(
           "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-sm w-full",
@@ -131,7 +131,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
               onClick={() => handlePlanSelect('basic')}
               variant={data.selectedPlan === 'basic' ? "default" : "outline"}
               className={cn(
-                "w-full mb-6 h-12 transition-all duration-200",
+                "w-full mb-6 h-12 transition-all duration-200 transition-transform hover:scale-105",
                 data.selectedPlan === 'basic'
                   ? "bg-[#1b80ff] text-white border border-[#1b80ff]"
                   : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
@@ -187,7 +187,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
               onClick={() => handlePlanSelect('pro')}
               variant={data.selectedPlan === 'pro' ? "default" : "outline"}
               className={cn(
-                "w-full mb-6 h-12 transition-all duration-200",
+                "w-full mb-6 h-12 transition-all duration-200 transition-transform hover:scale-105",
                 data.selectedPlan === 'pro'
                   ? "bg-[#1b80ff] text-white border border-[#1b80ff]"
                   : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
@@ -252,7 +252,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
           type="button"
           variant="outline"
           onClick={onPrev}
-          className="px-8 py-3 border-gray-300 hover:bg-gray-50"
+          className="px-8 py-3 border-gray-300 hover:bg-gray-50 transition-transform hover:scale-105"
           disabled={loading}
         >
           Back

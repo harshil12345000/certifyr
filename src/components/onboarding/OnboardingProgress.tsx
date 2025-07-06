@@ -18,7 +18,7 @@ export function OnboardingProgress({ stages, currentStage }: OnboardingProgressP
   return (
     <div className="absolute top-0 left-0 w-full pt-4 pb-4" style={{ background: 'transparent', zIndex: 50 }}>
       <div className="flex flex-col items-center w-full">
-        <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Black Logotype" className="h-24 pt-3 mb-3 object-contain" />
+        <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Black Logotype" className="h-20 pt-3 mb-0 object-contain" />
         <div className="w-full pt-0">
           <div className="flex items-center justify-between w-full px-0 py-6 max-w-6xl mx-auto">
             {stages.map((stage, index) => (
@@ -50,8 +50,8 @@ export function OnboardingProgress({ stages, currentStage }: OnboardingProgressP
                 </div>
                 
                 {index < stages.length - 1 && (
-                  <div className="flex-1 mx-4">
-                    <div className="h-0.5 bg-gray-200 relative overflow-hidden">
+                  <div className="flex-1 flex items-center mx-4">
+                    <div className="h-0.5 bg-gray-200 w-full relative top-0.5 overflow-hidden self-center">
                       <motion.div
                         className="h-full bg-[#1b80ff]"
                         initial={{ width: "0%" }}
