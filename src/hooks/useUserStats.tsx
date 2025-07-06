@@ -122,75 +122,7 @@ export function useUserStats(refreshIndex?: number) {
     };
 
     fetchStats();
-    
-    // Set up real-time subscriptions for live updates
-    const documentsChannel = supabase
-      .channel("documents-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "documents",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchStats();
-        },
-      )
-      .subscribe();
 
-    const employeesChannel = supabase
-      .channel("employees-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "request_portal_employees",
-        },
-        () => {
-          fetchStats();
-        },
-      )
-      .subscribe();
-
-    const requestsChannel = supabase
-      .channel("requests-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "document_requests",
-        },
-        () => {
-          fetchStats();
-        },
-      )
-      .subscribe();
-
-    const verificationsChannel = supabase
-      .channel("verifications-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "qr_verification_logs",
-        },
-        () => {
-          fetchStats();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(documentsChannel);
-      supabase.removeChannel(employeesChannel);
-      supabase.removeChannel(requestsChannel);
-      supabase.removeChannel(verificationsChannel);
-    };
   }, [user, refreshIndex]);
 
   return { stats, loading, error };
