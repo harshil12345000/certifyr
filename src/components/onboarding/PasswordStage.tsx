@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +41,7 @@ export function PasswordStage({ data, updateData, onNext, onPrev }: PasswordStag
       animate={{ opacity: 1, x: 0 }}
       className="max-w-2xl mx-auto w-full"
     >
-      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl">
+      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3">
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-2xl font-semibold text-gray-800">
             Secure Your Account

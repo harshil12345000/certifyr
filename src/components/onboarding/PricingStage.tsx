@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,7 +104,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       <div className="grid md:grid-cols-2 gap-8 mb-8">
         {/* Basic Plan */}
         <Card className={cn(
-          "relative cursor-pointer transition-all duration-300 hover:shadow-xl",
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3",
           data.selectedPlan === 'basic' 
             ? "ring-2 ring-blue-600 bg-blue-50/50 backdrop-blur-sm" 
             : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
@@ -131,7 +130,12 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
             <Button
               onClick={() => handlePlanSelect('basic')}
               variant={data.selectedPlan === 'basic' ? "default" : "outline"}
-              className="w-full mb-6 h-12"
+              className={cn(
+                "w-full mb-6 h-12 transition-all duration-200",
+                data.selectedPlan === 'basic'
+                  ? "bg-[#1b80ff] text-white border border-[#1b80ff] hover:bg-[#f3f4f6] hover:text-[#1b80ff] hover:border-[#1b80ff]"
+                  : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
+              )}
             >
               {data.selectedPlan === 'basic' ? "Selected" : "Select Basic"}
             </Button>
@@ -149,13 +153,13 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
         {/* Pro Plan */}
         <Card className={cn(
-          "relative cursor-pointer transition-all duration-300 hover:shadow-xl",
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3",
           data.selectedPlan === 'pro' 
-            ? "ring-2 ring-purple-600 bg-purple-50/50 backdrop-blur-sm" 
+            ? "ring-2 ring-[#1b80ff] bg-[#eaf4ff] backdrop-blur-sm" 
             : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
         )}>
           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1">
+            <Badge className="bg-[#1b80ff] text-white px-4 py-1">
               <Star className="w-3 h-3 mr-1" />
               Most Popular
             </Badge>
@@ -182,7 +186,12 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
             <Button
               onClick={() => handlePlanSelect('pro')}
               variant={data.selectedPlan === 'pro' ? "default" : "outline"}
-              className="w-full mb-6 h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              className={cn(
+                "w-full mb-6 h-12 transition-all duration-200",
+                data.selectedPlan === 'pro'
+                  ? "bg-[#1b80ff] text-white border border-[#1b80ff] hover:bg-[#f3f4f6] hover:text-[#1b80ff] hover:border-[#1b80ff]"
+                  : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
+              )}
             >
               {data.selectedPlan === 'pro' ? "Selected" : "Select Pro"}
             </Button>

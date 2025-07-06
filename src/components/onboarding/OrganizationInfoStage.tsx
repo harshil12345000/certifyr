@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,12 +45,12 @@ const countries = [
 export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: OrganizationInfoStageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation) {
+    if (data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation && data.organizationWebsite) {
       onNext();
     }
   };
 
-  const isValid = data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation;
+  const isValid = data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation && data.organizationWebsite;
 
   return (
     <motion.div
@@ -59,7 +58,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
       animate={{ opacity: 1, x: 0 }}
       className="max-w-3xl mx-auto w-full"
     >
-      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl">
+      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-2xl pt-3">
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-2xl font-semibold text-gray-800">
             Organization Information
@@ -164,7 +163,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
 
             <div className="space-y-2">
               <Label htmlFor="organizationWebsite" className="text-sm font-medium text-gray-700">
-                Website (Optional)
+                Website *
               </Label>
               <Input
                 id="organizationWebsite"
@@ -173,6 +172,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
                 value={data.organizationWebsite || ""}
                 onChange={(e) => updateData({ organizationWebsite: e.target.value })}
                 className="h-12 bg-white/50 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                required
               />
             </div>
 
