@@ -1,11 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface UserStats {
   documentsCreated: number;
-  documentsSigned: number;
-  pendingDocuments: number;
+  portalMembers: number;
+  requestedDocuments: number;
   totalVerifications: number;
 }
 
@@ -39,12 +40,21 @@ export async function incrementUserStat({
   if (error) console.error("Error incrementing user stat:", error);
 }
 
+// Add helper to track monthly document creation
+export async function trackMonthlyDocumentCreation(userId: string, organizationId: string) {
+  const { error } = await supabase.rpc("track_monthly_document_creation", {
+    p_user_id: userId,
+    p_organization_id: organizationId,
+  });
+  if (error) console.error("Error tracking monthly document creation:", error);
+}
+
 export function useUserStats(refreshIndex?: number) {
   const { user } = useAuth();
   const [stats, setStats] = useState<UserStats>({
     documentsCreated: 0,
-    documentsSigned: 0,
-    pendingDocuments: 0,
+    portalMembers: 0,
+    requestedDocuments: 0,
     totalVerifications: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -60,40 +70,60 @@ export function useUserStats(refreshIndex?: number) {
       try {
         setLoading(true);
         setError(null);
-        // Fetch stats from user_statistics table
+        
+        // Get user's organization
+        const orgId = await getOrganizationIdForUser(user.id);
+        if (!orgId) {
+          setStats({
+            documentsCreated: 0,
+            portalMembers: 0,
+            requestedDocuments: 0,
+            totalVerifications: 0,
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Fetch stats from user_statistics table for this organization
         const { data, error: statsError } = await supabase
           .from("user_statistics")
           .select("*")
           .eq("user_id", user.id)
+          .eq("organization_id", orgId)
           .single();
+
         if (data) {
           setStats({
             documentsCreated: data.documents_created || 0,
-            documentsSigned: data.documents_signed || 0,
-            pendingDocuments: data.pending_documents || 0,
+            portalMembers: data.portal_members || 0,
+            requestedDocuments: data.requested_documents || 0,
             totalVerifications: data.total_verifications || 0,
           });
         } else {
+          // Initialize stats if they don't exist
           setStats({
             documentsCreated: 0,
-            documentsSigned: 0,
-            pendingDocuments: 0,
+            portalMembers: 0,
+            requestedDocuments: 0,
             totalVerifications: 0,
           });
         }
       } catch (err) {
+        console.error("Error fetching stats:", err);
         setError("Failed to fetch statistics");
         setStats({
           documentsCreated: 0,
-          documentsSigned: 0,
-          pendingDocuments: 0,
+          portalMembers: 0,
+          requestedDocuments: 0,
           totalVerifications: 0,
         });
       } finally {
         setLoading(false);
       }
     };
+
     fetchStats();
+    
     // Set up real-time subscription for user_statistics changes
     const channel = supabase
       .channel("user-stats-changes")
@@ -110,6 +140,7 @@ export function useUserStats(refreshIndex?: number) {
         },
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };

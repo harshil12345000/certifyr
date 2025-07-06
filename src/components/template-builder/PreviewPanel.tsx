@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Section, Field } from "@/types/template-builder";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useToast } from "@/hooks/use-toast";
 import { Letterhead } from "@/components/templates/Letterhead";
+import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 
 interface PreviewPanelProps {
   elements: Section[];
@@ -25,10 +27,16 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   templateName = "Document Title",
 }) => {
   const { toast } = useToast();
+  const { trackDocumentCreation } = useDocumentTracking();
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
   const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
   const [isEditingBody, setIsEditingBody] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Track document creation when component mounts (preview is generated)
+  useEffect(() => {
+    trackDocumentCreation();
+  }, []);
 
   useEffect(() => {
     const data: Record<string, any> = {
@@ -72,6 +80,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       await downloadPDF(
         `${templateName.toLowerCase().replace(/\s+/g, "-")}.pdf`,
       );
+      // Track document creation on download
+      trackDocumentCreation();
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast({
@@ -87,6 +97,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       await downloadJPG(
         `${templateName.toLowerCase().replace(/\s+/g, "-")}.jpg`,
       );
+      // Track document creation on download
+      trackDocumentCreation();
     } catch (error) {
       console.error("Error downloading JPG:", error);
       toast({
@@ -100,6 +112,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const handlePrint = async () => {
     try {
       await printDocument();
+      // Track document creation on print
+      trackDocumentCreation();
     } catch (error) {
       console.error("Error printing document:", error);
       toast({

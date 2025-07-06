@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getOrganizationIdForUser } from "./useUserStats";
 
 interface ActivityData {
   name: string;
@@ -24,33 +26,25 @@ export function useUserActivity(refreshIndex?: number) {
         setLoading(true);
         setError(null);
 
-        // Fetch documents from the last 7 months
-        const sevenMonthsAgo = new Date();
-        sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
-
-        const { data: documents } = await supabase
-          .from("documents")
-          .select("created_at")
-          .eq("user_id", user.id)
-          .gte("created_at", sevenMonthsAgo.toISOString());
+        // Get user's organization
+        const orgId = await getOrganizationIdForUser(user.id);
+        if (!orgId) {
+          // Set empty data if no organization
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+          setActivityData(months.map((month) => ({ name: month, documents: 0 })));
+          setLoading(false);
+          return;
+        }
 
         // Generate the last 7 months
         const monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         ];
+        
         const activityByMonth: { [key: string]: number } = {};
-
+        const currentDate = new Date();
+        
         // Initialize last 7 months with 0
         for (let i = 6; i >= 0; i--) {
           const date = new Date();
@@ -59,13 +53,23 @@ export function useUserActivity(refreshIndex?: number) {
           activityByMonth[monthKey] = 0;
         }
 
-        // Count documents by month
-        if (documents && documents.length > 0) {
-          documents.forEach((doc) => {
-            const docDate = new Date(doc.created_at);
-            const monthKey = monthNames[docDate.getMonth()];
+        // Fetch monthly activity data from the new table
+        const sevenMonthsAgo = new Date();
+        sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
+
+        const { data: monthlyData } = await supabase
+          .from("organization_monthly_activity")
+          .select("year, month, documents_created")
+          .eq("organization_id", orgId)
+          .eq("user_id", user.id)
+          .gte("created_at", sevenMonthsAgo.toISOString());
+
+        // Aggregate data by month
+        if (monthlyData && monthlyData.length > 0) {
+          monthlyData.forEach((record) => {
+            const monthKey = monthNames[record.month - 1]; // month is 1-indexed
             if (activityByMonth.hasOwnProperty(monthKey)) {
-              activityByMonth[monthKey]++;
+              activityByMonth[monthKey] += record.documents_created;
             }
           });
         }
@@ -100,11 +104,11 @@ export function useUserActivity(refreshIndex?: number) {
         {
           event: "*",
           schema: "public",
-          table: "documents",
+          table: "organization_monthly_activity",
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          // Refetch activity data when documents change
+          // Refetch activity data when monthly activity changes
           fetchActivityData();
         },
       )

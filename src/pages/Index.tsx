@@ -6,7 +6,7 @@ import { RecentDocuments } from "@/components/dashboard/RecentDocuments";
 import { popularTemplates } from "@/data/mockData";
 import { TemplateCard } from "@/components/dashboard/TemplateCard";
 import { Button } from "@/components/ui/button";
-import { BarChart, FileText, FileSignature, FileClock } from "lucide-react";
+import { BarChart, FileText, Users, FolderOpen } from "lucide-react";
 import { Document } from "@/types/document";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
@@ -55,15 +55,15 @@ const Index = () => {
       loading: statsLoading,
     },
     {
-      label: "Documents Signed",
-      value: stats.documentsSigned,
-      icon: FileSignature,
+      label: "Portal Members",
+      value: stats.portalMembers,
+      icon: Users,
       loading: statsLoading,
     },
     {
-      label: "Pending Documents",
-      value: stats.pendingDocuments,
-      icon: FileClock,
+      label: "Requested Documents",
+      value: stats.requestedDocuments,
+      icon: FolderOpen,
       loading: statsLoading,
     },
     {
