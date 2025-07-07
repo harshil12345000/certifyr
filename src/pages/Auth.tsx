@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -80,6 +79,9 @@ const Auth = () => {
     }
   };
 
+  // When sending a password reset email, Supabase will use .ConfirmationURL in the email template to generate the link.
+  // The redirectTo URL here must match the allowed redirect URLs in your Supabase Auth settings.
+  // The .ConfirmationURL variable will include the necessary tokens for the reset flow.
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotLoading(true);
