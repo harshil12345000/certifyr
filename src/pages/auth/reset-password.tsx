@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   // Password validation
@@ -35,43 +35,23 @@ export default function ResetPassword() {
   const passwordsMatch = password === confirmPassword && password.length > 0;
 
   useEffect(() => {
-    const setupPasswordReset = async () => {
-      console.log('Starting password reset setup...');
+    const handlePasswordReset = async () => {
+      console.log('Initializing password reset...');
       setLoading(true);
       setError("");
 
       try {
-        // Extract tokens from URL fragments and search params
-        const hashParams = new URLSearchParams(location.hash.replace('#', ''));
-        const searchParams = new URLSearchParams(location.search);
-        
-        // Check all possible locations for the tokens
-        const accessToken = hashParams.get('access_token') || 
-                           searchParams.get('access_token') ||
-                           hashParams.get('token') ||
-                           searchParams.get('token');
-        
-        const refreshToken = hashParams.get('refresh_token') || 
-                            searchParams.get('refresh_token');
-        
-        const type = hashParams.get('type') || 
-                    searchParams.get('type');
+        // Extract tokens from URL
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const type = searchParams.get('type');
 
-        console.log('URL Analysis:', {
-          hash: location.hash,
-          search: location.search,
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          type: type
-        });
-
-        // First, clear any existing session
-        await supabase.auth.signOut();
+        console.log('URL params:', { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, type });
 
         if (type === 'recovery' && accessToken && refreshToken) {
           console.log('Setting session with recovery tokens...');
           
-          // Set the session using the tokens from the URL
+          // Set the session
           const { data, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
@@ -89,7 +69,7 @@ export default function ResetPassword() {
             throw new Error('Invalid session data received');
           }
         } else {
-          // Check if there's already an active session (shouldn't happen in normal flow)
+          // Check if there's already an active session
           const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
           
           if (getSessionError) {
@@ -101,7 +81,7 @@ export default function ResetPassword() {
             console.log('Found existing session for password reset');
             setSessionReady(true);
           } else {
-            throw new Error('Invalid or expired reset link. The link may have expired or already been used.');
+            throw new Error('Invalid or expired reset link. Please request a new password reset.');
           }
         }
       } catch (err: any) {
@@ -117,8 +97,8 @@ export default function ResetPassword() {
       }
     };
 
-    setupPasswordReset();
-  }, [location.hash, location.search, toast]);
+    handlePasswordReset();
+  }, [searchParams, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,6 @@ const Auth = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSuccess, setForgotSuccess] = useState("");
-  const [forgotError, setForgotError] = useState("");
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -79,50 +78,37 @@ const Auth = () => {
     }
   };
 
-  // When sending a password reset email, Supabase will use .ConfirmationURL in the email template to generate the link.
-  // The redirectTo URL here must match the allowed redirect URLs in your Supabase Auth settings.
-  // The .ConfirmationURL variable will include the necessary tokens for the reset flow.
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotLoading(true);
-    setForgotSuccess("");
-    setForgotError("");
     
     try {
-      const resetUrl = `${window.location.origin}/auth/reset-password`;
-      console.log('Sending password reset to:', forgotEmail, 'with redirect:', resetUrl);
+      console.log('Sending password reset email to:', forgotEmail);
       
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: resetUrl,
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
       
       if (error) {
         console.error('Password reset error:', error);
-        setForgotError(error.message);
         toast({
           title: "Reset Failed",
           description: error.message,
           variant: "destructive",
         });
       } else {
-        setForgotSuccess("Password reset email sent! Please check your inbox and follow the link to reset your password.");
-        setForgotEmail("");
         toast({
-          title: "Email Sent",
-          description: "Password reset email sent! Check your inbox.",
+          title: "Reset Email Sent",
+          description: "Please check your email for password reset instructions.",
         });
-        setTimeout(() => {
-          setForgotOpen(false);
-          setForgotSuccess("");
-        }, 3000);
+        setForgotEmail("");
+        setForgotOpen(false);
       }
     } catch (err) {
       console.error('Unexpected error:', err);
-      const errorMsg = "An unexpected error occurred. Please try again.";
-      setForgotError(errorMsg);
       toast({
         title: "Error",
-        description: errorMsg,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -235,16 +221,6 @@ const Auth = () => {
                 disabled={forgotLoading}
               />
             </div>
-            {forgotError && (
-              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">
-                {forgotError}
-              </div>
-            )}
-            {forgotSuccess && (
-              <div className="text-green-600 text-sm bg-green-50 p-3 rounded-md">
-                {forgotSuccess}
-              </div>
-            )}
             <DialogFooter>
               <Button 
                 type="button" 
