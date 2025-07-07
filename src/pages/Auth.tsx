@@ -87,9 +87,8 @@ const Auth = () => {
     setForgotError("");
     
     try {
-      // Use the current window location to construct the redirect URL
       const resetUrl = `${window.location.origin}/auth/reset-password`;
-      console.log('Sending password reset email with redirect URL:', resetUrl);
+      console.log('Sending password reset to:', forgotEmail, 'with redirect:', resetUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
         redirectTo: resetUrl,
@@ -98,13 +97,32 @@ const Auth = () => {
       if (error) {
         console.error('Password reset error:', error);
         setForgotError(error.message);
+        toast({
+          title: "Reset Failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         setForgotSuccess("Password reset email sent! Please check your inbox and follow the link to reset your password.");
         setForgotEmail("");
+        toast({
+          title: "Email Sent",
+          description: "Password reset email sent! Check your inbox.",
+        });
+        setTimeout(() => {
+          setForgotOpen(false);
+          setForgotSuccess("");
+        }, 3000);
       }
     } catch (err) {
       console.error('Unexpected error:', err);
-      setForgotError("An unexpected error occurred. Please try again.");
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setForgotError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setForgotLoading(false);
     }
@@ -178,7 +196,7 @@ const Auth = () => {
             </form>
             <div className="mt-4 text-center text-sm text-gray-500">
               New to Certifyr?{' '}
-              <Link to="/auth/signup" className="text-blue-600 hover:underline font-medium">
+              <Link to="/onboarding" className="text-blue-600 hover:underline font-medium">
                 Create an Account
               </Link>
               <div className="mt-2">
@@ -202,21 +220,47 @@ const Auth = () => {
             <DialogTitle>Reset your password</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleForgotPassword} className="space-y-4">
-            <Label htmlFor="forgot-email">Email Address</Label>
-            <Input
-              id="forgot-email"
-              type="email"
-              value={forgotEmail}
-              onChange={e => setForgotEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              autoFocus
-            />
-            {forgotError && <div className="text-red-500 text-sm">{forgotError}</div>}
-            {forgotSuccess && <div className="text-green-600 text-sm">{forgotSuccess}</div>}
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email Address</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                autoFocus
+                disabled={forgotLoading}
+              />
+            </div>
+            {forgotError && (
+              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-md">
+                {forgotError}
+              </div>
+            )}
+            {forgotSuccess && (
+              <div className="text-green-600 text-sm bg-green-50 p-3 rounded-md">
+                {forgotSuccess}
+              </div>
+            )}
             <DialogFooter>
-              <Button type="submit" disabled={forgotLoading} className="w-full">
-                {forgotLoading ? "Sending..." : "Send Reset Email"}
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setForgotOpen(false)}
+                disabled={forgotLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={forgotLoading}>
+                {forgotLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Reset Email"
+                )}
               </Button>
             </DialogFooter>
           </form>
