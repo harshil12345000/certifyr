@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,8 @@ const Auth = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState("");
+  const [forgotError, setForgotError] = useState("");
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -78,39 +79,26 @@ const Auth = () => {
     }
   };
 
+  const getResetPasswordRedirectUrl = () => {
+    return "https://certifyr.vercel.app/auth/reset-password";
+  };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotLoading(true);
-    
+    setForgotSuccess("");
+    setForgotError("");
     try {
-      console.log('Sending password reset email to:', forgotEmail);
-      
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: getResetPasswordRedirectUrl(),
       });
-      
       if (error) {
-        console.error('Password reset error:', error);
-        toast({
-          title: "Reset Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        setForgotError(error.message);
       } else {
-        toast({
-          title: "Reset Email Sent",
-          description: "Please check your email for password reset instructions.",
-        });
-        setForgotEmail("");
-        setForgotOpen(false);
+        setForgotSuccess("Password reset email sent! Please check your inbox.");
       }
     } catch (err) {
-      console.error('Unexpected error:', err);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      setForgotError("An unexpected error occurred.");
     } finally {
       setForgotLoading(false);
     }
@@ -184,7 +172,7 @@ const Auth = () => {
             </form>
             <div className="mt-4 text-center text-sm text-gray-500">
               New to Certifyr?{' '}
-              <Link to="/onboarding" className="text-blue-600 hover:underline font-medium">
+              <Link to="/auth/signup" className="text-blue-600 hover:underline font-medium">
                 Create an Account
               </Link>
               <div className="mt-2">
@@ -200,7 +188,6 @@ const Auth = () => {
           </CardContent>
         </Card>
       </div>
-      
       {/* Forgot Password Modal */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent>
@@ -208,37 +195,21 @@ const Auth = () => {
             <DialogTitle>Reset your password</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleForgotPassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="forgot-email">Email Address</Label>
-              <Input
-                id="forgot-email"
-                type="email"
-                value={forgotEmail}
-                onChange={e => setForgotEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-                autoFocus
-                disabled={forgotLoading}
-              />
-            </div>
+            <Label htmlFor="forgot-email">Email Address</Label>
+            <Input
+              id="forgot-email"
+              type="email"
+              value={forgotEmail}
+              onChange={e => setForgotEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              autoFocus
+            />
+            {forgotError && <div className="text-red-500 text-sm">{forgotError}</div>}
+            {forgotSuccess && <div className="text-green-600 text-sm">{forgotSuccess}</div>}
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setForgotOpen(false)}
-                disabled={forgotLoading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={forgotLoading}>
-                {forgotLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Send Reset Email"
-                )}
+              <Button type="submit" disabled={forgotLoading} className="w-full">
+                {forgotLoading ? "Sending..." : "Send Reset Email"}
               </Button>
             </DialogFooter>
           </form>
@@ -247,5 +218,4 @@ const Auth = () => {
     </div>
   );
 };
-
 export default Auth;
