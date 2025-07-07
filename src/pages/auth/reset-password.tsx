@@ -6,6 +6,25 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
+function getTokenFromUrl(location: Location) {
+  // Try query string first
+  const params = new URLSearchParams(location.search);
+  let access_token = params.get("access_token");
+  let refresh_token = params.get("refresh_token");
+  let type = params.get("type");
+
+  // If not found, try hash fragment (Supabase sometimes uses this)
+  if (!access_token || !refresh_token) {
+    if (location.hash) {
+      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+      access_token = hashParams.get("access_token") || access_token;
+      refresh_token = hashParams.get("refresh_token") || refresh_token;
+      type = hashParams.get("type") || type;
+    }
+  }
+  return { access_token, refresh_token, type };
+}
+
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,12 +35,15 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Parse query params and set session if needed
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-    const type = params.get("type");
+    // Fix: getTokenFromUrl expects a DOM Location, but react-router's location is different.
+    // We'll construct a compatible object for getTokenFromUrl.
+    const domLocation = {
+      search: location.search,
+      hash: location.hash,
+    } as Location;
+
+    const { access_token, refresh_token, type } = getTokenFromUrl(domLocation);
 
     if (type === "recovery" && access_token && refresh_token) {
       supabase.auth
@@ -40,10 +62,10 @@ export default function ResetPassword() {
       setSessionSet(true);
       setLoading(false);
     } else {
-      setError("Invalid or missing session parameters.");
+      setError("Auth session missing! Please use the link from your email.");
       setLoading(false);
     }
-  }, [location.search]);
+  }, [location.search, location.hash]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
