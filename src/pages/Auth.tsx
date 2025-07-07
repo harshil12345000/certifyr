@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -79,26 +80,31 @@ const Auth = () => {
     }
   };
 
-  const getResetPasswordRedirectUrl = () => {
-    return "https://certifyr.vercel.app/auth/reset-password";
-  };
-
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotLoading(true);
     setForgotSuccess("");
     setForgotError("");
+    
     try {
+      // Use the current window location to construct the redirect URL
+      const resetUrl = `${window.location.origin}/auth/reset-password`;
+      console.log('Sending password reset email with redirect URL:', resetUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: getResetPasswordRedirectUrl(),
+        redirectTo: resetUrl,
       });
+      
       if (error) {
+        console.error('Password reset error:', error);
         setForgotError(error.message);
       } else {
-        setForgotSuccess("Password reset email sent! Please check your inbox.");
+        setForgotSuccess("Password reset email sent! Please check your inbox and follow the link to reset your password.");
+        setForgotEmail("");
       }
     } catch (err) {
-      setForgotError("An unexpected error occurred.");
+      console.error('Unexpected error:', err);
+      setForgotError("An unexpected error occurred. Please try again.");
     } finally {
       setForgotLoading(false);
     }
@@ -188,6 +194,7 @@ const Auth = () => {
           </CardContent>
         </Card>
       </div>
+      
       {/* Forgot Password Modal */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent>
@@ -218,4 +225,5 @@ const Auth = () => {
     </div>
   );
 };
+
 export default Auth;
