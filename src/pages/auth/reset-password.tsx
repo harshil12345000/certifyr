@@ -6,29 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-function getTokenFromUrl(location: Location) {
-  // Try query string first
-  const params = new URLSearchParams(location.search);
-  let access_token = params.get("access_token");
-  let refresh_token = params.get("refresh_token");
-  let type = params.get("type");
-
-  // If not found, try hash fragment (Supabase sometimes uses this)
-  if (!access_token || !refresh_token) {
-    if (location.hash) {
-      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
-      access_token = hashParams.get("access_token") || access_token;
-      refresh_token = hashParams.get("refresh_token") || refresh_token;
-      type = hashParams.get("type") || type;
-    }
-  }
-  return { access_token, refresh_token, type };
-}
-
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(true); // Start as true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [sessionSet, setSessionSet] = useState(false);
@@ -36,35 +17,64 @@ export default function ResetPassword() {
   const location = useLocation();
 
   useEffect(() => {
-    // Fix: getTokenFromUrl expects a DOM Location, but react-router's location is different.
-    // We'll construct a compatible object for getTokenFromUrl.
-    const domLocation = {
-      search: location.search,
-      hash: location.hash,
-    } as Location;
+    async function handleSession() {
+      setLoading(true);
+      setError("");
+      // Support both query params and hash fragments
+      const searchParams = new URLSearchParams(location.search);
+      let access_token = searchParams.get("access_token");
+      let refresh_token = searchParams.get("refresh_token");
+      let type = searchParams.get("type");
+      let token_hash = searchParams.get("token_hash");
 
-    const { access_token, refresh_token, type } = getTokenFromUrl(domLocation);
+      // If not in query, check hash fragment
+      if (!access_token || !refresh_token) {
+        if (window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, "?"));
+          access_token = hashParams.get("access_token") || access_token;
+          refresh_token = hashParams.get("refresh_token") || refresh_token;
+          type = hashParams.get("type") || type;
+          token_hash = hashParams.get("token_hash") || token_hash;
+        }
+      }
 
-    if (type === "recovery" && access_token && refresh_token) {
-      supabase.auth
-        .setSession({ access_token, refresh_token })
-        .then(({ error }) => {
-          if (error) {
-            setError(error.message);
-            setLoading(false);
-          } else {
-            setSessionSet(true);
-            setLoading(false);
-          }
-        });
-    } else if (!access_token && !refresh_token && !type) {
-      // If no params, assume user is already in a recovery session (e.g., page refresh)
-      setSessionSet(true);
-      setLoading(false);
-    } else {
+      // 1. Try access_token/refresh_token (default Supabase flow)
+      if (type === "recovery" && access_token && refresh_token) {
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (error) {
+          setError("Failed to set session: " + error.message);
+        } else {
+          setSessionSet(true);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 2. Try token_hash + type (custom email template flow)
+      if (token_hash && type) {
+        const { data, error } = await supabase.auth.verifyOtp({ token_hash, type: type as 'recovery' });
+        if (error) {
+          setError("Failed to verify OTP: " + error.message);
+        } else if (data.session) {
+          setSessionSet(true);
+        } else {
+          setError("No session returned from OTP verification.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 3. If no params, assume user is already in a recovery session (e.g., page refresh)
+      if (!access_token && !refresh_token && !token_hash && !type) {
+        setSessionSet(true);
+        setLoading(false);
+        return;
+      }
+
       setError("Auth session missing! Please use the link from your email.");
       setLoading(false);
     }
+    handleSession();
   }, [location.search, location.hash]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,7 +122,7 @@ export default function ResetPassword() {
   }
 
   if (!sessionSet) {
-    return null; // Don't show form until session is set
+    return null;
   }
 
   return (
