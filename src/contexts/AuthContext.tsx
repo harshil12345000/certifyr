@@ -59,19 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         } = await supabase.auth.getSession();
 
         let validUser = initialSession?.user ?? null;
-        // Extra check: verify user still exists in Supabase
-        if (validUser) {
-          const { data: userCheck, error: userCheckError } = await supabase
-            .from('user_profiles')
-            .select('email')
-            .eq('user_id', validUser.id)
-            .single();
-          if (userCheckError || !userCheck) {
-            // User profile missing, force sign out
-            await supabase.auth.signOut();
-            validUser = null;
-          }
-        }
 
         if (mounted) {
           setSession(initialSession);
@@ -97,19 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!mounted) return;
 
       let validUser = session?.user ?? null;
-      // Extra check: verify user still exists in Supabase
-      if (validUser) {
-        const { data: userCheck, error: userCheckError } = await supabase
-          .from('user_profiles')
-          .select('email')
-          .eq('user_id', validUser.id)
-          .single();
-        if (userCheckError || !userCheck) {
-          // User profile missing, force sign out
-          await supabase.auth.signOut();
-          validUser = null;
-        }
-      }
 
       setSession(session);
       setUser(validUser);
@@ -277,19 +251,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!error) {
         const { data: { session: newSession } } = await supabase.auth.getSession();
         let validUser = newSession?.user ?? null;
-        // Extra check: verify user still exists in Supabase
-        if (validUser) {
-          const { data: userCheck, error: userCheckError } = await supabase
-            .from('user_profiles')
-            .select('email')
-            .eq('user_id', validUser.id)
-            .single();
-          if (userCheckError || !userCheck) {
-            // User profile missing, force sign out
-            await supabase.auth.signOut();
-            validUser = null;
-          }
-        }
         setSession(newSession);
         setUser(validUser);
       }
