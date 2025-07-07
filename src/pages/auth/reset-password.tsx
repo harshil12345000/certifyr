@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,41 @@ import { Label } from "@/components/ui/label";
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start as true
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [sessionSet, setSessionSet] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Parse query params and set session if needed
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+    const type = params.get("type");
+
+    if (type === "recovery" && access_token && refresh_token) {
+      supabase.auth
+        .setSession({ access_token, refresh_token })
+        .then(({ error }) => {
+          if (error) {
+            setError(error.message);
+            setLoading(false);
+          } else {
+            setSessionSet(true);
+            setLoading(false);
+          }
+        });
+    } else if (!access_token && !refresh_token && !type) {
+      // If no params, assume user is already in a recovery session (e.g., page refresh)
+      setSessionSet(true);
+      setLoading(false);
+    } else {
+      setError("Invalid or missing session parameters.");
+      setLoading(false);
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +72,26 @@ export default function ResetPassword() {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="w-full max-w-md text-center text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="w-full max-w-md text-center text-red-500 text-lg">{error}</div>
+      </div>
+    );
+  }
+
+  if (!sessionSet) {
+    return null; // Don't show form until session is set
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
