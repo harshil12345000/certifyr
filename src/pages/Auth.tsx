@@ -24,11 +24,6 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
-  const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSuccess, setForgotSuccess] = useState("");
-  const [forgotError, setForgotError] = useState("");
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -76,31 +71,6 @@ const Auth = () => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const getResetPasswordRedirectUrl = () => {
-    return "https://certifyr.vercel.app/auth/reset-password";
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setForgotLoading(true);
-    setForgotSuccess("");
-    setForgotError("");
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: getResetPasswordRedirectUrl(),
-      });
-      if (error) {
-        setForgotError(error.message);
-      } else {
-        setForgotSuccess("Password reset email sent! Please check your inbox.");
-      }
-    } catch (err) {
-      setForgotError("An unexpected error occurred.");
-    } finally {
-      setForgotLoading(false);
     }
   };
 
@@ -175,46 +145,10 @@ const Auth = () => {
               <Link to="/auth/signup" className="text-blue-600 hover:underline font-medium">
                 Create an Account
               </Link>
-              <div className="mt-2">
-                <button
-                  type="button"
-                  className="text-blue-600 hover:underline font-medium focus:outline-none"
-                  onClick={() => setForgotOpen(true)}
-                >
-                  Forgot Password?
-                </button>
-              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-      {/* Forgot Password Modal */}
-      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset your password</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleForgotPassword} className="space-y-4">
-            <Label htmlFor="forgot-email">Email Address</Label>
-            <Input
-              id="forgot-email"
-              type="email"
-              value={forgotEmail}
-              onChange={e => setForgotEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              autoFocus
-            />
-            {forgotError && <div className="text-red-500 text-sm">{forgotError}</div>}
-            {forgotSuccess && <div className="text-green-600 text-sm">{forgotSuccess}</div>}
-            <DialogFooter>
-              <Button type="submit" disabled={forgotLoading} className="w-full">
-                {forgotLoading ? "Sending..." : "Send Reset Email"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
