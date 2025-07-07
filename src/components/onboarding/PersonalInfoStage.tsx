@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -16,18 +17,18 @@ interface PersonalInfoStageProps {
   onPrev: () => void;
 }
 
+type ButtonState = 'verify' | 'emailSent' | 'checkVerification' | 'checking' | 'next';
+
 export function PersonalInfoStage({ data, updateData, onNext, onPrev }: PersonalInfoStageProps) {
-  const { signUp, signIn, user } = useAuth(); // Use user from context
-  const [verifying, setVerifying] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [emailSentState, setEmailSentState] = useState(false);
+  const { signUp, user } = useAuth();
+  const [buttonState, setButtonState] = useState<ButtonState>('verify');
   const [error, setError] = useState<string | null>(null);
+  const [emailSentCooldown, setEmailSentCooldown] = useState(false);
 
   // Check if user is already verified on component mount
   useEffect(() => {
     if (user && (user.email_confirmed_at || user.confirmed_at)) {
-      setEmailVerified(true);
+      setButtonState('next');
     }
   }, [user]);
 
@@ -40,14 +41,13 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
       return;
     }
 
-    setVerifying(true);
-    setVerificationSent(true);
-    setEmailSentState(true);
-    
-    // Reset email sent state after 3 seconds
-    setTimeout(() => setEmailSentState(false), 3000);
+    if (emailSentCooldown) {
+      return;
+    }
 
     try {
+      const redirectUrl = `${window.location.origin}/auth/email-confirmed`;
+      
       const { error } = await signUp(data.email, data.password || Math.random().toString(36).slice(-8), {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
@@ -61,19 +61,34 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
       
       if (error) {
         setError(error.message);
-        setVerificationSent(false);
+        return;
       }
+
+      // Transition to "Email Sent" state
+      setButtonState('emailSent');
+      setEmailSentCooldown(true);
+      
+      // After 3 seconds, transition to "I've Verified My Email" state
+      setTimeout(() => {
+        setButtonState('checkVerification');
+      }, 3000);
+
+      // Reset cooldown after 30 seconds
+      setTimeout(() => {
+        setEmailSentCooldown(false);
+      }, 30000);
+
     } catch (err: any) {
-      setError("Failed to send confirmation email.");
-      setVerificationSent(false);
-    } finally {
-      setVerifying(false);
+      setError("Failed to send verification email.");
     }
   };
 
   const handleResendEmail = async () => {
+    if (emailSentCooldown) {
+      return;
+    }
+
     setError(null);
-    setVerifying(true);
     
     try {
       const { error } = await supabase.auth.resend({
@@ -83,44 +98,125 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
       
       if (error) {
         setError(error.message);
-      } else {
-        setEmailSentState(true);
-        setTimeout(() => setEmailSentState(false), 3000);
+        return;
       }
+
+      // Transition to "Email Sent" state
+      setButtonState('emailSent');
+      setEmailSentCooldown(true);
+      
+      // After 3 seconds, transition back to "I've Verified My Email" state
+      setTimeout(() => {
+        setButtonState('checkVerification');
+      }, 3000);
+
+      // Reset cooldown after 30 seconds
+      setTimeout(() => {
+        setEmailSentCooldown(false);
+      }, 30000);
+
     } catch (err: any) {
-      setError("Failed to resend confirmation email.");
-    } finally {
-      setVerifying(false);
+      setError("Failed to resend verification email.");
     }
   };
 
-  const handleCheckVerified = async () => {
-    setVerifying(true);
+  const handleCheckVerification = async () => {
+    setButtonState('checking');
     setError(null);
     
     try {
-      // Use the more efficient session refresh method
+      // Refresh the session to get the latest user data
       const { data: { session }, error } = await supabase.auth.refreshSession();
       
       if (error) {
         setError("Could not check verification status. Please try again.");
+        setButtonState('checkVerification');
         return;
       }
       
       if (session?.user && (session.user.email_confirmed_at || session.user.confirmed_at)) {
-        setEmailVerified(true);
-        onNext();
+        setButtonState('next');
       } else {
-        setError("Email not verified yet. Please check your inbox and click the confirmation link.");
+        setError("We couldn't verify your email yet. Please check your inbox and try again.");
+        setButtonState('checkVerification');
       }
     } catch (err: any) {
       setError("Could not check verification status.");
-    } finally {
-      setVerifying(false);
+      setButtonState('checkVerification');
     }
   };
 
-  const isValid = data.fullName && data.email && data.phoneNumber;
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    onNext();
+  };
+
+  const isFormValid = data.fullName && data.email && data.phoneNumber;
+
+  const renderActionButton = () => {
+    switch (buttonState) {
+      case 'verify':
+        return (
+          <Button
+            type="submit"
+            disabled={!isFormValid || emailSentCooldown}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            onClick={handleVerifyEmail}
+          >
+            {emailSentCooldown ? "Please wait..." : "Verify My Email"}
+          </Button>
+        );
+
+      case 'emailSent':
+        return (
+          <Button
+            type="button"
+            disabled
+            className="px-8 py-3 bg-green-600 text-white flex items-center gap-2 cursor-default transition-all duration-200"
+          >
+            <CheckCircle className="w-5 h-5" />
+            Email Sent
+          </Button>
+        );
+
+      case 'checkVerification':
+        return (
+          <Button
+            type="button"
+            onClick={handleCheckVerification}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 transition-all duration-200"
+          >
+            I've Verified My Email
+          </Button>
+        );
+
+      case 'checking':
+        return (
+          <Button
+            type="button"
+            disabled
+            className="px-8 py-3 bg-blue-600 text-white flex items-center gap-2 cursor-default"
+          >
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Checking...
+          </Button>
+        );
+
+      case 'next':
+        return (
+          <Button
+            type="submit"
+            onClick={handleNext}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-700 transition-all duration-200"
+          >
+            Next
+          </Button>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <motion.div
@@ -137,7 +233,7 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={emailVerified ? (e) => { e.preventDefault(); onNext(); } : handleVerifyEmail} className="space-y-6">
+          <form className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
                 Full Name *
@@ -184,9 +280,13 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md border border-red-200"
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
             <div className="flex justify-between pt-6">
@@ -194,57 +294,24 @@ export function PersonalInfoStage({ data, updateData, onNext, onPrev }: Personal
                 type="button"
                 variant="outline"
                 onClick={onPrev}
-                className="px-8 py-3 border-gray-300 hover:bg-gray-50 transition-transform hover:scale-105"
+                className="px-8 py-3 border-gray-300 hover:bg-gray-50 transition-all duration-200"
               >
                 Back
               </Button>
               
-              {emailVerified ? (
-                <Button
-                  type="submit"
-                  disabled={!isValid}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
-                >
-                  Next
-                </Button>
-              ) : emailSentState ? (
-                <Button
-                  type="button"
-                  disabled
-                  className="px-8 py-3 bg-green-600 text-white flex items-center gap-2 cursor-default"
-                >
-                  <CheckCircle className="w-5 h-5" /> Email Sent
-                </Button>
-              ) : verificationSent ? (
-                <Button
-                  type="button"
-                  onClick={handleCheckVerified}
-                  disabled={verifying}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
-                >
-                  {verifying ? "Checking..." : "I've Verified My Email"}
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={!isValid || verifying}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
-                >
-                  {verifying ? "Sending..." : "Verify Email"}
-                </Button>
-              )}
+              {renderActionButton()}
             </div>
             
-            {!emailVerified && verificationSent && (
+            {(buttonState === 'checkVerification' || buttonState === 'checking') && (
               <div className="flex justify-end pt-2">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   onClick={handleResendEmail}
-                  disabled={verifying || emailSentState}
-                  className="px-6 py-2 text-base font-medium border border-blue-600 text-blue-600 bg-white hover:bg-blue-50 hover:text-blue-700 transition-all"
+                  disabled={emailSentCooldown}
+                  className="px-6 py-2 text-sm border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200"
                 >
-                  {verifying ? "Sending..." : "Resend Confirmation Email"}
+                  {emailSentCooldown ? "Please wait..." : "Resend Verification Email"}
                 </Button>
               </div>
             )}
