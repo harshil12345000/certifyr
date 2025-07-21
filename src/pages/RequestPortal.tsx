@@ -83,9 +83,9 @@ export default function RequestPortal() {
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="requests">
               Requests
-              <Badge variant="secondary" className="ml-2">
+              <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary bg-primary text-primary-foreground text-xs font-medium">
                 {requestsCount}
-              </Badge>
+              </span>
             </TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
           </TabsList>

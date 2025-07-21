@@ -63,42 +63,48 @@ export function useUserStats(refreshIndex?: number) {
         
         // Get user's organization
         const orgId = await getOrganizationIdForUser(user.id);
-        if (!orgId) {
-          setStats({
-            documentsCreated: 0,
-            portalMembers: 0,
-            requestedDocuments: 0,
-            totalVerifications: 0,
-          });
-          setLoading(false);
-          return;
+        
+        // Get user statistics from user_statistics table
+        let userStats = null;
+        if (orgId) {
+          // Try to get stats with organization_id first
+          const { data: orgStats, error: orgStatsError } = await supabase
+            .from("user_statistics")
+            .select("documents_created, total_verifications, requested_documents, portal_members")
+            .eq("user_id", user.id)
+            .eq("organization_id", orgId)
+            .single();
+          
+          if (!orgStatsError && orgStats) {
+            userStats = orgStats;
+          }
+        }
+        
+        // If no stats found with organization_id, try without it (backward compatibility)
+        if (!userStats) {
+          const { data: legacyStats, error: legacyStatsError } = await supabase
+            .from("user_statistics")
+            .select("documents_created, total_verifications, requested_documents, portal_members")
+            .eq("user_id", user.id)
+            .is("organization_id", null)
+            .single();
+          
+          if (!legacyStatsError && legacyStats) {
+            userStats = legacyStats;
+          }
         }
 
-        // Fetch user statistics from user_statistics table
-        const { data: userStats, error: statsError } = await supabase
-          .from("user_statistics")
-          .select("documents_created, total_verifications")
-          .eq("user_id", user.id)
-          .eq("organization_id", orgId)
-          .single();
-
-        // Fetch portal members count (approved employees)
-        const { count: portalMembers } = await supabase
-          .from("request_portal_employees")
+        // Get actual documents created by this user (for real-time accuracy)
+        const { count: actualDocumentsCreated } = await supabase
+          .from("documents")
           .select("*", { count: "exact", head: true })
-          .eq("organization_id", orgId)
-          .eq("status", "approved");
+          .eq("user_id", user.id);
 
-        // Fetch requested documents count
-        const { count: requestedDocuments } = await supabase
-          .from("document_requests")
-          .select("*", { count: "exact", head: true })
-          .eq("organization_id", orgId);
-
+        // Use the corrected data from user_statistics table
         setStats({
-          documentsCreated: userStats?.documents_created || 0,
-          portalMembers: portalMembers || 0,
-          requestedDocuments: requestedDocuments || 0,
+          documentsCreated: actualDocumentsCreated || 0,
+          portalMembers: userStats?.portal_members || 0,
+          requestedDocuments: userStats?.requested_documents || 0,
           totalVerifications: userStats?.total_verifications || 0,
         });
 

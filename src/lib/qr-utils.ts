@@ -141,18 +141,33 @@ export const logQRVerification = async (
       ip_address: "0.0.0.0", // Would be handled server-side in production
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     });
-    // Increment user_statistics for total_verifications if org and user are present
-    if (organizationId && userId) {
+    
+    // Increment user_statistics for total_verifications if user is present
+    if (userId) {
       try {
-        await incrementUserStat({
-          userId,
-          organizationId,
-          statField: "total_verifications", // Make sure this matches your DB field
-        });
+        if (organizationId) {
+          // Use organization_id if available
+          await incrementUserStat({
+            userId,
+            organizationId,
+            statField: "total_verifications",
+          });
+        } else {
+          // Fallback to legacy method without organization_id
+          const { error: legacyError } = await supabase.rpc("increment_user_stat", {
+            p_user_id: userId,
+            p_organization_id: null,
+            p_stat_field: "total_verifications",
+          });
+          if (legacyError) {
+            console.error("Error incrementing legacy total_verifications stat:", legacyError);
+          }
+        }
       } catch (statError) {
         console.error("Error incrementing total_verifications stat:", statError);
       }
     }
   } catch (error) {
+    console.error("Error logging QR verification:", error);
   }
 };

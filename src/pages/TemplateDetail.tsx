@@ -78,6 +78,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { generateAndDownloadPdf } from "@/lib/pdf-utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
+import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 
 const TEMPLATE_NAMES: Record<string, string> = {
   "academic-transcript-1": "Academic Transcript",
@@ -515,6 +516,7 @@ const TemplateDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { trackDocumentCreation } = useDocumentTracking();
   const [formData, setFormData] = useState<
     | FormData
     | ArticlesOfIncorporationData
@@ -891,6 +893,12 @@ const TemplateDetail = () => {
   const handleDownloadPDF = async () => {
     try {
       await downloadPDF(`${templateId}.pdf`);
+      // Track document creation on download
+      trackDocumentCreation();
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully!",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -902,6 +910,12 @@ const TemplateDetail = () => {
   const handleDownloadJPG = async () => {
     try {
       await downloadJPG(`${templateId}.jpg`);
+      // Track document creation on download
+      trackDocumentCreation();
+      toast({
+        title: "Success",
+        description: "JPG downloaded successfully!",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -913,6 +927,12 @@ const TemplateDetail = () => {
   const handlePrint = async () => {
     try {
       await printDocument();
+      // Track document creation on print
+      trackDocumentCreation();
+      toast({
+        title: "Success",
+        description: "Document printed successfully!",
+      });
     } catch (error) {
       toast({
         title: "Error",

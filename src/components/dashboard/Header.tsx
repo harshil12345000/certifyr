@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Search, Settings, User, LogOut, CircleHelp, CircleX, Check } from "lucide-react";
+import { Bell, Search, Settings, User, LogOut, CircleHelp, CircleX, Check, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,7 @@ interface Notification {
   subject: string;
   body: string;
   created_at: string;
+  read_by?: string[];
   is_read?: boolean;
 }
 
@@ -173,20 +174,7 @@ export function Header() {
     return email.substring(0, 2).toUpperCase();
   };
 
-  // Helper: get/set read notifications from localStorage
-  const READ_KEY = 'certifyr_read_notifications';
-  function getReadNotifications() {
-    try {
-      return JSON.parse(localStorage.getItem(READ_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  }
-  function setReadNotifications(ids) {
-    localStorage.setItem(READ_KEY, JSON.stringify(ids));
-  }
-
-  // Helper: get/set cleared notifications from localStorage
+  // Helper: get/set cleared notifications from localStorage (for UI state only)
   const CLEARED_KEY = 'certifyr_cleared_notifications';
   function getClearedNotifications() {
     try {
@@ -195,7 +183,7 @@ export function Header() {
       return [];
     }
   }
-  function setClearedNotifications(ids) {
+  function setClearedNotifications(ids: string[]) {
     localStorage.setItem(CLEARED_KEY, JSON.stringify(ids));
   }
 
@@ -230,10 +218,11 @@ export function Header() {
         return;
       }
       const orgId = orgs.organization_id;
+      
       // 2. Fetch notifications for this org
       const { data, error } = await supabase
         .from("notifications")
-        .select("id, subject, body, created_at")
+        .select("id, subject, body, created_at, read_by")
         .eq("org_id", orgId)
         .order("created_at", { ascending: false });
       if (error) {
@@ -242,43 +231,92 @@ export function Header() {
         setLoadingNotifications(false);
         return;
       }
-      // Filter out cleared notifications
+      
+      // 3. Filter out cleared notifications and mark read status
       const clearedIds = getClearedNotifications();
       const filtered = (data ?? []).filter((n) => !clearedIds.includes(n.id));
-      setNotifications(filtered);
-      // Only mark as unread if not in localStorage
-      const readIds = getReadNotifications();
-      setUnread(filtered.filter((n) => !readIds.includes(n.id)).map((n) => n.id));
+      
+      // 4. Mark notifications as read/unread based on read_by array
+      const processedNotifications = filtered.map((n) => ({
+        ...n,
+        is_read: Array.isArray(n.read_by) && n.read_by.includes(user.id),
+      }));
+      
+      setNotifications(processedNotifications);
+      
+      // 5. Set unread notifications
+      const unreadNotifications = processedNotifications
+        .filter((n) => !n.is_read)
+        .map((n) => n.id);
+      setUnread(unreadNotifications);
+      
       setLoadingNotifications(false);
     };
     fetchNotifications();
   }, [user]);
 
-  // Recalculate unread whenever notifications change
-  useEffect(() => {
-    const readIds = getReadNotifications();
-    setUnread(notifications.filter((n) => !readIds.includes(n.id)).map((n) => n.id));
-  }, [notifications]);
-
-  // Mark as read (optional, if you have a read-tracking table)
+  // Mark as read in database
   const markAsRead = async (notificationId: string) => {
-    setUnread((prev) => prev.filter((id) => id !== notificationId));
-    // Add to localStorage
-    const readIds = getReadNotifications();
-    if (!readIds.includes(notificationId)) {
-      setReadNotifications([...readIds, notificationId]);
+    if (!user) return;
+    
+    try {
+      // Update the notification's read_by array in the database
+      const { data: currentNotification } = await supabase
+        .from("notifications")
+        .select("read_by")
+        .eq("id", notificationId)
+        .single();
+
+      const currentReadBy = Array.isArray(currentNotification?.read_by) ? currentNotification.read_by : [];
+      const updatedReadBy = currentReadBy.includes(user.id) 
+        ? currentReadBy 
+        : [...currentReadBy, user.id];
+
+      await supabase
+        .from("notifications")
+        .update({ read_by: updatedReadBy })
+        .eq("id", notificationId);
+
+      // Update local state
+      setUnread((prev) => prev.filter((id) => id !== notificationId));
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, is_read: true } : n
+        )
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
     }
-    // Optionally, update a read-tracking table here
   };
 
-  // Mark all notifications as read when the bell is clicked
-  const markAllAsRead = () => {
-    // Mark all current notification IDs as read in localStorage
-    const allIds = notifications.map((n) => n.id);
-    setReadNotifications(allIds);
-    setUnread([]);
-    // Optionally, update a read-tracking table here
-    console.log('All notifications marked as read');
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    if (!user || notifications.length === 0) return;
+    
+    try {
+      // Update all notifications' read_by arrays
+      const updatePromises = notifications.map(async (notification) => {
+        const currentReadBy = notification.read_by || [];
+        const updatedReadBy = currentReadBy.includes(user.id) 
+          ? currentReadBy 
+          : [...currentReadBy, user.id];
+
+        return supabase
+          .from("notifications")
+          .update({ read_by: updatedReadBy })
+          .eq("id", notification.id);
+      });
+
+      await Promise.all(updatePromises);
+
+      // Update local state
+      setUnread([]);
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, is_read: true }))
+      );
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
   };
 
   // Clear notifications handler
@@ -287,6 +325,39 @@ export function Header() {
     setClearedNotifications([...getClearedNotifications(), ...allIds]);
     setNotifications([]);
     setUnread([]);
+  };
+
+  // Mark notification as completed (cleared)
+  const markAsCompleted = async (notificationId: string) => {
+    if (!user) return;
+    
+    try {
+      // Add to cleared notifications in localStorage
+      setClearedNotifications([...getClearedNotifications(), notificationId]);
+      
+      // Also mark as read in database
+      const { data: currentNotification } = await supabase
+        .from("notifications")
+        .select("read_by")
+        .eq("id", notificationId)
+        .single();
+
+      const currentReadBy = currentNotification?.read_by || [];
+      const updatedReadBy = currentReadBy.includes(user.id) 
+        ? currentReadBy 
+        : [...currentReadBy, user.id];
+
+      await supabase
+        .from("notifications")
+        .update({ read_by: updatedReadBy })
+        .eq("id", notificationId);
+
+      // Update local state
+      setNotifications(notifications.filter(notif => notif.id !== notificationId));
+      setUnread(unread.filter(id => id !== notificationId));
+    } catch (error) {
+      console.error("Error marking notification as completed:", error);
+    }
   };
 
   const handleSignOut = async () => {
@@ -385,10 +456,7 @@ export function Header() {
                           title="Completed"
                           onClick={e => {
                             e.stopPropagation();
-                            // Remove this notification from panel and persist in cleared list
-                            setClearedNotifications([...getClearedNotifications(), n.id]);
-                            setNotifications(notifications.filter(notif => notif.id !== n.id));
-                            setUnread(unread.filter(id => id !== n.id));
+                            markAsCompleted(n.id);
                           }}
                           type="button"
                           tabIndex={0}
@@ -493,63 +561,13 @@ export function Header() {
             {allTemplates.map((template) => (
               <CommandItem
                 key={template.id}
-                value={`${template.title} ${template.description} ${template.category}`}
+                value={template.title}
                 onSelect={() => handleTemplateSelect(template.id)}
-                className="cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-primary-500/10 flex items-center justify-center">
-                    <Search className="h-4 w-4 text-primary-500" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{template.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {template.description}
-                    </div>
-                  </div>
-                </div>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>{template.title}</span>
               </CommandItem>
             ))}
-          </CommandGroup>
-          <CommandGroup heading="Quick Actions">
-            <CommandItem
-              onSelect={() => {
-                setOpen(false);
-                navigate("/templates");
-              }}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center">
-                  <Search className="h-4 w-4 text-blue-500" />
-                </div>
-                <div>
-                  <div className="font-medium">Browse All Templates</div>
-                  <div className="text-sm text-muted-foreground">
-                    View the complete template library
-                  </div>
-                </div>
-              </div>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setOpen(false);
-                navigate("/dashboard");
-              }}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center">
-                  <Search className="h-4 w-4 text-green-500" />
-                </div>
-                <div>
-                  <div className="font-medium">Go to Dashboard</div>
-                  <div className="text-sm text-muted-foreground">
-                    View your documents and activity
-                  </div>
-                </div>
-              </div>
-            </CommandItem>
           </CommandGroup>
         </CommandList>
       </CommandDialog>

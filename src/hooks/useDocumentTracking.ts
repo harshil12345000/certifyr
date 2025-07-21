@@ -10,8 +10,7 @@ export function useDocumentTracking() {
     
     try {
       const orgId = await getOrganizationIdForUser(user.id);
-      if (!orgId) return;
-
+      
       // Insert a new document record to track creation
       const { error } = await supabase
         .from("documents")
@@ -26,16 +25,32 @@ export function useDocumentTracking() {
         console.error("Error tracking document creation:", error);
       } else {
         console.log("Document creation tracked successfully");
-        // Increment user_statistics for documentsCreated
-        try {
-          // Use the incrementUserStat helper
-          await incrementUserStat({
-            userId: user.id,
-            organizationId: orgId,
-            statField: "documents_created", // Make sure this matches your DB field
-          });
-        } catch (statError) {
-          console.error("Error incrementing user statistics:", statError);
+        
+        // Increment user_statistics for documentsCreated if organization exists
+        if (orgId) {
+          try {
+            await incrementUserStat({
+              userId: user.id,
+              organizationId: orgId,
+              statField: "documents_created",
+            });
+          } catch (statError) {
+            console.error("Error incrementing user statistics:", statError);
+          }
+        } else {
+          // If no organization, try to increment without organization_id (backward compatibility)
+          try {
+            const { error: legacyError } = await supabase.rpc("increment_user_stat", {
+              p_user_id: user.id,
+              p_organization_id: null,
+              p_stat_field: "documents_created",
+            });
+            if (legacyError) {
+              console.error("Error incrementing legacy user statistics:", legacyError);
+            }
+          } catch (legacyStatError) {
+            console.error("Error with legacy stat increment:", legacyStatError);
+          }
         }
       }
     } catch (error) {

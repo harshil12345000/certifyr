@@ -25,6 +25,7 @@ import { DocumentRequest } from "@/types/document";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
+import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
   "bonafide-1": "BonafidePreview",
@@ -51,6 +52,7 @@ const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
 
 export function EmployeePendingRequests() {
   const { employee, organizationId } = useEmployeePortal();
+  const { trackDocumentCreation } = useDocumentTracking();
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -119,6 +121,8 @@ export function EmployeePendingRequests() {
 
   const handlePrint = (elementId: string) => {
     printDocument();
+    // Track document creation on print
+    trackDocumentCreation();
   };
 
   const handleDownloadJPG = async (elementId: string, filename: string) => {
@@ -130,6 +134,8 @@ export function EmployeePendingRequests() {
         link.download = `${filename}.jpg`;
         link.href = canvas.toDataURL("image/jpeg");
         link.click();
+        // Track document creation on download
+        trackDocumentCreation();
       } catch (error) {
         console.error("Error generating JPG:", error);
       }
@@ -160,6 +166,8 @@ export function EmployeePendingRequests() {
         }
 
         pdf.save(`${filename}.pdf`);
+        // Track document creation on download
+        trackDocumentCreation();
       } catch (error) {
         console.error("Error generating PDF:", error);
       }
