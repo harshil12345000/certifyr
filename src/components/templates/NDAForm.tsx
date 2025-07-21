@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { NDAData } from "@/types/corporate-templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface NDAFormProps {
   initialData: NDAData;
@@ -12,10 +13,14 @@ interface NDAFormProps {
 }
 
 export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
   const [formData, setFormData] = useState<NDAData>(initialData);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Track preview generation
+    await trackPreviewGeneration("nda-1", "update");
+    // Submit the form
     onSubmit(formData);
   };
 
@@ -58,7 +63,7 @@ export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
             onChange={(e) =>
               handleChange("disclosingPartyAddress", e.target.value)
             }
-            rows={2}
+            placeholder="Enter complete address"
             required
           />
         </div>
@@ -73,72 +78,7 @@ export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
             onChange={(e) =>
               handleChange("receivingPartyAddress", e.target.value)
             }
-            rows={2}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="purposeOfDisclosure">Purpose of Disclosure *</Label>
-          <Textarea
-            id="purposeOfDisclosure"
-            value={formData.purposeOfDisclosure}
-            onChange={(e) =>
-              handleChange("purposeOfDisclosure", e.target.value)
-            }
-            placeholder="Describe the business purpose for sharing confidential information"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="confidentialInformation">
-            Definition of Confidential Information *
-          </Label>
-          <Textarea
-            id="confidentialInformation"
-            value={formData.confidentialInformation}
-            onChange={(e) =>
-              handleChange("confidentialInformation", e.target.value)
-            }
-            placeholder="Define what constitutes confidential information"
-            rows={4}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="exclusions">Exclusions from Confidentiality *</Label>
-          <Textarea
-            id="exclusions"
-            value={formData.exclusions}
-            onChange={(e) => handleChange("exclusions", e.target.value)}
-            placeholder="Information that is not considered confidential"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="obligations">Obligations of Receiving Party *</Label>
-          <Textarea
-            id="obligations"
-            value={formData.obligations}
-            onChange={(e) => handleChange("obligations", e.target.value)}
-            placeholder="Describe the obligations of the receiving party"
-            rows={4}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="termLength">Term Length *</Label>
-          <Input
-            id="termLength"
-            value={formData.termLength}
-            onChange={(e) => handleChange("termLength", e.target.value)}
-            placeholder="e.g., 5 years"
+            placeholder="Enter complete address"
             required
           />
         </div>
@@ -154,70 +94,101 @@ export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="returnOfInformation">Return of Information *</Label>
-          <Textarea
-            id="returnOfInformation"
-            value={formData.returnOfInformation}
-            onChange={(e) =>
-              handleChange("returnOfInformation", e.target.value)
-            }
-            placeholder="Requirements for returning confidential information"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="remedies">Remedies for Breach *</Label>
-          <Textarea
-            id="remedies"
-            value={formData.remedies}
-            onChange={(e) => handleChange("remedies", e.target.value)}
-            placeholder="Available remedies in case of breach"
-            rows={3}
-            required
-          />
-        </div>
-
         <div className="space-y-2">
-          <Label htmlFor="governingLaw">Governing Law *</Label>
+          <Label htmlFor="duration">Agreement Duration *</Label>
           <Input
-            id="governingLaw"
-            value={formData.governingLaw}
-            onChange={(e) => handleChange("governingLaw", e.target.value)}
-            placeholder="e.g., State of California"
+            id="duration"
+            value={formData.duration}
+            onChange={(e) => handleChange("duration", e.target.value)}
+            placeholder="e.g., 2 years"
+            required
+          />
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="confidentialInformation">
+            Confidential Information *
+          </Label>
+          <Textarea
+            id="confidentialInformation"
+            value={formData.confidentialInformation}
+            onChange={(e) =>
+              handleChange("confidentialInformation", e.target.value)
+            }
+            placeholder="Define what constitutes confidential information"
+            required
+          />
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="permittedUse">Permitted Use *</Label>
+          <Textarea
+            id="permittedUse"
+            value={formData.permittedUse}
+            onChange={(e) => handleChange("permittedUse", e.target.value)}
+            placeholder="Specify permitted uses of confidential information"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="place">Place of Signing *</Label>
+          <Label htmlFor="date">Date *</Label>
+          <Input
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => handleChange("date", e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="place">Place *</Label>
           <Input
             id="place"
             value={formData.place}
             onChange={(e) => handleChange("place", e.target.value)}
-            placeholder="City, State"
+            placeholder="e.g., San Francisco, CA"
             required
           />
         </div>
 
-        <div className="flex items-center space-x-2 md:col-span-2">
-          <Switch
-            id="includeDigitalSignature"
-            checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) =>
-              handleChange("includeDigitalSignature", checked)
-            }
+        <div className="space-y-2">
+          <Label htmlFor="signatoryName">Signatory Name *</Label>
+          <Input
+            id="signatoryName"
+            value={formData.signatoryName}
+            onChange={(e) => handleChange("signatoryName", e.target.value)}
+            placeholder="Enter signatory name"
+            required
           />
-          <Label htmlFor="includeDigitalSignature">
-            Include Digital Signatures
-          </Label>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="signatoryDesignation">Signatory Designation *</Label>
+          <Input
+            id="signatoryDesignation"
+            value={formData.signatoryDesignation}
+            onChange={(e) => handleChange("signatoryDesignation", e.target.value)}
+            placeholder="Enter signatory designation"
+            required
+          />
         </div>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="includeDigitalSignature"
+          checked={formData.includeDigitalSignature}
+          onCheckedChange={(checked) =>
+            handleChange("includeDigitalSignature", checked)
+          }
+        />
+        <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
+      </div>
+
       <Button type="submit" className="w-full">
-        Generate Non-Disclosure Agreement
+        Update Preview
       </Button>
     </form>
   );

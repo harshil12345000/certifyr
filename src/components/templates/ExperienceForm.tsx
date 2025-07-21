@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface ExperienceFormProps {
   onSubmit: (data: ExperienceData) => void;
@@ -50,12 +51,18 @@ const formSchema = z.object({
 });
 
 export function ExperienceForm({ onSubmit, initialData }: ExperienceFormProps) {
+  const { trackPreviewGeneration } = usePreviewTracking();
+  
   const form = useForm<ExperienceData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
-  const handleFormSubmit = (values: ExperienceData) => {
+  const handleFormSubmit = async (values: ExperienceData) => {
+    // Track preview generation
+    await trackPreviewGeneration("experience-1", "update");
+    
+    // Submit the form
     onSubmit(values);
   };
 

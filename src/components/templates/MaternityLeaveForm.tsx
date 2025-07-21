@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MaternityLeaveData } from "@/types/templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 const maternityLeaveSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -44,6 +45,8 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({
   onSubmit,
   initialData,
 }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
+  
   const form = useForm<MaternityLeaveData>({
     resolver: zodResolver(maternityLeaveSchema),
     defaultValues: {
@@ -70,7 +73,10 @@ export const MaternityLeaveForm: React.FC<MaternityLeaveFormProps> = ({
     },
   });
 
-  const handleSubmit = (data: MaternityLeaveData) => {
+  const handleSubmit = async (data: MaternityLeaveData) => {
+    // Track preview generation
+    await trackPreviewGeneration("maternity-leave-1", "update");
+    // Submit the form
     onSubmit(data);
   };
 

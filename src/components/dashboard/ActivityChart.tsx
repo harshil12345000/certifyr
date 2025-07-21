@@ -9,19 +9,19 @@ import {
 } from "recharts";
 
 interface ActivityChartProps {
-  data?: Array<{ name: string; documents: number }>;
+  data?: Array<{ name: string; Documents: number }>;
 }
 
 export function ActivityChart({ data }: ActivityChartProps) {
   // Generate default empty data for the last 7 months if no data provided
   const defaultData = [
-    { name: "Jan", documents: 0 },
-    { name: "Feb", documents: 0 },
-    { name: "Mar", documents: 0 },
-    { name: "Apr", documents: 0 },
-    { name: "May", documents: 0 },
-    { name: "Jun", documents: 0 },
-    { name: "Jul", documents: 0 },
+    { name: "Jan", Documents: 0 },
+    { name: "Feb", Documents: 0 },
+    { name: "Mar", Documents: 0 },
+    { name: "Apr", Documents: 0 },
+    { name: "May", Documents: 0 },
+    { name: "Jun", Documents: 0 },
+    { name: "Jul", Documents: 0 },
   ];
 
   const chartData = data && data.length > 0 ? data : defaultData;
@@ -46,7 +46,12 @@ export function ActivityChart({ data }: ActivityChartProps) {
             tickLine={false}
             tick={{ fontSize: 12 }}
           />
-          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+          <YAxis 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fontSize: 12 }} 
+            allowDecimals={false}
+          />
           <Tooltip
             contentStyle={{
               borderRadius: "8px",
@@ -56,7 +61,7 @@ export function ActivityChart({ data }: ActivityChartProps) {
           />
           <Area
             type="monotone"
-            dataKey="documents"
+            dataKey="Documents"
             stroke="#3a86ff"
             strokeWidth={2}
             fillOpacity={1}

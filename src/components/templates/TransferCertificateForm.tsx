@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { TransferCertificateData } from "@/types/templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -22,14 +22,11 @@ const formSchema = z.object({
   motherName: z.string().min(1, "Mother's name is required"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   admissionNumber: z.string().min(1, "Admission number is required"),
-  class: z.string().min(1, "Class is required"),
-  section: z.string().min(1, "Section is required"),
-  academicYear: z.string().min(1, "Academic year is required"),
-  dateOfAdmission: z.string().min(1, "Date of admission is required"),
-  dateOfLeaving: z.string().min(1, "Date of leaving is required"),
+  admissionDate: z.string().min(1, "Admission date is required"),
+  lastClass: z.string().min(1, "Last class is required"),
+  lastClassYear: z.string().min(1, "Last class year is required"),
+  conductBehavior: z.string().min(1, "Conduct and behavior is required"),
   reasonForLeaving: z.string().min(1, "Reason for leaving is required"),
-  conduct: z.string().min(1, "Conduct is required"),
-  subjects: z.string().min(1, "Subjects are required"),
   institutionName: z.string().min(1, "Institution name is required"),
   date: z.string().min(1, "Date is required"),
   place: z.string().min(1, "Place is required"),
@@ -46,14 +43,23 @@ interface TransferCertificateFormProps {
 export const TransferCertificateForm: React.FC<
   TransferCertificateFormProps
 > = ({ onSubmit, initialData }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
+  
   const form = useForm<TransferCertificateData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
+  const handleSubmit = async (data: TransferCertificateData) => {
+    // Track preview generation
+    await trackPreviewGeneration("transfer-certificate-1", "update");
+    // Submit the form
+    onSubmit(data);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -127,52 +133,10 @@ export const TransferCertificateForm: React.FC<
 
           <FormField
             control={form.control}
-            name="class"
+            name="admissionDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Class</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., 10th, Class X" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="section"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Section</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., A, B, C" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="academicYear"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Academic Year</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., 2023-2024" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="dateOfAdmission"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date of Admission</FormLabel>
+                <FormLabel>Admission Date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -183,12 +147,40 @@ export const TransferCertificateForm: React.FC<
 
           <FormField
             control={form.control}
-            name="dateOfLeaving"
+            name="lastClass"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date of Leaving</FormLabel>
+                <FormLabel>Last Class</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input placeholder="Enter last class" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="lastClassYear"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Class Year</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter last class year" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="conductBehavior"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Conduct and Behavior</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter conduct and behavior" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -202,50 +194,13 @@ export const TransferCertificateForm: React.FC<
               <FormItem>
                 <FormLabel>Reason for Leaving</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., Transfer to another school"
-                    {...field}
-                  />
+                  <Input placeholder="Enter reason for leaving" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="conduct"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Conduct</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Good, Excellent" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="subjects"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Subjects Studied</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="List all subjects studied (e.g., English, Mathematics, Science, Social Studies, etc.)"
-                  className="min-h-[100px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="institutionName"
@@ -265,7 +220,7 @@ export const TransferCertificateForm: React.FC<
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Issue Date</FormLabel>
+                <FormLabel>Date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -309,7 +264,7 @@ export const TransferCertificateForm: React.FC<
               <FormItem>
                 <FormLabel>Signatory Designation</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter designation" {...field} />
+                  <Input placeholder="Enter signatory designation" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

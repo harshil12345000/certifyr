@@ -6,7 +6,7 @@ import { getOrganizationIdForUser } from "./useUserStats";
 
 interface ActivityData {
   name: string;
-  documents: number;
+  Documents: number;
 }
 
 export function useUserActivity(refreshIndex?: number) {
@@ -26,15 +26,8 @@ export function useUserActivity(refreshIndex?: number) {
         setLoading(true);
         setError(null);
 
-        // Get user's organization
+        // Get user's organization (optional)
         const orgId = await getOrganizationIdForUser(user.id);
-        if (!orgId) {
-          // Set empty data if no organization
-          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
-          setActivityData(months.map((month) => ({ name: month, documents: 0 })));
-          setLoading(false);
-          return;
-        }
 
         // Generate the last 7 months
         const monthNames = [
@@ -52,21 +45,22 @@ export function useUserActivity(refreshIndex?: number) {
           activityByMonth[monthKey] = 0;
         }
 
-        // Fetch actual document creation data for the last 7 months
+        // Fetch actual preview generation data for the last 7 months
         const sevenMonthsAgo = new Date();
         sevenMonthsAgo.setMonth(sevenMonthsAgo.getMonth() - 6);
 
-        const { data: documents } = await supabase
-          .from("documents")
+        const { data: previewGenerations } = await supabase
+          .from("preview_generations")
           .select("created_at")
           .eq("user_id", user.id)
+          .eq("organization_id", orgId || null)
           .gte("created_at", sevenMonthsAgo.toISOString());
 
-        // Count documents by month
-        if (documents && documents.length > 0) {
-          documents.forEach((doc) => {
-            const docDate = new Date(doc.created_at);
-            const monthKey = monthNames[docDate.getMonth()];
+        // Count preview generations by month
+        if (previewGenerations && previewGenerations.length > 0) {
+          previewGenerations.forEach((generation) => {
+            const generationDate = new Date(generation.created_at);
+            const monthKey = monthNames[generationDate.getMonth()];
             if (activityByMonth.hasOwnProperty(monthKey)) {
               activityByMonth[monthKey]++;
             }
@@ -75,9 +69,9 @@ export function useUserActivity(refreshIndex?: number) {
 
         // Convert to array format for chart
         const chartData: ActivityData[] = Object.entries(activityByMonth).map(
-          ([name, documents]) => ({
+          ([name, Documents]) => ({
             name,
-            documents,
+            Documents,
           }),
         );
 
@@ -87,7 +81,7 @@ export function useUserActivity(refreshIndex?: number) {
         setError("Failed to fetch activity data");
         // Set empty data on error
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
-        setActivityData(months.map((month) => ({ name: month, documents: 0 })));
+        setActivityData(months.map((month) => ({ name: month, Documents: 0 })));
       } finally {
         setLoading(false);
       }

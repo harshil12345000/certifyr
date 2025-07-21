@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { CorporateBylawsData } from "@/types/corporate-templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 import {
   Select,
   SelectContent,
@@ -11,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CorporateBylawsData } from "@/types/corporate-templates";
 
 interface CorporateBylawsFormProps {
   initialData: CorporateBylawsData;
@@ -22,10 +23,14 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
   initialData,
   onSubmit,
 }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
   const [formData, setFormData] = useState<CorporateBylawsData>(initialData);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Track preview generation
+    await trackPreviewGeneration("corporate-bylaws-1", "update");
+    // Submit the form
     onSubmit(formData);
   };
 
@@ -71,212 +76,141 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
           </Select>
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="principalOffice">Principal Office Address *</Label>
-          <Textarea
-            id="principalOffice"
-            value={formData.principalOffice}
-            onChange={(e) => handleChange("principalOffice", e.target.value)}
-            placeholder="Principal office address"
-            rows={2}
-            required
-          />
-        </div>
-
         <div className="space-y-2">
-          <Label htmlFor="boardMeetingFrequency">
-            Board Meeting Frequency *
-          </Label>
-          <Select
-            value={formData.boardMeetingFrequency}
-            onValueChange={(value) =>
-              handleChange("boardMeetingFrequency", value)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select frequency" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="quarterly">Quarterly</SelectItem>
-              <SelectItem value="semi-annually">Semi-Annually</SelectItem>
-              <SelectItem value="annually">Annually</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="shareholderMeetingDate">
-            Annual Shareholder Meeting Date *
-          </Label>
+          <Label htmlFor="registeredOffice">Registered Office *</Label>
           <Input
-            id="shareholderMeetingDate"
-            value={formData.shareholderMeetingDate}
-            onChange={(e) =>
-              handleChange("shareholderMeetingDate", e.target.value)
-            }
-            placeholder="e.g., Second Tuesday of May"
+            id="registeredOffice"
+            value={formData.registeredOffice}
+            onChange={(e) => handleChange("registeredOffice", e.target.value)}
+            placeholder="Enter registered office address"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fiscalYearEnd">Fiscal Year End *</Label>
+          <Label htmlFor="fiscalYear">Fiscal Year End *</Label>
           <Input
-            id="fiscalYearEnd"
-            value={formData.fiscalYearEnd}
-            onChange={(e) => handleChange("fiscalYearEnd", e.target.value)}
-            placeholder="e.g., December 31"
+            id="fiscalYear"
+            type="date"
+            value={formData.fiscalYear}
+            onChange={(e) => handleChange("fiscalYear", e.target.value)}
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="numberOfDirectors">Number of Directors *</Label>
-          <Select
-            value={formData.numberOfDirectors}
-            onValueChange={(value) => handleChange("numberOfDirectors", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select number" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1</SelectItem>
-              <SelectItem value="3">3</SelectItem>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="7">7</SelectItem>
-              <SelectItem value="9">9</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="directorTermLength">Director Term Length *</Label>
-          <Select
-            value={formData.directorTermLength}
-            onValueChange={(value) => handleChange("directorTermLength", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select term" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1 year">1 Year</SelectItem>
-              <SelectItem value="2 years">2 Years</SelectItem>
-              <SelectItem value="3 years">3 Years</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="officerTitles">Officer Titles *</Label>
+          <Label htmlFor="boardMembers">Board Members *</Label>
           <Textarea
-            id="officerTitles"
-            value={formData.officerTitles}
-            onChange={(e) => handleChange("officerTitles", e.target.value)}
-            placeholder="e.g., President, Secretary, Treasurer"
-            rows={2}
+            id="boardMembers"
+            value={formData.boardMembers}
+            onChange={(e) => handleChange("boardMembers", e.target.value)}
+            placeholder="List board members (one per line)"
             required
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="votingRights">Voting Rights Description *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="officers">Corporate Officers *</Label>
+          <Textarea
+            id="officers"
+            value={formData.officers}
+            onChange={(e) => handleChange("officers", e.target.value)}
+            placeholder="List officers and their positions"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="stockClasses">Stock Classes *</Label>
+          <Textarea
+            id="stockClasses"
+            value={formData.stockClasses}
+            onChange={(e) => handleChange("stockClasses", e.target.value)}
+            placeholder="Describe stock classes and rights"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="votingRights">Voting Rights *</Label>
           <Textarea
             id="votingRights"
             value={formData.votingRights}
             onChange={(e) => handleChange("votingRights", e.target.value)}
-            placeholder="Describe voting rights of shareholders"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="dividendPolicy">Dividend Policy *</Label>
-          <Textarea
-            id="dividendPolicy"
-            value={formData.dividendPolicy}
-            onChange={(e) => handleChange("dividendPolicy", e.target.value)}
-            placeholder="Describe dividend distribution policy"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="amendmentProcess">Amendment Process *</Label>
-          <Textarea
-            id="amendmentProcess"
-            value={formData.amendmentProcess}
-            onChange={(e) => handleChange("amendmentProcess", e.target.value)}
-            placeholder="Describe how bylaws can be amended"
-            rows={3}
+            placeholder="Describe voting rights"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="adoptionDate">Adoption Date *</Label>
+          <Label htmlFor="date">Date *</Label>
           <Input
-            id="adoptionDate"
+            id="date"
             type="date"
-            value={formData.adoptionDate}
-            onChange={(e) => handleChange("adoptionDate", e.target.value)}
+            value={formData.date}
+            onChange={(e) => handleChange("date", e.target.value)}
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="place">Place of Adoption *</Label>
+          <Label htmlFor="place">Place *</Label>
           <Input
             id="place"
             value={formData.place}
             onChange={(e) => handleChange("place", e.target.value)}
-            placeholder="City, State"
+            placeholder="e.g., San Francisco, CA"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signatoryName">Secretary/Signatory Name *</Label>
+          <Label htmlFor="signatoryName">Signatory Name *</Label>
           <Input
             id="signatoryName"
             value={formData.signatoryName}
             onChange={(e) => handleChange("signatoryName", e.target.value)}
-            placeholder="Name of corporate secretary"
+            placeholder="Enter signatory name"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signatoryDesignation">Signatory Title *</Label>
+          <Label htmlFor="signatoryDesignation">Signatory Designation *</Label>
           <Input
             id="signatoryDesignation"
             value={formData.signatoryDesignation}
-            onChange={(e) =>
-              handleChange("signatoryDesignation", e.target.value)
-            }
-            placeholder="e.g., Corporate Secretary"
+            onChange={(e) => handleChange("signatoryDesignation", e.target.value)}
+            placeholder="Enter signatory designation"
             required
           />
         </div>
+      </div>
 
-        <div className="flex items-center space-x-2 md:col-span-2">
-          <Switch
-            id="includeDigitalSignature"
-            checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) =>
-              handleChange("includeDigitalSignature", checked)
-            }
-          />
-          <Label htmlFor="includeDigitalSignature">
-            Include Digital Signature
-          </Label>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="amendmentProcedure">Amendment Procedure *</Label>
+        <Textarea
+          id="amendmentProcedure"
+          value={formData.amendmentProcedure}
+          onChange={(e) => handleChange("amendmentProcedure", e.target.value)}
+          placeholder="Describe the procedure for amending bylaws"
+          required
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="includeDigitalSignature"
+          checked={formData.includeDigitalSignature}
+          onCheckedChange={(checked) =>
+            handleChange("includeDigitalSignature", checked)
+          }
+        />
+        <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
       </div>
 
       <Button type="submit" className="w-full">
-        Generate Corporate Bylaws
+        Update Preview
       </Button>
     </form>
   );

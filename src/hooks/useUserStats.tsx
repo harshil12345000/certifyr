@@ -27,16 +27,21 @@ export async function incrementUserStat({
   statField,
 }: {
   userId: string;
-  organizationId: string;
+  organizationId: string | null;
   statField: string;
 }) {
-  // Upsert: increment the field by 1
-  const { error } = await supabase.rpc("increment_user_stat", {
-    p_user_id: userId,
-    p_organization_id: organizationId,
-    p_stat_field: statField,
-  });
-  if (error) console.error("Error incrementing user stat:", error);
+  try {
+    const { error } = await supabase.rpc("increment_user_stat", {
+      p_user_id: userId,
+      p_organization_id: organizationId,
+      p_stat_field: statField,
+    });
+    if (error) {
+      console.error(`Error incrementing ${statField}:`, error);
+    }
+  } catch (error) {
+    console.error(`Error incrementing ${statField}:`, error);
+  }
 }
 
 export function useUserStats(refreshIndex?: number) {
@@ -94,36 +99,35 @@ export function useUserStats(refreshIndex?: number) {
           }
         }
 
-        // Get actual documents created by this user (for real-time accuracy)
-        const { count: actualDocumentsCreated } = await supabase
-          .from("documents")
+        // Get actual preview generations count (this is what "Documents Created" should show)
+        const { count: previewGenerationsCount } = await supabase
+          .from("preview_generations")
           .select("*", { count: "exact", head: true })
           .eq("user_id", user.id);
 
-        // Use the corrected data from user_statistics table
-        setStats({
-          documentsCreated: actualDocumentsCreated || 0,
-          portalMembers: userStats?.portal_members || 0,
-          requestedDocuments: userStats?.requested_documents || 0,
-          totalVerifications: userStats?.total_verifications || 0,
-        });
+        // Use the preview generations count for documents created
+        const documentsCreated = previewGenerationsCount || 0;
 
-      } catch (err) {
-        console.error("Error fetching stats:", err);
-        setError("Failed to fetch statistics");
+        // Get other stats from user_statistics table
+        const totalVerifications = userStats?.total_verifications || 0;
+        const requestedDocuments = userStats?.requested_documents || 0;
+        const portalMembers = userStats?.portal_members || 0;
+
         setStats({
-          documentsCreated: 0,
-          portalMembers: 0,
-          requestedDocuments: 0,
-          totalVerifications: 0,
+          documentsCreated,
+          portalMembers,
+          requestedDocuments,
+          totalVerifications,
         });
+      } catch (err) {
+        console.error("Error fetching user stats:", err);
+        setError("Failed to fetch user statistics");
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-
   }, [user, refreshIndex]);
 
   return { stats, loading, error };

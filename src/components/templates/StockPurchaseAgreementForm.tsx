@@ -4,14 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { StockPurchaseAgreementData } from "@/types/corporate-templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface StockPurchaseAgreementFormProps {
   initialData: StockPurchaseAgreementData;
@@ -21,11 +15,15 @@ interface StockPurchaseAgreementFormProps {
 export const StockPurchaseAgreementForm: React.FC<
   StockPurchaseAgreementFormProps
 > = ({ initialData, onSubmit }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
   const [formData, setFormData] =
     useState<StockPurchaseAgreementData>(initialData);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Track preview generation
+    await trackPreviewGeneration("stock-purchase-agreement-1", "update");
+    // Submit the form
     onSubmit(formData);
   };
 
@@ -40,82 +38,72 @@ export const StockPurchaseAgreementForm: React.FC<
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="purchaserName">Purchaser Name *</Label>
-          <Input
-            id="purchaserName"
-            value={formData.purchaserName}
-            onChange={(e) => handleChange("purchaserName", e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="sellerName">Seller Name *</Label>
-          <Input
-            id="sellerName"
-            value={formData.sellerName}
-            onChange={(e) => handleChange("sellerName", e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="companyName">Company Name *</Label>
           <Input
             id="companyName"
             value={formData.companyName}
             onChange={(e) => handleChange("companyName", e.target.value)}
+            placeholder="Enter company name"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="shareClass">Share Class *</Label>
-          <Select
-            value={formData.shareClass}
-            onValueChange={(value) => handleChange("shareClass", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select share class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="common">Common Stock</SelectItem>
-              <SelectItem value="preferred">Preferred Stock</SelectItem>
-              <SelectItem value="class-a">Class A Common</SelectItem>
-              <SelectItem value="class-b">Class B Common</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="numberOfShares">Number of Shares *</Label>
+          <Label htmlFor="seller">Seller Name *</Label>
           <Input
-            id="numberOfShares"
-            value={formData.numberOfShares}
-            onChange={(e) => handleChange("numberOfShares", e.target.value)}
-            placeholder="e.g., 10,000"
+            id="seller"
+            value={formData.seller}
+            onChange={(e) => handleChange("seller", e.target.value)}
+            placeholder="Enter seller name"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="sharePrice">Price per Share *</Label>
+          <Label htmlFor="buyer">Buyer Name *</Label>
           <Input
-            id="sharePrice"
-            value={formData.sharePrice}
-            onChange={(e) => handleChange("sharePrice", e.target.value)}
-            placeholder="e.g., $10.00"
+            id="buyer"
+            value={formData.buyer}
+            onChange={(e) => handleChange("buyer", e.target.value)}
+            placeholder="Enter buyer name"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="totalPurchasePrice">Total Purchase Price *</Label>
+          <Label htmlFor="shares">Number of Shares *</Label>
           <Input
-            id="totalPurchasePrice"
-            value={formData.totalPurchasePrice}
-            onChange={(e) => handleChange("totalPurchasePrice", e.target.value)}
-            placeholder="e.g., $100,000"
+            id="shares"
+            type="number"
+            value={formData.shares}
+            onChange={(e) => handleChange("shares", e.target.value)}
+            placeholder="Enter number of shares"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="pricePerShare">Price per Share *</Label>
+          <Input
+            id="pricePerShare"
+            type="number"
+            step="0.01"
+            value={formData.pricePerShare}
+            onChange={(e) => handleChange("pricePerShare", e.target.value)}
+            placeholder="Enter price per share"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="totalConsideration">Total Consideration *</Label>
+          <Input
+            id="totalConsideration"
+            type="number"
+            step="0.01"
+            value={formData.totalConsideration}
+            onChange={(e) => handleChange("totalConsideration", e.target.value)}
+            placeholder="Enter total consideration"
             required
           />
         </div>
@@ -131,98 +119,110 @@ export const StockPurchaseAgreementForm: React.FC<
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="purchaserAddress">Purchaser Address *</Label>
-          <Textarea
-            id="purchaserAddress"
-            value={formData.purchaserAddress}
-            onChange={(e) => handleChange("purchaserAddress", e.target.value)}
-            rows={2}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="sellerAddress">Seller Address *</Label>
-          <Textarea
-            id="sellerAddress"
-            value={formData.sellerAddress}
-            onChange={(e) => handleChange("sellerAddress", e.target.value)}
-            rows={2}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="restrictionsOnTransfer">
-            Restrictions on Transfer *
-          </Label>
-          <Textarea
-            id="restrictionsOnTransfer"
-            value={formData.restrictionsOnTransfer}
-            onChange={(e) =>
-              handleChange("restrictionsOnTransfer", e.target.value)
-            }
-            placeholder="Describe any restrictions on transferring the shares"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="representationsWarranties">
-            Representations and Warranties *
-          </Label>
-          <Textarea
-            id="representationsWarranties"
-            value={formData.representationsWarranties}
-            onChange={(e) =>
-              handleChange("representationsWarranties", e.target.value)
-            }
-            placeholder="Key representations and warranties"
-            rows={4}
-            required
-          />
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="governingLaw">Governing Law *</Label>
           <Input
             id="governingLaw"
             value={formData.governingLaw}
             onChange={(e) => handleChange("governingLaw", e.target.value)}
-            placeholder="e.g., State of Delaware"
+            placeholder="Enter governing law"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="representations">Representations & Warranties *</Label>
+        <Textarea
+          id="representations"
+          value={formData.representations}
+          onChange={(e) => handleChange("representations", e.target.value)}
+          placeholder="Enter representations and warranties"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="warranties">Additional Warranties *</Label>
+        <Textarea
+          id="warranties"
+          value={formData.warranties}
+          onChange={(e) => handleChange("warranties", e.target.value)}
+          placeholder="Enter additional warranties"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="covenants">Covenants *</Label>
+        <Textarea
+          id="covenants"
+          value={formData.covenants}
+          onChange={(e) => handleChange("covenants", e.target.value)}
+          placeholder="Enter covenants"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="date">Date *</Label>
+          <Input
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => handleChange("date", e.target.value)}
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="place">Place of Signing *</Label>
+          <Label htmlFor="place">Place *</Label>
           <Input
             id="place"
             value={formData.place}
             onChange={(e) => handleChange("place", e.target.value)}
-            placeholder="City, State"
+            placeholder="e.g., San Francisco, CA"
             required
           />
         </div>
 
-        <div className="flex items-center space-x-2 md:col-span-2">
-          <Switch
-            id="includeDigitalSignature"
-            checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) =>
-              handleChange("includeDigitalSignature", checked)
-            }
+        <div className="space-y-2">
+          <Label htmlFor="signatoryName">Signatory Name *</Label>
+          <Input
+            id="signatoryName"
+            value={formData.signatoryName}
+            onChange={(e) => handleChange("signatoryName", e.target.value)}
+            placeholder="Enter signatory name"
+            required
           />
-          <Label htmlFor="includeDigitalSignature">
-            Include Digital Signatures
-          </Label>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="signatoryDesignation">Signatory Designation *</Label>
+          <Input
+            id="signatoryDesignation"
+            value={formData.signatoryDesignation}
+            onChange={(e) => handleChange("signatoryDesignation", e.target.value)}
+            placeholder="Enter signatory designation"
+            required
+          />
         </div>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="includeDigitalSignature"
+          checked={formData.includeDigitalSignature}
+          onCheckedChange={(checked) =>
+            handleChange("includeDigitalSignature", checked)
+          }
+        />
+        <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
+      </div>
+
       <Button type="submit" className="w-full">
-        Generate Stock Purchase Agreement
+        Update Preview
       </Button>
     </form>
   );

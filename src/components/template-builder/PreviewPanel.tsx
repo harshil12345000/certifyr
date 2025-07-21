@@ -13,7 +13,6 @@ import {
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useToast } from "@/hooks/use-toast";
 import { Letterhead } from "@/components/templates/Letterhead";
-import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 
 interface PreviewPanelProps {
   elements: Section[];
@@ -27,16 +26,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   templateName = "Document Title",
 }) => {
   const { toast } = useToast();
-  const { trackDocumentCreation } = useDocumentTracking();
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
   const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
   const [isEditingBody, setIsEditingBody] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
-
-  // Track document creation when component mounts AND when preview is updated
-  useEffect(() => {
-    trackDocumentCreation();
-  }, [elements, templateName]); // Track when elements or template name changes
 
   useEffect(() => {
     const data: Record<string, any> = {
@@ -80,8 +73,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       await downloadPDF(
         `${templateName.toLowerCase().replace(/\s+/g, "-")}.pdf`,
       );
-      // Track document creation on download
-      trackDocumentCreation();
       toast({
         title: "Success",
         description: "PDF downloaded successfully!",
@@ -101,8 +92,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       await downloadJPG(
         `${templateName.toLowerCase().replace(/\s+/g, "-")}.jpg`,
       );
-      // Track document creation on download
-      trackDocumentCreation();
       toast({
         title: "Success",
         description: "JPG downloaded successfully!",
@@ -120,8 +109,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const handlePrint = async () => {
     try {
       await printDocument();
-      // Track document creation on print
-      trackDocumentCreation();
       toast({
         title: "Success",
         description: "Document printed successfully!",
@@ -190,76 +177,50 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4">
-        <div
-          id="document-preview"
-          className="a4-document w-[21cm] min-h-[29.7cm] bg-white border border-gray-200 shadow-lg relative overflow-hidden flex flex-col mx-auto"
-        >
+      <div className="flex-1 p-6 overflow-y-auto">
+        <div className="max-w-4xl mx-auto bg-white shadow-sm border rounded-lg p-8">
           <Letterhead />
 
-          <div className="flex justify-center mt-8">
-            <div className="bg-gray-100 border border-gray-300 rounded px-6 py-2 text-xl font-bold shadow-sm">
-              {templateName}
+          <div className="mt-8">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Bonafide Certificate
+              </h1>
+              <div className="w-24 h-1 bg-primary mx-auto"></div>
             </div>
-          </div>
 
-          <div className="flex-1 p-8">
-            <div className="flex gap-2 mb-2">
-              <Button
-                size="sm"
-                variant="outline"
-                type="button"
-                onClick={() => format("bold")}
-              >
-                <b>B</b>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                type="button"
-                onClick={() => format("italic")}
-              >
-                <i>I</i>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                type="button"
-                onClick={() => format("underline")}
-              >
-                <u>U</u>
-              </Button>
-            </div>
-            {isEditingBody ? (
-              <div
-                ref={editorRef}
-                className="w-full min-h-[200px] border rounded p-2 text-base mb-2 focus:outline-none bg-white"
-                contentEditable
-                suppressContentEditableWarning
-                dangerouslySetInnerHTML={{ __html: bodyHtml }}
-                onBlur={(e) => {
-                  setBodyHtml(e.currentTarget.innerHTML);
-                  setIsEditingBody(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
+            <div className="text-base leading-relaxed">
+              {isEditingBody ? (
+                <div
+                  ref={editorRef}
+                  className="w-full min-h-[200px] border rounded p-2 text-base mb-2 focus:outline-none bg-white"
+                  contentEditable
+                  suppressContentEditableWarning
+                  dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                  onBlur={(e) => {
+                    setBodyHtml(e.currentTarget.innerHTML);
                     setIsEditingBody(false);
-                  }
-                }}
-                style={{ whiteSpace: "pre-wrap" }}
-                autoFocus
-              />
-            ) : (
-              <div
-                className="text-base leading-relaxed cursor-pointer min-h-[100px]"
-                onClick={() => setIsEditingBody(true)}
-              >
-                {renderProcessedBody(bodyHtml)}
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setIsEditingBody(false);
+                    }
+                  }}
+                  style={{ whiteSpace: "pre-wrap" }}
+                  autoFocus
+                />
+              ) : (
+                <div
+                  className="text-base leading-relaxed cursor-pointer min-h-[100px]"
+                  onClick={() => setIsEditingBody(true)}
+                >
+                  {renderProcessedBody(bodyHtml)}
+                </div>
+              )}
+              <div className="text-xs text-gray-400 mt-2">
+                Click to edit. Use [Field Name] to insert fields. Use toolbar for
+                formatting.
               </div>
-            )}
-            <div className="text-xs text-gray-400 mt-2">
-              Click to edit. Use [Field Name] to insert fields. Use toolbar for
-              formatting.
             </div>
           </div>
         </div>

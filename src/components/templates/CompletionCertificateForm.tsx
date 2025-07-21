@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,15 +12,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CompletionCertificateData } from "@/types/templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -31,7 +25,7 @@ const formSchema = z.object({
   completionDate: z.string().min(1, "Completion date is required"),
   grade: z.string().min(1, "Grade is required"),
   percentage: z.string().min(1, "Percentage is required"),
-  programType: z.enum(["course", "training", "internship"]),
+  programType: z.string().min(1, "Program type is required"),
   institutionName: z.string().min(1, "Institution name is required"),
   date: z.string().min(1, "Date is required"),
   place: z.string().min(1, "Place is required"),
@@ -48,14 +42,23 @@ interface CompletionCertificateFormProps {
 export const CompletionCertificateForm: React.FC<
   CompletionCertificateFormProps
 > = ({ onSubmit, initialData }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
+  
   const form = useForm<CompletionCertificateData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
+  const handleSubmit = async (data: CompletionCertificateData) => {
+    // Track preview generation
+    await trackPreviewGeneration("completion-certificate-1", "update");
+    // Submit the form
+    onSubmit(data);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField
             control={form.control}
@@ -104,7 +107,7 @@ export const CompletionCertificateForm: React.FC<
             name="courseTitle"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Course/Program Title</FormLabel>
+                <FormLabel>Course Title</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter course title" {...field} />
                 </FormControl>
@@ -118,9 +121,9 @@ export const CompletionCertificateForm: React.FC<
             name="courseDuration"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Duration</FormLabel>
+                <FormLabel>Course Duration</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 6 months, 1 year" {...field} />
+                  <Input placeholder="Enter course duration" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -148,7 +151,7 @@ export const CompletionCertificateForm: React.FC<
               <FormItem>
                 <FormLabel>Grade</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., A+, First Class" {...field} />
+                  <Input placeholder="Enter grade" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -160,9 +163,9 @@ export const CompletionCertificateForm: React.FC<
             name="percentage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Percentage/CGPA</FormLabel>
+                <FormLabel>Percentage</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 85%, 8.5 CGPA" {...field} />
+                  <Input placeholder="Enter percentage" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -175,21 +178,9 @@ export const CompletionCertificateForm: React.FC<
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Program Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select program type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="course">Course</SelectItem>
-                    <SelectItem value="training">Training Program</SelectItem>
-                    <SelectItem value="internship">Internship</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <Input placeholder="Enter program type" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -214,7 +205,7 @@ export const CompletionCertificateForm: React.FC<
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Issue Date</FormLabel>
+                <FormLabel>Date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -258,7 +249,7 @@ export const CompletionCertificateForm: React.FC<
               <FormItem>
                 <FormLabel>Signatory Designation</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter designation" {...field} />
+                  <Input placeholder="Enter signatory designation" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

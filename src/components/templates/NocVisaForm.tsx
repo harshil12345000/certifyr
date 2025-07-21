@@ -13,15 +13,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { NocVisaData } from "@/types/templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -52,25 +45,23 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
   onSubmit,
   initialData,
 }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
+  
   const form = useForm<NocVisaData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
-  const visaTypes = [
-    "Tourist Visa",
-    "Business Visa",
-    "Student Visa",
-    "Work Visa",
-    "Transit Visa",
-    "Medical Visa",
-    "Conference Visa",
-    "Other",
-  ];
+  const handleSubmit = async (data: NocVisaData) => {
+    // Track preview generation
+    await trackPreviewGeneration("noc-visa-1", "update");
+    // Submit the form
+    onSubmit(data);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -148,23 +139,9 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Visa Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select visa type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {visaTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <Input placeholder="Enter visa type" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -186,15 +163,26 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
 
           <FormField
             control={form.control}
+            name="travelPurpose"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Travel Purpose</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter travel purpose" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="travelDates"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Travel Dates</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., 15/01/2024 to 30/01/2024"
-                    {...field}
-                  />
+                  <Input placeholder="Enter travel dates" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -206,7 +194,7 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
             name="returnDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Expected Return Date</FormLabel>
+                <FormLabel>Return Date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -214,45 +202,21 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
               </FormItem>
             )}
           />
-        </div>
 
-        <FormField
-          control={form.control}
-          name="travelPurpose"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Purpose of Travel</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe the purpose of travel"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="sponsorDetails"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sponsor Details</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter sponsor details" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="sponsorDetails"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Sponsor Details</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter sponsor name, address, and contact details"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="institutionName"
@@ -261,6 +225,20 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
                 <FormLabel>Institution Name</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter institution name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -281,22 +259,6 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="signatoryName"
@@ -344,7 +306,7 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
           )}
         />
 
-        <Button type="submit" className="w-full md:w-auto">
+        <Button type="submit" className="w-full">
           Update Preview
         </Button>
       </form>

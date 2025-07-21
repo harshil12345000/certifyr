@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AcademicTranscriptData } from "@/types/corporate-templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface AcademicTranscriptFormProps {
   onSubmit: (data: AcademicTranscriptData) => void;
@@ -22,6 +23,7 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
   onSubmit,
   initialData,
 }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
   const [formData, setFormData] = useState<AcademicTranscriptData>(initialData);
 
   useEffect(() => {
@@ -34,8 +36,11 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
     onSubmit(updatedData);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Track preview generation
+    await trackPreviewGeneration("academic-transcript-1", "update");
+    // Submit the form
     onSubmit(formData);
   };
 
@@ -81,16 +86,6 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-            <Input
-              id="dateOfBirth"
-              type="date"
-              value={formData.dateOfBirth}
-              onChange={(e) => handleChange("dateOfBirth", e.target.value)}
-              required
-            />
-          </div>
         </div>
       </div>
 
@@ -99,109 +94,97 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
         <h3 className="text-lg font-medium border-b pb-2">Academic Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="courseTitle">Course Title *</Label>
+            <Label htmlFor="course">Course/Program *</Label>
             <Input
-              id="courseTitle"
-              value={formData.courseTitle}
-              onChange={(e) => handleChange("courseTitle", e.target.value)}
+              id="course"
+              value={formData.course}
+              onChange={(e) => handleChange("course", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="academicYear">Academic Year *</Label>
+            <Label htmlFor="department">Department *</Label>
             <Input
-              id="academicYear"
-              value={formData.academicYear}
-              onChange={(e) => handleChange("academicYear", e.target.value)}
-              placeholder="e.g., 2023-2024"
+              id="department"
+              value={formData.department}
+              onChange={(e) => handleChange("department", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="semester">Semester/Year *</Label>
+            <Label htmlFor="enrollmentYear">Enrollment Year *</Label>
             <Input
-              id="semester"
-              value={formData.semester}
-              onChange={(e) => handleChange("semester", e.target.value)}
-              placeholder="e.g., Semester 1, Final Year"
+              id="enrollmentYear"
+              type="number"
+              value={formData.enrollmentYear}
+              onChange={(e) => handleChange("enrollmentYear", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="class">Class/Division</Label>
-            <Select onValueChange={(value) => handleChange("class", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="first-class">First Class</SelectItem>
-                <SelectItem value="second-class">Second Class</SelectItem>
-                <SelectItem value="third-class">Third Class</SelectItem>
-                <SelectItem value="distinction">Distinction</SelectItem>
-                <SelectItem value="pass">Pass</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="subjects">Subjects & Marks *</Label>
-          <Textarea
-            id="subjects"
-            value={formData.subjects}
-            onChange={(e) => handleChange("subjects", e.target.value)}
-            placeholder="List subjects with marks (e.g., Mathematics: 85, Physics: 92, Chemistry: 78)"
-            className="min-h-[100px]"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="cgpa">CGPA/GPA</Label>
+            <Label htmlFor="graduationYear">Graduation Year *</Label>
             <Input
-              id="cgpa"
-              value={formData.cgpa}
-              onChange={(e) => handleChange("cgpa", e.target.value)}
-              placeholder="e.g., 8.5"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="percentage">Percentage</Label>
-            <Input
-              id="percentage"
-              value={formData.percentage}
-              onChange={(e) => handleChange("percentage", e.target.value)}
-              placeholder="e.g., 85.5%"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="grades">Overall Grade</Label>
-            <Input
-              id="grades"
-              value={formData.grades}
-              onChange={(e) => handleChange("grades", e.target.value)}
-              placeholder="e.g., A, B+"
+              id="graduationYear"
+              type="number"
+              value={formData.graduationYear}
+              onChange={(e) => handleChange("graduationYear", e.target.value)}
+              required
             />
           </div>
         </div>
       </div>
 
-      {/* Institution Details Section */}
+      {/* Academic Performance Section */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium border-b pb-2">
-          Institution Details
-        </h3>
+        <h3 className="text-lg font-medium border-b pb-2">Academic Performance</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="institutionName">Institution Name *</Label>
+            <Label htmlFor="cgpa">CGPA *</Label>
             <Input
-              id="institutionName"
-              value={formData.institutionName}
-              onChange={(e) => handleChange("institutionName", e.target.value)}
+              id="cgpa"
+              type="number"
+              step="0.01"
+              value={formData.cgpa}
+              onChange={(e) => handleChange("cgpa", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="date">Issue Date *</Label>
+            <Label htmlFor="grade">Grade/Division *</Label>
+            <Input
+              id="grade"
+              value={formData.grade}
+              onChange={(e) => handleChange("grade", e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Signatory Details Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium border-b pb-2">Signatory Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="signatoryName">Signatory Name *</Label>
+            <Input
+              id="signatoryName"
+              value={formData.signatoryName}
+              onChange={(e) => handleChange("signatoryName", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="signatoryDesignation">Signatory Designation *</Label>
+            <Input
+              id="signatoryDesignation"
+              value={formData.signatoryDesignation}
+              onChange={(e) => handleChange("signatoryDesignation", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Date *</Label>
             <Input
               id="date"
               type="date"
@@ -211,7 +194,7 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="place">Place of Issue *</Label>
+            <Label htmlFor="place">Place *</Label>
             <Input
               id="place"
               value={formData.place}
@@ -219,32 +202,9 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="signatoryName">Authorized Signatory Name *</Label>
-            <Input
-              id="signatoryName"
-              value={formData.signatoryName}
-              onChange={(e) => handleChange("signatoryName", e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="signatoryDesignation">
-              Signatory Designation *
-            </Label>
-            <Input
-              id="signatoryDesignation"
-              value={formData.signatoryDesignation}
-              onChange={(e) =>
-                handleChange("signatoryDesignation", e.target.value)
-              }
-              required
-            />
-          </div>
         </div>
       </div>
 
-      {/* Digital Signature Option */}
       <div className="flex items-center space-x-2">
         <Checkbox
           id="includeDigitalSignature"
@@ -253,13 +213,11 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
             handleChange("includeDigitalSignature", checked)
           }
         />
-        <Label htmlFor="includeDigitalSignature">
-          Include Digital Signature
-        </Label>
+        <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
       </div>
 
       <Button type="submit" className="w-full">
-        Generate Transcript
+        Update Preview
       </Button>
     </form>
   );

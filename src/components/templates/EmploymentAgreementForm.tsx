@@ -4,14 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { EmploymentAgreementData } from "@/types/corporate-templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface EmploymentAgreementFormProps {
   initialData: EmploymentAgreementData;
@@ -21,11 +15,15 @@ interface EmploymentAgreementFormProps {
 export const EmploymentAgreementForm: React.FC<
   EmploymentAgreementFormProps
 > = ({ initialData, onSubmit }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
   const [formData, setFormData] =
     useState<EmploymentAgreementData>(initialData);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Track preview generation
+    await trackPreviewGeneration("employment-agreement-1", "update");
+    // Submit the form
     onSubmit(formData);
   };
 
@@ -45,6 +43,7 @@ export const EmploymentAgreementForm: React.FC<
             id="employeeName"
             value={formData.employeeName}
             onChange={(e) => handleChange("employeeName", e.target.value)}
+            placeholder="Enter employee's full name"
             required
           />
         </div>
@@ -55,6 +54,7 @@ export const EmploymentAgreementForm: React.FC<
             id="employerName"
             value={formData.employerName}
             onChange={(e) => handleChange("employerName", e.target.value)}
+            placeholder="Enter employer/company name"
             required
           />
         </div>
@@ -65,6 +65,7 @@ export const EmploymentAgreementForm: React.FC<
             id="jobTitle"
             value={formData.jobTitle}
             onChange={(e) => handleChange("jobTitle", e.target.value)}
+            placeholder="Enter job title"
             required
           />
         </div>
@@ -75,6 +76,7 @@ export const EmploymentAgreementForm: React.FC<
             id="department"
             value={formData.department}
             onChange={(e) => handleChange("department", e.target.value)}
+            placeholder="Enter department name"
           />
         </div>
 
@@ -90,68 +92,14 @@ export const EmploymentAgreementForm: React.FC<
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="employmentType">Employment Type *</Label>
-          <Select
-            value={formData.employmentType}
-            onValueChange={(value) =>
-              handleChange(
-                "employmentType",
-                value as "full-time" | "part-time" | "contract",
-              )
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="full-time">Full-time</SelectItem>
-              <SelectItem value="part-time">Part-time</SelectItem>
-              <SelectItem value="contract">Contract</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="salary">Salary/Compensation *</Label>
+          <Label htmlFor="salary">Annual Salary *</Label>
           <Input
             id="salary"
+            type="number"
             value={formData.salary}
             onChange={(e) => handleChange("salary", e.target.value)}
-            placeholder="e.g., $75,000 annually"
+            placeholder="Enter annual salary"
             required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="payFrequency">Pay Frequency *</Label>
-          <Select
-            value={formData.payFrequency}
-            onValueChange={(value) =>
-              handleChange(
-                "payFrequency",
-                value as "monthly" | "bi-weekly" | "weekly",
-              )
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select frequency" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="benefits">Benefits Package</Label>
-          <Textarea
-            id="benefits"
-            value={formData.benefits}
-            onChange={(e) => handleChange("benefits", e.target.value)}
-            placeholder="Describe health insurance, retirement, vacation, etc."
-            rows={3}
           />
         </div>
 
@@ -161,7 +109,7 @@ export const EmploymentAgreementForm: React.FC<
             id="workLocation"
             value={formData.workLocation}
             onChange={(e) => handleChange("workLocation", e.target.value)}
-            placeholder="e.g., Remote, Office address, Hybrid"
+            placeholder="Enter work location"
             required
           />
         </div>
@@ -172,108 +120,104 @@ export const EmploymentAgreementForm: React.FC<
             id="workHours"
             value={formData.workHours}
             onChange={(e) => handleChange("workHours", e.target.value)}
-            placeholder="e.g., 9 AM - 5 PM, Monday - Friday"
+            placeholder="e.g., 40 hours per week"
             required
           />
         </div>
+      </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="duties">Job Duties and Responsibilities *</Label>
+        <Textarea
+          id="duties"
+          value={formData.duties}
+          onChange={(e) => handleChange("duties", e.target.value)}
+          placeholder="List main duties and responsibilities"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="benefits">Benefits *</Label>
+        <Textarea
+          id="benefits"
+          value={formData.benefits}
+          onChange={(e) => handleChange("benefits", e.target.value)}
+          placeholder="List employee benefits"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="terminationTerms">Termination Terms *</Label>
+        <Textarea
+          id="terminationTerms"
+          value={formData.terminationTerms}
+          onChange={(e) => handleChange("terminationTerms", e.target.value)}
+          placeholder="Specify termination terms and notice period"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="probationPeriod">Probation Period</Label>
+          <Label htmlFor="date">Date *</Label>
           <Input
-            id="probationPeriod"
-            value={formData.probationPeriod}
-            onChange={(e) => handleChange("probationPeriod", e.target.value)}
-            placeholder="e.g., 90 days"
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => handleChange("date", e.target.value)}
+            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="governingLaw">Governing Law *</Label>
-          <Input
-            id="governingLaw"
-            value={formData.governingLaw}
-            onChange={(e) => handleChange("governingLaw", e.target.value)}
-            placeholder="e.g., State of California"
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="terminationClause">Termination Clause *</Label>
-          <Textarea
-            id="terminationClause"
-            value={formData.terminationClause}
-            onChange={(e) => handleChange("terminationClause", e.target.value)}
-            placeholder="Terms for termination of employment"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="confidentialityClause">
-            Confidentiality Clause *
-          </Label>
-          <Textarea
-            id="confidentialityClause"
-            value={formData.confidentialityClause}
-            onChange={(e) =>
-              handleChange("confidentialityClause", e.target.value)
-            }
-            placeholder="Confidentiality obligations"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="nonCompeteClause">Non-Compete Clause</Label>
-          <Textarea
-            id="nonCompeteClause"
-            value={formData.nonCompeteClause}
-            onChange={(e) => handleChange("nonCompeteClause", e.target.value)}
-            placeholder="Non-compete restrictions (if applicable)"
-            rows={3}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="place">Place of Signing *</Label>
+          <Label htmlFor="place">Place *</Label>
           <Input
             id="place"
             value={formData.place}
             onChange={(e) => handleChange("place", e.target.value)}
-            placeholder="City, State"
+            placeholder="Enter place of signing"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signatoryName">HR/Signatory Name *</Label>
+          <Label htmlFor="signatoryName">Signatory Name *</Label>
           <Input
             id="signatoryName"
             value={formData.signatoryName}
             onChange={(e) => handleChange("signatoryName", e.target.value)}
+            placeholder="Enter signatory name"
             required
           />
         </div>
 
-        <div className="flex items-center space-x-2 md:col-span-2">
-          <Switch
-            id="includeDigitalSignature"
-            checked={formData.includeDigitalSignature}
-            onCheckedChange={(checked) =>
-              handleChange("includeDigitalSignature", checked)
-            }
+        <div className="space-y-2">
+          <Label htmlFor="signatoryDesignation">Signatory Designation *</Label>
+          <Input
+            id="signatoryDesignation"
+            value={formData.signatoryDesignation}
+            onChange={(e) => handleChange("signatoryDesignation", e.target.value)}
+            placeholder="Enter signatory designation"
+            required
           />
-          <Label htmlFor="includeDigitalSignature">
-            Include Digital Signatures
-          </Label>
         </div>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="includeDigitalSignature"
+          checked={formData.includeDigitalSignature}
+          onCheckedChange={(checked) =>
+            handleChange("includeDigitalSignature", checked)
+          }
+        />
+        <Label htmlFor="includeDigitalSignature">Include Digital Signature</Label>
+      </div>
+
       <Button type="submit" className="w-full">
-        Generate Employment Agreement
+        Update Preview
       </Button>
     </form>
   );

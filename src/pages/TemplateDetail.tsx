@@ -79,6 +79,7 @@ import { generateAndDownloadPdf } from "@/lib/pdf-utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useDocumentTracking } from "@/hooks/useDocumentTracking";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 const TEMPLATE_NAMES: Record<string, string> = {
   "academic-transcript-1": "Academic Transcript",
@@ -517,6 +518,7 @@ const TemplateDetail = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { trackDocumentCreation } = useDocumentTracking();
+  const { trackPreviewGeneration } = usePreviewTracking();
   const [formData, setFormData] = useState<
     | FormData
     | ArticlesOfIncorporationData
@@ -552,6 +554,9 @@ const TemplateDetail = () => {
       | AcademicTranscriptData
       | EmbassyAttestationLetterData,
   ) => {
+    // Track preview generation
+    trackPreviewGeneration(templateId!, "generate");
+    
     setFormData(data);
   };
 

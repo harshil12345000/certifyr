@@ -13,26 +13,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { IncomeCertificateData } from "@/types/templates";
+import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   fatherName: z.string().min(1, "Father's name is required"),
   designation: z.string().min(1, "Designation is required"),
-  employeeId: z.string().min(1, "Employee ID is required"),
   department: z.string().min(1, "Department is required"),
-  basicSalary: z.string().min(1, "Basic salary is required"),
-  allowances: z.string().min(1, "Allowances are required"),
-  totalIncome: z.string().min(1, "Total income is required"),
-  incomeFrequency: z.enum(["monthly", "yearly"]),
+  employeeId: z.string().min(1, "Employee ID is required"),
+  joiningDate: z.string().min(1, "Joining date is required"),
+  currentSalary: z.string().min(1, "Current salary is required"),
+  annualIncome: z.string().min(1, "Annual income is required"),
   purpose: z.string().min(1, "Purpose is required"),
   institutionName: z.string().min(1, "Institution name is required"),
   date: z.string().min(1, "Date is required"),
@@ -51,14 +43,23 @@ export const IncomeCertificateForm: React.FC<IncomeCertificateFormProps> = ({
   onSubmit,
   initialData,
 }) => {
+  const { trackPreviewGeneration } = usePreviewTracking();
+  
   const form = useForm<IncomeCertificateData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
+  const handleSubmit = async (data: IncomeCertificateData) => {
+    // Track preview generation
+    await trackPreviewGeneration("income-certificate-1", "update");
+    // Submit the form
+    onSubmit(data);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -104,20 +105,6 @@ export const IncomeCertificateForm: React.FC<IncomeCertificateFormProps> = ({
 
           <FormField
             control={form.control}
-            name="employeeId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Employee ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter employee ID" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="department"
             render={({ field }) => (
               <FormItem>
@@ -132,97 +119,74 @@ export const IncomeCertificateForm: React.FC<IncomeCertificateFormProps> = ({
 
           <FormField
             control={form.control}
-            name="incomeFrequency"
+            name="employeeId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Income Frequency</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormLabel>Employee ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter employee ID" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Income Details</h3>
+          <FormField
+            control={form.control}
+            name="joiningDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Joining Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="basicSalary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Basic Salary (₹)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter basic salary" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="currentSalary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Current Salary</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter current salary" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="allowances"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Allowances (₹)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter allowances" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="annualIncome"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Annual Income</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter annual income" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="totalIncome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Income (₹)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter total income" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
+          <FormField
+            control={form.control}
+            name="purpose"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Purpose</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter purpose" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="purpose"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Purpose of Certificate</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter the purpose for which this income certificate is required"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="institutionName"
@@ -231,6 +195,20 @@ export const IncomeCertificateForm: React.FC<IncomeCertificateFormProps> = ({
                 <FormLabel>Institution Name</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter institution name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -251,22 +229,6 @@ export const IncomeCertificateForm: React.FC<IncomeCertificateFormProps> = ({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="signatoryName"
@@ -314,7 +276,7 @@ export const IncomeCertificateForm: React.FC<IncomeCertificateFormProps> = ({
           )}
         />
 
-        <Button type="submit" className="w-full md:w-auto">
+        <Button type="submit" className="w-full">
           Update Preview
         </Button>
       </form>
