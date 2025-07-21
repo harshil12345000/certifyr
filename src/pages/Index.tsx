@@ -15,6 +15,7 @@ import { useUserActivity } from "@/hooks/useUserActivity";
 import { useUserDocuments } from "@/hooks/useUserDocuments";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { uniqueTemplates } from "./Templates";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -155,8 +156,8 @@ const Index = () => {
                       {template.description}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-primary">
-                    Use
+                  <Button variant="ghost" size="sm" className="text-primary" asChild>
+                    <Link to={`/templates/${template.id}`}>Use</Link>
                   </Button>
                 </div>
               ))}

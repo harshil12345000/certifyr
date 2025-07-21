@@ -165,6 +165,15 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   // TODO: Replace with real admin check
   const isAdmin = true;
 
+  // Filter navItems for Pro-only features
+  const isProUser = user?.app_metadata?.plan === "pro" || false;
+  const filteredNavItems = navItems.filter(item => {
+    if ((item.name === "Request Portal" || item.name === "Admin") && !isProUser) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <>
       {/* Mobile Sidebar Toggle */}
@@ -209,7 +218,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 
         <div className="flex-1 py-6 overflow-y-auto">
           <nav className="px-2 space-y-1">
-            {navItems.map((item, idx) => (
+            {filteredNavItems.map((item, idx) => (
               <>
                 <Link
                   key={item.path}
