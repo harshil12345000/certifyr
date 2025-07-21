@@ -3,11 +3,12 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, AlertTriangle, Download } from "lucide-react";
+import { Check, XCircle, AlertTriangle, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { logQRVerification } from "@/lib/qr-utils";
 import { VerificationModal } from "@/components/templates/VerificationModal";
 import { downloadPDF } from "@/lib/document-utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VerifiedDocument {
   id: string;
@@ -27,6 +28,9 @@ const VerifyDocument = () => {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [organizationDetails, setOrganizationDetails] = useState<{ name: string } | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [brandingLoading, setBrandingLoading] = useState(true);
 
   useEffect(() => {
     const verifyDocument = async () => {
@@ -63,6 +67,31 @@ const VerifyDocument = () => {
           await logQRVerification(hash, "not_found");
         } else {
           setDocument(data);
+          if (data.organization_id) {
+            const { data: orgData } = await supabase
+              .from("organizations")
+              .select("name")
+              .eq("id", data.organization_id)
+              .single();
+
+            if (orgData) {
+              setOrganizationDetails(orgData);
+
+              const { data: fileData } = await supabase
+                .from("branding_files")
+                .select("path")
+                .eq("organization_id", data.organization_id)
+                .eq("name", "logo")
+                .single();
+
+              if (fileData?.path) {
+                const { data: urlData } = supabase.storage
+                  .from("branding-assets")
+                  .getPublicUrl(fileData.path);
+                setLogoUrl(urlData.publicUrl);
+              }
+            }
+          }
           const isExpired =
             data.expires_at && new Date(data.expires_at) < new Date();
           const isActive = data.is_active;
@@ -131,6 +160,7 @@ const VerifyDocument = () => {
         await logQRVerification(hash, "not_found");
       } finally {
         setLoading(false);
+        setBrandingLoading(false);
       }
     };
 
@@ -224,7 +254,7 @@ const VerifyDocument = () => {
               ) : isExpired || !isActive ? (
                 <AlertTriangle className="h-16 w-16 text-yellow-500" />
               ) : (
-                <CheckCircle className="h-16 w-16 text-green-500" />
+                <Check className="h-16 w-16 text-green-500" />
               )}
             </div>
             <CardTitle className="text-2xl">
@@ -249,6 +279,18 @@ const VerifyDocument = () => {
             {document && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  {!brandingLoading && organizationDetails && (
+                    <div className="col-span-2">
+                      <label className="font-semibold">Organization:</label>
+                      <div className="flex items-center gap-3 mt-1">
+                        <Avatar>
+                          {logoUrl && <AvatarImage src={logoUrl} alt="Organization Logo" />}
+                          <AvatarFallback>{organizationDetails.name?.[0] || "?"}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-base">{organizationDetails.name || "-"}</span>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label className="font-semibold">Document:</label>
                     <p>{getDocumentDisplayName()}</p>
@@ -256,7 +298,7 @@ const VerifyDocument = () => {
                   <div>
                     <label className="font-semibold">Generated:</label>
                     <p>
-                      {new Date(document.generated_at).toLocaleDateString()}
+                      {new Date(document.generated_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
                     </p>
                   </div>
                   <div>
@@ -279,7 +321,7 @@ const VerifyDocument = () => {
                     <div>
                       <label className="font-semibold">Expires:</label>
                       <p>
-                        {new Date(document.expires_at).toLocaleDateString()}
+                        {new Date(document.expires_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
                       </p>
                     </div>
                   )}

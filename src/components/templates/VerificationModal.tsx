@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,7 +6,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Check, XCircle, AlertTriangle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -27,11 +29,51 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   if (!verificationResult) return null;
 
   const { isValid, status, document, message } = verificationResult;
+  const [organizationDetails, setOrganizationDetails] = useState<{ name: string } | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [brandingLoading, setBrandingLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBranding = async () => {
+      if (document?.organization_id) {
+        setBrandingLoading(true);
+        const { data: orgData } = await supabase
+          .from("organizations")
+          .select("name")
+          .eq("id", document.organization_id)
+          .single();
+
+        if (orgData) {
+          setOrganizationDetails(orgData);
+
+          const { data: fileData } = await supabase
+            .from("branding_files")
+            .select("path")
+            .eq("organization_id", document.organization_id)
+            .eq("name", "logo")
+            .single();
+
+          if (fileData?.path) {
+            const { data: urlData } = supabase.storage
+              .from("branding-assets")
+              .getPublicUrl(fileData.path);
+            setLogoUrl(urlData.publicUrl);
+          }
+        }
+        setBrandingLoading(false);
+      } else {
+        setBrandingLoading(false);
+      }
+    };
+    if (isOpen) {
+      fetchBranding();
+    }
+  }, [document, isOpen]);
 
   const getIcon = () => {
     switch (status) {
       case "verified":
-        return <CheckCircle className="h-12 w-12 text-green-500" />;
+        return <Check className="h-12 w-12 text-green-500" />;
       case "expired":
         return <AlertTriangle className="h-12 w-12 text-yellow-500" />;
       case "not_found":
@@ -109,6 +151,18 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
           {isValid && document && (
             <div className="space-y-2 text-sm">
               <div className="bg-gray-50 p-3 rounded flex flex-col md:grid md:grid-cols-2 md:gap-4">
+                {!brandingLoading && organizationDetails && (
+                  <div className="col-span-2">
+                    <strong>Organization:</strong>
+                    <div className="flex items-center gap-3 mt-1">
+                      <Avatar>
+                        {logoUrl && <AvatarImage src={logoUrl} alt="Organization Logo" />}
+                        <AvatarFallback>{organizationDetails.name?.[0] || "?"}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-base">{organizationDetails.name || "-"}</span>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <p>
                     <strong>Document:</strong> {getDocumentDisplayName()}
@@ -117,12 +171,12 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                 <div>
                   <p>
                     <strong>Generated:</strong>{" "}
-                    {new Date(document.generated_at).toLocaleDateString()}
+                    {new Date(document.generated_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
                   </p>
                   {document.expires_at && (
                     <p>
                       <strong>Expires:</strong>{" "}
-                      {new Date(document.expires_at).toLocaleDateString()}
+                      {new Date(document.expires_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
                     </p>
                   )}
                 </div>
