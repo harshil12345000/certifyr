@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface CharacterFormProps {
   onSubmit: (data: CharacterData) => void;
@@ -46,19 +45,17 @@ const formSchema = z.object({
 });
 
 export function CharacterForm({ onSubmit, initialData }: CharacterFormProps) {
-  const { trackPreviewGeneration } = usePreviewTracking();
-  
   const form = useForm<CharacterData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
-  const handleFormSubmit = async (values: CharacterData) => {
-    // Track preview generation
-    await trackPreviewGeneration("character-1", "update");
-    
-    // Submit the form
+  const handleFormSubmit = (values: CharacterData) => {
     onSubmit(values);
+  };
+
+  const handleDigitalSignatureChange = (checked: boolean) => {
+    form.setValue("includeDigitalSignature", checked);
   };
 
   return (

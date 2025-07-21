@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
 interface BonafideFormProps {
   onSubmit: (data: BonafideData) => void;
@@ -58,22 +57,16 @@ const formSchema = z.object({
 });
 
 export function BonafideForm({ onSubmit, initialData }: BonafideFormProps) {
-  const { trackPreviewGeneration } = usePreviewTracking();
-  
   const form = useForm<BonafideData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
-  const handleFormSubmit = async (values: BonafideData) => {
-    // Track preview generation
-    await trackPreviewGeneration("bonafide-1", "update");
-    
-    // Submit the form
+  const handleFormSubmit = (values: BonafideData) => {
     onSubmit(values);
   };
 
-  const handleDigitalSignatureChange = async (checked: boolean) => {
+  const handleDigitalSignatureChange = (checked: boolean) => {
     form.setValue("includeDigitalSignature", checked);
   };
 

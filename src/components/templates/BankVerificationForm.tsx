@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BankVerificationData } from "@/types/templates";
-import { usePreviewTracking } from "@/hooks/usePreviewTracking";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -35,8 +35,10 @@ const formSchema = z.object({
   date: z.string().min(1, "Date is required"),
   place: z.string().min(1, "Place is required"),
   signatoryName: z.string().min(1, "Signatory name is required"),
-  signatoryDesignation: z.string().min(1, "Signatory designation is required"),
-  includeDigitalSignature: z.boolean(),
+  signatoryDesignation: z
+    .string()
+    .min(2, { message: "Designation is required" }),
+  includeDigitalSignature: z.boolean().default(false),
 });
 
 interface BankVerificationFormProps {
@@ -44,27 +46,26 @@ interface BankVerificationFormProps {
   initialData: BankVerificationData;
 }
 
-export const BankVerificationForm: React.FC<BankVerificationFormProps> = ({
+export function BankVerificationForm({
   onSubmit,
   initialData,
-}) => {
-  const { trackPreviewGeneration } = usePreviewTracking();
-  
+}: BankVerificationFormProps) {
   const form = useForm<BankVerificationData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
   });
 
-  const handleSubmit = async (data: BankVerificationData) => {
-    // Track preview generation
-    await trackPreviewGeneration("bank-verification-1", "update");
-    // Submit the form
-    onSubmit(data);
+  const handleFormSubmit = (values: BankVerificationData) => {
+    onSubmit(values);
+  };
+
+  const handleDigitalSignatureChange = (checked: boolean) => {
+    form.setValue("includeDigitalSignature", checked);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
