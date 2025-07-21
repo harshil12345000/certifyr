@@ -486,3 +486,144 @@ I've implemented the changes. Now, after a user fills out a form and clicks the 
 
 ---
 
+_**User**_
+
+for all templates, when clicking/opting for the "Digital Signature" it is not currectly displaying the uploaded digital signature from organization's branding. it should correctly do that for all template previews
+
+---
+
+_**Assistant**_
+
+<think><details><summary>Thought Process</summary>
+**Planning Bug Fixes**
+
+I'm starting with a plan to address the digital signature visibility issue. It's affecting all templates, and the "Include Digital Signature" option isn't working as expected in previews. This demands a systematic approach, ensuring all templates are properly updated. I'm breaking it down into manageable steps for a thorough fix.
+
+
+**Mapping Out the Solution**
+
+I'm now focusing on the specifics of the digital signature implementation. I've identified the `useBranding` hook as a key area to investigate how signature URLs are managed. My next step is to examine a preview component like `CharacterPreview.tsx`, dissecting the logic that handles the signature display, and verifying the correct data flow. I will then identify the problem and devise a fix.
+
+
+**Outlining Investigation Steps**
+
+I'm now formally sketching out the diagnostic steps. First, I'll trace the signature URL's origins via the `useBranding` hook. Following this, I will examine a representative preview component, specifically targeting the `includeDigitalSignature` conditional and associated image rendering logic. Finally, I plan to meticulously trace the data flow from the form components all the way to the preview.
+
+
+</details></think>
+
+---
+
+
+
+I understand. The digital signature is not appearing in the previews as expected. I will investigate and resolve this issue across all templates.
+
+My first step is to understand how branding, and specifically the digital signature, is managed within the application. I'll start by looking for a `useBranding` hook, which seems like the most probable place to find this logic.
+
+---
+
+<details>
+            <summary>Searched codebase "definition of useBranding hook" • **25** results</summary>
+        
+| File | Lines |
+|------|-------|
+| `src/contexts/BrandingContext.tsx` | L142-150 |
+| `src/contexts/BrandingContext.tsx` | L24-61 |
+| `src/contexts/BrandingContext.tsx` | L61-127 |
+| `src/contexts/BrandingContext.tsx` | L16-24 |
+| `src/contexts/BrandingContext.tsx` | L1-16 |
+| `src/contexts/BookmarksContext.tsx` | L58-66 |
+| `src/contexts/EmployeePortalContext.tsx` | L11-25 |
+| `src/contexts/BrandingContext.tsx` | L127-142 |
+| `src/contexts/AuthContext.tsx` | L32-42 |
+| `src/hooks/use-mobile.tsx` | L1-21 |
+| `src/hooks/use-toast.ts` | L166-186 |
+| `src/hooks/useBookmarks.ts` | L1-1 |
+| `src/hooks/useDocumentTracking.ts` | L59-62 |
+| `src/hooks/useUserStats.tsx` | L46-76 |
+| `src/hooks/use-toast.ts` | L186-188 |
+| `src/hooks/useUserStats.tsx` | L1-10 |
+| `src/hooks/useUserActivity.tsx` | L10-68 |
+| `src/contexts/BookmarksContext.tsx` | L16-58 |
+| `src/contexts/BookmarksContext.tsx` | L1-16 |
+| `src/hooks/useUserDocuments.tsx` | L1-62 |
+| `src/hooks/usePreviewTracking.ts` | L1-42 |
+| `src/hooks/useUserActivity.tsx` | L2-10 |
+| `src/hooks/useUserStats.tsx` | L127-178 |
+| `src/hooks/use-toast.ts` | L137-166 |
+| `src/hooks/useUserStats.tsx` | L76-127 |
+
+</details>
+
+---
+
+The search results confirm that `BrandingContext.tsx` contains the `useBranding` hook. This hook is responsible for fetching the `logoUrl` and `signatureUrl` from Supabase. The problem likely lies in how the template previews are consuming this context or in the data being passed to them.
+
+Now, I'll examine one of the template preview components to see how it uses the `useBranding` hook and renders the signature. `CharacterPreview.tsx` is a good candidate, as it was one of the first results in my initial search.
+
+---
+
+Read file: src/components/templates/CharacterPreview.tsx
+
+---
+
+The `CharacterPreview.tsx` component shows the correct logic for rendering the signature. It checks for both `includeDigitalSignature` (from the form data) and `signatureUrl` (from the `useBranding` hook) before attempting to display the image.
+
+This suggests the issue is not with the preview component itself, but rather with the data being provided to it. The `signatureUrl` is likely `null` or `undefined` when the preview is rendered.
+
+To confirm this, I will add a `console.log` statement to the `CharacterPreview.tsx` component to inspect the value of `signatureUrl` and `organizationDetails` when the component renders.
+
+---
+
+```diff
+  
+    useEffect(() => {
++     console.log("Branding context values:", { signatureUrl, organizationDetails });
+      if (fullName && parentName && duration) {
+        const generateQR = async () => {
+```
+
+---
+
+Now, please follow these steps to help me debug the issue:
+
+1.  Open the developer console in your browser.
+2.  Navigate to a template that uses the "Character" certificate.
+3.  Fill out the form and check the "Include Digital Signature" box.
+4.  Click "Generate Preview".
+5.  In the developer console, you should see the output from the `console.log` statement I just added. Please paste that output here.
+
+This information will be crucial in helping me understand why the signature is not being displayed.
+
+---
+
+_**User**_
+
+fix for all templates. i dont want any issue diagnose message
+
+---
+
+_**Assistant**_
+
+<think><details><summary>Thought Process</summary>
+**Investigating Digital Signatures**
+
+I've identified `BrandingContext` as a key source, providing the crucial `signatureUrl`. I'm now examining `CharacterPreview.tsx` to understand how it uses the signature URL and pinpoint the exact location where the digital signature is being implemented. The goal is to swiftly address the signature problem without involving the user in troubleshooting.
+
+
+</details></think>
+
+---
+
+**Assessing Context Providers**
+
+I'm now scrutinizing the implementation of `BrandingProvider` throughout the application. My focus is on confirming whether it correctly wraps the preview components and, consequently, if the necessary context, including the `signatureUrl`, is available. I'll check if the correct `organizationId` is being passed, as this is critical for fetching the branding data.
+
+
+
+</thought>
+
+
+
+---
+
