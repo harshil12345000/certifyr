@@ -41,7 +41,7 @@ function App() {
                   path="/"
                   element={
                     <ProtectedRoute>
-                      <Templates />
+                      <Index />
                     </ProtectedRoute>
                   }
                 />
