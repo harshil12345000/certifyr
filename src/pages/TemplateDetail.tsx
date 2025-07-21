@@ -519,6 +519,7 @@ const TemplateDetail = () => {
   const { user } = useAuth();
   const { trackDocumentCreation } = useDocumentTracking();
   const { trackPreviewGeneration } = usePreviewTracking();
+  const [activeTab, setActiveTab] = useState("form");
   const [formData, setFormData] = useState<
     | FormData
     | ArticlesOfIncorporationData
@@ -558,6 +559,7 @@ const TemplateDetail = () => {
     trackPreviewGeneration(templateId!, "generate");
     
     setFormData(data);
+    setActiveTab("preview");
   };
 
   const renderForm = () => {
@@ -962,7 +964,7 @@ const TemplateDetail = () => {
         </div>
         <Separator />
         <div>
-          <Tabs defaultValue="form" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full mb-4">
               <TabsTrigger value="form" className="w-1/2">
                 Form
