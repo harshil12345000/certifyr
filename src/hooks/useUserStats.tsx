@@ -15,6 +15,7 @@ export async function getOrganizationIdForUser(userId: string) {
     .from("organization_members")
     .select("organization_id")
     .eq("user_id", userId)
+    .eq("role", "admin")
     .single();
   if (error || !data?.organization_id) return null;
   return data.organization_id;
@@ -68,60 +69,103 @@ export function useUserStats(refreshIndex?: number) {
         
         // Get user's organization
         const orgId = await getOrganizationIdForUser(user.id);
-        
-        // Get user statistics from user_statistics table
-        let userStats = null;
-        if (orgId) {
-          // Try to get stats with organization_id first
-          const { data: orgStats, error: orgStatsError } = await supabase
-            .from("user_statistics")
-            .select("documents_created, total_verifications, requested_documents, portal_members")
-            .eq("user_id", user.id)
-            .eq("organization_id", orgId)
-            .single();
-          
-          if (!orgStatsError && orgStats) {
-            userStats = orgStats;
-          }
-        }
-        
-        // If no stats found with organization_id, try without it (backward compatibility)
-        if (!userStats) {
-          const { data: legacyStats, error: legacyStatsError } = await supabase
-            .from("user_statistics")
-            .select("documents_created, total_verifications, requested_documents, portal_members")
-            .eq("user_id", user.id)
-            .is("organization_id", null)
-            .single();
-          
-          if (!legacyStatsError && legacyStats) {
-            userStats = legacyStats;
-          }
-        }
 
-        // Get actual preview generations count (this is what "Documents Created" should show)
-        const { count: previewGenerationsCount } = await supabase
-          .from("preview_generations")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
+        // Fetch all stats in parallel for better performance
+        const [userStatsResult, previewGenerationsCount] = await Promise.all([
+          // Get user statistics from user_statistics table
+          (async () => {
+            let userStats = null;
+            
+            // Try to get stats with organization_id first
+            if (orgId) {
+              const { data: orgStats, error: orgStatsError } = await supabase
+                .from("user_statistics")
+                .select("total_verifications, requested_documents, portal_members")
+                .eq("user_id", user.id)
+                .eq("organization_id", orgId)
+                .single();
+              
+              if (!orgStatsError && orgStats) {
+                userStats = orgStats;
+              }
+            }
+            
+            // If no stats found with organization_id, try without it (backward compatibility)
+            if (!userStats) {
+              const { data: legacyStats, error: legacyStatsError } = await supabase
+                .from("user_statistics")
+                .select("total_verifications, requested_documents, portal_members")
+                .eq("user_id", user.id)
+                .is("organization_id", null)
+                .single();
+              
+              if (!legacyStatsError && legacyStats) {
+                userStats = legacyStats;
+              }
+            }
 
-        // Use the preview generations count for documents created
-        const documentsCreated = previewGenerationsCount || 0;
+            // If still no stats, create a new entry
+            if (!userStats) {
+              const { data: newStats, error: createError } = await supabase
+                .from("user_statistics")
+                .insert({
+                  user_id: user.id,
+                  organization_id: orgId,
+                  total_verifications: 0,
+                  requested_documents: 0,
+                  portal_members: 0,
+                })
+                .select()
+                .single();
 
-        // Get other stats from user_statistics table
-        const totalVerifications = userStats?.total_verifications || 0;
-        const requestedDocuments = userStats?.requested_documents || 0;
-        const portalMembers = userStats?.portal_members || 0;
+              if (!createError && newStats) {
+                userStats = newStats;
+              }
+            }
 
+            return userStats;
+          })(),
+
+          // Get preview generations count
+          (async () => {
+            const query = supabase
+              .from("preview_generations")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", user.id);
+
+            // Add organization filter if available
+            if (orgId) {
+              query.eq("organization_id", orgId);
+            } else {
+              query.is("organization_id", null);
+            }
+
+            const { count, error } = await query;
+            
+            if (error) {
+              console.error("Error fetching preview generations count:", error);
+              return 0;
+            }
+
+            return count || 0;
+          })()
+        ]);
+
+        // Set the stats with proper fallbacks
         setStats({
-          documentsCreated,
-          portalMembers,
-          requestedDocuments,
-          totalVerifications,
+          documentsCreated: previewGenerationsCount,
+          portalMembers: userStatsResult?.portal_members || 0,
+          requestedDocuments: userStatsResult?.requested_documents || 0,
+          totalVerifications: userStatsResult?.total_verifications || 0,
         });
       } catch (err) {
         console.error("Error fetching user stats:", err);
         setError("Failed to fetch user statistics");
+        // Keep the last known good stats instead of resetting to 0
+        setStats((prevStats) => ({
+          ...prevStats,
+          error: "Failed to update statistics",
+        }));
       } finally {
         setLoading(false);
       }

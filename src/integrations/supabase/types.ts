@@ -710,6 +710,48 @@ export type Database = {
           },
         ]
       }
+      preview_generations: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string | null
+          template_id: string
+          action_type: "generate" | "update"
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          organization_id?: string | null
+          template_id: string
+          action_type: "generate" | "update"
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          organization_id?: string | null
+          template_id?: string
+          action_type?: "generate" | "update"
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preview_generations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preview_generations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
