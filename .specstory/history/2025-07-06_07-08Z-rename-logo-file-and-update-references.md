@@ -75,3 +75,35 @@ If you use the logo elsewhere or need the filename updated in other locations, l
 
 ---
 
+_**User**_
+
+Is the number of documents automatically set to 0? Is it just static?
+
+---
+
+_**Assistant**_
+
+The number of documents is not just statically set to 0; it is dynamically calculated based on the user's document creation activity for the last 7 months.
+
+Here's how it works in the `useUserActivity` hook:
+
+- **Initialization:**  
+  The code initializes the last 7 months with 0 documents for each month (so the chart always shows 7 months, even if there is no data).
+
+- **Fetching Data:**  
+  It fetches all documents created by the user in the last 7 months from the Supabase `documents` table.
+
+- **Counting:**  
+  For each document found, it increments the count for the corresponding month.
+
+- **Fallback:**  
+  If there is an error or the user has no organization, it falls back to a static array of months with 0 documents.
+
+**Summary:**  
+- If there is real data, the numbers reflect actual document creation counts per month.
+- If there is no data (e.g., error, no organization, or no documents), it shows 0 for each month as a fallback.
+
+So, the 0s are not static—they are a default, but real data will overwrite them if available.
+
+---
+

@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/use-toast";
+import React from "react";
 
 type NavItem = {
   name: string;
@@ -44,6 +45,85 @@ const navItems: NavItem[] = [
     icon: <Settings className="h-5 w-5" />,
   },
 ];
+
+// Memoized SidebarProfile component
+const SidebarProfile = React.memo(function SidebarProfile({
+  logoUrl,
+  userAvatarUrl,
+  displayName,
+  email,
+  initials,
+  isCollapsed,
+  toast,
+}: {
+  logoUrl: string | null;
+  userAvatarUrl: string | null;
+  displayName: string;
+  email: string;
+  initials: string;
+  isCollapsed: boolean;
+  toast: any;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center p-4 border-t border-border/30",
+        isCollapsed ? "justify-center" : "justify-start",
+      )}
+    >
+      <Avatar className="h-8 w-8">
+        {logoUrl ? (
+          <AvatarImage
+            src={logoUrl}
+            alt={displayName}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              console.error(
+                "[Sidebar] Logo image failed to load:",
+                logoUrl,
+              );
+              toast({
+                title: "Logo failed to load",
+                description:
+                  "Your organization logo could not be loaded. Please check your network or storage settings.",
+                variant: "destructive",
+              });
+              if (userAvatarUrl && !target.src.endsWith(userAvatarUrl)) {
+                target.src = userAvatarUrl;
+              } else {
+                target.style.display = "none";
+              }
+            }}
+          />
+        ) : userAvatarUrl ? (
+          <AvatarImage
+            src={userAvatarUrl}
+            alt={displayName}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+              console.error(
+                "[Sidebar] User avatar image failed to load:",
+                userAvatarUrl,
+              );
+              toast({
+                title: "Avatar failed to load",
+                description: "Your user avatar could not be loaded.",
+                variant: "destructive",
+              });
+            }}
+          />
+        ) : null}
+        <AvatarFallback>{initials}</AvatarFallback>
+      </Avatar>
+      {!isCollapsed && (
+        <div className="ml-3">
+          <p className="text-sm font-medium">{displayName}</p>
+          <p className="text-xs text-muted-foreground">{email}</p>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -169,63 +249,16 @@ export function Sidebar() {
           </nav>
         </div>
 
-        <div
-          className={cn(
-            "flex items-center p-4 border-t border-border/30",
-            isCollapsed ? "justify-center" : "justify-start",
-          )}
-        >
-          <Avatar className="h-8 w-8">
-            {logoUrl ? (
-              <AvatarImage
-                src={logoUrl}
-                alt={displayName}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  console.error(
-                    "[Sidebar] Logo image failed to load:",
-                    logoUrl,
-                  );
-                  toast({
-                    title: "Logo failed to load",
-                    description:
-                      "Your organization logo could not be loaded. Please check your network or storage settings.",
-                    variant: "destructive",
-                  });
-                  if (userAvatarUrl && !target.src.endsWith(userAvatarUrl)) {
-                    target.src = userAvatarUrl;
-                  } else {
-                    target.style.display = "none";
-                  }
-                }}
-              />
-            ) : userAvatarUrl ? (
-              <AvatarImage
-                src={userAvatarUrl}
-                alt={displayName}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                  console.error(
-                    "[Sidebar] User avatar image failed to load:",
-                    userAvatarUrl,
-                  );
-                  toast({
-                    title: "Avatar failed to load",
-                    description: "Your user avatar could not be loaded.",
-                    variant: "destructive",
-                  });
-                }}
-              />
-            ) : null}
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-          {!isCollapsed && (
-            <div className="ml-3">
-              <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-xs text-muted-foreground">{email}</p>
-            </div>
-          )}
-        </div>
+        {/* Bottom Profile Section */}
+        <SidebarProfile
+          logoUrl={logoUrl}
+          userAvatarUrl={userAvatarUrl}
+          displayName={displayName}
+          email={email}
+          initials={initials}
+          isCollapsed={isCollapsed}
+          toast={toast}
+        />
       </aside>
 
       {/* Overlay for mobile */}

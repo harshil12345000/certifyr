@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
+import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 
 interface UserProfileFormState {
   organizationName: string;
@@ -615,7 +616,7 @@ const AdminPage = () => {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="p-6 text-center">Loading admin settings...</div>
+        <AdminPageSkeleton />
       </DashboardLayout>
     );
   }

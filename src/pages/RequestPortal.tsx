@@ -12,10 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { RequestPortalSettings } from "@/components/request-portal/RequestPortalSettings";
 import { RequestPortalRequests } from "@/components/request-portal/RequestPortalRequests";
 import { RequestPortalMembers } from "@/components/request-portal/RequestPortalMembers";
+import { RequestPortalSkeleton } from "@/components/request-portal/RequestPortalSkeleton";
 
 export default function RequestPortal() {
   const [activeTab, setActiveTab] = useState("settings");
   const [requestsCount, setRequestsCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // Fetch requests count from Supabase
   useEffect(() => {
@@ -44,6 +46,21 @@ export default function RequestPortal() {
     };
     fetchRequestsCount();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500); // Simulate loading for 500ms
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <RequestPortalSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Search, Settings, User, LogOut, CircleHelp } from "lucide-react";
+import { Bell, Search, Settings, User, LogOut, CircleHelp, CircleX, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
 import { cn } from "@/lib/utils";
+import { NotificationSkeleton } from "@/components/ui/notification-skeleton";
 
 interface Notification {
   id: string;
@@ -172,6 +173,32 @@ export function Header() {
     return email.substring(0, 2).toUpperCase();
   };
 
+  // Helper: get/set read notifications from localStorage
+  const READ_KEY = 'certifyr_read_notifications';
+  function getReadNotifications() {
+    try {
+      return JSON.parse(localStorage.getItem(READ_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  }
+  function setReadNotifications(ids) {
+    localStorage.setItem(READ_KEY, JSON.stringify(ids));
+  }
+
+  // Helper: get/set cleared notifications from localStorage
+  const CLEARED_KEY = 'certifyr_cleared_notifications';
+  function getClearedNotifications() {
+    try {
+      return JSON.parse(localStorage.getItem(CLEARED_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  }
+  function setClearedNotifications(ids) {
+    localStorage.setItem(CLEARED_KEY, JSON.stringify(ids));
+  }
+
   // Handle keyboard shortcut for opening search
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -215,18 +242,51 @@ export function Header() {
         setLoadingNotifications(false);
         return;
       }
-      setNotifications(data ?? []);
-      // Optionally, implement unread logic if you have a read-tracking table
-      setUnread((data ?? []).map((n) => n.id)); // Mark all as unread for now
+      // Filter out cleared notifications
+      const clearedIds = getClearedNotifications();
+      const filtered = (data ?? []).filter((n) => !clearedIds.includes(n.id));
+      setNotifications(filtered);
+      // Only mark as unread if not in localStorage
+      const readIds = getReadNotifications();
+      setUnread(filtered.filter((n) => !readIds.includes(n.id)).map((n) => n.id));
       setLoadingNotifications(false);
     };
     fetchNotifications();
   }, [user]);
 
+  // Recalculate unread whenever notifications change
+  useEffect(() => {
+    const readIds = getReadNotifications();
+    setUnread(notifications.filter((n) => !readIds.includes(n.id)).map((n) => n.id));
+  }, [notifications]);
+
   // Mark as read (optional, if you have a read-tracking table)
   const markAsRead = async (notificationId: string) => {
     setUnread((prev) => prev.filter((id) => id !== notificationId));
+    // Add to localStorage
+    const readIds = getReadNotifications();
+    if (!readIds.includes(notificationId)) {
+      setReadNotifications([...readIds, notificationId]);
+    }
     // Optionally, update a read-tracking table here
+  };
+
+  // Mark all notifications as read when the bell is clicked
+  const markAllAsRead = () => {
+    // Mark all current notification IDs as read in localStorage
+    const allIds = notifications.map((n) => n.id);
+    setReadNotifications(allIds);
+    setUnread([]);
+    // Optionally, update a read-tracking table here
+    console.log('All notifications marked as read');
+  };
+
+  // Clear notifications handler
+  const handleClearNotifications = () => {
+    const allIds = notifications.map((n) => n.id);
+    setClearedNotifications([...getClearedNotifications(), ...allIds]);
+    setNotifications([]);
+    setUnread([]);
   };
 
   const handleSignOut = async () => {
@@ -257,24 +317,44 @@ export function Header() {
         <div className="flex items-center gap-2 ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={markAllAsRead} // Mark all as read when bell or badge is clicked
+                style={{ position: 'relative' }}
+              >
                 <Bell className="h-5 w-5" />
                 {unread.length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary-600" />
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-primary-600 text-white text-[0.65rem] font-bold shadow"
+                    style={{ minWidth: '1rem', height: '1rem', fontSize: '0.65rem', lineHeight: '1rem' }}
+                  >
+                    {unread.length}
+                  </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-[23rem]" style={{ maxHeight: '402px', overflowY: 'auto' }}>
+              <div className="flex items-center justify-between">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <span
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600 cursor-pointer px-2 py-1 rounded-full border border-border transition-colors hover:bg-accent"
+                  title="Clear Notifications"
+                  onClick={handleClearNotifications}
+                  style={{ userSelect: 'none' }}
+                >
+                  <CircleX className="w-4 h-4" />
+                  Clear Notifications
+                </span>
+              </div>
               <DropdownMenuSeparator />
               {loadingNotifications ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  Loading...
-                </div>
+                <NotificationSkeleton />
               ) : notifications.length === 0 ? (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">
-                    No notifications yet
+                    No notifications yet.
                   </p>
                 </div>
               ) : (
@@ -282,10 +362,10 @@ export function Header() {
                   <>
                     <DropdownMenuItem
                       key={n.id}
-                      className="cursor-pointer p-3 relative"
+                      className="cursor-pointer p-3 relative flex items-start"
                       onClick={() => markAsRead(n.id)}
                     >
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium flex items-center">
                           {n.subject}
                           {unread.includes(n.id) && (
@@ -298,6 +378,29 @@ export function Header() {
                         <p className="text-xs text-muted-foreground mt-1">
                           {dayjs(n.created_at).format("MMM D, YYYY HH:mm")}
                         </p>
+                      </div>
+                      <div className="relative ml-3 flex-shrink-0">
+                        <button
+                          className="w-6 h-6 flex items-center justify-center rounded-full border border-border bg-background hover:bg-green-50 hover:text-green-600 transition-colors"
+                          title="Completed"
+                          onClick={e => {
+                            e.stopPropagation();
+                            // Remove this notification from panel and persist in cleared list
+                            setClearedNotifications([...getClearedNotifications(), n.id]);
+                            setNotifications(notifications.filter(notif => notif.id !== n.id));
+                            setUnread(unread.filter(id => id !== n.id));
+                          }}
+                          type="button"
+                          tabIndex={0}
+                        >
+                          <Check className="w-[14px] h-[14px]" />
+                        </button>
+                        <span
+                          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-7 px-2 py-1 rounded bg-black text-white text-xs opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-lg"
+                          style={{ minWidth: '70px' }}
+                        >
+                          Completed
+                        </span>
                       </div>
                     </DropdownMenuItem>
                     {i < notifications.length - 1 && (

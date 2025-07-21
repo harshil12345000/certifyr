@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { TemplateCard } from "@/components/dashboard/TemplateCard";
@@ -19,6 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { popularTemplates } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
+import { TemplatesSkeleton } from "@/components/dashboard/TemplatesSkeleton";
 
 // Define a minimal Template type to maintain correct typings
 type Template = {
@@ -161,8 +162,16 @@ const Templates = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
   // TODO: Replace with real admin check
   const isAdmin = true;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500); // Simulate loading for 500ms
+    return () => clearTimeout(timer);
+  }, []);
 
   // Filter templates based on search and category filters
   const filteredTemplates = uniqueTemplates.filter((template) => {
@@ -231,6 +240,15 @@ const Templates = () => {
       (template) => template.category === actualCategory,
     ).length;
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <TemplatesSkeleton />
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">

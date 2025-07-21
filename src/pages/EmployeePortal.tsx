@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EmployeePortalAuth } from "@/components/employee-portal/EmployeePortalAuth";
 import { EmployeePortalDashboard } from "@/components/employee-portal/EmployeePortalDashboard";
 import { EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
+import { EmployeePortalSkeleton } from "@/components/employee-portal/EmployeePortalSkeleton";
 
 export default function EmployeePortal() {
   const { organizationId } = useParams<{ organizationId: string }>();
@@ -71,11 +72,7 @@ export default function EmployeePortal() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <EmployeePortalSkeleton />;
   }
 
   if (!portalSettings) {

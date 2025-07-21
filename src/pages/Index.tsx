@@ -27,10 +27,16 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { BookmarkCheck } from "lucide-react";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 const Index = () => {
   const { user } = useAuth();
   const [refreshIndex, setRefreshIndex] = useState(0);
+
+  // Persist last loaded values to avoid flicker
+  const [lastStats, setLastStats] = useState<any>(null);
+  const [lastActivityData, setLastActivityData] = useState<any>(null);
+  const [lastDocuments, setLastDocuments] = useState<any>(null);
 
   // Periodically refresh data every 30 seconds
   useEffect(() => {
@@ -48,32 +54,50 @@ const Index = () => {
     refreshIndex,
   );
 
+  const isLoading = statsLoading || activityLoading || documentsLoading;
+
+  // Update last loaded values when not loading
+  useEffect(() => {
+    if (!statsLoading) setLastStats(stats);
+  }, [stats, statsLoading]);
+  useEffect(() => {
+    if (!activityLoading) setLastActivityData(activityData);
+  }, [activityData, activityLoading]);
+  useEffect(() => {
+    if (!documentsLoading) setLastDocuments(documents);
+  }, [documents, documentsLoading]);
+
+  // Always show last loaded value, or fallback to default (0/[])
   const statsCards = [
     {
       label: "Documents Created",
-      value: stats.documentsCreated,
+      value: lastStats ? lastStats.documentsCreated : 0,
       icon: FileText,
-      loading: statsLoading,
     },
     {
       label: "Portal Members",
-      value: stats.portalMembers,
+      value: lastStats ? lastStats.portalMembers : 0,
       icon: Users,
-      loading: statsLoading,
     },
     {
       label: "Requested Documents",
-      value: stats.requestedDocuments,
+      value: lastStats ? lastStats.requestedDocuments : 0,
       icon: FolderOpen,
-      loading: statsLoading,
     },
     {
       label: "Total Verifications",
-      value: stats.totalVerifications,
+      value: lastStats ? lastStats.totalVerifications : 0,
       icon: BarChart,
-      loading: statsLoading,
     },
   ];
+
+  if (isLoading && !lastStats) {
+    return (
+      <DashboardLayout>
+        <DashboardSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -94,7 +118,7 @@ const Index = () => {
             <StatsCard
               key={index}
               title={stat.label}
-              value={stat.loading ? "Loading..." : stat.value.toString()}
+              value={stat.value.toString()}
               icon={stat.icon}
             />
           ))}
@@ -105,15 +129,7 @@ const Index = () => {
           {/* Activity Chart - 4/7 width */}
           <div className="glass-card p-6 lg:col-span-4">
             <h2 className="text-lg font-medium mb-4">Activity Overview</h2>
-            {activityLoading ? (
-              <div className="h-64 flex items-center justify-center">
-                <p className="text-muted-foreground">
-                  Loading activity data...
-                </p>
-              </div>
-            ) : (
-              <ActivityChart data={activityData} />
-            )}
+            <ActivityChart data={lastActivityData || []} />
           </div>
 
           {/* Popular Templates - 3/7 width */}
@@ -149,7 +165,7 @@ const Index = () => {
         </div>
 
         {/* Recent Documents */}
-        <RecentDocuments documents={documents} loading={documentsLoading} />
+        <RecentDocuments documents={lastDocuments || []} loading={false} />
 
         {/* Recent Templates */}
       </div>
