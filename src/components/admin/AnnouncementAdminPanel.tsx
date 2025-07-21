@@ -61,6 +61,9 @@ export function AnnouncementAdminPanel({
           .order("created_at", { ascending: false });
         if (!error && data) {
           setAnnouncements(data);
+          
+          // Handle expired announcements
+          await handleExpiredAnnouncements(data);
         }
       } finally {
         setLoading(false);
@@ -68,6 +71,41 @@ export function AnnouncementAdminPanel({
     };
     fetchData();
   }, [user, organizationId]);
+
+  const handleExpiredAnnouncements = async (announcements: Announcement[]) => {
+    const now = new Date();
+    const expiredAnnouncements = announcements.filter(
+      (a) => a.expires_at && a.is_active && new Date(a.expires_at) < now
+    );
+
+    for (const announcement of expiredAnnouncements) {
+      try {
+        // Update announcement status
+        await supabase
+          .from("announcements")
+          .update({ is_active: false })
+          .eq("id", announcement.id);
+
+        // Update notification data
+        await supabase
+          .from("notifications")
+          .update({
+            data: supabase.sql`jsonb_set(data, '{is_active}', 'false')`
+          })
+          .eq("data->announcement_id", announcement.id)
+          .eq("type", "announcement");
+
+        // Update local state
+        setAnnouncements((prev) =>
+          prev.map((a) =>
+            a.id === announcement.id ? { ...a, is_active: false } : a
+          )
+        );
+      } catch (error) {
+        console.error(`Failed to handle expired announcement ${announcement.id}:`, error);
+      }
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -82,6 +120,57 @@ export function AnnouncementAdminPanel({
       ...f,
       [name]: value,
     }));
+  };
+
+  const handleToggleAnnouncementStatus = async (announcementId: string, currentStatus: boolean) => {
+    try {
+      // Update announcement status
+      const { error: announcementError } = await supabase
+        .from("announcements")
+        .update({ is_active: !currentStatus })
+        .eq("id", announcementId);
+
+      if (announcementError) {
+        toast({
+          title: "Error",
+          description: "Failed to update announcement status",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update notification data
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .update({
+          data: supabase.sql`jsonb_set(data, '{is_active}', ${JSON.stringify(!currentStatus)})`
+        })
+        .eq("data->announcement_id", announcementId)
+        .eq("type", "announcement");
+
+      if (notificationError) {
+        console.error("Failed to update notification:", notificationError);
+      }
+
+      // Update local state
+      setAnnouncements((prev) =>
+        prev.map((a) =>
+          a.id === announcementId ? { ...a, is_active: !currentStatus } : a
+        )
+      );
+
+      toast({
+        title: "Status updated",
+        description: `Announcement ${!currentStatus ? "activated" : "deactivated"}`,
+      });
+    } catch (error) {
+      console.error("Failed to toggle announcement status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update announcement status",
+        variant: "destructive",
+      });
+    }
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,30 +191,58 @@ export function AnnouncementAdminPanel({
       return;
     }
     setIsCreating(true);
-    const { error, data } = await supabase
-      .from("announcements")
-      .insert([
-        {
-          title: form.title,
-          content: form.content,
-          is_global: false,
-          is_active: form.is_active,
-          expires_at: form.expires_at ? form.expires_at : null,
-          created_by: user?.id,
-          organization_id: organizationId,
-        },
-      ])
-      .select();
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
+    
+    try {
+      // Create the announcement
+      const { error: announcementError, data: announcementData } = await supabase
+        .from("announcements")
+        .insert([
+          {
+            title: form.title,
+            content: form.content,
+            is_global: false,
+            is_active: form.is_active,
+            expires_at: form.expires_at ? form.expires_at : null,
+            created_by: user?.id,
+            organization_id: organizationId,
+          },
+        ])
+        .select();
+
+      if (announcementError) {
+        toast({
+          title: "Error",
+          description: announcementError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a notification for the announcement
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            org_id: organizationId,
+            subject: form.title,
+            body: form.content,
+            type: "announcement",
+            data: {
+              announcement_id: announcementData?.[0]?.id,
+              is_active: form.is_active,
+              expires_at: form.expires_at,
+            },
+          },
+        ]);
+
+      if (notificationError) {
+        console.error("Failed to create notification:", notificationError);
+        // Don't fail the whole operation if notification creation fails
+      }
+
       toast({ title: "Announcement created!" });
-      if (data && data[0]) {
-        setAnnouncements((a) => [data[0], ...a]);
+      if (announcementData && announcementData[0]) {
+        setAnnouncements((a) => [announcementData[0], ...a]);
       }
       setForm({
         title: "",
@@ -133,8 +250,16 @@ export function AnnouncementAdminPanel({
         is_active: true,
         expires_at: "",
       });
+    } catch (error) {
+      console.error("Failed to create announcement:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create announcement",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
     }
-    setIsCreating(false);
   };
 
   if (!organizationId) {
@@ -245,27 +370,38 @@ export function AnnouncementAdminPanel({
           ) : (
             announcements.map((a) => (
               <li key={a.id} className="border bg-muted rounded-lg px-3 py-2">
-                <div className="flex justify-between">
-                  <p className="font-semibold">{a.title}</p>
-                  <span className="text-xs">
-                    {dayjs(a.created_at).format("MMM D, YYYY HH:mm")}
-                  </span>
-                </div>
-                <div className="text-sm mt-1">{a.content}</div>
-                <div className="flex gap-3 mt-2 text-xs">
-                  <span
-                    className={
-                      a.is_active ? "text-green-700" : "text-muted-foreground"
-                    }
-                  >
-                    {a.is_active ? "Active" : "Inactive"}
-                  </span>
-                  <span className="text-blue-700">Organization</span>
-                  {a.expires_at && (
-                    <span className="text-muted-foreground">
-                      Expires: {dayjs(a.expires_at).format("MMM D, YYYY HH:mm")}
-                    </span>
-                  )}
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="font-semibold">{a.title}</p>
+                      <span className="text-xs">
+                        {dayjs(a.created_at).format("MMM D, YYYY HH:mm")}
+                      </span>
+                    </div>
+                    <div className="text-sm mb-2">{a.content}</div>
+                    <div className="flex gap-3 text-xs">
+                      <span
+                        className={
+                          a.is_active ? "text-green-700" : "text-muted-foreground"
+                        }
+                      >
+                        {a.is_active ? "Active" : "Inactive"}
+                      </span>
+                      <span className="text-blue-700">Organization</span>
+                      {a.expires_at && (
+                        <span className="text-muted-foreground">
+                          Expires: {dayjs(a.expires_at).format("MMM D, YYYY HH:mm")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-4 flex items-center">
+                    <Switch
+                      checked={a.is_active}
+                      onCheckedChange={() => handleToggleAnnouncementStatus(a.id, a.is_active)}
+                      className="ml-2"
+                    />
+                  </div>
                 </div>
               </li>
             ))

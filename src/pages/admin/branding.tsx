@@ -368,12 +368,6 @@ export default function Branding() {
               icon={Image}
             />
             <FileUploadCard
-              type="seal"
-              title="Official Seal"
-              description="Official organizational seal or stamp"
-              icon={FileText}
-            />
-            <FileUploadCard
               type="signature"
               title="Digital Signature"
               description="Authorized signatory's digital signature"

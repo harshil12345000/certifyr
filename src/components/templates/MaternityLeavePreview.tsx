@@ -37,7 +37,7 @@ export const MaternityLeavePreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, sealUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -251,18 +251,6 @@ export const MaternityLeavePreview: React.FC<
           )}
         </div>
       </div>
-
-      {/* Seal */}
-      {sealUrl && (
-        <div className="absolute bottom-8 left-8">
-          <img
-            src={sealUrl}
-            alt="Organization Seal"
-            className="h-20 w-20 object-contain opacity-75"
-            onError={(e) => handleImageError(e, "seal")}
-          />
-        </div>
-      )}
     </div>
   );
 };

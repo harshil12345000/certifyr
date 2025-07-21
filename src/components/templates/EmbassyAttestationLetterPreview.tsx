@@ -7,7 +7,6 @@ import { Letterhead } from "./Letterhead";
 
 interface BrandingAssets {
   logoUrl: string | null;
-  sealUrl: string | null;
   signatureUrl: string | null;
   organizationAddress: string | null;
   organizationPhone: string | null;
@@ -55,14 +54,13 @@ export const EmbassyAttestationLetterPreview: React.FC<
 
   const [branding, setBranding] = useState<BrandingAssets>({
     logoUrl: null,
-    sealUrl: null,
     signatureUrl: null,
     organizationAddress: null,
     organizationPhone: null,
     organizationEmail: null,
   });
   const { user } = useAuth();
-  const { signatureUrl: brandingSignatureUrl, sealUrl: brandingSealUrl } =
+  const { signatureUrl: brandingSignatureUrl } =
     useBranding();
 
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
@@ -115,7 +113,6 @@ export const EmbassyAttestationLetterPreview: React.FC<
             console.error("Error fetching branding files:", filesError);
           } else if (filesData) {
             let newLogoUrl: string | null = null;
-            let newSealUrl: string | null = null;
             let newSignatureUrl: string | null = null;
 
             filesData.forEach((file) => {
@@ -125,7 +122,6 @@ export const EmbassyAttestationLetterPreview: React.FC<
               const publicUrl = publicUrlRes.data?.publicUrl;
               if (publicUrl) {
                 if (file.name === "logo") newLogoUrl = publicUrl;
-                if (file.name === "seal") newSealUrl = publicUrl;
                 if (file.name === "signature") newSignatureUrl = publicUrl;
               }
             });
@@ -133,7 +129,6 @@ export const EmbassyAttestationLetterPreview: React.FC<
             setBranding((prev) => ({
               ...prev,
               logoUrl: newLogoUrl,
-              sealUrl: newSealUrl,
               signatureUrl: newSignatureUrl,
             }));
           }
@@ -343,17 +338,6 @@ export const EmbassyAttestationLetterPreview: React.FC<
           <p>{institutionName || "[Institution Name]"}</p>
         </div>
       </div>
-
-      {/* Seal */}
-      {brandingSealUrl && (
-        <div className="absolute bottom-32 left-16">
-          <img
-            src={brandingSealUrl}
-            alt="Institution Seal"
-            className="h-24 w-24 object-contain opacity-50"
-          />
-        </div>
-      )}
     </div>
   );
 };

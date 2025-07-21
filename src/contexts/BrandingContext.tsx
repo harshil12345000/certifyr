@@ -17,7 +17,6 @@ interface OrganizationDetails {
 
 interface BrandingContextType {
   logoUrl: string | null;
-  sealUrl: string | null;
   signatureUrl: string | null;
   organizationDetails: OrganizationDetails | null;
   isLoading: boolean;
@@ -26,7 +25,6 @@ interface BrandingContextType {
 
 const BrandingContext = createContext<BrandingContextType>({
   logoUrl: null,
-  sealUrl: null,
   signatureUrl: null,
   organizationDetails: null,
   isLoading: false,
@@ -35,7 +33,6 @@ const BrandingContext = createContext<BrandingContextType>({
 
 export function BrandingProvider({ children, organizationId }: { children: ReactNode; organizationId?: string }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [sealUrl, setSealUrl] = useState<string | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] =
     useState<OrganizationDetails | null>(null);
@@ -55,7 +52,6 @@ export function BrandingProvider({ children, organizationId }: { children: React
 
     if (!orgIdToUse) {
       setLogoUrl(null);
-      setSealUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
       setIsLoading(false);
@@ -92,7 +88,6 @@ export function BrandingProvider({ children, organizationId }: { children: React
 
       if (!filesError && filesData) {
         let newLogoUrl: string | null = null;
-        let newSealUrl: string | null = null;
         let newSignatureUrl: string | null = null;
 
         filesData.forEach((file) => {
@@ -103,22 +98,18 @@ export function BrandingProvider({ children, organizationId }: { children: React
             const publicUrl = urlData.publicUrl;
 
             if (file.name === "logo") newLogoUrl = publicUrl;
-            if (file.name === "seal") newSealUrl = publicUrl;
             if (file.name === "signature") newSignatureUrl = publicUrl;
           }
         });
 
         setLogoUrl(newLogoUrl);
-        setSealUrl(newSealUrl);
         setSignatureUrl(newSignatureUrl);
       } else {
         setLogoUrl(null);
-        setSealUrl(null);
         setSignatureUrl(null);
       }
     } catch (error) {
       setLogoUrl(null);
-      setSealUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
     } finally {
@@ -139,7 +130,6 @@ export function BrandingProvider({ children, organizationId }: { children: React
     <BrandingContext.Provider
       value={{
         logoUrl,
-        sealUrl,
         signatureUrl,
         organizationDetails,
         isLoading,

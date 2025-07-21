@@ -27,7 +27,6 @@ import {
   ImagePlus,
   Cloud,
   Image as ImageIcon,
-  Shield,
   Pen,
 } from "lucide-react";
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
@@ -50,13 +49,11 @@ interface UserProfileFormState {
 
 interface BrandingFileState {
   logo: File | null;
-  seal: File | null;
   signature: File | null;
 }
 
 interface BrandingFilePreview {
   logoUrl: string | null;
-  sealUrl: string | null;
   signatureUrl: string | null;
 }
 
@@ -81,7 +78,7 @@ const FileDropzone = ({
   icon?: React.ElementType;
   value?: File | null;
   previewSrc?: string;
-  type: "logo" | "seal" | "signature";
+  type: "logo" | "signature";
   boxClassName?: string;
 }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -132,7 +129,6 @@ const FileDropzone = ({
   let AssetIcon = Icon;
   if (!Icon) {
     if (type === "logo") AssetIcon = ImageIcon;
-    else if (type === "seal") AssetIcon = Shield;
     else if (type === "signature") AssetIcon = Pen;
     else AssetIcon = Cloud;
   }
@@ -253,13 +249,11 @@ const AdminPage = () => {
   });
   const [brandingFiles, setBrandingFiles] = useState<BrandingFileState>({
     logo: null,
-    seal: null,
     signature: null,
   });
   const [brandingPreviews, setBrandingPreviews] = useState<BrandingFilePreview>(
     {
       logoUrl: null,
-      sealUrl: null,
       signatureUrl: null,
     },
   );
@@ -269,7 +263,6 @@ const AdminPage = () => {
     [key in keyof BrandingFileState]: File | null;
   }>({
     logo: null,
-    seal: null,
     signature: null,
   });
 
@@ -358,7 +351,6 @@ const AdminPage = () => {
       if (filesData) {
         const previews: BrandingFilePreview = {
           logoUrl: null,
-          sealUrl: null,
           signatureUrl: null,
         };
 
@@ -373,8 +365,6 @@ const AdminPage = () => {
             if (!signedUrlError && signedUrlData?.signedUrl) {
               if (file.name === "logo")
                 previews.logoUrl = signedUrlData.signedUrl;
-              if (file.name === "seal")
-                previews.sealUrl = signedUrlData.signedUrl;
               if (file.name === "signature")
                 previews.signatureUrl = signedUrlData.signedUrl;
             }
@@ -513,7 +503,7 @@ const AdminPage = () => {
         >) {
           const file = brandingFiles[key];
           if (file) {
-            // Check if a file with the same name (logo, seal, signature) already exists for this org
+            // Check if a file with the same name (logo, signature) already exists for this org
             const { data: existingFiles, error: fetchExistingError } =
               await supabase
                 .from("branding_files")
@@ -597,7 +587,7 @@ const AdminPage = () => {
       if (currentOrgId) {
         await fetchBrandingFiles(currentOrgId);
         await refreshBranding();
-        setBrandingFiles({ logo: null, seal: null, signature: null });
+        setBrandingFiles({ logo: null, signature: null });
       }
     } catch (error) {
       console.error("Failed to save organization data:", error);
@@ -803,13 +793,13 @@ const AdminPage = () => {
                   <CardTitle>Branding Assets</CardTitle>
                   <CardDescription>
                     {organizationId
-                      ? "Upload your organization's logo, seal, and digital signature."
+                      ? "Upload your organization's logo and digital signature."
                       : "Branding features require organization membership. Contact your admin to join an organization."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {(
-                    ["logo", "seal", "signature"] as Array<
+                    ["logo", "signature"] as Array<
                       keyof BrandingFileState
                     >
                   ).map((type) => {
@@ -828,7 +818,6 @@ const AdminPage = () => {
                     };
                     let iconComp = Cloud;
                     if (type === "logo") iconComp = ImagePlus;
-                    else if (type === "seal") iconComp = Shield;
                     else if (type === "signature") iconComp = Pen;
                     return (
                       <div key={type} className="space-y-2">

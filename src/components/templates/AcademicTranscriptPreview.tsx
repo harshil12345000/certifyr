@@ -38,7 +38,7 @@ export const AcademicTranscriptPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { logoUrl, sealUrl, signatureUrl, organizationDetails } = useBranding();
+  const { logoUrl, signatureUrl, organizationDetails } = useBranding();
 
   const formattedDateOfBirth = dateOfBirth
     ? new Date(dateOfBirth).toLocaleDateString("en-GB", {
@@ -215,17 +215,6 @@ export const AcademicTranscriptPreview: React.FC<
           <p>{displayInstitutionName}</p>
         </div>
       </div>
-
-      {/* Seal */}
-      {sealUrl && (
-        <div className="absolute bottom-32 left-16">
-          <img
-            src={sealUrl}
-            alt="Institution Seal"
-            className="h-24 w-24 object-contain opacity-50"
-          />
-        </div>
-      )}
     </div>
   );
 };

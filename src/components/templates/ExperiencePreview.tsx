@@ -18,7 +18,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, sealUrl, organizationDetails, isLoading } =
+  const { signatureUrl, organizationDetails, isLoading } =
     useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -175,17 +175,6 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
             </div>
           )}
         </div>
-
-        {sealUrl && (
-          <div className="absolute bottom-8 left-8">
-            <img
-              src={sealUrl}
-              alt="Organization Seal"
-              className="h-20 w-20 object-contain opacity-75"
-              onError={(e) => handleImageError(e, "seal")}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
