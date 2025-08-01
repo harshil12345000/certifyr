@@ -1,4 +1,3 @@
-
 export interface FoundersAgreementData {
   founderNames: string;
   founders: string;
@@ -136,6 +135,8 @@ export interface CorporateBylawsData {
   amendmentProcedure: string;
   dissolutionProcess: string;
   adoptionDate: string;
+  // Directors can be nested object or string
+  directors?: { numberOfDirectors: string; directorTermLength: string; boardMeetingFrequency: string };
   date: string;
   place: string;
   signatoryName: string;
@@ -201,13 +202,13 @@ export interface OfferLetterData {
 export interface StockPurchaseAgreementData {
   sellerName: string;
   sellerAddress: string;
-  seller: string;
+  seller: { name: string; address: string };
   buyerName: string;
   purchaserName: string;
   purchaserAddress: string;
-  buyer: string;
+  buyer: { name: string; address: string };
   numberOfShares: string;
-  shares: string;
+  shares: { class: string; quantity: string };
   shareClass: string;
   sharePrice: string;
   pricePerShare: string;
@@ -220,7 +221,7 @@ export interface StockPurchaseAgreementData {
   representations: string;
   representationsWarranties: string;
   warranties: string;
-  covenants: string;
+  covenants: { restrictionsOnTransfer: string } | string;
   restrictionsOnTransfer: string;
   indemnification: string;
   governingLaw: string;
