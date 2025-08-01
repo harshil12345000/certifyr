@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 
 const Auth = () => {
   const { user, signIn, loading } = useAuth();
@@ -25,6 +26,7 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -137,14 +139,31 @@ const Auth = () => {
                 )}
               </Button>
             </form>
-            <div className="mt-4 text-center text-sm text-gray-500">
-              New to Certifyr?{' '}
-              <Link to="/auth/signup" className="text-blue-600 hover:underline font-medium">
-                Create an Account
-              </Link>
+            <div className="mt-4 space-y-2">
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-blue-600 hover:underline font-medium"
+                  disabled={isLoading}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+              <div className="text-center text-sm text-gray-500">
+                New to Certifyr?{' '}
+                <Link to="/auth/signup" className="text-blue-600 hover:underline font-medium">
+                  Create an Account
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
+        
+        <ForgotPasswordModal 
+          isOpen={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+        />
       </div>
     </div>
   );
