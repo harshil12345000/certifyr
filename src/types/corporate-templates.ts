@@ -110,11 +110,13 @@ export interface AcademicTranscriptData {
 
 export interface CorporateBylawsData {
   corporationName: string;
+  companyName: string;
   stateOfIncorporation: string;
   registeredAgent: string;
   registeredOffice: string;
   principalOffice: string;
   businessPurpose: string;
+  purpose: string;
   authorizedShares: string;
   fiscalYearEnd: string;
   fiscalYear: string;

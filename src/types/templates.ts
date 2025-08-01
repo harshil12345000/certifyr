@@ -318,6 +318,9 @@ export interface NocVisaData {
   includeDigitalSignature: boolean;
 }
 
+// Re-export from corporate templates for convenience
+export type { OfferLetterData } from './corporate-templates';
+
 // Form Data Interface for Employee Portal
 export interface FormData {
   [key: string]: any;
