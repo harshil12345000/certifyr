@@ -1,6 +1,7 @@
 
 export interface FoundersAgreementData {
   founderNames: string;
+  founders: string;
   companyName: string;
   effectiveDate: string;
   businessDescription: string;
@@ -8,6 +9,7 @@ export interface FoundersAgreementData {
   equityDistribution: string;
   roles: string;
   rolesResponsibilities: string;
+  rolesAndResponsibilities: string;
   vestingSchedule: string;
   intellectualProperty: string;
   nonCompete: string;
@@ -15,6 +17,7 @@ export interface FoundersAgreementData {
   confidentiality: string;
   disputeResolution: string;
   exitProvisions: string;
+  termination: string;
   governingLaw: string;
   date: string;
   place: string;
@@ -146,10 +149,15 @@ export interface NDAData {
   effectiveDate: string;
   duration: string;
   confidentialInformation: string;
+  purposeOfDisclosure: string;
   permittedUse: string;
   permittedDisclosure: string;
+  exclusions: string;
+  obligations: string;
+  termLength: string;
   nonDisclosurePeriod: string;
   returnOfMaterials: string;
+  returnOfInformation: string;
   remedies: string;
   governingLaw: string;
   date: string;
@@ -165,13 +173,17 @@ export interface OfferLetterData {
   jobTitle: string;
   department: string;
   startDate: string;
+  dateOfOffer: string;
   salary: string;
   salaryAmount: string;
+  salaryCurrency: string;
+  salaryFrequency: string;
   benefits: string;
   duties: string;
   jobResponsibilities: string;
   reportingManager: string;
   workLocation: string;
+  workHours: string;
   employmentTerms: string;
   probationPeriod: string;
   noticePeriod: string;
@@ -186,21 +198,28 @@ export interface OfferLetterData {
 
 export interface StockPurchaseAgreementData {
   sellerName: string;
+  sellerAddress: string;
   seller: string;
   buyerName: string;
+  purchaserName: string;
+  purchaserAddress: string;
   buyer: string;
   numberOfShares: string;
   shares: string;
+  shareClass: string;
   sharePrice: string;
   pricePerShare: string;
   totalPrice: string;
+  totalPurchasePrice: string;
   totalConsideration: string;
   companyName: string;
   closingDate: string;
   paymentTerms: string;
   representations: string;
+  representationsWarranties: string;
   warranties: string;
   covenants: string;
+  restrictionsOnTransfer: string;
   indemnification: string;
   governingLaw: string;
   date: string;
