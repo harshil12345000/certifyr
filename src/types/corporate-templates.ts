@@ -1,62 +1,21 @@
-// Corporate template data types
-export interface ArticlesOfIncorporationData {
-  corporationName: string;
-  stateOfIncorporation: string;
-  businessPurpose: string;
-  corporateAddress: string;
-  registeredAgent: string;
-  registeredAgentAddress: string;
-  authorizedShares: string;
-  shareValue: string;
-  incorporatorName: string;
-  incorporatorAddress: string;
-  incorporatorSignature: string;
-  filingDate: string;
-  institutionName: string;
-  date: string;
-  place: string;
-  signatoryName: string;
-  signatoryDesignation: string;
-  includeDigitalSignature: boolean;
-}
-
-export interface CorporateBylawsData {
-  corporationName: string;
-  stateOfIncorporation: string;
-  principalOffice: string;
-  boardMeetingFrequency: string;
-  shareholderMeetingDate: string;
-  fiscalYearEnd: string;
-  numberOfDirectors: string;
-  directorTermLength: string;
-  officerTitles: string;
-  votingRights: string;
-  dividendPolicy: string;
-  amendmentProcess: string;
-  adoptionDate: string;
-  institutionName: string;
-  date: string;
-  place: string;
-  signatoryName: string;
-  signatoryDesignation: string;
-  includeDigitalSignature: boolean;
-}
 
 export interface FoundersAgreementData {
   founderNames: string;
   companyName: string;
-  businessDescription: string;
-  equityDistribution: string;
-  vestingSchedule: string;
-  roles: string;
-  capitalContributions: string;
-  intellectualProperty: string;
-  confidentiality: string;
-  nonCompete: string;
-  disputeResolution: string;
-  governingLaw: string;
   effectiveDate: string;
-  institutionName: string;
+  businessDescription: string;
+  businessPurpose: string;
+  equityDistribution: string;
+  roles: string;
+  rolesResponsibilities: string;
+  vestingSchedule: string;
+  intellectualProperty: string;
+  nonCompete: string;
+  capitalContributions: string;
+  confidentiality: string;
+  disputeResolution: string;
+  exitProvisions: string;
+  governingLaw: string;
   date: string;
   place: string;
   signatoryName: string;
@@ -64,26 +23,26 @@ export interface FoundersAgreementData {
   includeDigitalSignature: boolean;
 }
 
-export interface StockPurchaseAgreementData {
-  purchaserName: string;
-  sellerName: string;
-  companyName: string;
-  numberOfShares: string;
-  sharePrice: string;
-  totalPurchasePrice: string;
-  shareClass: string;
-  restrictionsOnTransfer: string;
-  representationsWarranties: string;
-  closingDate: string;
-  governingLaw: string;
-  purchaserAddress: string;
-  sellerAddress: string;
-  effectiveDate: string;
-  institutionName: string;
+export interface ArticlesOfIncorporationData {
+  corporationName: string;
+  stateOfIncorporation: string;
+  registeredAgent: string;
+  registeredAgentAddress: string;
+  registeredAddress: string;
+  corporateAddress: string;
+  authorizedShares: string;
+  stockShares: string;
+  shareValue: string;
+  stockValue: string;
+  incorporatorName: string;
+  incorporator: string;
+  incorporatorAddress: string;
+  incorporatorTitle: string;
+  businessPurpose: string;
+  purpose: string;
+  filingDate: string;
   date: string;
   place: string;
-  signatoryName: string;
-  signatoryDesignation: string;
   includeDigitalSignature: boolean;
 }
 
@@ -93,62 +52,13 @@ export interface EmploymentAgreementData {
   jobTitle: string;
   department: string;
   startDate: string;
-  employmentType: "full-time" | "part-time" | "contract";
   salary: string;
-  payFrequency: "monthly" | "bi-weekly" | "weekly";
-  benefits: string;
   workLocation: string;
   workHours: string;
-  probationPeriod: string;
+  benefits: string;
+  duties: string;
   terminationClause: string;
-  confidentialityClause: string;
-  nonCompeteClause: string;
-  governingLaw: string;
-  effectiveDate: string;
-  institutionName: string;
-  date: string;
-  place: string;
-  signatoryName: string;
-  signatoryDesignation: string;
-  includeDigitalSignature: boolean;
-}
-
-export interface IPAssignmentAgreementData {
-  assignorName: string;
-  assigneeName: string;
-  relationshipDescription: string;
-  intellectualPropertyDescription: string;
-  workScope: string;
-  creationPeriod: string;
-  compensationDetails: string;
-  assignmentScope: string;
-  moralRights: string;
-  warrantiesAssignor: string;
-  governingLaw: string;
-  effectiveDate: string;
-  institutionName: string;
-  date: string;
-  place: string;
-  signatoryName: string;
-  signatoryDesignation: string;
-  includeDigitalSignature: boolean;
-}
-
-export interface NDAData {
-  disclosingParty: string;
-  receivingParty: string;
-  purposeOfDisclosure: string;
-  confidentialInformation: string;
-  exclusions: string;
-  obligations: string;
-  termLength: string;
-  returnOfInformation: string;
-  remedies: string;
-  governingLaw: string;
-  disclosingPartyAddress: string;
-  receivingPartyAddress: string;
-  effectiveDate: string;
-  institutionName: string;
+  terminationTerms: string;
   date: string;
   place: string;
   signatoryName: string;
@@ -161,15 +71,88 @@ export interface AcademicTranscriptData {
   studentId: string;
   fatherName: string;
   motherName: string;
-  dateOfBirth: string;
   courseTitle: string;
+  course: string;
+  department: string;
   academicYear: string;
+  enrollmentYear: string;
+  graduationYear: string;
   semester: string;
   subjects: string;
-  grades: string;
   cgpa: string;
   percentage: string;
+  grades: string;
+  grade: string;
   class: string;
+  institutionName: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  date: string;
+  place: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface CorporateBylawsData {
+  corporationName: string;
+  stateOfIncorporation: string;
+  registeredOffice: string;
+  businessPurpose: string;
+  authorizedShares: string;
+  fiscalYearEnd: string;
+  fiscalYear: string;
+  boardSize: string;
+  boardMembers: string;
+  officers: string;
+  stockClasses: string;
+  meetingRequirements: string;
+  votingRights: string;
+  dividendPolicy: string;
+  amendmentProcess: string;
+  amendmentProcedure: string;
+  dissolutionProcess: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface NDAData {
+  disclosingParty: string;
+  receivingParty: string;
+  effectiveDate: string;
+  duration: string;
+  confidentialInformation: string;
+  permittedUse: string;
+  permittedDisclosure: string;
+  nonDisclosurePeriod: string;
+  returnOfMaterials: string;
+  remedies: string;
+  governingLaw: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+
+export interface OfferLetterData {
+  candidateName: string;
+  candidateAddress: string;
+  jobTitle: string;
+  department: string;
+  startDate: string;
+  salary: string;
+  salaryAmount: string;
+  benefits: string;
+  duties: string;
+  jobResponsibilities: string;
+  reportingManager: string;
+  workLocation: string;
+  employmentTerms: string;
+  probationPeriod: string;
+  noticePeriod: string;
+  acceptanceDeadline: string;
   institutionName: string;
   date: string;
   place: string;
@@ -178,25 +161,25 @@ export interface AcademicTranscriptData {
   includeDigitalSignature: boolean;
 }
 
-export interface EmbassyAttestationLetterData {
-  applicantName: string;
-  passportNumber: string;
-  nationality: string;
-  dateOfBirth: string;
-  placeOfBirth: string;
-  fatherName: string;
-  motherName: string;
-  documentType: string;
-  documentNumber: string;
-  issuingAuthority: string;
-  documentIssueDate: string;
-  purposeOfAttestation: string;
-  destinationCountry: string;
-  embassyName: string;
-  applicantAddress: string;
-  phoneNumber: string;
-  emailAddress: string;
-  institutionName: string;
+export interface StockPurchaseAgreementData {
+  sellerName: string;
+  seller: string;
+  buyerName: string;
+  buyer: string;
+  numberOfShares: string;
+  shares: string;
+  sharePrice: string;
+  pricePerShare: string;
+  totalPrice: string;
+  totalConsideration: string;
+  companyName: string;
+  closingDate: string;
+  paymentTerms: string;
+  representations: string;
+  warranties: string;
+  covenants: string;
+  indemnification: string;
+  governingLaw: string;
   date: string;
   place: string;
   signatoryName: string;

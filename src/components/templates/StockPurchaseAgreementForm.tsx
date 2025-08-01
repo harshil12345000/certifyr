@@ -16,14 +16,11 @@ export const StockPurchaseAgreementForm: React.FC<
   StockPurchaseAgreementFormProps
 > = ({ initialData, onSubmit }) => {
   const { trackPreviewGeneration } = usePreviewTracking();
-  const [formData, setFormData] =
-    useState<StockPurchaseAgreementData>(initialData);
+  const [formData, setFormData] = useState<StockPurchaseAgreementData>(initialData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("stock-purchase-agreement-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -38,72 +35,61 @@ export const StockPurchaseAgreementForm: React.FC<
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="companyName">Company Name *</Label>
+          <Label htmlFor="sellerName">Seller Name *</Label>
           <Input
-            id="companyName"
-            value={formData.companyName}
-            onChange={(e) => handleChange("companyName", e.target.value)}
-            placeholder="Enter company name"
+            id="sellerName"
+            value={formData.sellerName}
+            onChange={(e) => handleChange("sellerName", e.target.value)}
+            placeholder="Enter seller's name"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="seller">Seller Name *</Label>
+          <Label htmlFor="buyerName">Buyer Name *</Label>
           <Input
-            id="seller"
-            value={formData.seller}
-            onChange={(e) => handleChange("seller", e.target.value)}
-            placeholder="Enter seller name"
+            id="buyerName"
+            value={formData.buyerName}
+            onChange={(e) => handleChange("buyerName", e.target.value)}
+            placeholder="Enter buyer's name"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="buyer">Buyer Name *</Label>
+          <Label htmlFor="numberOfShares">Number of Shares *</Label>
           <Input
-            id="buyer"
-            value={formData.buyer}
-            onChange={(e) => handleChange("buyer", e.target.value)}
-            placeholder="Enter buyer name"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="shares">Number of Shares *</Label>
-          <Input
-            id="shares"
+            id="numberOfShares"
             type="number"
-            value={formData.shares}
-            onChange={(e) => handleChange("shares", e.target.value)}
+            value={formData.numberOfShares}
+            onChange={(e) => handleChange("numberOfShares", e.target.value)}
             placeholder="Enter number of shares"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="pricePerShare">Price per Share *</Label>
+          <Label htmlFor="sharePrice">Price per Share *</Label>
           <Input
-            id="pricePerShare"
+            id="sharePrice"
             type="number"
             step="0.01"
-            value={formData.pricePerShare}
-            onChange={(e) => handleChange("pricePerShare", e.target.value)}
+            value={formData.sharePrice}
+            onChange={(e) => handleChange("sharePrice", e.target.value)}
             placeholder="Enter price per share"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="totalConsideration">Total Consideration *</Label>
+          <Label htmlFor="totalPrice">Total Purchase Price *</Label>
           <Input
-            id="totalConsideration"
+            id="totalPrice"
             type="number"
             step="0.01"
-            value={formData.totalConsideration}
-            onChange={(e) => handleChange("totalConsideration", e.target.value)}
-            placeholder="Enter total consideration"
+            value={formData.totalPrice}
+            onChange={(e) => handleChange("totalPrice", e.target.value)}
+            placeholder="Enter total purchase price"
             required
           />
         </div>
@@ -132,23 +118,23 @@ export const StockPurchaseAgreementForm: React.FC<
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="representations">Representations & Warranties *</Label>
+        <Label htmlFor="representations">Representations *</Label>
         <Textarea
           id="representations"
           value={formData.representations}
           onChange={(e) => handleChange("representations", e.target.value)}
-          placeholder="Enter representations and warranties"
+          placeholder="Specify representations and warranties"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="warranties">Additional Warranties *</Label>
+        <Label htmlFor="warranties">Warranties *</Label>
         <Textarea
           id="warranties"
           value={formData.warranties}
           onChange={(e) => handleChange("warranties", e.target.value)}
-          placeholder="Enter additional warranties"
+          placeholder="Specify warranties"
           required
         />
       </div>
@@ -159,7 +145,7 @@ export const StockPurchaseAgreementForm: React.FC<
           id="covenants"
           value={formData.covenants}
           onChange={(e) => handleChange("covenants", e.target.value)}
-          placeholder="Enter covenants"
+          placeholder="Specify covenants and agreements"
           required
         />
       </div>

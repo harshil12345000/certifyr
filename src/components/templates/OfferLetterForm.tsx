@@ -14,8 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { OfferLetterData } from "@/types/templates";
-import { Switch } from "@/components/ui/switch";
+import { OfferLetterData } from "@/types/corporate-templates";
 
 const formSchema = z.object({
   candidateName: z.string().min(1, "Candidate name is required"),
@@ -23,18 +22,20 @@ const formSchema = z.object({
   jobTitle: z.string().min(1, "Job title is required"),
   department: z.string().min(1, "Department is required"),
   startDate: z.string().min(1, "Start date is required"),
-  salary: z.string().min(1, "Salary is required"),
+  salaryAmount: z.string().min(1, "Salary amount is required"),
   benefits: z.string().min(1, "Benefits are required"),
+  jobResponsibilities: z.string().min(1, "Job responsibilities are required"),
+  reportingManager: z.string().min(1, "Reporting manager is required"),
   workLocation: z.string().min(1, "Work location is required"),
-  workHours: z.string().min(1, "Work hours are required"),
-  duties: z.string().min(1, "Duties are required"),
+  employmentTerms: z.string().min(1, "Employment terms are required"),
+  probationPeriod: z.string().min(1, "Probation period is required"),
+  noticePeriod: z.string().min(1, "Notice period is required"),
+  acceptanceDeadline: z.string().min(1, "Acceptance deadline is required"),
   institutionName: z.string().min(1, "Institution name is required"),
   date: z.string().min(1, "Date is required"),
   place: z.string().min(1, "Place is required"),
   signatoryName: z.string().min(1, "Signatory name is required"),
-  signatoryDesignation: z
-    .string()
-    .min(2, { message: "Designation is required" }),
+  signatoryDesignation: z.string().min(1, "Signatory designation is required"),
   includeDigitalSignature: z.boolean().default(false),
 });
 
@@ -43,10 +44,7 @@ interface OfferLetterFormProps {
   initialData: OfferLetterData;
 }
 
-export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
-  onSubmit,
-  initialData,
-}) => {
+export function OfferLetterForm({ onSubmit, initialData }: OfferLetterFormProps) {
   const form = useForm<OfferLetterData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
@@ -54,10 +52,6 @@ export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
 
   const handleFormSubmit = (values: OfferLetterData) => {
     onSubmit(values);
-  };
-
-  const handleDigitalSignatureChange = (checked: boolean) => {
-    form.setValue("includeDigitalSignature", checked);
   };
 
   return (
@@ -85,7 +79,7 @@ export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
               <FormItem>
                 <FormLabel>Candidate Address</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Enter candidate address" {...field} />
+                  <Input placeholder="Enter candidate address" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -136,12 +130,54 @@ export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
 
           <FormField
             control={form.control}
-            name="salary"
+            name="salaryAmount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Salary</FormLabel>
+                <FormLabel>Salary Amount</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter salary" {...field} />
+                  <Input placeholder="Enter salary amount" {...field} value={String(field.value)} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="benefits"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Benefits</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Enter benefits" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="jobResponsibilities"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Job Responsibilities</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Enter job responsibilities" {...field} value={String(field.value)} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="reportingManager"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reporting Manager</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter reporting manager" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -164,31 +200,12 @@ export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
 
           <FormField
             control={form.control}
-            name="workHours"
+            name="employmentTerms"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Work Hours</FormLabel>
+              <FormItem className="md:col-span-2">
+                <FormLabel>Employment Terms</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter work hours" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="duties"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job Duties and Responsibilities</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="List main duties and responsibilities"
-                    {...field}
-                  />
+                  <Textarea placeholder="Enter employment terms" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -197,20 +214,46 @@ export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
 
           <FormField
             control={form.control}
-            name="benefits"
+            name="probationPeriod"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Benefits</FormLabel>
+                <FormLabel>Probation Period</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="List employee benefits" {...field} />
+                  <Input placeholder="Enter probation period" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="noticePeriod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notice Period</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter notice period" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="acceptanceDeadline"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Acceptance Deadline</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="institutionName"
@@ -306,4 +349,4 @@ export const OfferLetterForm: React.FC<OfferLetterFormProps> = ({
       </form>
     </Form>
   );
-};
+}

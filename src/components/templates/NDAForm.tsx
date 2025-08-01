@@ -18,9 +18,7 @@ export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("nda-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -95,12 +93,12 @@ export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="duration">Agreement Duration *</Label>
+          <Label htmlFor="duration">Duration/Term *</Label>
           <Input
             id="duration"
             value={formData.duration}
             onChange={(e) => handleChange("duration", e.target.value)}
-            placeholder="e.g., 2 years"
+            placeholder="e.g., 2 years from effective date"
             required
           />
         </div>
@@ -120,7 +118,7 @@ export const NDAForm: React.FC<NDAFormProps> = ({ initialData, onSubmit }) => {
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
           <Label htmlFor="permittedUse">Permitted Use *</Label>
           <Textarea
             id="permittedUse"

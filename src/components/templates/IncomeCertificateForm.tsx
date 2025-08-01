@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IncomeCertificateData } from "@/types/templates";
-import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -25,14 +24,13 @@ const formSchema = z.object({
   joiningDate: z.string().min(1, "Joining date is required"),
   currentSalary: z.string().min(1, "Current salary is required"),
   annualIncome: z.string().min(1, "Annual income is required"),
+  incomeFrequency: z.string().min(1, "Income frequency is required"),
   purpose: z.string().min(1, "Purpose is required"),
   institutionName: z.string().min(1, "Institution name is required"),
   date: z.string().min(1, "Date is required"),
   place: z.string().min(1, "Place is required"),
   signatoryName: z.string().min(1, "Signatory name is required"),
-  signatoryDesignation: z
-    .string()
-    .min(2, { message: "Designation is required" }),
+  signatoryDesignation: z.string().min(1, "Designation is required"),
   includeDigitalSignature: z.boolean().default(false),
 });
 
@@ -52,10 +50,6 @@ export function IncomeCertificateForm({
 
   const handleFormSubmit = (values: IncomeCertificateData) => {
     onSubmit(values);
-  };
-
-  const handleDigitalSignatureChange = (checked: boolean) => {
-    form.setValue("includeDigitalSignature", checked);
   };
 
   return (
@@ -139,7 +133,7 @@ export function IncomeCertificateForm({
               <FormItem>
                 <FormLabel>Joining Date</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" {...field} value={String(field.value)} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -153,7 +147,7 @@ export function IncomeCertificateForm({
               <FormItem>
                 <FormLabel>Current Salary</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter current salary" {...field} />
+                  <Input placeholder="Enter current salary" {...field} value={String(field.value)} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -167,7 +161,21 @@ export function IncomeCertificateForm({
               <FormItem>
                 <FormLabel>Annual Income</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter annual income" {...field} />
+                  <Input placeholder="Enter annual income" {...field} value={String(field.value)} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="incomeFrequency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Income Frequency</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Monthly, Annual" {...field} value={String(field.value)} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -283,4 +291,4 @@ export function IncomeCertificateForm({
       </form>
     </Form>
   );
-};
+}
