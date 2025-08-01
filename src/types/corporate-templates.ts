@@ -1,5 +1,4 @@
 
-
 export interface FoundersAgreementData {
   founderNames: string;
   companyName: string;
@@ -26,17 +25,21 @@ export interface FoundersAgreementData {
 
 export interface ArticlesOfIncorporationData {
   corporationName: string;
+  companyName: string;
   stateOfIncorporation: string;
   registeredAgent: string;
   registeredAgentAddress: string;
   registeredAddress: string;
+  registeredOffice: string;
   corporateAddress: string;
   authorizedShares: string;
   stockShares: string;
   shareValue: string;
   stockValue: string;
+  shareClasses: string;
   incorporatorName: string;
   incorporator: string;
+  incorporators: Array<{ name: string; address: string; place?: string }>;
   incorporatorAddress: string;
   incorporatorTitle: string;
   businessPurpose: string;
@@ -44,6 +47,8 @@ export interface ArticlesOfIncorporationData {
   filingDate: string;
   date: string;
   place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
   includeDigitalSignature: boolean;
 }
 
@@ -220,4 +225,3 @@ export interface EmbassyAttestationLetterData {
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
 }
-

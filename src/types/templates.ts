@@ -1,5 +1,4 @@
 
-
 export interface IncomeCertificateData {
   fullName: string;
   fatherName: string;
@@ -32,23 +31,6 @@ export interface EmbassyAttestationData {
   embassy: string;
   purposeOfAttestation: string;
   purpose: string;
-  institutionName: string;
-  date: string;
-  place: string;
-  signatoryName: string;
-  signatoryDesignation: string;
-  includeDigitalSignature: boolean;
-}
-
-export interface EmbassyAttestationLetterData {
-  applicantName: string;
-  passportNumber: string;
-  nationality: string;
-  documentType: string;
-  documentDetails: string;
-  attestationPurpose: string;
-  embassyName: string;
-  submissionDate: string;
   institutionName: string;
   date: string;
   place: string;
@@ -129,6 +111,14 @@ export interface ExperienceData {
 
 export interface AddressProofData {
   fullName: string;
+  fatherName: string;
+  relationshipWithApplicant: string;
+  currentAddress: string;
+  permanentAddress: string;
+  residenceDuration: string;
+  idProofType: string;
+  idProofNumber: string;
+  purpose: string;
   address: string;
   duration: string;
   proofType: string;
@@ -142,10 +132,19 @@ export interface AddressProofData {
 
 export interface BankVerificationData {
   fullName: string;
-  accountNumber: string;
+  employeeId: string;
+  designation: string;
+  department: string;
   bankName: string;
-  branchName: string;
+  accountNumber: string;
   accountType: string;
+  ifscCode: string;
+  branchName: string;
+  branchAddress: string;
+  accountHolderName: string;
+  joinDate: string;
+  currentSalary: string;
+  purpose: string;
   openingDate: string;
   currentBalance: string;
   institutionName: string;
@@ -242,4 +241,3 @@ export interface FoundersAgreementPreviewProps {
 export interface FormData {
   [key: string]: any;
 }
-
