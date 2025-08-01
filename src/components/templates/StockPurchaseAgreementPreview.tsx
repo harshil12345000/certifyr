@@ -117,7 +117,7 @@ export const StockPurchaseAgreementPreview: React.FC<
 
       <div className="mb-6">
         <h3 className="text-lg font-bold mb-2">TRANSFER RESTRICTIONS</h3>
-        <p>{covenants.restrictionsOnTransfer}</p>
+        <p>{data.restrictionsOnTransfer}</p>
       </div>
 
       <div className="mb-6">

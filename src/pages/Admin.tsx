@@ -862,7 +862,7 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-6">
-            <AnnouncementAdminPanel organizationId={organizationId} />
+            <AnnouncementAdminPanel />
           </TabsContent>
         </Tabs>
       </div>

@@ -208,6 +208,8 @@ export const getInitialData = (
         workHours: "",
         probationPeriod: "",
         terminationClause: "",
+        duties: "",
+        terminationTerms: "",
         confidentialityClause: "",
         nonCompeteClause: "",
         governingLaw: "",
@@ -229,6 +231,11 @@ export const getInitialData = (
         governingLaw: "",
         disclosingPartyAddress: "",
         receivingPartyAddress: "",
+        duration: "",
+        permittedUse: "",
+        permittedDisclosure: "",
+        nonDisclosurePeriod: "",
+        returnOfMaterials: "",
         effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as NDAData;
@@ -236,16 +243,22 @@ export const getInitialData = (
     case "founders-agreement-1":
       return {
         founderNames: "",
+        founders: "",
         companyName: "",
         businessDescription: "",
+        businessPurpose: "",
         equityDistribution: "",
         vestingSchedule: "",
         roles: "",
+        rolesResponsibilities: "",
+        rolesAndResponsibilities: "",
         capitalContributions: "",
         intellectualProperty: "",
         confidentiality: "",
         nonCompete: "",
         disputeResolution: "",
+        exitProvisions: "",
+        termination: "",
         governingLaw: "",
         effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
@@ -255,17 +268,29 @@ export const getInitialData = (
       return {
         purchaserName: "",
         sellerName: "",
+        sellerAddress: "",
+        buyerName: "",
+        buyer: { name: "", address: "" },
+        seller: { name: "", address: "" },
         companyName: "",
         numberOfShares: "",
+        shares: { class: "", quantity: "" },
         sharePrice: "",
+        pricePerShare: "",
+        totalPrice: "",
         totalPurchasePrice: "",
+        totalConsideration: "",
         shareClass: "",
         restrictionsOnTransfer: "",
         representationsWarranties: "",
+        representations: "",
+        warranties: "",
+        covenants: "",
+        indemnification: "",
+        paymentTerms: "",
         closingDate: new Date().toISOString().split("T")[0],
         governingLaw: "",
         purchaserAddress: "",
-        sellerAddress: "",
         effectiveDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as StockPurchaseAgreementData;
@@ -273,15 +298,25 @@ export const getInitialData = (
     case "articles-incorporation-1":
       return {
         corporationName: "",
+        companyName: "",
         stateOfIncorporation: "",
         businessPurpose: "",
+        purpose: "",
         corporateAddress: "",
         registeredAgent: "",
         registeredAgentAddress: "",
+        registeredAddress: "",
+        registeredOffice: "",
         authorizedShares: "",
+        stockShares: "",
         shareValue: "",
+        stockValue: "",
+        shareClasses: "",
         incorporatorName: "",
+        incorporator: "",
+        incorporators: [],
         incorporatorAddress: "",
+        incorporatorTitle: "",
         incorporatorSignature: "",
         filingDate: new Date().toISOString().split("T")[0],
         ...commonFields,
@@ -290,17 +325,31 @@ export const getInitialData = (
     case "corporate-bylaws-1":
       return {
         corporationName: "",
+        companyName: "",
         stateOfIncorporation: "",
+        registeredAgent: "",
+        registeredOffice: "",
         principalOffice: "",
-        boardMeetingFrequency: "",
-        shareholderMeetingDate: "",
+        businessPurpose: "",
+        purpose: "",
+        authorizedShares: "",
         fiscalYearEnd: "",
+        fiscalYear: "",
+        boardSize: "",
         numberOfDirectors: "",
         directorTermLength: "",
+        boardMembers: "",
+        officers: "",
         officerTitles: "",
+        stockClasses: "",
+        meetingRequirements: "",
+        boardMeetingFrequency: "",
+        shareholderMeetingDate: "",
         votingRights: "",
         dividendPolicy: "",
         amendmentProcess: "",
+        amendmentProcedure: "",
+        dissolutionProcess: "",
         adoptionDate: new Date().toISOString().split("T")[0],
         ...commonFields,
       } as CorporateBylawsData;
@@ -755,7 +804,7 @@ const TemplateDetail = () => {
           signatoryDesignation: foundersData.signatoryDesignation,
           includeDigitalSignature: foundersData.includeDigitalSignature,
         };
-        return <FoundersAgreementPreview data={foundersPreviewData} />;
+        return <FoundersAgreementPreview data={foundersPreviewData as any} />;
       case "stock-purchase-agreement-1":
         // Convert corporate template data to preview template data
         const stockData = formData as StockPurchaseAgreementData;
@@ -788,7 +837,7 @@ const TemplateDetail = () => {
           signatoryDesignation: stockData.signatoryDesignation,
           includeDigitalSignature: stockData.includeDigitalSignature,
         };
-        return <StockPurchaseAgreementPreview data={stockPreviewData} />;
+        return <StockPurchaseAgreementPreview data={stockPreviewData as any} />;
       case "articles-incorporation-1":
         // Convert corporate template data to preview template data
         const articlesData = formData as ArticlesOfIncorporationData;
@@ -813,7 +862,7 @@ const TemplateDetail = () => {
           signatoryDesignation: articlesData.signatoryDesignation,
           includeDigitalSignature: articlesData.includeDigitalSignature,
         };
-        return <ArticlesOfIncorporationPreview data={articlesPreviewData} />;
+        return <ArticlesOfIncorporationPreview data={articlesPreviewData as any} />;
       case "corporate-bylaws-1":
         // Convert corporate template data to preview template data
         const bylawsData = formData as CorporateBylawsData;
@@ -851,7 +900,7 @@ const TemplateDetail = () => {
           signatoryDesignation: bylawsData.signatoryDesignation,
           includeDigitalSignature: bylawsData.includeDigitalSignature,
         };
-        return <CorporateBylawsPreview data={bylawsPreviewData} />;
+        return <CorporateBylawsPreview data={bylawsPreviewData as any} />;
       case "bonafide-1":
         return <BonafidePreview data={formData as BonafideData} />;
       case "character-1":

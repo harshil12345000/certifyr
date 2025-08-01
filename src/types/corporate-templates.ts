@@ -221,7 +221,7 @@ export interface StockPurchaseAgreementData {
   representations: string;
   representationsWarranties: string;
   warranties: string;
-  covenants: { restrictionsOnTransfer: string } | string;
+  covenants: string;
   restrictionsOnTransfer: string;
   indemnification: string;
   governingLaw: string;
