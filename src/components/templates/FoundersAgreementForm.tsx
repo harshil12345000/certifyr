@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +22,7 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("founders-agreement-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -74,11 +73,11 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="businessPurpose">Business Purpose *</Label>
+          <Label htmlFor="businessDescription">Business Description *</Label>
           <Textarea
-            id="businessPurpose"
-            value={formData.businessPurpose}
-            onChange={(e) => handleChange("businessPurpose", e.target.value)}
+            id="businessDescription"
+            value={formData.businessDescription}
+            onChange={(e) => handleChange("businessDescription", e.target.value)}
             placeholder="Describe the company's business purpose"
             required
           />
@@ -96,11 +95,11 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="rolesResponsibilities">Roles & Responsibilities *</Label>
+          <Label htmlFor="roles">Roles & Responsibilities *</Label>
           <Textarea
-            id="rolesResponsibilities"
-            value={formData.rolesResponsibilities}
-            onChange={(e) => handleChange("rolesResponsibilities", e.target.value)}
+            id="roles"
+            value={formData.roles}
+            onChange={(e) => handleChange("roles", e.target.value)}
             placeholder="Define roles and responsibilities of each founder"
             required
           />
@@ -140,12 +139,45 @@ export const FoundersAgreementForm: React.FC<FoundersAgreementFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="exitProvisions">Exit Provisions *</Label>
+          <Label htmlFor="capitalContributions">Capital Contributions *</Label>
           <Textarea
-            id="exitProvisions"
-            value={formData.exitProvisions}
-            onChange={(e) => handleChange("exitProvisions", e.target.value)}
-            placeholder="Define terms for founder exit"
+            id="capitalContributions"
+            value={formData.capitalContributions}
+            onChange={(e) => handleChange("capitalContributions", e.target.value)}
+            placeholder="Define initial capital contributions"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confidentiality">Confidentiality *</Label>
+          <Textarea
+            id="confidentiality"
+            value={formData.confidentiality}
+            onChange={(e) => handleChange("confidentiality", e.target.value)}
+            placeholder="Specify confidentiality terms"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="disputeResolution">Dispute Resolution *</Label>
+          <Textarea
+            id="disputeResolution"
+            value={formData.disputeResolution}
+            onChange={(e) => handleChange("disputeResolution", e.target.value)}
+            placeholder="Define dispute resolution mechanism"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="governingLaw">Governing Law *</Label>
+          <Input
+            id="governingLaw"
+            value={formData.governingLaw}
+            onChange={(e) => handleChange("governingLaw", e.target.value)}
+            placeholder="e.g., State of Delaware"
             required
           />
         </div>

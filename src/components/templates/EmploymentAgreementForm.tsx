@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +22,7 @@ export const EmploymentAgreementForm: React.FC<
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("employment-agreement-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -127,17 +126,6 @@ export const EmploymentAgreementForm: React.FC<
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="duties">Job Duties and Responsibilities *</Label>
-        <Textarea
-          id="duties"
-          value={formData.duties}
-          onChange={(e) => handleChange("duties", e.target.value)}
-          placeholder="List main duties and responsibilities"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="benefits">Benefits *</Label>
         <Textarea
           id="benefits"
@@ -149,11 +137,11 @@ export const EmploymentAgreementForm: React.FC<
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="terminationTerms">Termination Terms *</Label>
+        <Label htmlFor="terminationClause">Termination Clause *</Label>
         <Textarea
-          id="terminationTerms"
-          value={formData.terminationTerms}
-          onChange={(e) => handleChange("terminationTerms", e.target.value)}
+          id="terminationClause"
+          value={formData.terminationClause}
+          onChange={(e) => handleChange("terminationClause", e.target.value)}
           placeholder="Specify termination terms and notice period"
           required
         />

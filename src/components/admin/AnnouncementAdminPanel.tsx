@@ -1,413 +1,253 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import dayjs from "dayjs";
+import { toast } from "sonner";
+import { Trash2, Eye, EyeOff, Calendar } from "lucide-react";
 
 interface Announcement {
   id: string;
   title: string;
   content: string;
-  is_global: boolean;
+  expires_at: string | null;
   is_active: boolean;
+  is_global: boolean;
   created_at: string;
-  expires_at?: string | null;
-  organization_id?: string | null;
+  organization_id: string | null;
 }
 
-export function AnnouncementAdminPanel({
-  organizationId,
-}: {
-  organizationId: string | null;
-}) {
-  const { user } = useAuth();
+export const AnnouncementAdminPanel: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [form, setForm] = useState({
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
     title: "",
     content: "",
-    is_active: true,
     expires_at: "",
+    is_global: false,
   });
-  const [isCreating, setIsCreating] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id || !organizationId) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        // Fetch announcements for this organization
-        const { data, error } = await supabase
-          .from("announcements")
-          .select(
-            "id, title, content, is_global, is_active, created_at, expires_at, organization_id",
-          )
-          .eq("organization_id", organizationId)
-          .order("created_at", { ascending: false });
-        if (!error && data) {
-          setAnnouncements(data);
-          
-          // Handle expired announcements
-          await handleExpiredAnnouncements(data);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [user, organizationId]);
+    fetchAnnouncements();
+  }, []);
 
-  const handleExpiredAnnouncements = async (announcements: Announcement[]) => {
-    const now = new Date();
-    const expiredAnnouncements = announcements.filter(
-      (a) => a.expires_at && a.is_active && new Date(a.expires_at) < now
-    );
-
-    for (const announcement of expiredAnnouncements) {
-      try {
-        // Update announcement status
-        await supabase
-          .from("announcements")
-          .update({ is_active: false })
-          .eq("id", announcement.id);
-
-        // Update notification data
-        await supabase
-          .from("notifications")
-          .update({
-            data: supabase.sql`jsonb_set(data, '{is_active}', 'false')`
-          })
-          .eq("data->announcement_id", announcement.id)
-          .eq("type", "announcement");
-
-        // Update local state
-        setAnnouncements((prev) =>
-          prev.map((a) =>
-            a.id === announcement.id ? { ...a, is_active: false } : a
-          )
-        );
-      } catch (error) {
-        console.error(`Failed to handle expired announcement ${announcement.id}:`, error);
-      }
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setForm((f) => ({
-      ...f,
-      [e.target.name]: e.target.value,
-    }));
-  };
-  const handleSwitch = (name: string, value: boolean) => {
-    setForm((f) => ({
-      ...f,
-      [name]: value,
-    }));
-  };
-
-  const handleToggleAnnouncementStatus = async (announcementId: string, currentStatus: boolean) => {
+  const fetchAnnouncements = async () => {
     try {
-      // Update announcement status
-      const { error: announcementError } = await supabase
-        .from("announcements")
-        .update({ is_active: !currentStatus })
-        .eq("id", announcementId);
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (announcementError) {
-        toast({
-          title: "Error",
-          description: "Failed to update announcement status",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update notification data
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .update({
-          data: supabase.sql`jsonb_set(data, '{is_active}', ${JSON.stringify(!currentStatus)})`
-        })
-        .eq("data->announcement_id", announcementId)
-        .eq("type", "announcement");
-
-      if (notificationError) {
-        console.error("Failed to update notification:", notificationError);
-      }
-
-      // Update local state
-      setAnnouncements((prev) =>
-        prev.map((a) =>
-          a.id === announcementId ? { ...a, is_active: !currentStatus } : a
-        )
-      );
-
-      toast({
-        title: "Status updated",
-        description: `Announcement ${!currentStatus ? "activated" : "deactivated"}`,
-      });
+      if (error) throw error;
+      setAnnouncements(data || []);
     } catch (error) {
-      console.error("Failed to toggle announcement status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update announcement status",
-        variant: "destructive",
-      });
+      console.error('Error fetching announcements:', error);
+      toast.error('Failed to load announcements');
+    } finally {
+      setLoading(false);
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.content.trim()) {
-      toast({
-        title: "Title and content are required",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!organizationId) {
-      toast({
-        title: "No organization found",
-        description:
-          "You must be part of an organization to create announcements",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsCreating(true);
-    
+    if (!user) return;
+
     try {
-      // Create the announcement
-      const { error: announcementError, data: announcementData } = await supabase
-        .from("announcements")
-        .insert([
-          {
-            title: form.title,
-            content: form.content,
-            is_global: false,
-            is_active: form.is_active,
-            expires_at: form.expires_at ? form.expires_at : null,
-            created_by: user?.id,
-            organization_id: organizationId,
-          },
-        ])
-        .select();
-
-      if (announcementError) {
-        toast({
-          title: "Error",
-          description: announcementError.message,
-          variant: "destructive",
+      const { error } = await supabase
+        .from('announcements')
+        .insert({
+          title: formData.title,
+          content: formData.content,
+          expires_at: formData.expires_at || null,
+          is_global: formData.is_global,
+          created_by: user.id,
+          organization_id: formData.is_global ? null : user.id, // Use user.id as org proxy
         });
-        return;
-      }
 
-      // Create a notification for the announcement
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert([
-          {
-            org_id: organizationId,
-            subject: form.title,
-            body: form.content,
-            type: "announcement",
-            data: {
-              announcement_id: announcementData?.[0]?.id,
-              is_active: form.is_active,
-              expires_at: form.expires_at,
-            },
-          },
-        ]);
+      if (error) throw error;
 
-      if (notificationError) {
-        console.error("Failed to create notification:", notificationError);
-        // Don't fail the whole operation if notification creation fails
-      }
-
-      toast({ title: "Announcement created!" });
-      if (announcementData && announcementData[0]) {
-        setAnnouncements((a) => [announcementData[0], ...a]);
-      }
-      setForm({
-        title: "",
-        content: "",
-        is_active: true,
-        expires_at: "",
-      });
+      toast.success('Announcement created successfully');
+      setFormData({ title: "", content: "", expires_at: "", is_global: false });
+      fetchAnnouncements();
     } catch (error) {
-      console.error("Failed to create announcement:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create announcement",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreating(false);
+      console.error('Error creating announcement:', error);
+      toast.error('Failed to create announcement');
     }
   };
 
-  if (!organizationId) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Announcements</CardTitle>
-          <CardDescription>
-            Complete your organization setup to manage announcements.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Please complete your organization information in the Organization
-            tab to enable announcement features.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const toggleAnnouncementStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .update({ is_active: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setAnnouncements(prev =>
+        prev.map(ann => ann.id === id ? { ...ann, is_active: !currentStatus } : ann)
+      );
+      toast.success('Announcement status updated');
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      toast.error('Failed to update announcement');
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setAnnouncements(prev => prev.filter(ann => ann.id !== id));
+      toast.success('Announcement deleted');
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      toast.error('Failed to delete announcement');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Announcements</CardTitle>
-          <CardDescription>Loading...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Please wait while we load your organization data.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Organization Announcements</CardTitle>
-        <CardDescription>
-          Post important announcements for your organization members. Only
-          admins can post announcements.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-4 mb-8" onSubmit={handleSubmit}>
-          <div>
-            <Label>Title</Label>
-            <Input
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
-              maxLength={100}
-            />
-          </div>
-          <div>
-            <Label>Content</Label>
-            <Textarea
-              name="content"
-              rows={3}
-              value={form.content}
-              onChange={handleChange}
-              required
-              maxLength={500}
-            />
-          </div>
-          <div className="flex gap-4 items-center">
-            <Label htmlFor="is_active" className="mr-2">
-              Active
-            </Label>
-            <Switch
-              id="is_active"
-              checked={form.is_active}
-              onCheckedChange={(v: boolean) => handleSwitch("is_active", v)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="expires_at" className="mr-2">
-              Expires at (optional)
-            </Label>
-            <Input
-              type="datetime-local"
-              name="expires_at"
-              id="expires_at"
-              value={form.expires_at}
-              onChange={handleChange}
-              className="max-w-[200px] mx-0 px-[18px]"
-            />
-          </div>
-          <Button type="submit" disabled={!organizationId || isCreating}>
-            {isCreating ? "Creating..." : "Create Announcement"}
-          </Button>
-          {!organizationId && (
-            <p className="text-xs text-red-500 mt-2">
-              You must be part of an organization to create announcements.
-            </p>
-          )}
-        </form>
-        <h3 className="font-medium mb-4">Organization Announcements</h3>
-        <ul className="space-y-4">
-          {announcements.length === 0 ? (
-            <li className="text-muted-foreground text-sm">
-              No announcements yet.
-            </li>
-          ) : (
-            announcements.map((a) => (
-              <li key={a.id} className="border bg-muted rounded-lg px-3 py-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="font-semibold">{a.title}</p>
-                      <span className="text-xs">
-                        {dayjs(a.created_at).format("MMM D, YYYY HH:mm")}
-                      </span>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create New Announcement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Announcement title"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                value={formData.content}
+                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Announcement content"
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="expires_at">Expiration Date (Optional)</Label>
+              <Input
+                id="expires_at"
+                type="date"
+                value={formData.expires_at}
+                onChange={(e) => setFormData(prev => ({ ...prev, expires_at: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_global"
+                checked={formData.is_global}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_global: checked }))}
+              />
+              <Label htmlFor="is_global">Global Announcement</Label>
+            </div>
+
+            <Button type="submit" className="w-full">
+              Create Announcement
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Existing Announcements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {announcements.length === 0 ? (
+              <p className="text-muted-foreground">No announcements found.</p>
+            ) : (
+              announcements.map((announcement) => (
+                <div key={announcement.id} className="border rounded-lg p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold">{announcement.title}</h3>
+                      <p className="text-sm text-muted-foreground">{announcement.content}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        Created: {formatDate(announcement.created_at)}
+                        {announcement.expires_at && (
+                          <span>• Expires: {formatDate(announcement.expires_at)}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm mb-2">{a.content}</div>
-                    <div className="flex gap-3 text-xs">
-                      <span
-                        className={
-                          a.is_active ? "text-green-700" : "text-muted-foreground"
-                        }
-                      >
-                        {a.is_active ? "Active" : "Inactive"}
-                      </span>
-                      <span className="text-blue-700">Organization</span>
-                      {a.expires_at && (
-                        <span className="text-muted-foreground">
-                          Expires: {dayjs(a.expires_at).format("MMM D, YYYY HH:mm")}
-                        </span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={announcement.is_active ? "default" : "secondary"}>
+                        {announcement.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      {announcement.is_global && (
+                        <Badge variant="outline">Global</Badge>
                       )}
                     </div>
                   </div>
-                  <div className="ml-4 flex items-center">
-                    <Switch
-                      checked={a.is_active}
-                      onCheckedChange={() => handleToggleAnnouncementStatus(a.id, a.is_active)}
-                      className="ml-2"
-                    />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleAnnouncementStatus(announcement.id, announcement.is_active)}
+                    >
+                      {announcement.is_active ? (
+                        <>
+                          <EyeOff className="h-4 w-4 mr-2" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Activate
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteAnnouncement(announcement.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
                   </div>
                 </div>
-              </li>
-            ))
-          )}
-        </ul>
-      </CardContent>
-    </Card>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};

@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { EmbassyAttestationLetterData } from "@/types/templates";
+import { EmbassyAttestationLetterData } from "@/types/corporate-templates";
 import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 import {
   Select,
@@ -40,9 +40,7 @@ export const EmbassyAttestationLetterForm: React.FC<
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("embassy-attestation-letter-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -53,11 +51,11 @@ export const EmbassyAttestationLetterForm: React.FC<
         <h3 className="text-lg font-medium border-b pb-2">Applicant Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name *</Label>
+            <Label htmlFor="applicantName">Full Name *</Label>
             <Input
-              id="fullName"
-              value={formData.fullName}
-              onChange={(e) => handleChange("fullName", e.target.value)}
+              id="applicantName"
+              value={formData.applicantName}
+              onChange={(e) => handleChange("applicantName", e.target.value)}
               required
             />
           </div>
@@ -80,11 +78,11 @@ export const EmbassyAttestationLetterForm: React.FC<
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address">Address *</Label>
+            <Label htmlFor="applicantAddress">Address *</Label>
             <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleChange("address", e.target.value)}
+              id="applicantAddress"
+              value={formData.applicantAddress}
+              onChange={(e) => handleChange("applicantAddress", e.target.value)}
               required
             />
           </div>
@@ -132,15 +130,11 @@ export const EmbassyAttestationLetterForm: React.FC<
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="documentIssuingAuthority">
-              Document Issuing Authority *
-            </Label>
+            <Label htmlFor="issuingAuthority">Document Issuing Authority *</Label>
             <Input
-              id="documentIssuingAuthority"
-              value={formData.documentIssuingAuthority}
-              onChange={(e) =>
-                handleChange("documentIssuingAuthority", e.target.value)
-              }
+              id="issuingAuthority"
+              value={formData.issuingAuthority}
+              onChange={(e) => handleChange("issuingAuthority", e.target.value)}
               required
             />
           </div>
@@ -152,20 +146,20 @@ export const EmbassyAttestationLetterForm: React.FC<
         <h3 className="text-lg font-medium border-b pb-2">Embassy Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="embassy">Embassy/Consulate *</Label>
+            <Label htmlFor="embassyName">Embassy/Consulate *</Label>
             <Input
-              id="embassy"
-              value={formData.embassy}
-              onChange={(e) => handleChange("embassy", e.target.value)}
+              id="embassyName"
+              value={formData.embassyName}
+              onChange={(e) => handleChange("embassyName", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="purpose">Purpose of Attestation *</Label>
+            <Label htmlFor="purposeOfAttestation">Purpose of Attestation *</Label>
             <Input
-              id="purpose"
-              value={formData.purpose}
-              onChange={(e) => handleChange("purpose", e.target.value)}
+              id="purposeOfAttestation"
+              value={formData.purposeOfAttestation}
+              onChange={(e) => handleChange("purposeOfAttestation", e.target.value)}
               required
             />
           </div>

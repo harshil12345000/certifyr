@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +29,7 @@ export const ArticlesOfIncorporationForm: React.FC<
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("articles-incorporation-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -88,59 +87,81 @@ export const ArticlesOfIncorporationForm: React.FC<
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="registeredAddress">Registered Address *</Label>
+          <Label htmlFor="registeredAgentAddress">Registered Agent Address *</Label>
           <Textarea
-            id="registeredAddress"
-            value={formData.registeredAddress}
-            onChange={(e) => handleChange("registeredAddress", e.target.value)}
+            id="registeredAgentAddress"
+            value={formData.registeredAgentAddress}
+            onChange={(e) => handleChange("registeredAgentAddress", e.target.value)}
             placeholder="Enter complete address"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="stockShares">Number of Stock Shares *</Label>
+          <Label htmlFor="corporateAddress">Corporate Address *</Label>
+          <Textarea
+            id="corporateAddress"
+            value={formData.corporateAddress}
+            onChange={(e) => handleChange("corporateAddress", e.target.value)}
+            placeholder="Enter corporate address"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="authorizedShares">Number of Authorized Shares *</Label>
           <Input
-            id="stockShares"
+            id="authorizedShares"
             type="number"
-            value={formData.stockShares}
-            onChange={(e) => handleChange("stockShares", e.target.value)}
+            value={formData.authorizedShares}
+            onChange={(e) => handleChange("authorizedShares", e.target.value)}
             placeholder="e.g., 1000"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="stockValue">Par Value per Share *</Label>
+          <Label htmlFor="shareValue">Par Value per Share *</Label>
           <Input
-            id="stockValue"
+            id="shareValue"
             type="number"
             step="0.01"
-            value={formData.stockValue}
-            onChange={(e) => handleChange("stockValue", e.target.value)}
+            value={formData.shareValue}
+            onChange={(e) => handleChange("shareValue", e.target.value)}
             placeholder="e.g., 0.01"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="incorporator">Incorporator Name *</Label>
+          <Label htmlFor="incorporatorName">Incorporator Name *</Label>
           <Input
-            id="incorporator"
-            value={formData.incorporator}
-            onChange={(e) => handleChange("incorporator", e.target.value)}
+            id="incorporatorName"
+            value={formData.incorporatorName}
+            onChange={(e) => handleChange("incorporatorName", e.target.value)}
             placeholder="e.g., Jane Smith"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="incorporatorTitle">Incorporator Title *</Label>
+          <Label htmlFor="incorporatorAddress">Incorporator Address *</Label>
+          <Textarea
+            id="incorporatorAddress"
+            value={formData.incorporatorAddress}
+            onChange={(e) => handleChange("incorporatorAddress", e.target.value)}
+            placeholder="Enter incorporator address"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="filingDate">Filing Date *</Label>
           <Input
-            id="incorporatorTitle"
-            value={formData.incorporatorTitle}
-            onChange={(e) => handleChange("incorporatorTitle", e.target.value)}
-            placeholder="e.g., Director"
+            id="filingDate"
+            type="date"
+            value={formData.filingDate}
+            onChange={(e) => handleChange("filingDate", e.target.value)}
             required
           />
         </div>
@@ -169,11 +190,11 @@ export const ArticlesOfIncorporationForm: React.FC<
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="purpose">Corporate Purpose *</Label>
+        <Label htmlFor="businessPurpose">Corporate Purpose *</Label>
         <Textarea
-          id="purpose"
-          value={formData.purpose}
-          onChange={(e) => handleChange("purpose", e.target.value)}
+          id="businessPurpose"
+          value={formData.businessPurpose}
+          onChange={(e) => handleChange("businessPurpose", e.target.value)}
           placeholder="Describe the purpose of the corporation"
           required
         />

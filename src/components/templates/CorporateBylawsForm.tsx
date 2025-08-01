@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +29,7 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("corporate-bylaws-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -77,56 +76,56 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="registeredOffice">Registered Office *</Label>
+          <Label htmlFor="principalOffice">Principal Office *</Label>
           <Input
-            id="registeredOffice"
-            value={formData.registeredOffice}
-            onChange={(e) => handleChange("registeredOffice", e.target.value)}
-            placeholder="Enter registered office address"
+            id="principalOffice"
+            value={formData.principalOffice}
+            onChange={(e) => handleChange("principalOffice", e.target.value)}
+            placeholder="Enter principal office address"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fiscalYear">Fiscal Year End *</Label>
+          <Label htmlFor="fiscalYearEnd">Fiscal Year End *</Label>
           <Input
-            id="fiscalYear"
+            id="fiscalYearEnd"
             type="date"
-            value={formData.fiscalYear}
-            onChange={(e) => handleChange("fiscalYear", e.target.value)}
+            value={formData.fiscalYearEnd}
+            onChange={(e) => handleChange("fiscalYearEnd", e.target.value)}
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="boardMembers">Board Members *</Label>
-          <Textarea
-            id="boardMembers"
-            value={formData.boardMembers}
-            onChange={(e) => handleChange("boardMembers", e.target.value)}
-            placeholder="List board members (one per line)"
+          <Label htmlFor="numberOfDirectors">Number of Directors *</Label>
+          <Input
+            id="numberOfDirectors"
+            value={formData.numberOfDirectors}
+            onChange={(e) => handleChange("numberOfDirectors", e.target.value)}
+            placeholder="e.g., 3"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="officers">Corporate Officers *</Label>
-          <Textarea
-            id="officers"
-            value={formData.officers}
-            onChange={(e) => handleChange("officers", e.target.value)}
-            placeholder="List officers and their positions"
+          <Label htmlFor="directorTermLength">Director Term Length *</Label>
+          <Input
+            id="directorTermLength"
+            value={formData.directorTermLength}
+            onChange={(e) => handleChange("directorTermLength", e.target.value)}
+            placeholder="e.g., 1 year"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="stockClasses">Stock Classes *</Label>
+          <Label htmlFor="officerTitles">Officer Titles *</Label>
           <Textarea
-            id="stockClasses"
-            value={formData.stockClasses}
-            onChange={(e) => handleChange("stockClasses", e.target.value)}
-            placeholder="Describe stock classes and rights"
+            id="officerTitles"
+            value={formData.officerTitles}
+            onChange={(e) => handleChange("officerTitles", e.target.value)}
+            placeholder="List officer titles"
             required
           />
         </div>
@@ -138,6 +137,50 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
             value={formData.votingRights}
             onChange={(e) => handleChange("votingRights", e.target.value)}
             placeholder="Describe voting rights"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="boardMeetingFrequency">Board Meeting Frequency *</Label>
+          <Input
+            id="boardMeetingFrequency"
+            value={formData.boardMeetingFrequency}
+            onChange={(e) => handleChange("boardMeetingFrequency", e.target.value)}
+            placeholder="e.g., Monthly"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="shareholderMeetingDate">Shareholder Meeting Date *</Label>
+          <Input
+            id="shareholderMeetingDate"
+            value={formData.shareholderMeetingDate}
+            onChange={(e) => handleChange("shareholderMeetingDate", e.target.value)}
+            placeholder="e.g., First Monday in May"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dividendPolicy">Dividend Policy *</Label>
+          <Textarea
+            id="dividendPolicy"
+            value={formData.dividendPolicy}
+            onChange={(e) => handleChange("dividendPolicy", e.target.value)}
+            placeholder="Describe dividend policy"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="adoptionDate">Adoption Date *</Label>
+          <Input
+            id="adoptionDate"
+            type="date"
+            value={formData.adoptionDate}
+            onChange={(e) => handleChange("adoptionDate", e.target.value)}
             required
           />
         </div>
@@ -188,11 +231,11 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="amendmentProcedure">Amendment Procedure *</Label>
+        <Label htmlFor="amendmentProcess">Amendment Process *</Label>
         <Textarea
-          id="amendmentProcedure"
-          value={formData.amendmentProcedure}
-          onChange={(e) => handleChange("amendmentProcedure", e.target.value)}
+          id="amendmentProcess"
+          value={formData.amendmentProcess}
+          onChange={(e) => handleChange("amendmentProcess", e.target.value)}
           placeholder="Describe the procedure for amending bylaws"
           required
         />

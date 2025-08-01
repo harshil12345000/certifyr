@@ -1,15 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AcademicTranscriptData } from "@/types/corporate-templates";
 import { usePreviewTracking } from "@/hooks/usePreviewTracking";
@@ -38,9 +32,7 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Track preview generation
     await trackPreviewGeneration("academic-transcript-1", "update");
-    // Submit the form
     onSubmit(formData);
   };
 
@@ -94,40 +86,39 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
         <h3 className="text-lg font-medium border-b pb-2">Academic Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="course">Course/Program *</Label>
+            <Label htmlFor="courseTitle">Course/Program *</Label>
             <Input
-              id="course"
-              value={formData.course}
-              onChange={(e) => handleChange("course", e.target.value)}
+              id="courseTitle"
+              value={formData.courseTitle}
+              onChange={(e) => handleChange("courseTitle", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="department">Department *</Label>
+            <Label htmlFor="academicYear">Academic Year *</Label>
             <Input
-              id="department"
-              value={formData.department}
-              onChange={(e) => handleChange("department", e.target.value)}
+              id="academicYear"
+              value={formData.academicYear}
+              onChange={(e) => handleChange("academicYear", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="enrollmentYear">Enrollment Year *</Label>
+            <Label htmlFor="semester">Semester *</Label>
             <Input
-              id="enrollmentYear"
-              type="number"
-              value={formData.enrollmentYear}
-              onChange={(e) => handleChange("enrollmentYear", e.target.value)}
+              id="semester"
+              value={formData.semester}
+              onChange={(e) => handleChange("semester", e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="graduationYear">Graduation Year *</Label>
-            <Input
-              id="graduationYear"
-              type="number"
-              value={formData.graduationYear}
-              onChange={(e) => handleChange("graduationYear", e.target.value)}
+            <Label htmlFor="subjects">Subjects *</Label>
+            <Textarea
+              id="subjects"
+              value={formData.subjects}
+              onChange={(e) => handleChange("subjects", e.target.value)}
+              placeholder="List subjects (one per line)"
               required
             />
           </div>
@@ -150,11 +141,29 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="grade">Grade/Division *</Label>
+            <Label htmlFor="percentage">Percentage *</Label>
             <Input
-              id="grade"
-              value={formData.grade}
-              onChange={(e) => handleChange("grade", e.target.value)}
+              id="percentage"
+              value={formData.percentage}
+              onChange={(e) => handleChange("percentage", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="grades">Grades *</Label>
+            <Input
+              id="grades"
+              value={formData.grades}
+              onChange={(e) => handleChange("grades", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="class">Class/Division *</Label>
+            <Input
+              id="class"
+              value={formData.class}
+              onChange={(e) => handleChange("class", e.target.value)}
               required
             />
           </div>
@@ -165,6 +174,15 @@ export const AcademicTranscriptForm: React.FC<AcademicTranscriptFormProps> = ({
       <div className="space-y-4">
         <h3 className="text-lg font-medium border-b pb-2">Signatory Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="institutionName">Institution Name *</Label>
+            <Input
+              id="institutionName"
+              value={formData.institutionName}
+              onChange={(e) => handleChange("institutionName", e.target.value)}
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="signatoryName">Signatory Name *</Label>
             <Input
