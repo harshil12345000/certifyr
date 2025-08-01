@@ -88,6 +88,36 @@ export type Database = {
         }
         Relationships: []
       }
+      document_drafts: {
+        Row: {
+          created_at: string | null
+          form_data: Json | null
+          id: string
+          name: string
+          template_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          form_data?: Json | null
+          id?: string
+          name: string
+          template_id: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          form_data?: Json | null
+          id?: string
+          name?: string
+          template_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       document_requests: {
         Row: {
           created_at: string
@@ -355,6 +385,41 @@ export type Database = {
         }
         Relationships: []
       }
+      preview_generations: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preview_generations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -587,6 +652,7 @@ export type Database = {
           organization_type: string | null
           organization_website: string | null
           phone_number: string | null
+          plan: string
           updated_at: string | null
           user_id: string
         }
@@ -602,6 +668,7 @@ export type Database = {
           organization_type?: string | null
           organization_website?: string | null
           phone_number?: string | null
+          plan?: string
           updated_at?: string | null
           user_id: string
         }
@@ -617,6 +684,7 @@ export type Database = {
           organization_type?: string | null
           organization_website?: string | null
           phone_number?: string | null
+          plan?: string
           updated_at?: string | null
           user_id?: string
         }
@@ -629,6 +697,8 @@ export type Database = {
           id: string
           organization_id: string | null
           pending_documents: number
+          portal_members: number | null
+          requested_documents: number | null
           total_verifications: number
           updated_at: string | null
           user_id: string
@@ -639,6 +709,8 @@ export type Database = {
           id?: string
           organization_id?: string | null
           pending_documents?: number
+          portal_members?: number | null
+          requested_documents?: number | null
           total_verifications?: number
           updated_at?: string | null
           user_id: string
@@ -649,6 +721,8 @@ export type Database = {
           id?: string
           organization_id?: string | null
           pending_documents?: number
+          portal_members?: number | null
+          requested_documents?: number | null
           total_verifications?: number
           updated_at?: string | null
           user_id?: string
@@ -710,48 +784,6 @@ export type Database = {
           },
         ]
       }
-      preview_generations: {
-        Row: {
-          id: string
-          user_id: string
-          organization_id: string | null
-          template_id: string
-          action_type: "generate" | "update"
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          organization_id?: string | null
-          template_id: string
-          action_type: "generate" | "update"
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          organization_id?: string | null
-          template_id?: string
-          action_type?: "generate" | "update"
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "preview_generations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "preview_generations_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -786,6 +818,14 @@ export type Database = {
       }
       is_user_admin_of_org: {
         Args: { user_id: string; org_id: string }
+        Returns: boolean
+      }
+      user_belongs_to_organization: {
+        Args: { user_uuid: string; org_uuid: string }
+        Returns: boolean
+      }
+      user_is_org_admin: {
+        Args: { user_uuid: string; org_uuid: string }
         Returns: boolean
       }
     }
