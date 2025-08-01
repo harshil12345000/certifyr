@@ -23,6 +23,10 @@ export interface EmbassyAttestationData {
   passportNumber: string;
   nationality: string;
   address: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  fatherName: string;
+  motherName: string;
   documentType: string;
   documentNumber: string;
   documentIssueDate: string;
@@ -31,6 +35,10 @@ export interface EmbassyAttestationData {
   embassy: string;
   purposeOfAttestation: string;
   purpose: string;
+  destinationCountry: string;
+  applicantAddress: string;
+  phoneNumber: string;
+  emailAddress: string;
   institutionName: string;
   date: string;
   place: string;
@@ -103,7 +111,9 @@ export interface ExperienceData {
   department: string;
   employeeId: string;
   joiningDate: string;
+  joinDate: string;
   lastWorkingDate: string;
+  resignationDate: string;
   workDuration: string;
   conduct: string;
   performance: string;
@@ -189,7 +199,10 @@ export interface CompletionCertificateData {
   duration: string;
   startDate: string;
   endDate: string;
+  completionDate: string;
   grade: string;
+  percentage: string;
+  programType: string;
   skills: string;
   institutionName: string;
   date: string;

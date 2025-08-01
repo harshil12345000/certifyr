@@ -108,6 +108,7 @@ export interface AcademicTranscriptData {
 export interface CorporateBylawsData {
   corporationName: string;
   stateOfIncorporation: string;
+  registeredAgent: string;
   registeredOffice: string;
   principalOffice: string;
   businessPurpose: string;
@@ -213,10 +214,22 @@ export interface EmbassyAttestationLetterData {
   applicantName: string;
   passportNumber: string;
   nationality: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  fatherName: string;
+  motherName: string;
   documentType: string;
+  documentNumber: string;
   documentDetails: string;
+  documentIssueDate: string;
+  issuingAuthority: string;
   attestationPurpose: string;
+  purposeOfAttestation: string;
+  destinationCountry: string;
   embassyName: string;
+  applicantAddress: string;
+  phoneNumber: string;
+  emailAddress: string;
   submissionDate: string;
   institutionName: string;
   date: string;
