@@ -1,7 +1,12 @@
+
 import React from "react";
-import { CorporateBylawsPreviewProps } from "@/types/templates";
+import { CorporateBylawsData } from "@/types/corporate-templates";
 import { useBranding } from "@/contexts/BrandingContext";
 import { Letterhead } from "./Letterhead";
+
+interface CorporateBylawsPreviewProps {
+  data: CorporateBylawsData;
+}
 
 interface ExtendedCorporateBylawsPreviewProps
   extends CorporateBylawsPreviewProps {
@@ -13,18 +18,19 @@ export const CorporateBylawsPreview: React.FC<
   ExtendedCorporateBylawsPreviewProps
 > = ({ data, isEmployeePreview = false, requestStatus = "pending" }) => {
   const {
-    companyName,
+    corporationName,
     stateOfIncorporation,
     registeredAgent,
     registeredOffice,
-    directors,
-    officers,
-    shareholders,
-    shareClasses,
-    meetings,
-    voting,
-    indemnification,
-    amendments,
+    numberOfDirectors,
+    directorTermLength,
+    officerTitles,
+    boardMeetingFrequency,
+    shareholderMeetingDate,
+    votingRights,
+    dividendPolicy,
+    fiscalYearEnd,
+    amendmentProcess,
     date: issueDate,
     signatoryName,
     signatoryDesignation,
@@ -60,7 +66,7 @@ export const CorporateBylawsPreview: React.FC<
       {/* Document Content */}
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">{companyName}</h1>
+        <h1 className="text-2xl font-bold mb-2">{corporationName}</h1>
         <h2 className="text-xl font-semibold">
           {stateOfIncorporation} Corporation
         </h2>
@@ -84,11 +90,11 @@ export const CorporateBylawsPreview: React.FC<
         <h3 className="text-lg font-bold mb-2">ARTICLE II - SHAREHOLDERS</h3>
         <p>
           <strong>Section 2.1 Annual Meeting.</strong> The annual meeting of
-          shareholders shall be held on {meetings.shareholderMeetingDate} of
+          shareholders shall be held on {shareholderMeetingDate} of
           each year.
         </p>
         <p className="mt-2">
-          <strong>Section 2.2 Voting Rights.</strong> {voting.votingRights}
+          <strong>Section 2.2 Voting Rights.</strong> {votingRights}
         </p>
       </div>
 
@@ -99,12 +105,12 @@ export const CorporateBylawsPreview: React.FC<
         </h3>
         <p>
           <strong>Section 3.1 Number and Term.</strong> The corporation shall
-          have {directors.numberOfDirectors} directors, each serving a term of{" "}
-          {directors.directorTermLength}.
+          have {numberOfDirectors} directors, each serving a term of{" "}
+          {directorTermLength}.
         </p>
         <p className="mt-2">
           <strong>Section 3.2 Meetings.</strong> Regular meetings of the board
-          shall be held {directors.boardMeetingFrequency}.
+          shall be held {boardMeetingFrequency}.
         </p>
       </div>
 
@@ -113,7 +119,7 @@ export const CorporateBylawsPreview: React.FC<
         <h3 className="text-lg font-bold mb-2">ARTICLE IV - OFFICERS</h3>
         <p>
           <strong>Section 4.1 Titles.</strong> The officers of the corporation
-          shall include: {officers.officerTitles}.
+          shall include: {officerTitles}.
         </p>
       </div>
 
@@ -124,7 +130,7 @@ export const CorporateBylawsPreview: React.FC<
         </h3>
         <p>
           <strong>Section 5.1 Dividend Policy.</strong>{" "}
-          {shareClasses.dividendPolicy}
+          {dividendPolicy}
         </p>
       </div>
 
@@ -133,7 +139,7 @@ export const CorporateBylawsPreview: React.FC<
         <h3 className="text-lg font-bold mb-2">ARTICLE VI - FISCAL YEAR</h3>
         <p>
           The fiscal year of the corporation shall end on{" "}
-          {meetings.fiscalYearEnd} of each year.
+          {fiscalYearEnd} of each year.
         </p>
       </div>
 
@@ -142,7 +148,7 @@ export const CorporateBylawsPreview: React.FC<
         <h3 className="text-lg font-bold mb-2">ARTICLE VII - AMENDMENTS</h3>
         <p>
           <strong>Section 7.1 Amendment Process.</strong>{" "}
-          {amendments.amendmentProcess}
+          {amendmentProcess}
         </p>
       </div>
 
@@ -191,7 +197,7 @@ export const CorporateBylawsPreview: React.FC<
               <strong>{signatoryName || "[Secretary Name]"}</strong>
             </p>
             <p className="text-sm">{signatoryDesignation || "[Title]"}</p>
-            <p className="text-sm">{companyName}</p>
+            <p className="text-sm">{corporationName}</p>
           </div>
         </div>
       </div>

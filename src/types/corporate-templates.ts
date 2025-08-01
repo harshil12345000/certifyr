@@ -1,4 +1,5 @@
 
+
 export interface FoundersAgreementData {
   founderNames: string;
   companyName: string;
@@ -59,6 +60,12 @@ export interface EmploymentAgreementData {
   duties: string;
   terminationClause: string;
   terminationTerms: string;
+  employmentType: string;
+  probationPeriod: string;
+  payFrequency: string;
+  confidentialityClause: string;
+  nonCompeteClause: string;
+  governingLaw: string;
   date: string;
   place: string;
   signatoryName: string;
@@ -71,6 +78,7 @@ export interface AcademicTranscriptData {
   studentId: string;
   fatherName: string;
   motherName: string;
+  dateOfBirth: string;
   courseTitle: string;
   course: string;
   department: string;
@@ -96,20 +104,27 @@ export interface CorporateBylawsData {
   corporationName: string;
   stateOfIncorporation: string;
   registeredOffice: string;
+  principalOffice: string;
   businessPurpose: string;
   authorizedShares: string;
   fiscalYearEnd: string;
   fiscalYear: string;
   boardSize: string;
+  numberOfDirectors: string;
+  directorTermLength: string;
   boardMembers: string;
   officers: string;
+  officerTitles: string;
   stockClasses: string;
   meetingRequirements: string;
+  boardMeetingFrequency: string;
+  shareholderMeetingDate: string;
   votingRights: string;
   dividendPolicy: string;
   amendmentProcess: string;
   amendmentProcedure: string;
   dissolutionProcess: string;
+  adoptionDate: string;
   date: string;
   place: string;
   signatoryName: string;
@@ -119,7 +134,9 @@ export interface CorporateBylawsData {
 
 export interface NDAData {
   disclosingParty: string;
+  disclosingPartyAddress: string;
   receivingParty: string;
+  receivingPartyAddress: string;
   effectiveDate: string;
   duration: string;
   confidentialInformation: string;
@@ -186,3 +203,21 @@ export interface StockPurchaseAgreementData {
   signatoryDesignation: string;
   includeDigitalSignature: boolean;
 }
+
+export interface EmbassyAttestationLetterData {
+  applicantName: string;
+  passportNumber: string;
+  nationality: string;
+  documentType: string;
+  documentDetails: string;
+  attestationPurpose: string;
+  embassyName: string;
+  submissionDate: string;
+  institutionName: string;
+  date: string;
+  place: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+  includeDigitalSignature: boolean;
+}
+

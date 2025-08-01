@@ -1,4 +1,5 @@
 
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,12 +77,12 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="principalOffice">Principal Office *</Label>
+          <Label htmlFor="registeredOffice">Registered Office *</Label>
           <Input
-            id="principalOffice"
-            value={formData.principalOffice}
-            onChange={(e) => handleChange("principalOffice", e.target.value)}
-            placeholder="Enter principal office address"
+            id="registeredOffice"
+            value={formData.registeredOffice}
+            onChange={(e) => handleChange("registeredOffice", e.target.value)}
+            placeholder="Enter registered office address"
             required
           />
         </div>
@@ -175,17 +176,6 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="adoptionDate">Adoption Date *</Label>
-          <Input
-            id="adoptionDate"
-            type="date"
-            value={formData.adoptionDate}
-            onChange={(e) => handleChange("adoptionDate", e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="date">Date *</Label>
           <Input
             id="date"
@@ -258,3 +248,4 @@ export const CorporateBylawsForm: React.FC<CorporateBylawsFormProps> = ({
     </form>
   );
 };
+
