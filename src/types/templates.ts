@@ -78,10 +78,16 @@ export interface CharacterData {
 export interface BonafideData {
   fullName: string;
   fatherName: string;
+  parentName: string;
+  gender: string;
+  type: string;
   class: string;
   section: string;
   rollNumber: string;
   academicYear: string;
+  startDate: string;
+  courseOrDesignation: string;
+  department: string;
   purpose: string;
   institutionName: string;
   date: string;
@@ -174,7 +180,12 @@ export interface MaternityLeaveData {
 
 export interface CompletionCertificateData {
   participantName: string;
+  fullName: string;
+  fatherName: string;
+  registrationNumber: string;
+  courseTitle: string;
   courseName: string;
+  courseDuration: string;
   duration: string;
   startDate: string;
   endDate: string;
