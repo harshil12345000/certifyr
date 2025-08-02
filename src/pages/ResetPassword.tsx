@@ -73,57 +73,87 @@ const ResetPassword = () => {
   // Validate token on component mount
   useEffect(() => {
     const validateToken = async () => {
-      // Supabase password reset can come in different formats
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      const type = searchParams.get('type');
-      
-      // Also check for hash fragments (Supabase sometimes uses these)
+      console.log("Starting token validation...");
+      console.log("Full URL:", window.location.href);
+      console.log("Search params:", window.location.search);
+      console.log("Hash:", window.location.hash);
+
+      // Check URL for auth tokens (Supabase can use query params or hash fragments)
+      const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hashAccessToken = hashParams.get('access_token');
-      const hashRefreshToken = hashParams.get('refresh_token');
-      const hashType = hashParams.get('type');
+      
+      // Get tokens from either source
+      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+      const type = urlParams.get('type') || hashParams.get('type');
 
-      const finalAccessToken = accessToken || hashAccessToken;
-      const finalRefreshToken = refreshToken || hashRefreshToken;
-      const finalType = type || hashType;
-
-      console.log("URL params:", { 
-        accessToken: finalAccessToken, 
-        refreshToken: finalRefreshToken, 
-        type: finalType,
-        fullURL: window.location.href,
-        searchParams: searchParams.toString(),
-        hashParams: hashParams.toString()
+      console.log("Token details:", {
+        accessToken: accessToken ? `${accessToken.substring(0, 20)}...` : "Missing",
+        refreshToken: refreshToken ? `${refreshToken.substring(0, 20)}...` : "Missing", 
+        type,
+        urlHasParams: window.location.search.length > 0,
+        hashHasParams: window.location.hash.length > 0
       });
 
-      if (finalType !== 'recovery' || !finalAccessToken || !finalRefreshToken) {
-        console.log("Missing required parameters or wrong type");
+      // If no tokens in URL, check if user is already authenticated via session
+      if (!accessToken || !refreshToken) {
+        console.log("No tokens in URL, checking current session...");
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session check error:", sessionError);
+          setIsValidToken(false);
+          setIsValidating(false);
+          return;
+        }
+
+        if (session?.user) {
+          console.log("User has active session, allowing password reset");
+          setIsValidToken(true);
+          setIsValidating(false);
+          return;
+        }
+
+        console.log("No session found and no tokens in URL");
+        setIsValidToken(false);
+        setIsValidating(false);
+        return;
+      }
+
+      // Validate the recovery type
+      if (type !== 'recovery') {
+        console.log("Invalid type:", type);
         setIsValidToken(false);
         setIsValidating(false);
         return;
       }
 
       try {
+        console.log("Attempting to set session with tokens...");
+        
         // Set the session with the tokens from URL
         const { data, error } = await supabase.auth.setSession({
-          access_token: finalAccessToken,
-          refresh_token: finalRefreshToken,
+          access_token: accessToken,
+          refresh_token: refreshToken,
         });
 
-        if (error || !data.session) {
+        if (error) {
           console.error("Token validation error:", error);
           setIsValidToken(false);
-        } else {
-          console.log("Token validation successful");
+        } else if (data.session?.user) {
+          console.log("Token validation successful, user:", data.session.user.email);
           setIsValidToken(true);
+        } else {
+          console.log("No session created from tokens");
+          setIsValidToken(false);
         }
       } catch (error) {
-        console.error("Unexpected token validation error:", error);
+        console.error("Exception during token validation:", error);
         setIsValidToken(false);
-      } finally {
-        setIsValidating(false);
       }
+
+      setIsValidating(false);
     };
 
     validateToken();
