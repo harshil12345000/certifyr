@@ -73,11 +73,32 @@ const ResetPassword = () => {
   // Validate token on component mount
   useEffect(() => {
     const validateToken = async () => {
+      // Supabase password reset can come in different formats
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
       const type = searchParams.get('type');
+      
+      // Also check for hash fragments (Supabase sometimes uses these)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hashAccessToken = hashParams.get('access_token');
+      const hashRefreshToken = hashParams.get('refresh_token');
+      const hashType = hashParams.get('type');
 
-      if (type !== 'recovery' || !accessToken || !refreshToken) {
+      const finalAccessToken = accessToken || hashAccessToken;
+      const finalRefreshToken = refreshToken || hashRefreshToken;
+      const finalType = type || hashType;
+
+      console.log("URL params:", { 
+        accessToken: finalAccessToken, 
+        refreshToken: finalRefreshToken, 
+        type: finalType,
+        fullURL: window.location.href,
+        searchParams: searchParams.toString(),
+        hashParams: hashParams.toString()
+      });
+
+      if (finalType !== 'recovery' || !finalAccessToken || !finalRefreshToken) {
+        console.log("Missing required parameters or wrong type");
         setIsValidToken(false);
         setIsValidating(false);
         return;
@@ -86,14 +107,15 @@ const ResetPassword = () => {
       try {
         // Set the session with the tokens from URL
         const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
+          access_token: finalAccessToken,
+          refresh_token: finalRefreshToken,
         });
 
         if (error || !data.session) {
           console.error("Token validation error:", error);
           setIsValidToken(false);
         } else {
+          console.log("Token validation successful");
           setIsValidToken(true);
         }
       } catch (error) {
