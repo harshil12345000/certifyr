@@ -135,7 +135,7 @@ export function SavedDrafts() {
             You don't have any saved drafts yet
           </p>
           <Button asChild>
-            <Link to="/templates">Create Document</Link>
+            <Link to="/documents">Create Document</Link>
           </Button>
         </CardContent>
       </Card>
@@ -150,7 +150,7 @@ export function SavedDrafts() {
           <CardDescription>Your recently saved document drafts</CardDescription>
         </div>
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/templates">View All</Link>
+          <Link to="/documents">View All</Link>
         </Button>
       </CardHeader>
       <CardContent>
@@ -176,7 +176,7 @@ export function SavedDrafts() {
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" asChild title="Edit Draft">
-                  <Link to={`/templates/${draft.template_id}`}>
+                  <Link to={`/documents/${draft.template_id}`}>
                     <ExternalLink className="h-4 w-4" />
                     <span className="sr-only">Edit</span>
                   </Link>

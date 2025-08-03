@@ -36,8 +36,8 @@ interface Notification {
   is_read?: boolean;
 }
 
-// Import templates data for search functionality
-const allTemplates = [
+// Import documents data for search functionality
+const allDocuments = [
   {
     id: "bonafide-1",
     title: "Bonafide Certificate",
@@ -364,9 +364,9 @@ export function Header() {
     await signOut();
   };
 
-  const handleTemplateSelect = (templateId: string) => {
+  const handleDocumentSelect = (documentId: string) => {
     setOpen(false);
-    navigate(`/templates/${templateId}`);
+    navigate(`/documents/${documentId}`);
   };
 
   return (
@@ -557,15 +557,16 @@ export function Header() {
         <CommandInput placeholder="Search documents..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Templates">
-            {allTemplates.map((template) => (
+          <CommandGroup heading="Documents">
+            {allDocuments.map((document) => (
               <CommandItem
-                key={template.id}
-                value={template.title}
-                onSelect={() => handleTemplateSelect(template.id)}
+                key={document.id}
+                value={document.title}
+                onSelect={() => handleDocumentSelect(document.id)}
+                className="cursor-pointer"
               >
                 <FileText className="mr-2 h-4 w-4" />
-                <span>{template.title}</span>
+                <span>{document.title}</span>
               </CommandItem>
             ))}
           </CommandGroup>

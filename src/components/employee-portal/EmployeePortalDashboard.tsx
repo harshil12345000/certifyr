@@ -34,7 +34,7 @@ export function EmployeePortalDashboard({
   const { organization, setEmployee } = useEmployeePortal();
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("tab") || "templates";
+    return urlParams.get("tab") || "documents";
   });
 
   // Sync employee prop with context
@@ -47,7 +47,7 @@ export function EmployeePortalDashboard({
   // Update URL when tab changes
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (activeTab === "templates") {
+    if (activeTab === "documents") {
       url.searchParams.delete("tab");
     } else {
       url.searchParams.set("tab", activeTab);
@@ -77,10 +77,10 @@ export function EmployeePortalDashboard({
         </div>
         <nav className="flex-1 py-6 px-2 space-y-1 overflow-y-auto">
           <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "templates" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
-            onClick={() => setActiveTab("templates")}
+            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "documents" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
+            onClick={() => setActiveTab("documents")}
           >
-            <FileText className="h-5 w-5 mr-2" /> Templates
+            <FileText className="h-5 w-5 mr-2" /> Documents
           </button>
           <button
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "pending" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
@@ -110,7 +110,7 @@ export function EmployeePortalDashboard({
       </aside>
       {/* Main Content */}
       <main className="flex-1 p-6">
-        {activeTab === "templates" && <EmployeeTemplates />}
+        {activeTab === "documents" && <EmployeeTemplates />}
         {activeTab === "pending" && <EmployeePendingRequests />}
         {activeTab === "settings" && <EmployeeSettings employee={employee} />}
       </main>

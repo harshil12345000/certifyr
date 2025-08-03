@@ -29,8 +29,8 @@ type NavItem = {
 const navItems: NavItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: <Home className="h-5 w-5" /> },
   {
-    name: "Templates",
-    path: "/templates",
+    name: "Documents",
+    path: "/documents",
     icon: <FileText className="h-5 w-5" />,
   },
   {
@@ -234,8 +234,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
                   <span className="flex-shrink-0">{item.icon}</span>
                   {!isCollapsed && <span className="ml-3">{item.name}</span>}
                 </Link>
-                {/* Insert Bookmarks tab right after Templates */}
-                {isAdmin && item.name === "Templates" && (
+                {/* Insert Bookmarks tab right after Documents */}
+                {isAdmin && item.name === "Documents" && (
                   <Link
                     to="/bookmarks"
                     className={cn(
