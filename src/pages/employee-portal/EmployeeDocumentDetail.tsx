@@ -4,7 +4,7 @@ import * as Forms from "@/components/templates/forms";
 import * as Previews from "@/components/templates";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getInitialData } from "@/pages/TemplateDetail";
+import { getInitialData } from "@/pages/DocumentDetail";
 import { EmployeePortalLayout } from "@/components/employee-portal/EmployeePortalLayout";
 import { FormData } from "@/types/templates";
 import { useEmployeePortal } from "@/contexts/EmployeePortalContext";

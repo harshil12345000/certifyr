@@ -1,5 +1,5 @@
-import TemplatesDashboard from "./admin/templates";
+import DocumentsDashboard from "./admin/documents";
 
 export default function CertifyrAdmin() {
-  return <TemplatesDashboard />;
+  return <DocumentsDashboard />;
 }

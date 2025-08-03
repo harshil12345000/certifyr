@@ -156,8 +156,10 @@ const allTemplatesArr: Template[] = [
   ...popularTemplates,
   ...dedupedAdditionalTemplates,
 ];
-export const uniqueTemplates: Template[] = getUniqueTemplates(allTemplatesArr);
-const Templates = () => {
+export const uniqueDocuments: Template[] = getUniqueTemplates(allTemplatesArr);
+// Legacy export for backward compatibility
+export const uniqueTemplates: Template[] = uniqueDocuments;
+const Documents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -173,14 +175,14 @@ const Templates = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Filter templates based on search and category filters
-  const filteredTemplates = uniqueTemplates.filter((template) => {
+  // Filter documents based on search and category filters
+  const filteredDocuments = uniqueDocuments.filter((document) => {
     const matchesSearch =
-      template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase());
+      document.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      document.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategories.length === 0 ||
-      selectedCategories.includes(template.category);
+      selectedCategories.includes(document.category);
     return matchesSearch && matchesCategory;
   });
   const toggleCategory = (category: string) => {
@@ -195,7 +197,7 @@ const Templates = () => {
     setSearchQuery("");
   };
   const categories: string[] = Array.from(
-    new Set(uniqueTemplates.map((t) => t.category)),
+    new Set(uniqueDocuments.map((t) => t.category)),
   );
   const handleCreateTemplate = () => {
     navigate("/template-builder");
@@ -236,8 +238,8 @@ const Templates = () => {
       Miscellaneous: "Legal",
     };
     const actualCategory = categoryMapping[categoryName] || categoryName;
-    return uniqueTemplates.filter(
-      (template) => template.category === actualCategory,
+    return uniqueDocuments.filter(
+      (document) => document.category === actualCategory,
     ).length;
   };
 
@@ -255,9 +257,9 @@ const Templates = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold mb-1">Document Templates</h1>
+            <h1 className="text-2xl font-semibold mb-1">Documents</h1>
             <p className="text-muted-foreground">
-              Browse and use our collection of legally reliable templates.
+              Browse and use our collection of legally reliable documents.
             </p>
           </div>
         </div>
@@ -268,7 +270,7 @@ const Templates = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Search templates..."
+              placeholder="Search documents..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -354,25 +356,25 @@ const Templates = () => {
             </div>
           )}
 
-          {filteredTemplates.length === 0 ? (
+          {filteredDocuments.length === 0 ? (
             <div className="py-12 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
                 <Search className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium">No templates found</h3>
+              <h3 className="text-lg font-medium">No documents found</h3>
               <p className="text-muted-foreground mt-1">
                 Try adjusting your search or filter criteria
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTemplates.map((template) => (
+              {filteredDocuments.map((document) => (
                 <TemplateCard
-                  key={template.id}
-                  id={template.id}
-                  title={template.title}
-                  description={template.description}
-                  category={template.category}
+                  key={document.id}
+                  id={document.id}
+                  title={document.title}
+                  description={document.description}
+                  category={document.category}
                   isAdmin={isAdmin}
                 />
               ))}
@@ -397,7 +399,7 @@ const Templates = () => {
                     variant="outline"
                     className="bg-primary-50 border-primary-200 text-primary-700"
                   >
-                    {realCount} Templates
+                    {realCount} Documents
                   </Badge>
                 </div>
                 <h3 className="font-medium text-lg mb-1">{category.name}</h3>
@@ -419,4 +421,4 @@ const Templates = () => {
     </DashboardLayout>
   );
 };
-export default Templates;
+export default Documents;

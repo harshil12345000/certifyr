@@ -6,20 +6,20 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "@/pages/Index";
-import Templates from "@/pages/Templates";
-import TemplateDetail from "@/pages/TemplateDetail";
-import TemplateBuilder from "@/pages/TemplateBuilder";
+import Documents from "@/pages/Documents";
+import DocumentDetail from "@/pages/DocumentDetail";
+import DocumentBuilder from "@/pages/DocumentBuilder";
 import Onboarding from "@/pages/Onboarding";
 import Admin from "@/pages/Admin";
 import Settings from "@/pages/Settings";
 import RequestPortal from "@/pages/RequestPortal";
 import Branding from "@/pages/admin/branding";
-import AdminTemplates from "@/pages/admin/templates";
-import AdminTemplateBuilder from "@/pages/admin/templates/TemplateBuilder";
+import AdminDocuments from "@/pages/admin/documents";
+import AdminDocumentBuilder from "@/pages/admin/documents/DocumentBuilder";
 import NotFound from "@/pages/NotFound";
 import VerifyDocument from "@/pages/VerifyDocument";
 import EmployeePortal from "@/pages/EmployeePortal";
-import EmployeeTemplateDetail from "@/pages/employee-portal/EmployeeTemplateDetail";
+import EmployeeDocumentDetail from "@/pages/employee-portal/EmployeeDocumentDetail";
 import { EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
 import NoAccess from "@/pages/employee-portal/NoAccess";
 import { BookmarksPage } from "./pages/Index";
@@ -54,30 +54,57 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path="/templates"
-                  element={
-                    <ProtectedRoute>
-                      <Templates />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/templates/:id"
-                  element={
-                    <ProtectedRoute>
-                      <TemplateDetail />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/templates/:id/edit"
-                  element={
-                    <ProtectedRoute>
-                      <TemplateBuilder />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* New routes */}
+                  <Route
+                    path="/documents"
+                    element={
+                      <ProtectedRoute>
+                        <Documents />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/documents/:id"
+                    element={
+                      <ProtectedRoute>
+                        <DocumentDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/documents/:id/edit"
+                    element={
+                      <ProtectedRoute>
+                        <DocumentBuilder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Legacy template routes for backward compatibility */}
+                  <Route
+                    path="/templates"
+                    element={
+                      <ProtectedRoute>
+                        <Documents />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/templates/:id"
+                    element={
+                      <ProtectedRoute>
+                        <DocumentDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/templates/:id/edit"
+                    element={
+                      <ProtectedRoute>
+                        <DocumentBuilder />
+                      </ProtectedRoute>
+                    }
+                  />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/signup" element={<Onboarding />} />
                 <Route path="/auth/email-confirmed" element={<EmailConfirmed />} />
@@ -95,12 +122,22 @@ function App() {
                   element={<EmployeePortal />}
                 />
                 <Route
+                  path="/:organizationId/request-portal/documents/:id"
+                  element={
+                    <EmployeePortalProvider
+                      organizationId={window.location.pathname.split("/")[1]}
+                    >
+                      <EmployeeDocumentDetail />
+                    </EmployeePortalProvider>
+                  }
+                />
+                <Route
                   path="/:organizationId/request-portal/templates/:id"
                   element={
                     <EmployeePortalProvider
                       organizationId={window.location.pathname.split("/")[1]}
                     >
-                      <EmployeeTemplateDetail />
+                      <EmployeeDocumentDetail />
                     </EmployeePortalProvider>
                   }
                 />
@@ -112,22 +149,41 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path="/admin/templates"
-                  element={
-                    <ProtectedRoute>
-                      <AdminTemplates />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/templates/:id"
-                  element={
-                    <ProtectedRoute>
-                      <AdminTemplateBuilder />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* New admin routes */}
+                  <Route
+                    path="/admin/documents"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDocuments />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/documents/:id"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDocumentBuilder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Legacy admin routes for backward compatibility */}
+                  <Route
+                    path="/admin/templates"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDocuments />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/templates/:id"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDocumentBuilder />
+                      </ProtectedRoute>
+                    }
+                  />
                 <Route
                   path="/settings"
                   element={

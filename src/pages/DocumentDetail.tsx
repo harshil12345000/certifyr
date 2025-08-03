@@ -81,7 +81,8 @@ import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
-const TEMPLATE_NAMES: Record<string, string> = {
+// Map document IDs to display names
+const DOCUMENT_NAMES: Record<string, string> = {
   "academic-transcript-1": "Academic Transcript",
   "embassy-attestation-letter-1": "Embassy Attestation Letter",
   "employment-agreement-1": "Employment Agreement",
@@ -104,7 +105,7 @@ const TEMPLATE_NAMES: Record<string, string> = {
   "address-proof-1": "Address Proof",
 };
 
-const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
+const DOCUMENT_DESCRIPTIONS: Record<string, string> = {
   "academic-transcript-1":
     "Official record of a student's academic performance.",
   "embassy-attestation-letter-1":
@@ -1004,10 +1005,10 @@ const TemplateDetail = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-semibold">
-              {TEMPLATE_NAMES[templateId || ""] || "Template Details"}
+              {DOCUMENT_NAMES[templateId || ""] || "Document Details"}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {TEMPLATE_DESCRIPTIONS[templateId || ""] || ""}
+              {DOCUMENT_DESCRIPTIONS[templateId || ""] || ""}
             </p>
           </div>
         </div>
@@ -1061,5 +1062,11 @@ const TemplateDetail = () => {
     </DashboardLayout>
   );
 };
+
+// Legacy exports for backward compatibility
+export const TEMPLATE_NAMES = DOCUMENT_NAMES;
+export const TEMPLATE_DESCRIPTIONS = DOCUMENT_DESCRIPTIONS;
+
+export { DOCUMENT_NAMES, DOCUMENT_DESCRIPTIONS };
 
 export default TemplateDetail;

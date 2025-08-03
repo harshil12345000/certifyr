@@ -13,7 +13,7 @@ import { useUserStats } from "@/hooks/useUserStats";
 import { useUserActivity } from "@/hooks/useUserActivity";
 import { useUserDocuments } from "@/hooks/useUserDocuments";
 import { useBookmarks } from "@/hooks/useBookmarks";
-import { uniqueTemplates } from "./Templates";
+import { uniqueDocuments, uniqueTemplates } from "./Documents";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { BookmarkCheck } from "lucide-react";
@@ -149,7 +149,7 @@ export function BookmarksPage() {
     bookmarks,
     removeBookmark
   } = useBookmarks();
-  const bookmarkedTemplates = uniqueTemplates.filter(t => bookmarks.includes(t.id));
+  const bookmarkedDocuments = uniqueDocuments.filter(t => bookmarks.includes(t.id));
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<{
     id: string;
@@ -160,8 +160,8 @@ export function BookmarksPage() {
         <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
           <span>Bookmarks</span>
         </h1>
-        {bookmarkedTemplates.length === 0 ? <div className="py-12 text-center text-muted-foreground">No bookmarks yet. Click the bookmark icon on any document to add it here.</div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {bookmarkedTemplates.map(template => <div key={template.id} className="relative group">
+        {bookmarkedDocuments.length === 0 ? <div className="py-12 text-center text-muted-foreground">No bookmarks yet. Click the bookmark icon on any document to add it here.</div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {bookmarkedDocuments.map(template => <div key={template.id} className="relative group">
                 <TemplateCard {...template} isAdmin={true} forceBookmarked={true} onBookmarkClick={e => {
             e.preventDefault();
             setPendingRemove({
