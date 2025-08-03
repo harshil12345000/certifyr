@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -16,22 +15,13 @@ import { useUserDocuments } from "@/hooks/useUserDocuments";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { uniqueTemplates } from "./Templates";
 import { Link } from "react-router-dom";
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { BookmarkCheck } from "lucide-react";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-
 const Index = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [refreshIndex, setRefreshIndex] = useState(0);
 
   // Persist last loaded values to avoid flicker
@@ -42,19 +32,23 @@ const Index = () => {
   // Periodically refresh data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setRefreshIndex((i) => i + 1);
+      setRefreshIndex(i => i + 1);
     }, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const { stats, loading: statsLoading, error } = useUserStats(refreshIndex);
-  const { activityData, loading: activityLoading } =
-    useUserActivity(refreshIndex);
-  const { documents, loading: documentsLoading } = useUserDocuments(
-    5,
-    refreshIndex,
-  );
-
+  const {
+    stats,
+    loading: statsLoading,
+    error
+  } = useUserStats(refreshIndex);
+  const {
+    activityData,
+    loading: activityLoading
+  } = useUserActivity(refreshIndex);
+  const {
+    documents,
+    loading: documentsLoading
+  } = useUserDocuments(5, refreshIndex);
   const isLoading = statsLoading || activityLoading || documentsLoading;
 
   // Update last loaded values when not loading
@@ -69,39 +63,29 @@ const Index = () => {
   }, [documents, documentsLoading]);
 
   // Always show last loaded value, or fallback to default (0/[])
-  const statsCards = [
-    {
-      label: "Documents Created",
-      value: lastStats ? lastStats.documentsCreated : 0,
-      icon: FileText,
-    },
-    {
-      label: "Portal Members",
-      value: lastStats ? lastStats.portalMembers : 0,
-      icon: Users,
-    },
-    {
-      label: "Requested Documents",
-      value: lastStats ? lastStats.requestedDocuments : 0,
-      icon: FolderOpen,
-    },
-    {
-      label: "Total Verifications",
-      value: lastStats ? lastStats.totalVerifications : 0,
-      icon: BarChart,
-    },
-  ];
-
+  const statsCards = [{
+    label: "Documents Created",
+    value: lastStats ? lastStats.documentsCreated : 0,
+    icon: FileText
+  }, {
+    label: "Portal Members",
+    value: lastStats ? lastStats.portalMembers : 0,
+    icon: Users
+  }, {
+    label: "Requested Documents",
+    value: lastStats ? lastStats.requestedDocuments : 0,
+    icon: FolderOpen
+  }, {
+    label: "Total Verifications",
+    value: lastStats ? lastStats.totalVerifications : 0,
+    icon: BarChart
+  }];
   if (isLoading && !lastStats) {
-    return (
-      <DashboardLayout>
+    return <DashboardLayout>
         <DashboardSkeleton />
-      </DashboardLayout>
-    );
+      </DashboardLayout>;
   }
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -115,14 +99,7 @@ const Index = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statsCards.map((stat, index) => (
-            <StatsCard
-              key={index}
-              title={stat.label}
-              value={stat.value.toString()}
-              icon={stat.icon}
-            />
-          ))}
+          {statsCards.map((stat, index) => <StatsCard key={index} title={stat.label} value={stat.value.toString()} icon={stat.icon} />)}
         </div>
 
         {/* Charts and tables */}
@@ -142,11 +119,7 @@ const Index = () => {
               </Button>
             </div>
             <div className="space-y-4">
-              {popularTemplates.slice(0, 3).map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0"
-                >
+              {popularTemplates.slice(0, 3).map(template => <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
                   <div className="rounded-full w-9 h-9 bg-primary-500/10 text-primary-500 flex items-center justify-center">
                     <FileText className="h-4 w-4" />
                   </div>
@@ -159,8 +132,7 @@ const Index = () => {
                   <Button variant="ghost" size="sm" className="text-primary" asChild>
                     <Link to={`/templates/${template.id}`}>Use</Link>
                   </Button>
-                </div>
-              ))}
+                </div>)}
             </div>
           </div>
         </div>
@@ -170,56 +142,38 @@ const Index = () => {
 
         {/* Recent Templates */}
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 };
-
 export function BookmarksPage() {
-  const { bookmarks, removeBookmark } = useBookmarks();
-  const bookmarkedTemplates = uniqueTemplates.filter((t) =>
-    bookmarks.includes(t.id),
-  );
+  const {
+    bookmarks,
+    removeBookmark
+  } = useBookmarks();
+  const bookmarkedTemplates = uniqueTemplates.filter(t => bookmarks.includes(t.id));
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<{
     id: string;
     title: string;
   } | null>(null);
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
           <span>Bookmarks</span>
         </h1>
-        {bookmarkedTemplates.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground">
-            No bookmarks yet. Click the bookmark icon on any template to add it
-            here.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {bookmarkedTemplates.map((template) => (
-              <div key={template.id} className="relative group">
-                <TemplateCard
-                  {...template}
-                  isAdmin={true}
-                  forceBookmarked={true}
-                  onBookmarkClick={(e) => {
-                    e.preventDefault();
-                    setPendingRemove({
-                      id: template.id,
-                      title: template.title,
-                    });
-                    setDialogOpen(template.id);
-                  }}
-                />
+        {bookmarkedTemplates.length === 0 ? <div className="py-12 text-center text-muted-foreground">No bookmarks yet. Click the bookmark icon on any document to add it here.</div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {bookmarkedTemplates.map(template => <div key={template.id} className="relative group">
+                <TemplateCard {...template} isAdmin={true} forceBookmarked={true} onBookmarkClick={e => {
+            e.preventDefault();
+            setPendingRemove({
+              id: template.id,
+              title: template.title
+            });
+            setDialogOpen(template.id);
+          }} />
                 {/* Modal for confirming removal */}
-                <AlertDialog
-                  open={dialogOpen === template.id}
-                  onOpenChange={(open) => {
-                    if (!open) setDialogOpen(null);
-                  }}
-                >
+                <AlertDialog open={dialogOpen === template.id} onOpenChange={open => {
+            if (!open) setDialogOpen(null);
+          }}>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
@@ -234,25 +188,19 @@ export function BookmarksPage() {
                       <AlertDialogCancel onClick={() => setDialogOpen(null)}>
                         No
                       </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => {
-                          if (pendingRemove) removeBookmark(pendingRemove.id);
-                          setDialogOpen(null);
-                          setPendingRemove(null);
-                        }}
-                      >
+                      <AlertDialogAction onClick={() => {
+                  if (pendingRemove) removeBookmark(pendingRemove.id);
+                  setDialogOpen(null);
+                  setPendingRemove(null);
+                }}>
                         Yes
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </div>
-            ))}
-          </div>
-        )}
+              </div>)}
+          </div>}
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 }
-
 export default Index;
