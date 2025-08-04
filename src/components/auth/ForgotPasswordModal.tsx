@@ -71,8 +71,8 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     setIsLoading(true);
     
     try {
-      // Use the correct production URL for Supabase auth
-      const redirectUrl = 'https://certifyr.vercel.app/reset-password';
+      // Use dynamic URL to work in all environments
+      const redirectUrl = `${window.location.origin}/reset-password`;
       
       console.log('Sending reset email with redirect URL:', redirectUrl);
       
