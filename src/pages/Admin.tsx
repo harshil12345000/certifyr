@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -627,8 +628,11 @@ const AdminPage = () => {
         <Tabs defaultValue="organization" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="organization">Organization</TabsTrigger>
+            <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+            <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="branding">Branding</TabsTrigger>
+            <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
           </TabsList>
 
