@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   Card,
   CardContent,
@@ -82,14 +81,12 @@ export default function RequestPortal() {
         >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="settings">Settings</TabsTrigger>
-            <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="requests">
               Requests
               <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary bg-primary text-primary-foreground text-xs font-medium">
                 {requestsCount}
               </span>
             </TabsTrigger>
-            <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="members">Members</TabsTrigger>
           </TabsList>
 
