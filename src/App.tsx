@@ -27,6 +27,7 @@ import { BookmarksProvider } from "./contexts/BookmarksContext";
 import Auth from "@/pages/Auth";
 import EmailConfirmed from "@/pages/auth/email-confirmed";
 import ResetPassword from "@/pages/ResetPassword";
+import Landing from "@/pages/Landing";
 
 const queryClient = new QueryClient();
 
@@ -38,14 +39,7 @@ function App() {
           <BrandingProvider>
             <BookmarksProvider>
               <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="/" element={<Landing />} />
                 <Route
                   path="/dashboard"
                   element={
