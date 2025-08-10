@@ -307,7 +307,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
                   <span className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
                     <HelpCircle className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-sm font-medium">Help Center</span>
+                  <span className="text-sm font-medium">Help</span>
                 </a>
               </div>
             )}
