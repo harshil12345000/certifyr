@@ -291,23 +291,23 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
                   href="https://certifyr.featurebase.app/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center gap-2 px-3 py-2 hover:bg-primary-500/5 transition-colors"
+                  className="flex-1 inline-flex items-center gap-2 px-3 py-1 hover:bg-primary-500/5 transition-colors"
                 >
                   <span className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
-                    <Send className="h-3.5 w-3.5" />
+                    <Send className="h-3 w-3" />
                   </span>
-                  <span className="text-sm font-medium">Feedback</span>
+                  <span className="text-sm font-small">Feedback</span>
                 </a>
                 <a
                   href="https://certifyr.featurebase.app/help"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center gap-2 px-3 py-2 hover:bg-primary-500/5 transition-colors border-l border-border"
+                  className="flex-1 inline-flex items-center gap-2 px-3 py-1 hover:bg-primary-500/5 transition-colors border-l border-border"
                 >
                   <span className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
-                    <HelpCircle className="h-3.5 w-3.5" />
+                    <HelpCircle className="h-3 w-3" />
                   </span>
-                  <span className="text-sm font-medium">Help</span>
+                  <span className="text-sm font-small">Help</span>
                 </a>
               </div>
             )}
