@@ -11,6 +11,8 @@ import {
   ChevronRight,
   DoorOpen,
   Bookmark,
+  Send,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarLogo } from "./SidebarLogo";
@@ -255,6 +257,61 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
               </>
             ))}
           </nav>
+        </div>
+
+        {/* Support Row: Feedback + Help Center */}
+        <div className="px-2 pb-2">
+          <div className={cn("flex", isCollapsed ? "justify-center" : "justify-stretch")}>
+            {isCollapsed ? (
+              <div className="flex gap-2">
+                <a
+                  href="https://certifyr.featurebase.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-border hover:bg-primary-500/5 transition-colors"
+                >
+                  <div className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
+                    <Send className="h-3.5 w-3.5" />
+                  </div>
+                </a>
+                <a
+                  href="https://certifyr.featurebase.app/help"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-border hover:bg-primary-500/5 transition-colors"
+                >
+                  <div className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </div>
+                </a>
+              </div>
+            ) : (
+              <div className="flex w-full rounded-md border border-border overflow-hidden">
+                <a
+                  href="https://certifyr.featurebase.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center gap-2 px-3 py-2 hover:bg-primary-500/5 transition-colors"
+                >
+                  <span className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
+                    <Send className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-sm font-medium">Feedback</span>
+                </a>
+                <a
+                  href="https://certifyr.featurebase.app/help"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center gap-2 px-3 py-2 hover:bg-primary-500/5 transition-colors border-l border-border"
+                >
+                  <span className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-sm font-medium">Help Center</span>
+                </a>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom Profile Section */}
