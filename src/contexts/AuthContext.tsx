@@ -12,6 +12,7 @@ export interface SignUpData {
   organizationSize?: string;
   organizationWebsite?: string;
   organizationLocation?: string;
+  selectedPlan?: string;
 }
 
 interface AuthContextType {
@@ -209,6 +210,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         metaData.organization_type_other = data.organizationTypeOther.trim();
       }
 
+      // Selected plan for onboarding (used by handle_new_user trigger)
+      if (data.selectedPlan) {
+        metaData.selectedPlan = data.selectedPlan;
+      }
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,

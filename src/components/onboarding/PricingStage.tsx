@@ -80,6 +80,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         organizationSize: data.organizationSize,
         organizationWebsite: data.organizationWebsite,
         organizationLocation: data.organizationLocation,
+        selectedPlan: data.selectedPlan,
       });
       if (error) {
         setError(error.message);
@@ -90,8 +91,8 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         });
       } else {
         toast({
-          title: "Account Created!",
-          description: "Welcome to Certifyr! Setting up your dashboard...",
+          title: "Success! Your account has been created",
+          description: "You're all set. Redirecting to your dashboard...",
         });
         navigate("/dashboard");
       }

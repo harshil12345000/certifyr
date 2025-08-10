@@ -46,11 +46,7 @@ export function IntroStage({ onNext }: IntroStageProps) {
 
           {/* Get Started Button */}
           <div className="pt-4">
-            <Button
-              onClick={onNext}
-              size="lg"
-              className="px-12 py-4 text-lg bg-[#1b80ff] hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 text-white transition-transform hover:scale-105"
-            >
+            <Button onClick={onNext} size="lg">
               Get Started
             </Button>
           </div>
