@@ -78,22 +78,43 @@ const ResetPassword = () => {
       console.log("Search params:", window.location.search);
       console.log("Hash:", window.location.hash);
 
-      // Check URL for auth tokens (Supabase can use query params or hash fragments)
+      // Check URL for auth tokens or authorization code (Supabase can use query params or hash fragments)
       const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       
-      // Get tokens from either source
+      // Get params from either source
       const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+      const code = urlParams.get('code') || hashParams.get('code');
       const type = urlParams.get('type') || hashParams.get('type');
 
       console.log("Token details:", {
         accessToken: accessToken ? `${accessToken.substring(0, 20)}...` : "Missing",
         refreshToken: refreshToken ? `${refreshToken.substring(0, 20)}...` : "Missing", 
+        code: code ? `${code.substring(0, 10)}...` : "Missing",
         type,
         urlHasParams: window.location.search.length > 0,
         hashHasParams: window.location.hash.length > 0
       });
+
+      // If using PKCE/code flow, exchange code for a session first
+      if (code && type === 'recovery') {
+        try {
+          console.log("Exchanging code for session...");
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("Code exchange error:", error);
+            // Fall through to token-based handling below
+          } else if (data.session?.user) {
+            console.log("Code exchange successful for:", data.session.user.email);
+            setIsValidToken(true);
+            setIsValidating(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Exception during code exchange:", err);
+        }
+      }
 
       // If no tokens in URL, check if user is already authenticated via session
       if (!accessToken || !refreshToken) {
