@@ -271,75 +271,81 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">
+      <div className="w-full">
+        {/* Header Section - Minimal spacing */}
+        <div className="px-6 pt-4 pb-2">
+          <h1 className="text-2xl font-bold mb-1">
             {requestId ? `View ${getTemplateName(id)}` : getTemplateName(id)}
           </h1>
           {getTemplateDescription(id) && (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-sm mb-0">
               {getTemplateDescription(id)}
             </p>
           )}
-
-          {requestStatus === "approved" && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
-              <p className="text-green-800 font-medium">
-                ✓ This document has been approved
-              </p>
-            </div>
-          )}
-
-          {requestStatus === "rejected" && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-              <p className="text-red-800 font-medium">
-                ✗ This document request was rejected
-              </p>
-            </div>
-          )}
         </div>
 
-        <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="form">Form</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
-          <TabsContent value="form" className="mt-0">
-            <div className="bg-card p-6 rounded-lg shadow-sm border">
-              <FormComponent
-                onSubmit={handleFormSubmit as any}
-                onDataChange={handleFormDataChange as any}
-                initialData={formData as any}
-              />
-            </div>
-          </TabsContent>
-          <TabsContent value="preview" className="mt-0">
-            <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
-              {!requestId && (
-                <div className="p-4 border-b bg-gray-50 flex justify-end">
-                  <Button
-                    onClick={handleRequestApproval}
-                    disabled={isSubmitting}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    {isSubmitting ? "Submitting..." : "Request Approval"}
-                  </Button>
-                </div>
-              )}
-              <div className="p-4">
-                <BrandingProvider organizationId={organizationId}>
-                  {PreviewComponent && (
-                    <PreviewComponent
-                      data={formData as any}
-                      isEmployeePreview={false}
-                      requestStatus={requestStatus}
-                    />
-                  )}
-                </BrandingProvider>
+        {/* Status Messages - No top margin */}
+        {requestStatus === "approved" && (
+          <div className="mx-6 mb-3 bg-green-50 border border-green-200 rounded-md p-3">
+            <p className="text-green-800 font-medium">
+              ✓ This document has been approved
+            </p>
+          </div>
+        )}
+
+        {requestStatus === "rejected" && (
+          <div className="mx-6 mb-3 bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-red-800 font-medium">
+              ✗ This document request was rejected
+            </p>
+          </div>
+        )}
+
+        {/* Tabs Container - No top spacing */}
+        <div className="px-6">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-3">
+              <TabsTrigger value="form">Form</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="form" className="mt-0">
+              <div className="bg-card p-4 rounded-lg shadow-sm border">
+                <FormComponent
+                  onSubmit={handleFormSubmit as any}
+                  onDataChange={handleFormDataChange as any}
+                  initialData={formData as any}
+                />
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+            
+            <TabsContent value="preview" className="mt-0">
+              <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+                {!requestId && (
+                  <div className="p-3 border-b bg-muted/50 flex justify-end">
+                    <Button
+                      onClick={handleRequestApproval}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Submitting..." : "Request Approval"}
+                    </Button>
+                  </div>
+                )}
+                <div className="p-4">
+                  <BrandingProvider organizationId={organizationId}>
+                    {PreviewComponent && (
+                      <PreviewComponent
+                        data={formData as any}
+                        isEmployeePreview={false}
+                        requestStatus={requestStatus}
+                      />
+                    )}
+                  </BrandingProvider>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </EmployeePortalLayout>
   );
