@@ -12,6 +12,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 
+// Template names and descriptions from DocumentDetail
+const TEMPLATE_NAMES: Record<string, string> = {
+  "academic-transcript-1": "Academic Transcript",
+  "embassy-attestation-letter-1": "Embassy Attestation Letter",
+  "employment-agreement-1": "Employment Agreement",
+  "nda-1": "Non-Disclosure Agreement",
+  "founders-agreement-1": "Founders Agreement",
+  "stock-purchase-agreement-1": "Stock Purchase Agreement",
+  "articles-incorporation-1": "Articles of Incorporation",
+  "corporate-bylaws-1": "Corporate Bylaws",
+  "bonafide-1": "Bonafide Certificate",
+  "character-1": "Character Certificate",
+  "experience-1": "Experience Certificate",
+  "embassy-attestation-1": "Embassy Attestation",
+  "completion-certificate-1": "Completion Certificate",
+  "transfer-certificate-1": "Transfer Certificate",
+  "noc-visa-1": "NOC for Visa",
+  "income-certificate-1": "Income Certificate",
+  "maternity-leave-1": "Maternity Leave Certificate",
+  "bank-verification-1": "Bank Verification Letter",
+  "offer-letter-1": "Offer Letter",
+  "address-proof-1": "Address Proof",
+};
+
+const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
+  "academic-transcript-1": "Official record of a student's academic performance.",
+  "embassy-attestation-letter-1": "Letter for embassy attestation and verification.",
+  "employment-agreement-1": "Contract outlining terms of employment.",
+  "nda-1": "Agreement to protect confidential information.",
+  "founders-agreement-1": "Agreement between company founders.",
+  "stock-purchase-agreement-1": "Agreement for the purchase of company stock.",
+  "articles-incorporation-1": "Legal document to form a corporation.",
+  "corporate-bylaws-1": "Rules governing the management of a corporation.",
+  "bonafide-1": "Certificate confirming a person's association with an institution.",
+  "character-1": "Certificate attesting to a person's character.",
+  "experience-1": "Certificate of work experience.",
+  "embassy-attestation-1": "Document for embassy attestation purposes.",
+  "completion-certificate-1": "Certificate for successful course or program completion.",
+  "transfer-certificate-1": "Certificate for transfer between institutions.",
+  "noc-visa-1": "No Objection Certificate for visa applications.",
+  "income-certificate-1": "Certificate stating income details.",
+  "maternity-leave-1": "Certificate for maternity leave approval.",
+  "bank-verification-1": "Letter for bank account verification.",
+  "offer-letter-1": "Official job offer letter.",
+  "address-proof-1": "Document to verify address.",
+};
+
 const TEMPLATE_FORM_MAP: Record<string, keyof typeof Forms> = {
   "bonafide-1": "BonafideForm",
   "character-1": "CharacterForm",
@@ -59,29 +106,11 @@ const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
 };
 
 const getTemplateName = (templateId: string) => {
-  const nameMap: Record<string, string> = {
-    "bonafide-1": "Bonafide Certificate",
-    "character-1": "Character Certificate",
-    "experience-1": "Experience Certificate",
-    "embassy-attestation-1": "Embassy Attestation",
-    "completion-certificate-1": "Completion Certificate",
-    "transfer-certificate-1": "Transfer Certificate",
-    "noc-visa-1": "NOC for Visa",
-    "income-certificate-1": "Income Certificate",
-    "maternity-leave-1": "Maternity Leave Letter",
-    "bank-verification-1": "Bank Verification Letter",
-    "offer-letter-1": "Offer Letter",
-    "address-proof-1": "Address Proof Certificate",
-    "articles-incorporation-1": "Articles of Incorporation",
-    "corporate-bylaws-1": "Corporate Bylaws",
-    "founders-agreement-1": "Founders Agreement",
-    "stock-purchase-agreement-1": "Stock Purchase Agreement",
-    "employment-agreement-1": "Employment Agreement",
-    "nda-1": "Non-Disclosure Agreement",
-    "academic-transcript-1": "Academic Transcript",
-    "embassy-attestation-letter-1": "Embassy Attestation Letter",
-  };
-  return nameMap[templateId] || templateId;
+  return TEMPLATE_NAMES[templateId] || templateId;
+};
+
+const getTemplateDescription = (templateId: string) => {
+  return TEMPLATE_DESCRIPTIONS[templateId] || "";
 };
 
 export default function EmployeeTemplateDetail() {
@@ -242,11 +271,16 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="max-w-4xl mx-auto px-4 py-2">
-        <div className="mb-4">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2">
-            {requestId ? `View ${getTemplateName(id)}` : "Fill Out Template"}
+            {requestId ? `View ${getTemplateName(id)}` : getTemplateName(id)}
           </h1>
+          {getTemplateDescription(id) && (
+            <p className="text-muted-foreground text-sm">
+              {getTemplateDescription(id)}
+            </p>
+          )}
 
           {requestStatus === "approved" && (
             <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
