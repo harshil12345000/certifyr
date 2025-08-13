@@ -181,11 +181,7 @@ export function RequestPortalSettings() {
             </div>
 
             <Alert className="bg-transparent rounded-sm">
-              <AlertDescription>
-                Share this URL with your employees to allow them to request
-                documents. They will need to enter the portal password and be
-                approved by an admin.
-              </AlertDescription>
+              <AlertDescription>Share this URL with your employees or students to allow them to request documents. They will need to enter the portal password and be approved by an admin.</AlertDescription>
             </Alert>
           </>}
 
