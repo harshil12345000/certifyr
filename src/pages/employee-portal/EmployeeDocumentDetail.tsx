@@ -271,10 +271,10 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="w-full">
-        {/* Header Section - Minimal spacing */}
-        <div className="px-6 pt-4 pb-2">
-          <h1 className="text-2xl font-bold mb-1">
+      <div className="w-full h-full">
+        {/* Header Section - Zero top spacing */}
+        <div className="px-6 pt-0 pb-3">
+          <h1 className="text-2xl font-bold mb-1 mt-4">
             {requestId ? `View ${getTemplateName(id)}` : getTemplateName(id)}
           </h1>
           {getTemplateDescription(id) && (
@@ -284,7 +284,7 @@ export default function EmployeeTemplateDetail() {
           )}
         </div>
 
-        {/* Status Messages - No top margin */}
+        {/* Status Messages */}
         {requestStatus === "approved" && (
           <div className="mx-6 mb-3 bg-green-50 border border-green-200 rounded-md p-3">
             <p className="text-green-800 font-medium">
@@ -301,16 +301,16 @@ export default function EmployeeTemplateDetail() {
           </div>
         )}
 
-        {/* Tabs Container - No top spacing */}
-        <div className="px-6">
+        {/* Tabs Container */}
+        <div className="px-6 pb-6">
           <Tabs value={tab} onValueChange={setTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-3">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="form">Form</TabsTrigger>
               <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
             
             <TabsContent value="form" className="mt-0">
-              <div className="bg-card p-4 rounded-lg shadow-sm border">
+              <div className="bg-card p-6 rounded-lg shadow-sm border">
                 <FormComponent
                   onSubmit={handleFormSubmit as any}
                   onDataChange={handleFormDataChange as any}
@@ -322,16 +322,17 @@ export default function EmployeeTemplateDetail() {
             <TabsContent value="preview" className="mt-0">
               <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
                 {!requestId && (
-                  <div className="p-3 border-b bg-muted/50 flex justify-end">
+                  <div className="p-4 border-b bg-muted/50 flex justify-end">
                     <Button
                       onClick={handleRequestApproval}
                       disabled={isSubmitting}
+                      className="transition-colors hover:bg-primary/90"
                     >
                       {isSubmitting ? "Submitting..." : "Request Approval"}
                     </Button>
                   </div>
                 )}
-                <div className="p-4">
+                <div className="p-6">
                   <BrandingProvider organizationId={organizationId}>
                     {PreviewComponent && (
                       <PreviewComponent

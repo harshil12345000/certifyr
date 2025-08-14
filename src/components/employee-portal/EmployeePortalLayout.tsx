@@ -81,7 +81,7 @@ export function EmployeePortalLayout({
         </div>
       </aside>
       <div className="pl-64 flex flex-col min-h-screen">
-        <main className="flex-1 px-2">{children}</main>
+        <main className="flex-1">{children}</main>
       </div>
     </div>
   );
