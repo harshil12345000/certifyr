@@ -55,10 +55,18 @@ export default function ResetPassword() {
       setIsValidating(true);
       
       try {
-        // Check URL parameters for recovery tokens
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        const type = searchParams.get('type');
+        // Check URL parameters for recovery tokens (support both hash and query)
+        const hash = window.location.hash;
+        const search = window.location.search;
+        const getParam = (key: string) => {
+          const h = new URLSearchParams(hash.startsWith('#') ? hash.substring(1) : hash);
+          const q = new URLSearchParams(search.startsWith('?') ? search.substring(1) : search);
+          return h.get(key) || q.get(key);
+        };
+
+        const accessToken = getParam('access_token');
+        const refreshToken = getParam('refresh_token');
+        const type = getParam('type');
         
         console.log('Recovery validation - URL params:', {
           hasAccessToken: !!accessToken,
@@ -189,10 +197,7 @@ export default function ResetPassword() {
     }
   };
 
-  // Redirect if user is already logged in and not in recovery flow
-  if (user && !searchParams.get('type')) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Do not redirect away; allow password reset even if session is established during recovery
 
   // Loading state during token validation
   if (isValidating) {
