@@ -71,10 +71,11 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     setIsLoading(true);
     
     try {
-      // Use dynamic URL to work in all environments
+      // Use proper recovery redirect URL
       const redirectUrl = `${window.location.origin}/reset-password`;
       
-      console.log('Sending reset email with redirect URL:', redirectUrl);
+      console.log('Sending password reset email to:', email);
+      console.log('Recovery redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
@@ -82,10 +83,30 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
 
       if (error) {
         console.error("Password reset error:", error);
-        // Don't leak whether email exists - always show neutral message
+        
+        // Handle specific error cases
+        if (error.message.includes('rate_limit')) {
+          toast({
+            title: "Too Many Requests",
+            description: "Please wait before requesting another reset link.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (error.message.includes('invalid_email')) {
+          toast({
+            title: "Invalid Email",
+            description: "Please enter a valid email address.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // For other errors, still show success to prevent email enumeration
       }
 
-      // Always show success message regardless of whether email exists
+      // Always show success message for security
       setIsEmailSent(true);
       setLastRequestTime(Date.now());
       
@@ -95,7 +116,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
       });
 
     } catch (error) {
-      console.error("Unexpected error:", error);
+      console.error("Unexpected error in password reset:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
