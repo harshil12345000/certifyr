@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
@@ -6,8 +6,19 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+const SIDEBAR_STORAGE_KEY = "sidebar-collapsed-state";
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Initialize state from localStorage
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    return stored === "true";
+  });
+
+  // Persist state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
+  }, [isCollapsed]);
   return (
     <div className="min-h-screen bg-background">
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
