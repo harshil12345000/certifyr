@@ -71,11 +71,11 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     setIsLoading(true);
     
     try {
-      // Use proper recovery redirect URL
+      // CRITICAL: This URL must be added to Supabase Auth > URL Configuration > Redirect URLs
       const redirectUrl = `${window.location.origin}/reset-password`;
       
-      console.log('Sending password reset email to:', email);
-      console.log('Recovery redirect URL:', redirectUrl);
+      console.log('Requesting password reset for:', email);
+      console.log('Reset page URL:', redirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
