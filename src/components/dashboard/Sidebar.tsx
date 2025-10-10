@@ -276,9 +276,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 
         {/* Support Row: Feedback + Help Center */}
         <div className="px-2 pb-2">
-          <div className={cn("flex", isCollapsed ? "justify-center" : "justify-stretch")}>
+          <div className={cn("flex", isCollapsed ? "flex-col items-center gap-2" : "justify-stretch")}>
             {isCollapsed ? (
-              <div className="flex gap-2">
+              <>
                 <a
                   href="https://certifyr.featurebase.app/"
                   target="_blank"
@@ -299,7 +299,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
                     <HelpCircle className="h-3.5 w-3.5" />
                   </div>
                 </a>
-              </div>
+              </>
             ) : (
               <div className="flex w-full rounded-md border border-border overflow-hidden">
                 <a
