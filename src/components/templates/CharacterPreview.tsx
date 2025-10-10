@@ -30,7 +30,7 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -40,7 +40,7 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
         const url = await generateDocumentQRCode(
           "character-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -52,7 +52,7 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
     }
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     fullName,
     parentName,

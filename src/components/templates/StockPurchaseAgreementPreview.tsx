@@ -33,7 +33,7 @@ export const StockPurchaseAgreementPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -45,14 +45,14 @@ export const StockPurchaseAgreementPreview: React.FC<
         const url = await generateDocumentQRCode(
           "stock-purchase-agreement-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
       }
     };
     generateQR();
-  }, [data, organizationDetails?.name, user?.id, companyName, seller, buyer]);
+  }, [data, organizationId, user?.id, companyName, seller, buyer]);
 
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement>,

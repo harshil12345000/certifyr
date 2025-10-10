@@ -19,6 +19,7 @@ interface BrandingContextType {
   logoUrl: string | null;
   signatureUrl: string | null;
   organizationDetails: OrganizationDetails | null;
+  organizationId: string | null;
   isLoading: boolean;
   refreshBranding: () => Promise<void>;
 }
@@ -27,6 +28,7 @@ const BrandingContext = createContext<BrandingContextType>({
   logoUrl: null,
   signatureUrl: null,
   organizationDetails: null,
+  organizationId: null,
   isLoading: false,
   refreshBranding: async () => {},
 });
@@ -36,6 +38,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] =
     useState<OrganizationDetails | null>(null);
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
@@ -54,10 +57,12 @@ export function BrandingProvider({ children, organizationId }: { children: React
       setLogoUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
+      setCurrentOrgId(null);
       setIsLoading(false);
       return;
     }
 
+    setCurrentOrgId(orgIdToUse);
     setIsLoading(true);
 
     try {
@@ -132,6 +137,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
         logoUrl,
         signatureUrl,
         organizationDetails,
+        organizationId: currentOrgId,
         isLoading,
         refreshBranding,
       }}

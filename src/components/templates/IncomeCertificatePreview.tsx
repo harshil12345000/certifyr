@@ -34,7 +34,7 @@ export const IncomeCertificatePreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -44,7 +44,7 @@ export const IncomeCertificatePreview: React.FC<
         const url = await generateDocumentQRCode(
           "income-certificate-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -53,7 +53,7 @@ export const IncomeCertificatePreview: React.FC<
     }
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     fullName,
     designation,

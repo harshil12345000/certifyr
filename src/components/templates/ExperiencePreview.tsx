@@ -18,7 +18,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, organizationDetails, isLoading } =
+  const { signatureUrl, organizationDetails, organizationId, isLoading } =
     useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
         const url = await generateDocumentQRCode(
           "experience-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -44,7 +44,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
       };
       generateQR();
     }
-  }, [data, organizationDetails?.name, user?.id]);
+  }, [data, organizationId, user?.id]);
 
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement>,

@@ -38,7 +38,7 @@ export const BankVerificationPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { logoUrl, signatureUrl, organizationDetails } = useBranding();
+  const { logoUrl, signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ export const BankVerificationPreview: React.FC<
         const url = await generateDocumentQRCode(
           "bank-verification-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -65,7 +65,7 @@ export const BankVerificationPreview: React.FC<
     generateQR();
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     fullName,
     bankName,

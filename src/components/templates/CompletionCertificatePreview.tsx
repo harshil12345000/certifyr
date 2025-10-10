@@ -33,7 +33,7 @@ export const CompletionCertificatePreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -45,7 +45,7 @@ export const CompletionCertificatePreview: React.FC<
         const url = await generateDocumentQRCode(
           "completion-certificate-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -59,7 +59,7 @@ export const CompletionCertificatePreview: React.FC<
     generateQR();
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     fullName,
     courseTitle,

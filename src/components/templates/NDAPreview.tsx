@@ -36,7 +36,7 @@ export const NDAPreview: React.FC<ExtendedNDAPreviewProps> = ({
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -48,7 +48,7 @@ export const NDAPreview: React.FC<ExtendedNDAPreviewProps> = ({
         const url = await generateDocumentQRCode(
           "nda-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -60,7 +60,7 @@ export const NDAPreview: React.FC<ExtendedNDAPreviewProps> = ({
     generateQR();
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     disclosingParty,
     receivingParty,

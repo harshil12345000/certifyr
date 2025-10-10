@@ -28,7 +28,7 @@ export const AddressProofPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -38,7 +38,7 @@ export const AddressProofPreview: React.FC<
         const url = await generateDocumentQRCode(
           "address-proof-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -52,7 +52,7 @@ export const AddressProofPreview: React.FC<
     }
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     fullName,
     currentAddress,

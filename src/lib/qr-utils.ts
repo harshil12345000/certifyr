@@ -82,13 +82,17 @@ export const saveVerifiedDocument = async (
     );
     const { error } = await supabase.from("verified_documents").insert(payload);
     if (error) {
+      console.error('Error saving verified document:', error);
       if (error.code === "42501" || error.code === "PGRST301") {
+        console.error('Permission denied - RLS policy blocking insert');
         return null;
       }
       return null;
     }
+    console.log('Verified document saved successfully');
     return verificationHash;
   } catch (error) {
+    console.error('Exception saving verified document:', error);
     return null;
   }
 };
@@ -110,14 +114,18 @@ export const generateDocumentQRCode = async (
     };
     const verificationHash = await saveVerifiedDocument(verificationData);
     if (!verificationHash) {
+      console.error('Failed to save verified document for QR code generation');
       return null;
     }
     const url = createVerificationUrl(verificationHash);
     if (!url) {
+      console.error('Failed to create verification URL for QR code');
       return null;
     }
+    console.log('QR code generated successfully:', url);
     return url;
   } catch (error) {
+    console.error('Error generating QR code:', error);
     return null;
   }
 };

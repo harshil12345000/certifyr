@@ -41,7 +41,7 @@ export const EmbassyAttestationPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -53,7 +53,7 @@ export const EmbassyAttestationPreview: React.FC<
         const url = await generateDocumentQRCode(
           "embassy-attestation-1",
           data,
-          organizationDetails?.name,
+          organizationId || undefined,
           user?.id,
         );
         setQrCodeUrl(url);
@@ -67,7 +67,7 @@ export const EmbassyAttestationPreview: React.FC<
     generateQR();
   }, [
     data,
-    organizationDetails?.name,
+    organizationId,
     user?.id,
     fullName,
     documentType,
