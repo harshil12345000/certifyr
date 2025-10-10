@@ -8,7 +8,8 @@ import {
   Settings,
   Menu,
   X,
-  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   DoorOpen,
   Bookmark,
   Send,
@@ -201,21 +202,35 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
           "transition-all duration-300 ease-in-out",
         )}
       >
-        <div className="flex items-center justify-between p-4 h-16">
+        {/* Toggle button - above logo when collapsed */}
+        {isCollapsed && (
+          <div className="flex justify-center pt-4 pb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex h-8 w-8"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        <div className={cn(
+          "flex items-center p-4 h-16",
+          isCollapsed ? "justify-center" : "justify-between"
+        )}>
           <SidebarLogo collapsed={isCollapsed} />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:flex"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            <ChevronRight
-              className={cn(
-                "h-5 w-5 transition-all",
-                isCollapsed ? "rotate-180" : "",
-              )}
-            />
-          </Button>
+          {!isCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex h-8 w-8"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex-1 py-6 overflow-y-auto">
