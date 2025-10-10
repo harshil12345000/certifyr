@@ -138,7 +138,10 @@ const Index = () => {
         </div>
 
         {/* Recent Documents */}
-        <RecentDocuments documents={lastDocuments || []} loading={false} />
+        <RecentDocuments 
+          documents={lastDocuments || []} 
+          loading={documentsLoading && !lastDocuments} 
+        />
 
         {/* Recent Templates */}
       </div>
