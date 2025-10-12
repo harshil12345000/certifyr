@@ -12,6 +12,7 @@ import DocumentBuilder from "@/pages/DocumentBuilder";
 import Onboarding from "@/pages/Onboarding";
 import Admin from "@/pages/Admin";
 import Settings from "@/pages/Settings";
+import History from "@/pages/History";
 import RequestPortal from "@/pages/RequestPortal";
 import Branding from "@/pages/admin/branding";
 import AdminDocuments from "@/pages/admin/documents";
@@ -189,6 +190,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <ProtectedRoute>
+                      <History />
                     </ProtectedRoute>
                   }
                 />

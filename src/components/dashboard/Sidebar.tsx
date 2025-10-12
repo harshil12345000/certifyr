@@ -14,6 +14,7 @@ import {
   Bookmark,
   Send,
   HelpCircle,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarLogo } from "./SidebarLogo";
@@ -35,6 +36,11 @@ const navItems: NavItem[] = [
     name: "Documents",
     path: "/documents",
     icon: <FileText className="h-5 w-5" />,
+  },
+  {
+    name: "History",
+    path: "/history",
+    icon: <Clock className="h-5 w-5" />,
   },
   {
     name: "Request Portal",

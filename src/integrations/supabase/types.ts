@@ -118,6 +118,45 @@ export type Database = {
         }
         Relationships: []
       }
+      document_history: {
+        Row: {
+          created_at: string | null
+          document_name: string
+          form_data: Json
+          id: string
+          is_editable: boolean | null
+          organization_id: string
+          status: string | null
+          template_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_name: string
+          form_data: Json
+          id?: string
+          is_editable?: boolean | null
+          organization_id: string
+          status?: string | null
+          template_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          document_name?: string
+          form_data?: Json
+          id?: string
+          is_editable?: boolean | null
+          organization_id?: string
+          status?: string | null
+          template_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_requests: {
         Row: {
           created_at: string
