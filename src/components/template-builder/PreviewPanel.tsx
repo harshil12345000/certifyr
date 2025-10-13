@@ -9,10 +9,12 @@ import {
   Smartphone,
   Share2,
   Copy,
+  Save,
 } from "lucide-react";
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useToast } from "@/hooks/use-toast";
 import { Letterhead } from "@/components/templates/Letterhead";
+import { useDocumentHistory } from "@/hooks/useDocumentHistory";
 
 interface PreviewPanelProps {
   elements: Section[];
@@ -26,6 +28,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   templateName = "Document Title",
 }) => {
   const { toast } = useToast();
+  const { saveDocument } = useDocumentHistory();
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
   const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
   const [isEditingBody, setIsEditingBody] = useState(false);
@@ -126,6 +129,29 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     }
   };
 
+  const handleSaveChanges = async () => {
+    try {
+      const formData = {
+        bodyHtml,
+        sampleData,
+        elements,
+      };
+      
+      await saveDocument(
+        templateName,
+        formData,
+        templateName.toLowerCase().replace(/\s+/g, "-")
+      );
+    } catch (error) {
+      console.error("Error saving document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col w-full h-full">
       <div className="bg-muted p-4 flex flex-col gap-4">
@@ -151,6 +177,14 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
         {/* Document Actions */}
         <div className="flex gap-2 justify-center border-t pt-4">
+          <Button
+            variant="default"
+            size="lg"
+            onClick={handleSaveChanges}
+            className="flex-1 max-w-[200px]"
+          >
+            <Save className="h-5 w-5 mr-2" /> Save Changes
+          </Button>
           <Button
             variant="outline"
             size="lg"
