@@ -90,7 +90,7 @@ export default function History() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-lg line-clamp-1">
-                        {item.document_name}
+                        {item.document_name} for {item.form_data?.fullName || item.form_data?.employeeName || item.form_data?.studentName || "Unknown"}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {formatDate(item.created_at)}

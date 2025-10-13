@@ -88,6 +88,7 @@ export function useDocumentHistory() {
           .update({
             document_name: documentName,
             form_data: formData,
+            status: "Draft",
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingDocs[0].id)
@@ -110,7 +111,7 @@ export function useDocumentHistory() {
             document_name: documentName,
             form_data: formData,
             template_id: templateId,
-            status: "draft",
+            status: "Draft",
           })
           .select()
           .single();
