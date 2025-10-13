@@ -70,28 +70,61 @@ export function useDocumentHistory() {
     }
 
     try {
-      const { data, error } = await supabase
+      // Check if document already exists for this user, org, and template
+      const { data: existingDocs } = await supabase
         .from("document_history")
-        .insert({
-          user_id: user.id,
-          organization_id: organizationId,
-          document_name: documentName,
-          form_data: formData,
-          template_id: templateId,
-          status: "draft",
-        })
-        .select()
-        .single();
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("organization_id", organizationId)
+        .eq("template_id", templateId)
+        .limit(1);
 
-      if (error) throw error;
+      let result;
 
-      toast({
-        title: "Success",
-        description: "Document saved to History",
-      });
+      if (existingDocs && existingDocs.length > 0) {
+        // Update existing document
+        result = await supabase
+          .from("document_history")
+          .update({
+            document_name: documentName,
+            form_data: formData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingDocs[0].id)
+          .select()
+          .single();
+
+        if (result.error) throw result.error;
+
+        toast({
+          title: "Success",
+          description: "Document updated in History",
+        });
+      } else {
+        // Insert new document
+        result = await supabase
+          .from("document_history")
+          .insert({
+            user_id: user.id,
+            organization_id: organizationId,
+            document_name: documentName,
+            form_data: formData,
+            template_id: templateId,
+            status: "draft",
+          })
+          .select()
+          .single();
+
+        if (result.error) throw result.error;
+
+        toast({
+          title: "Success",
+          description: "Document saved to History",
+        });
+      }
 
       fetchHistory();
-      return data;
+      return result.data;
     } catch (error) {
       console.error("Error saving document:", error);
       toast({
