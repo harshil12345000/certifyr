@@ -73,13 +73,14 @@ import {
   AcademicTranscriptData,
   EmbassyAttestationLetterData,
 } from "@/types/corporate-templates";
-import { Download, FileDown, ImageDown, Printer } from "lucide-react";
+import { Download, FileDown, ImageDown, Printer, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { generateAndDownloadPdf } from "@/lib/pdf-utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 import { usePreviewTracking } from "@/hooks/usePreviewTracking";
+import { useDocumentHistory } from "@/hooks/useDocumentHistory";
 
 // Map document IDs to display names
 const DOCUMENT_NAMES: Record<string, string> = {
@@ -569,6 +570,7 @@ const TemplateDetail = () => {
   const { user } = useAuth();
   const { trackDocumentCreation } = useDocumentTracking();
   const { trackPreviewGeneration } = usePreviewTracking();
+  const { saveDocument } = useDocumentHistory();
   const [activeTab, setActiveTab] = useState("form");
   const [formData, setFormData] = useState<
     | FormData
@@ -999,6 +1001,25 @@ const TemplateDetail = () => {
     }
   };
 
+  const handleSaveChanges = async () => {
+    try {
+      const documentName = DOCUMENT_NAMES[templateId || ""] || "Document";
+      
+      await saveDocument(
+        documentName,
+        formData,
+        templateId || ""
+      );
+    } catch (error) {
+      console.error("Error saving document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="container space-y-6">
@@ -1032,6 +1053,13 @@ const TemplateDetail = () => {
               className="bg-secondary rounded-md p-4"
             >
               <div className="flex justify-end gap-2 mb-4">
+                <Button
+                  onClick={handleSaveChanges}
+                  variant="default"
+                  className="gap-2"
+                >
+                  Save Changes <Save className="h-4 w-4" />
+                </Button>
                 <Button
                   onClick={handlePrint}
                   variant="secondary"
