@@ -24,17 +24,36 @@ export function useDocumentHistory() {
   const [loading, setLoading] = useState(true);
 
   const fetchHistory = async () => {
-    if (!user || !organizationId) {
+    if (!user) {
       setHistory([]);
       setLoading(false);
       return;
     }
 
     try {
+      setLoading(true);
+      // Resolve organization id via hook or RPC fallback
+      let orgId = organizationId as string | null | undefined;
+      if (!orgId) {
+        const { data: fetchedOrgId, error: orgErr } = await supabase.rpc(
+          "get_user_organization_id",
+          { user_id: user.id }
+        );
+        if (orgErr) {
+          console.error("Error fetching organization id via RPC:", orgErr);
+        }
+        orgId = (fetchedOrgId as string | null) || null;
+      }
+
+      if (!orgId) {
+        setHistory([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("document_history")
         .select("*")
-        .eq("organization_id", organizationId)
+        .eq("organization_id", orgId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -142,6 +161,38 @@ export function useDocumentHistory() {
           title: "Success",
           description: "Document saved to History",
         });
+      }
+
+      // Also sync to document_drafts for quick access
+      try {
+        const { data: existingDrafts } = await supabase
+          .from("document_drafts")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("template_id", templateId)
+          .limit(1);
+
+        if (existingDrafts && existingDrafts.length > 0) {
+          await supabase
+            .from("document_drafts")
+            .update({
+              form_data: formData,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingDrafts[0].id)
+            .eq("user_id", user.id);
+        } else {
+          await supabase
+            .from("document_drafts")
+            .insert({
+              user_id: user.id,
+              name: documentName,
+              template_id: templateId,
+              form_data: formData,
+            });
+        }
+      } catch (e) {
+        console.error("Error syncing document_drafts:", e);
       }
 
       fetchHistory();
