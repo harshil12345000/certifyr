@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -571,6 +571,7 @@ const TemplateDetail = () => {
   const { trackDocumentCreation } = useDocumentTracking();
   const { trackPreviewGeneration } = usePreviewTracking();
   const { saveDocument } = useDocumentHistory();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("form");
   const [formData, setFormData] = useState<
     | FormData
@@ -583,6 +584,7 @@ const TemplateDetail = () => {
     | AcademicTranscriptData
     | EmbassyAttestationLetterData
   >(() => getInitialData(templateId || ""));
+  const [remountKey, setRemountKey] = useState(0);
 
   useEffect(() => {
     if (!templateId) {
@@ -594,6 +596,15 @@ const TemplateDetail = () => {
       navigate("/templates");
     }
   }, [templateId, navigate, toast]);
+
+  // Hydrate form from history when navigating from History page
+  useEffect(() => {
+  const state = (location as any).state as { historyData?: { form_data?: any; template_id?: string } } | undefined;
+  if (state?.historyData?.form_data) {
+    setFormData(state.historyData.form_data as any);
+    setRemountKey((k) => k + 1);
+  }
+  }, [location]);
 
   const handleFormSubmit = (
     data:
@@ -618,147 +629,147 @@ const TemplateDetail = () => {
     switch (templateId) {
       case "academic-transcript-1":
         return (
-          <AcademicTranscriptForm
+          <AcademicTranscriptForm key={remountKey}
             initialData={formData as AcademicTranscriptData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "embassy-attestation-letter-1":
         return (
-          <EmbassyAttestationLetterForm
+          <EmbassyAttestationLetterForm key={remountKey}
             initialData={formData as EmbassyAttestationLetterData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "employment-agreement-1":
         return (
-          <EmploymentAgreementForm
+          <EmploymentAgreementForm key={remountKey}
             initialData={formData as EmploymentAgreementData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "nda-1":
         return (
-          <NDAForm
+          <NDAForm key={remountKey}
             initialData={formData as NDAData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "founders-agreement-1":
         return (
-          <FoundersAgreementForm
+          <FoundersAgreementForm key={remountKey}
             initialData={formData as FoundersAgreementData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "stock-purchase-agreement-1":
         return (
-          <StockPurchaseAgreementForm
+          <StockPurchaseAgreementForm key={remountKey}
             initialData={formData as StockPurchaseAgreementData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "articles-incorporation-1":
         return (
-          <ArticlesOfIncorporationForm
+          <ArticlesOfIncorporationForm key={remountKey}
             initialData={formData as ArticlesOfIncorporationData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "corporate-bylaws-1":
         return (
-          <CorporateBylawsForm
+          <CorporateBylawsForm key={remountKey}
             initialData={formData as CorporateBylawsData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "bonafide-1":
         return (
-          <BonafideForm
+          <BonafideForm key={remountKey}
             initialData={formData as BonafideData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "character-1":
         return (
-          <CharacterForm
+          <CharacterForm key={remountKey}
             initialData={formData as CharacterData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "experience-1":
         return (
-          <ExperienceForm
+          <ExperienceForm key={remountKey}
             initialData={formData as ExperienceData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "embassy-attestation-1":
         return (
-          <EmbassyAttestationForm
+          <EmbassyAttestationForm key={remountKey}
             initialData={formData as EmbassyAttestationData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "completion-certificate-1":
         return (
-          <CompletionCertificateForm
+          <CompletionCertificateForm key={remountKey}
             initialData={formData as CompletionCertificateData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "transfer-certificate-1":
         return (
-          <TransferCertificateForm
+          <TransferCertificateForm key={remountKey}
             initialData={formData as TransferCertificateData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "noc-visa-1":
         return (
-          <NocVisaForm
+          <NocVisaForm key={remountKey}
             initialData={formData as NocVisaData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "income-certificate-1":
         return (
-          <IncomeCertificateForm
+          <IncomeCertificateForm key={remountKey}
             initialData={formData as IncomeCertificateData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "maternity-leave-1":
         return (
-          <MaternityLeaveForm
+          <MaternityLeaveForm key={remountKey}
             initialData={formData as MaternityLeaveData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "bank-verification-1":
         return (
-          <BankVerificationForm
+          <BankVerificationForm key={remountKey}
             initialData={formData as BankVerificationData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "offer-letter-1":
         return (
-          <OfferLetterForm
+          <OfferLetterForm key={remountKey}
             initialData={formData as OfferLetterData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
         );
       case "address-proof-1":
         return (
-          <AddressProofForm
+          <AddressProofForm key={remountKey}
             initialData={formData as AddressProofData}
             onDataChange={setFormData}
           />
         );
       default:
         return (
-          <BonafideForm
+          <BonafideForm key={remountKey}
             initialData={formData as BonafideData}
             onSubmit={(data) => handleFormSubmit(data)}
           />
