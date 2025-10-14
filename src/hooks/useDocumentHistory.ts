@@ -72,7 +72,7 @@ export function useDocumentHistory() {
 
   useEffect(() => {
     fetchHistory();
-  }, [user, organizationId]);
+  }, [user]);
 
   const saveDocument = async (
     documentName: string,
