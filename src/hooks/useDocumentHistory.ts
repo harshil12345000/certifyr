@@ -60,7 +60,7 @@ export function useDocumentHistory() {
     formData: any,
     templateId: string
   ) => {
-    if (!user || !organizationId) {
+    if (!user) {
       toast({
         title: "Error",
         description: "You must be logged in to save documents",
@@ -69,13 +69,33 @@ export function useDocumentHistory() {
       return null;
     }
 
+    // Ensure we have an organization ID; fetch via RPC if missing
+    let orgId = organizationId as string | null | undefined;
+    if (!orgId) {
+      const { data: fetchedOrgId, error: orgErr } = await supabase.rpc(
+        "get_user_organization_id",
+        { user_id: user.id }
+      );
+      if (orgErr) {
+        console.error("Error fetching organization id via RPC:", orgErr);
+      }
+      orgId = (fetchedOrgId as string | null) || null;
+    }
+    if (!orgId) {
+      toast({
+        title: "Error",
+        description: "No active organization found for your account.",
+        variant: "destructive",
+      });
+      return null;
+    }
     try {
       // Check if document already exists for this user, org, and template
       const { data: existingDocs } = await supabase
         .from("document_history")
         .select("id")
         .eq("user_id", user.id)
-        .eq("organization_id", organizationId)
+        .eq("organization_id", orgId)
         .eq("template_id", templateId)
         .limit(1);
 
@@ -107,7 +127,7 @@ export function useDocumentHistory() {
           .from("document_history")
           .insert({
             user_id: user.id,
-            organization_id: organizationId,
+            organization_id: orgId,
             document_name: documentName,
             form_data: formData,
             template_id: templateId,
