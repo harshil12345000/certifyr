@@ -54,7 +54,7 @@ export function useDocumentHistory() {
         .from("document_history")
         .select("*")
         .eq("organization_id", orgId)
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
 
       if (error) throw error;
       setHistory(data || []);

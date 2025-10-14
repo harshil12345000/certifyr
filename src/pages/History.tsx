@@ -69,7 +69,7 @@ export default function History() {
                         {item.document_name} for {item.form_data?.fullName || item.form_data?.employeeName || item.form_data?.studentName || "Unknown"}
                       </CardTitle>
                       <CardDescription className="mt-1">
-                        {formatDate(item.created_at)}
+                        {formatDate(item.updated_at)}
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="ml-2">
