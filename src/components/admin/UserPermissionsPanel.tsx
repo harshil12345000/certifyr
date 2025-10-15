@@ -119,26 +119,37 @@ export function UserPermissionsPanel({
       return;
     }
     setIsInviting(true);
-    const { error } = await supabase.from("organization_invites").insert([
-      {
-        organization_id: organizationId,
-        email: inviteForm.email.toLowerCase().trim(),
-        role: inviteForm.role,
-        invited_by: user?.id,
-      },
-    ]);
-    if (error) {
+
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-collaborator', {
+        body: {
+          email: inviteForm.email.toLowerCase().trim(),
+          role: inviteForm.role,
+          organizationId: organizationId,
+          invitedBy: user?.id,
+        }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Invitation sent",
+        description: `An invitation email has been sent to ${inviteForm.email}`,
+      });
+
+      setInviteForm({ email: "", role: "admin" });
+      await fetchInvites(organizationId);
+    } catch (error: any) {
+      console.error('Invitation error:', error);
+      toast({
+        title: "Error sending invitation",
+        description: error.message || "Failed to send invitation email",
         variant: "destructive",
       });
-    } else {
-      toast({ title: "Invitation sent successfully!" });
-      setInviteForm({ email: "", role: "member" });
-      await fetchInvites(organizationId);
+    } finally {
+      setIsInviting(false);
     }
-    setIsInviting(false);
   };
 
   const handleDeleteInvite = async (inviteId: string) => {
