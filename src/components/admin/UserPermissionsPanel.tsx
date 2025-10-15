@@ -54,7 +54,7 @@ export function UserPermissionsPanel({
   const [loading, setLoading] = useState(true);
   const [inviteForm, setInviteForm] = useState({
     email: "",
-    role: "member",
+    role: "admin",
   });
   const [isInviting, setIsInviting] = useState(false);
 
@@ -171,10 +171,10 @@ export function UserPermissionsPanel({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Users & Permissions
+            Collaborators
           </CardTitle>
           <CardDescription>
-            Complete your organization setup to manage users and permissions.
+            Complete your organization setup to manage collaborators.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -193,7 +193,7 @@ export function UserPermissionsPanel({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Users & Permissions
+            Collaborators
           </CardTitle>
           <CardDescription>Loading...</CardDescription>
         </CardHeader>
@@ -212,15 +212,15 @@ export function UserPermissionsPanel({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Users & Permissions
+            Collaborators
           </CardTitle>
           <CardDescription>
-            Only organization administrators can manage users and permissions.
+            Only organization administrators can manage collaborators.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Contact your organization administrator if you need to invite users
+            Contact your organization administrator if you need to invite collaborators
             or change permissions.
           </p>
         </CardContent>
@@ -236,10 +236,10 @@ export function UserPermissionsPanel({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Invite New User
+              Invite New Admin
             </CardTitle>
             <CardDescription>
-              Send an invitation to add a new user to your organization.
+              Send an invitation to add a new admin to your organization.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -270,7 +270,6 @@ export function UserPermissionsPanel({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
@@ -347,10 +346,10 @@ export function UserPermissionsPanel({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Organization Members
+              Admin Collaborators
             </CardTitle>
             <CardDescription>
-              Current members of your organization.
+              Current admin collaborators of your organization.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -384,10 +383,6 @@ export function UserPermissionsPanel({
             )}
           </CardContent>
         </Card>
-      </div>
-      {/* Overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/60 backdrop-blur-sm">
-        <span className="text-2xl font-bold text-black">Coming Soon...</span>
       </div>
     </div>
   );

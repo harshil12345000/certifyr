@@ -629,7 +629,7 @@ const AdminPage = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="organization">Organization</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
-            <TabsTrigger value="users">Users & Permissions</TabsTrigger>
+            <TabsTrigger value="users">Collaborators</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
