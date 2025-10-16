@@ -13,9 +13,32 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const anonKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const fallbackUrl = "https://yjeeamhahyhfawwgebtd.supabase.co";
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || fallbackUrl;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+    if (!supabaseUrl) {
+      console.error('Missing SUPABASE_URL');
+      return new Response(
+        JSON.stringify({ error: 'Server not configured: SUPABASE_URL is missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (!anonKey) {
+      console.error('Missing anon key: SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY');
+      return new Response(
+        JSON.stringify({ error: 'Server not configured: SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY is missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (!serviceRoleKey) {
+      console.error('Missing SUPABASE_SERVICE_ROLE_KEY');
+      return new Response(
+        JSON.stringify({ error: 'Server not configured: SUPABASE_SERVICE_ROLE_KEY is missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Client bound to the caller's JWT (to get the inviter user securely)
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
