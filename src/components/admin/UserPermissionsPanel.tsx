@@ -256,7 +256,7 @@ export function UserPermissionsPanel({
 
   return (
     <div className="relative">
-      <div className="space-y-6">
+      <div className="space-y-6 blur-md pointer-events-none">
         {/* Invite Users Section */}
         <Card>
           <CardHeader>
@@ -409,6 +409,11 @@ export function UserPermissionsPanel({
             )}
           </CardContent>
         </Card>
+      </div>
+      
+      {/* Lock Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-6xl">🔒</span>
       </div>
     </div>
   );
