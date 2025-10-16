@@ -130,21 +130,36 @@ export function UserPermissionsPanel({
         }
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error('Edge function invocation error:', error);
+        throw new Error(error.message || 'Failed to invoke edge function');
+      }
+      
+      if (data?.error) {
+        console.error('Edge function returned error:', data);
+        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
+      }
 
-      toast({
-        title: "Invitation sent",
-        description: `An invitation email has been sent to ${inviteForm.email}`,
-      });
+      if (data?.existingUserLinked) {
+        toast({
+          title: "Collaborator added",
+          description: `${inviteForm.email} has been added to your organization (user already exists)`,
+        });
+      } else {
+        toast({
+          title: "Invitation sent",
+          description: `An invitation email has been sent to ${inviteForm.email}`,
+        });
+      }
 
       setInviteForm({ email: "", role: "admin" });
       await fetchInvites(organizationId);
+      await fetchMembers(organizationId);
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast({
         title: "Error sending invitation",
-        description: error.message || "Failed to send invitation email",
+        description: error.message || "Failed to send invitation. Please try again.",
         variant: "destructive",
       });
     } finally {

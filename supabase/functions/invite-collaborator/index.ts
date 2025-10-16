@@ -31,9 +31,12 @@ serve(async (req) => {
     // Parse body
     const { email, role, organizationId } = await req.json();
 
+    console.log('Received invitation request:', { email, role, organizationId });
+
     if (!email || !role || !organizationId) {
+      console.error('Missing required fields:', { email: !!email, role: !!role, organizationId: !!organizationId });
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: email, role, and organizationId are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -41,12 +44,14 @@ serve(async (req) => {
     // Get inviter from JWT
     const { data: userData, error: getUserError } = await supabaseAuth.auth.getUser();
     if (getUserError || !userData?.user) {
+      console.error('Failed to get user from JWT:', getUserError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized - Please log in again' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     const inviterId = userData.user.id;
+    console.log('Inviter ID:', inviterId);
 
     // Verify inviter is an active admin of the organization
     const { data: membership, error: membershipError } = await supabaseAdmin
@@ -59,11 +64,13 @@ serve(async (req) => {
       .maybeSingle();
 
     if (membershipError || !membership) {
+      console.error('Membership verification failed:', membershipError);
       return new Response(
-        JSON.stringify({ error: 'Not authorized to invite users' }),
+        JSON.stringify({ error: 'You must be an organization admin to invite collaborators' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    console.log('Inviter is verified admin of organization');
 
     // Fetch organization for email metadata
     const { data: organization, error: orgError } = await supabaseAdmin
@@ -72,11 +79,13 @@ serve(async (req) => {
       .eq('id', organizationId)
       .maybeSingle();
     if (orgError || !organization) {
+      console.error('Organization fetch failed:', orgError);
       return new Response(
-        JSON.stringify({ error: 'Organization not found' }),
+        JSON.stringify({ error: 'Organization not found. Please contact support.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    console.log('Organization found:', organization.name);
 
     // Create/record invite first
     const expiresAt = new Date();
@@ -96,13 +105,16 @@ serve(async (req) => {
       .single();
 
     if (inviteError) {
+      console.error('Invite creation failed:', inviteError);
       return new Response(
-        JSON.stringify({ error: 'Failed to create invitation' }),
+        JSON.stringify({ error: 'Failed to create invitation record: ' + inviteError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    console.log('Invitation record created:', invite.id);
 
     // Try sending Supabase Auth invitation email (new users only)
+    console.log('Attempting to send invitation email to:', email);
     const { data: inviteData, error: emailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       String(email).toLowerCase().trim(),
       {
@@ -116,6 +128,8 @@ serve(async (req) => {
         },
       },
     );
+
+    console.log('Email invitation result:', { success: !emailError, error: emailError?.message });
 
     if (emailError) {
       // If user already exists, directly add them as a member and mark invite accepted
@@ -167,12 +181,18 @@ serve(async (req) => {
       }
 
       // For other email errors, roll back the invite
+      console.error('Email sending failed, rolling back invite:', emailError);
       await supabaseAdmin.from('organization_invites').delete().eq('id', invite.id);
       return new Response(
-        JSON.stringify({ error: 'Failed to send invitation email' }),
+        JSON.stringify({ 
+          error: 'Failed to send invitation email. Please ensure email is configured in Supabase settings.',
+          details: emailError.message 
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Invitation sent successfully');
 
     return new Response(
       JSON.stringify({ success: true, inviteId: invite.id }),
