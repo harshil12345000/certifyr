@@ -239,7 +239,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
           )}
         </div>
 
-        <div className="flex-1 py-6 overflow-y-auto">
+        <div className={cn("flex-1 overflow-y-auto", isCollapsed ? "py-3" : "py-6")}>
           <nav className="px-2 space-y-1">
             {navItems.map((item, idx) => (
               <>
@@ -289,20 +289,20 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
                   href="https://certifyr.featurebase.app/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-border hover:bg-primary-500/5 transition-colors"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border hover:bg-primary-500/5 transition-colors"
                 >
-                  <div className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
-                    <Send className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-center h-5 w-5 rounded-full border border-border">
+                    <Send className="h-3 w-3" />
                   </div>
                 </a>
                 <a
                   href="https://certifyr.featurebase.app/help"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-border hover:bg-primary-500/5 transition-colors"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border hover:bg-primary-500/5 transition-colors"
                 >
-                  <div className="flex items-center justify-center h-6 w-6 rounded-full border border-border">
-                    <HelpCircle className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-center h-5 w-5 rounded-full border border-border">
+                    <HelpCircle className="h-3 w-3" />
                   </div>
                 </a>
               </>
