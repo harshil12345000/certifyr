@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 
-// Template names and descriptions from DocumentDetail
 const TEMPLATE_NAMES: Record<string, string> = {
   "academic-transcript-1": "Academic Transcript",
   "embassy-attestation-letter-1": "Embassy Attestation Letter",
@@ -119,16 +118,15 @@ export default function EmployeeTemplateDetail() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [requestStatus, setRequestStatus] = useState<
-    "pending" | "approved" | "rejected"
-  >("pending");
+  const [requestStatus, setRequestStatus] = useState<"pending" | "approved" | "rejected">("pending");
   const { employee, organizationId } = useEmployeePortal();
   const { toast } = useToast();
 
   // Scroll to top when component mounts or template changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [id]);
+
   const [formData, setFormData] = useState<FormData>(() => {
     if (id) {
       const initialData = getInitialData(id);
@@ -152,7 +150,6 @@ export default function EmployeeTemplateDetail() {
     };
   });
 
-  // Check if we're viewing an existing request
   const requestId = searchParams.get("requestId");
 
   useEffect(() => {
@@ -170,9 +167,7 @@ export default function EmployeeTemplateDetail() {
 
           if (request) {
             setFormData(request.template_data as unknown as FormData);
-            setRequestStatus(
-              request.status as "pending" | "approved" | "rejected",
-            );
+            setRequestStatus(request.status as "pending" | "approved" | "rejected");
             if (request.status === "approved") {
               setTab("preview");
             }
@@ -194,9 +189,9 @@ export default function EmployeeTemplateDetail() {
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
       <EmployeePortalLayout activeTab="templates">
-        <div className="max-w-2xl mx-auto py-4">
+        <div className="p-6">
           <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
-          <p className="text-muted-foreground mb-2">
+          <p className="text-muted-foreground">
             No template found for ID: <span className="font-mono">{id}</span>
           </p>
         </div>
@@ -220,8 +215,7 @@ export default function EmployeeTemplateDetail() {
     if (!employee || !organizationId) {
       toast({
         title: "Error",
-        description:
-          "Employee or organization information not found. Please try logging in again.",
+        description: "Employee or organization information not found.",
         variant: "destructive",
       });
       return;
@@ -237,31 +231,25 @@ export default function EmployeeTemplateDetail() {
         status: "pending",
       });
 
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // --- Insert admin notification ---
       await supabase.from("notifications").insert({
         org_id: organizationId,
         type: "document_approval",
         subject: `${employee.full_name} Requested Document Approval`,
-        body: `${employee.full_name} requested approval for a document: ${getTemplateName(id)}.\n\nCheck details and respond in Request Portal → Requests.`,
+        body: `${employee.full_name} requested approval for: ${getTemplateName(id)}.\n\nCheck Request Portal → Requests.`,
         data: {
           document_id: id,
           employee_id: employee.id,
           template_id: id,
         },
       });
-      // --- End notification insert ---
 
       toast({
         title: "Request Submitted",
         description: "Your document request has been submitted for approval",
       });
 
-      // Redirect to pending tab using navigate
       navigate(`/${organizationId}/request-portal?tab=pending`);
     } catch (error) {
       console.error("Error submitting request:", error);
@@ -278,81 +266,66 @@ export default function EmployeeTemplateDetail() {
   return (
     <EmployeePortalLayout activeTab="templates">
       <div className="p-6">
-        {/* Header Section */}
         <div className="mb-4">
-          <h1 className="text-2xl font-bold mb-2">
-            {getTemplateName(id)}
-          </h1>
+          <h1 className="text-2xl font-bold">{getTemplateName(id)}</h1>
           {getTemplateDescription(id) && (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-sm mt-1">
               {getTemplateDescription(id)}
             </p>
           )}
         </div>
 
-        {/* Status Messages */}
         {requestStatus === "approved" && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-3">
-            <p className="text-green-800 font-medium">
-              ✓ This document has been approved
-            </p>
+            <p className="text-green-800 font-medium">✓ This document has been approved</p>
           </div>
         )}
 
         {requestStatus === "rejected" && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-red-800 font-medium">
-              ✗ This document request was rejected
-            </p>
+            <p className="text-red-800 font-medium">✗ This document request was rejected</p>
           </div>
         )}
 
-        {/* Tabs Container */}
-        <div>
-          <Tabs value={tab} onValueChange={setTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="form">Form</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="form" className="mt-0">
-              <div className="bg-card p-6 rounded-lg shadow-sm border">
-                <FormComponent
-                  onSubmit={handleFormSubmit as any}
-                  onDataChange={handleFormDataChange as any}
-                  initialData={formData as any}
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="preview" className="mt-0">
-              <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
-                {!requestId && (
-                  <div className="p-4 border-b bg-muted/50 flex justify-end">
-                    <Button
-                      onClick={handleRequestApproval}
-                      disabled={isSubmitting}
-                      className="transition-colors hover:bg-primary/90"
-                    >
-                      {isSubmitting ? "Submitting..." : "Request Approval"}
-                    </Button>
-                  </div>
-                )}
-                <div className="p-6">
-                  <BrandingProvider organizationId={organizationId}>
-                    {PreviewComponent && (
-                      <PreviewComponent
-                        data={formData as any}
-                        isEmployeePreview={false}
-                        requestStatus={requestStatus}
-                      />
-                    )}
-                  </BrandingProvider>
+        <Tabs value={tab} onValueChange={setTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="form">Form</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="form" className="mt-0">
+            <div className="bg-card p-6 rounded-lg border">
+              <FormComponent
+                onSubmit={handleFormSubmit as any}
+                onDataChange={handleFormDataChange as any}
+                initialData={formData as any}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="mt-0">
+            <div className="bg-card rounded-lg border">
+              {!requestId && (
+                <div className="p-4 border-b flex justify-end">
+                  <Button onClick={handleRequestApproval} disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Request Approval"}
+                  </Button>
                 </div>
+              )}
+              <div className="p-6">
+                <BrandingProvider organizationId={organizationId}>
+                  {PreviewComponent && (
+                    <PreviewComponent
+                      data={formData as any}
+                      isEmployeePreview={false}
+                      requestStatus={requestStatus}
+                    />
+                  )}
+                </BrandingProvider>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </EmployeePortalLayout>
   );
