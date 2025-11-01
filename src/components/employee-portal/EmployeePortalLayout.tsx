@@ -8,7 +8,7 @@ import {
   Clock,
   FolderOpen,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 interface EmployeePortalLayoutProps {
   children: ReactNode;
@@ -46,27 +46,27 @@ export function EmployeePortalLayout({
           </div>
         </div>
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          <a
-            href={`/${organization?.id}/request-portal`}
+          <Link
+            to={`/${organization?.id}/request-portal`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "templates" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("templates")}
           >
-            <FileText className="h-5 w-5 mr-2" /> Templates
-          </a>
-          <a
-            href={`/${organization?.id}/request-portal?tab=pending`}
+            <FileText className="h-5 w-5 mr-2" /> Documents
+          </Link>
+          <Link
+            to={`/${organization?.id}/request-portal?tab=pending`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "pending" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("pending")}
           >
             <FolderOpen className="h-5 w-5 mr-2" /> My Requests
-          </a>
-          <a
-            href={`/${organization?.id}/request-portal?tab=settings`}
+          </Link>
+          <Link
+            to={`/${organization?.id}/request-portal?tab=settings`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "settings" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("settings")}
           >
             <Settings className="h-5 w-5 mr-2" /> Settings
-          </a>
+          </Link>
         </nav>
         <div className="sticky bottom-0 left-0 w-full bg-background p-4 border-t border-border/30 flex items-center gap-3 z-10">
           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">

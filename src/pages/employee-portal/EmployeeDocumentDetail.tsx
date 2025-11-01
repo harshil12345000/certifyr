@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import * as Forms from "@/components/templates/forms";
 import * as Previews from "@/components/templates";
 import { Button } from "@/components/ui/button";
@@ -116,6 +116,7 @@ const getTemplateDescription = (templateId: string) => {
 export default function EmployeeTemplateDetail() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestStatus, setRequestStatus] = useState<
@@ -123,6 +124,11 @@ export default function EmployeeTemplateDetail() {
   >("pending");
   const { employee, organizationId } = useEmployeePortal();
   const { toast } = useToast();
+
+  // Scroll to top when component mounts or template changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
   const [formData, setFormData] = useState<FormData>(() => {
     if (id) {
       const initialData = getInitialData(id);
@@ -255,8 +261,8 @@ export default function EmployeeTemplateDetail() {
         description: "Your document request has been submitted for approval",
       });
 
-      // Redirect to pending tab
-      window.location.href = `/${organizationId}/request-portal?tab=pending`;
+      // Redirect to pending tab using navigate
+      navigate(`/${organizationId}/request-portal?tab=pending`);
     } catch (error) {
       console.error("Error submitting request:", error);
       toast({
@@ -271,14 +277,14 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="w-full h-full">
-        {/* Header Section - Zero top spacing */}
-        <div className="px-6 pt-0 pb-3">
-          <h1 className="text-2xl font-bold mb-1 mt-4">
-            {requestId ? `View ${getTemplateName(id)}` : getTemplateName(id)}
+      <div className="w-full min-h-screen">
+        {/* Header Section - Clean top alignment */}
+        <div className="px-6 pt-6 pb-4">
+          <h1 className="text-2xl font-bold mb-2">
+            {getTemplateName(id)}
           </h1>
           {getTemplateDescription(id) && (
-            <p className="text-muted-foreground text-sm mb-0">
+            <p className="text-muted-foreground text-sm">
               {getTemplateDescription(id)}
             </p>
           )}

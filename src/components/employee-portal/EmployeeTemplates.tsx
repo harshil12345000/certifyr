@@ -193,12 +193,12 @@ export function EmployeeTemplates() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Document Templates</h1>
+          <h1 className="text-2xl font-semibold mb-1">Available Documents</h1>
           <p className="text-muted-foreground">
-            Browse and use our collection of legally reliable templates.
+            Browse and request documents from our collection.
           </p>
         </div>
       </div>
