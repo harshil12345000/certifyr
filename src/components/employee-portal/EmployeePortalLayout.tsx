@@ -80,8 +80,8 @@ export function EmployeePortalLayout({
           </div>
         </div>
       </aside>
-      <div className="pl-64 flex flex-col min-h-screen">
-        <main className="flex-1">{children}</main>
+      <div className="ml-64 w-full">
+        {children}
       </div>
     </div>
   );

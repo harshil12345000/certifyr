@@ -277,9 +277,9 @@ export default function EmployeeTemplateDetail() {
 
   return (
     <EmployeePortalLayout activeTab="templates">
-      <div className="w-full min-h-screen">
-        {/* Header Section - Clean top alignment */}
-        <div className="px-6 pt-6 pb-4">
+      <div className="p-6">
+        {/* Header Section */}
+        <div className="mb-4">
           <h1 className="text-2xl font-bold mb-2">
             {getTemplateName(id)}
           </h1>
@@ -292,7 +292,7 @@ export default function EmployeeTemplateDetail() {
 
         {/* Status Messages */}
         {requestStatus === "approved" && (
-          <div className="mx-6 mb-3 bg-green-50 border border-green-200 rounded-md p-3">
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-3">
             <p className="text-green-800 font-medium">
               ✓ This document has been approved
             </p>
@@ -300,7 +300,7 @@ export default function EmployeeTemplateDetail() {
         )}
 
         {requestStatus === "rejected" && (
-          <div className="mx-6 mb-3 bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
             <p className="text-red-800 font-medium">
               ✗ This document request was rejected
             </p>
@@ -308,7 +308,7 @@ export default function EmployeeTemplateDetail() {
         )}
 
         {/* Tabs Container */}
-        <div className="px-6 pb-6">
+        <div>
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="form">Form</TabsTrigger>
