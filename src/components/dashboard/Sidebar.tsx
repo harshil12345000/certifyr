@@ -140,11 +140,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   const { user } = useAuth();
   const { logoUrl, organizationDetails } = useBranding();
 
-  // Debug logging
-  console.log("[Sidebar] logoUrl:", logoUrl);
-  console.log("[Sidebar] organizationDetails:", organizationDetails);
-  console.log("[Sidebar] user:", user);
-
   // Get name and avatar from user metadata if available
   const name =
     user?.user_metadata?.full_name ||

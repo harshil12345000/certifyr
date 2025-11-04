@@ -501,7 +501,7 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
       active.id !== over?.id &&
       over?.data.current?.type === "field-dropzone"
     ) {
-      console.log("Field drag end, implement reordering logic", active, over);
+      // Field reordering logic
     }
   };
 
@@ -515,7 +515,7 @@ export const TemplateCanvas: React.FC<TemplateCanvasProps> = ({
       const oldIndex = sections.findIndex((s) => s.id === active.id);
       const newIndex = sections.findIndex((s) => s.id === over?.id);
       const updatedSections = arrayMove(sections, oldIndex, newIndex);
-      console.log("Section drag end, implement reordering", active, over);
+      // Section reordering logic
     }
   };
 
