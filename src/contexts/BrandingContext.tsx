@@ -49,7 +49,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
         .from("organization_members")
         .select("organization_id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       return memberData?.organization_id;
     })() : null);
 
@@ -67,13 +67,13 @@ export function BrandingProvider({ children, organizationId }: { children: React
 
     try {
       // Fetch organization details
-      const { data: orgData, error: orgError } = await supabase
+      const { data: orgData } = await supabase
         .from("organizations")
         .select("name, address, phone, email")
         .eq("id", orgIdToUse)
-        .single();
+        .maybeSingle();
 
-      if (!orgError && orgData) {
+      if (orgData) {
         const orgDetails = {
           name: orgData.name,
           address: orgData.address,
@@ -86,12 +86,12 @@ export function BrandingProvider({ children, organizationId }: { children: React
       }
 
       // Fetch branding files
-      const { data: filesData, error: filesError } = await supabase
+      const { data: filesData } = await supabase
         .from("branding_files")
         .select("name, path")
         .eq("organization_id", orgIdToUse);
 
-      if (!filesError && filesData) {
+      if (filesData) {
         let newLogoUrl: string | null = null;
         let newSignatureUrl: string | null = null;
 
@@ -113,7 +113,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
         setLogoUrl(null);
         setSignatureUrl(null);
       }
-    } catch (error) {
+    } catch {
       setLogoUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);

@@ -243,8 +243,7 @@ export async function getOrganizationBranding() {
     }
 
     return branding;
-  } catch (error) {
-    console.error("Failed to get organization branding:", error);
+  } catch {
     return { logo: null, signature: null };
   }
 }

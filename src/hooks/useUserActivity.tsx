@@ -78,9 +78,7 @@ export function useUserActivity(refreshIndex?: number) {
 
         setActivityData(chartData);
       } catch (err) {
-        console.error("Error fetching activity data:", err);
         setError("Failed to fetch activity data");
-        // Set empty data on error
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
         setActivityData(months.map((month) => ({ name: month, Documents: 0 })));
       } finally {

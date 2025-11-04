@@ -29,7 +29,6 @@ export function useUserDocuments(limit = 10, refreshIndex?: number) {
           .limit(limit);
 
         if (error) {
-          console.error("Error fetching documents:", error);
           setError("Failed to fetch documents");
           setDocuments([]);
           return;
@@ -51,7 +50,6 @@ export function useUserDocuments(limit = 10, refreshIndex?: number) {
 
         setDocuments(transformedData);
       } catch (err) {
-        console.error("Unexpected error fetching documents:", err);
         setError("Failed to fetch documents");
         setDocuments([]);
       } finally {
@@ -61,9 +59,15 @@ export function useUserDocuments(limit = 10, refreshIndex?: number) {
 
     fetchDocuments();
 
-    // Set up real-time subscription for live updates
+    // Set up real-time subscription for live updates only if user exists
+    if (!user?.id) return;
+
     const channel = supabase
-      .channel("documents-changes")
+      .channel(`documents-changes-${user.id}`, {
+        config: {
+          broadcast: { self: false },
+        },
+      })
       .on(
         "postgres_changes",
         {
@@ -73,16 +77,20 @@ export function useUserDocuments(limit = 10, refreshIndex?: number) {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          // Refetch documents when changes occur
           fetchDocuments();
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          // Silently handle subscription errors
+          channel.unsubscribe();
+        }
+      });
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
-  }, [user, limit, refreshIndex]);
+  }, [user?.id, limit, refreshIndex]);
 
   return { documents, loading, error };
 }

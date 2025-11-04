@@ -38,10 +38,10 @@ export async function incrementUserStat({
       p_stat_field: statField,
     });
     if (error) {
-      console.error(`Error incrementing ${statField}:`, error);
+      // Silently fail
     }
-  } catch (error) {
-    console.error(`Error incrementing ${statField}:`, error);
+    } catch (error) {
+    // Silently fail
   }
 }
 
@@ -78,28 +78,28 @@ export function useUserStats(refreshIndex?: number) {
             
             // Try to get stats with organization_id first
             if (orgId) {
-              const { data: orgStats, error: orgStatsError } = await supabase
+              const { data: orgStats } = await supabase
                 .from("user_statistics")
                 .select("total_verifications, requested_documents, portal_members")
                 .eq("user_id", user.id)
                 .eq("organization_id", orgId)
-                .single();
+                .maybeSingle();
               
-              if (!orgStatsError && orgStats) {
+              if (orgStats) {
                 userStats = orgStats;
               }
             }
             
             // If no stats found with organization_id, try without it (backward compatibility)
             if (!userStats) {
-              const { data: legacyStats, error: legacyStatsError } = await supabase
+              const { data: legacyStats } = await supabase
                 .from("user_statistics")
                 .select("total_verifications, requested_documents, portal_members")
                 .eq("user_id", user.id)
                 .is("organization_id", null)
-                .single();
+                .maybeSingle();
               
-              if (!legacyStatsError && legacyStats) {
+              if (legacyStats) {
                 userStats = legacyStats;
               }
             }
@@ -140,12 +140,7 @@ export function useUserStats(refreshIndex?: number) {
               query.is("organization_id", null);
             }
 
-            const { count, error } = await query;
-            
-            if (error) {
-              console.error("Error fetching preview generations count:", error);
-              return 0;
-            }
+            const { count } = await query;
 
             return count || 0;
           })()
@@ -159,13 +154,13 @@ export function useUserStats(refreshIndex?: number) {
           totalVerifications: userStatsResult?.total_verifications || 0,
         });
       } catch (err) {
-        console.error("Error fetching user stats:", err);
         setError("Failed to fetch user statistics");
-        // Keep the last known good stats instead of resetting to 0
-        setStats((prevStats) => ({
-          ...prevStats,
-          error: "Failed to update statistics",
-        }));
+        setStats({
+          documentsCreated: 0,
+          portalMembers: 0,
+          requestedDocuments: 0,
+          totalVerifications: 0,
+        });
       } finally {
         setLoading(false);
       }
