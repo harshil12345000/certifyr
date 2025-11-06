@@ -2,28 +2,17 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Home } from "lucide-react";
-
 const NotFound = () => {
   const location = useLocation();
-
   useEffect(() => {
     // Track 404 silently without logging
   }, [location.pathname]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-certifyr-blue-light via-white to-white p-4">
+  return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-certifyr-blue-light via-white to-white p-4">
       <div className="text-center max-w-md glass-card p-8 animate-fade-in">
-        <div className="w-20 h-20 rounded-full bg-certifyr-blue/10 flex items-center justify-center mx-auto mb-6">
-          <FileText className="h-10 w-10 text-certifyr-blue" />
-        </div>
+        
         <h1 className="text-4xl font-bold mb-4 text-certifyr-blue-dark">404</h1>
-        <p className="text-xl text-gray-600 mb-6">
-          This document doesn't exist
-        </p>
-        <p className="text-muted-foreground mb-8">
-          The document you are looking for might have been removed, renamed, or
-          is temporarily unavailable.
-        </p>
+        <p className="text-xl text-gray-600 mb-6">This page doesn't exist</p>
+        <p className="text-muted-foreground mb-8">The page you are looking for might have been removed, renamed, or is temporarily unavailable.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button className="gradient-blue gap-2" asChild>
             <a href="/">
@@ -31,14 +20,11 @@ const NotFound = () => {
             </a>
           </Button>
           <Button variant="outline" asChild>
-            <a href="/templates">
-              <FileText className="h-4 w-4 mr-2" /> Browse Templates
+            <a href="/templates"> Browse Documents<FileText className="h-4 w-4 mr-2" /> Browse Templates
             </a>
           </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default NotFound;
