@@ -21,17 +21,16 @@ export default function EmployeePortal() {
           .from("request_portal_settings")
           .select("*")
           .eq("organization_id", organizationId)
-          .eq("enabled", true)
-          .single();
+          .maybeSingle();
 
-        if (error || !data) {
-          console.error("Portal settings fetch error:", error);
+        if (error) {
           setPortalSettings(null);
-        } else {
+        } else if (data && data.enabled) {
           setPortalSettings(data);
+        } else {
+          setPortalSettings(null);
         }
       } catch (error) {
-        console.error("Error fetching portal settings:", error);
         setPortalSettings(null);
       } finally {
         setLoading(false);
