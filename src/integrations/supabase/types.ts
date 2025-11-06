@@ -217,7 +217,7 @@ export type Database = {
       document_verifications: {
         Row: {
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           verification_hash: string
           verification_result: string
@@ -225,7 +225,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           verification_hash: string
           verification_result: string
@@ -233,7 +233,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           verification_hash?: string
           verification_result?: string
@@ -487,7 +487,7 @@ export type Database = {
         Row: {
           document_id: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           organization_id: string | null
           scanned_at: string
           template_type: string | null
@@ -499,7 +499,7 @@ export type Database = {
         Insert: {
           document_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string | null
           scanned_at?: string
           template_type?: string | null
@@ -511,7 +511,7 @@ export type Database = {
         Update: {
           document_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string | null
           scanned_at?: string
           template_type?: string | null
@@ -828,10 +828,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_organization_id: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      get_user_organization_id: { Args: { user_id: string }; Returns: string }
       get_user_organizations: {
         Args: { check_user_id: string }
         Returns: {
@@ -851,10 +848,7 @@ export type Database = {
         Args: { check_org_id: string; check_user_id: string }
         Returns: boolean
       }
-      is_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_user_admin: { Args: never; Returns: boolean }
       is_user_admin_of_org: {
         Args: { org_id: string; user_id: string }
         Returns: boolean
