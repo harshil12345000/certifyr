@@ -12,7 +12,7 @@ const NotFound = () => {
         
         <h1 className="text-4xl font-bold mb-4 text-certifyr-blue-dark">404 Error</h1>
         <p className="text-xl text-gray-600 mb-6">Uh oh! This page doesn't exist.</p>
-        <p className="text-muted-foreground mb-8">The page you are looking for might have been removed, renamed, or is temporarily unavailable.</p>
+        <p className="text-muted-foreground mb-8">This page is unavailable at the moment.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button className="gradient-blue gap-2" asChild>
             <a href="/">
