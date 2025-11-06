@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase, getPublicUrl } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { DoorOpen, Building2, Shield } from "lucide-react";
+import { DoorOpen, Building2, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -54,7 +54,7 @@ export function EmployeePortalAuth({
           .from("organizations")
           .select("name")
           .eq("id", portalSettings.organization_id)
-          .single();
+          .maybeSingle();
 
         // Fetch organization logo
         const { data: brandingFiles } = await supabase
@@ -64,15 +64,19 @@ export function EmployeePortalAuth({
           .eq("name", "logo")
           .maybeSingle();
 
-        const logoUrl = brandingFiles?.path
-          ? getPublicUrl("branding", brandingFiles.path)
-          : null;
+        let logoUrl = null;
+        if (brandingFiles?.path) {
+          const { data } = supabase.storage
+            .from("branding")
+            .getPublicUrl(brandingFiles.path);
+          logoUrl = data.publicUrl;
+        }
 
         setOrgData({
           name: org?.name || "Organization",
           logoUrl,
         });
-      } catch (error) {
+      } catch {
         // Silent fail - use fallback
         setOrgData({ name: "Organization", logoUrl: null });
       }
@@ -314,7 +318,7 @@ export function EmployeePortalAuth({
             </div>
             <CardTitle>{orgName}'s Request Portal</CardTitle>
             <CardDescription>
-              Enter your {orgName}'s portal password to access the request portal
+              Enter {orgName}'s portal password to access the request portal
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -333,7 +337,7 @@ export function EmployeePortalAuth({
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Entering..." : "Enter Portal"}
+                {loading ? "Verifying..." : "Verify Password"}
               </Button>
             </form>
           </CardContent>
@@ -368,23 +372,42 @@ export function EmployeePortalAuth({
   }
 
   // --- Sign In / Register UI ---
+  const orgName = orgData?.name || "Organization";
+  const orgInitial = orgName.charAt(0).toUpperCase();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-            {mode === "signin" ? (
-              <DoorOpen className="h-6 w-6 text-primary" />
-            ) : (
-              <Building2 className="h-6 w-6 text-primary" />
-            )}
+          {mode === "register" && (
+            <div className="flex justify-start mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMode("signin")}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+            </div>
+          )}
+          <div className="mx-auto">
+            <Avatar className="h-16 w-16">
+              {orgData?.logoUrl && (
+                <AvatarImage src={orgData.logoUrl} alt={orgName} />
+              )}
+              <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
+                {orgInitial}
+              </AvatarFallback>
+            </Avatar>
           </div>
           <CardTitle>
-            {mode === "signin" ? "Employee Sign In" : "Employee Registration"}
+            {mode === "signin" ? "Log In" : "Create an Account"}
           </CardTitle>
           <CardDescription>
             {mode === "signin"
-              ? "Sign in with your approved employee credentials"
+              ? "Sign in with your approved user credentials."
               : "Register to request access to the organization portal"}
           </CardDescription>
         </CardHeader>
