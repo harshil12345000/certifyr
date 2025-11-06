@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { supabase, getPublicUrl } from "@/integrations/supabase/client";
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DoorOpen, Building2, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface EmployeePortalAuthProps {
   portalSettings: any;
@@ -37,6 +38,48 @@ export function EmployeePortalAuth({
     password: "",
     confirmPassword: "",
   });
+  const [orgData, setOrgData] = useState<{
+    name: string;
+    logoUrl: string | null;
+  } | null>(null);
+
+  // Fetch organization data
+  useEffect(() => {
+    const fetchOrgData = async () => {
+      if (!portalSettings?.organization_id) return;
+
+      try {
+        // Fetch organization details
+        const { data: org } = await supabase
+          .from("organizations")
+          .select("name")
+          .eq("id", portalSettings.organization_id)
+          .single();
+
+        // Fetch organization logo
+        const { data: brandingFiles } = await supabase
+          .from("branding_files")
+          .select("path")
+          .eq("organization_id", portalSettings.organization_id)
+          .eq("name", "logo")
+          .maybeSingle();
+
+        const logoUrl = brandingFiles?.path
+          ? getPublicUrl("branding", brandingFiles.path)
+          : null;
+
+        setOrgData({
+          name: org?.name || "Organization",
+          logoUrl,
+        });
+      } catch (error) {
+        // Silent fail - use fallback
+        setOrgData({ name: "Organization", logoUrl: null });
+      }
+    };
+
+    fetchOrgData();
+  }, [portalSettings?.organization_id]);
 
   // --- Portal Password Gate Handler ---
   const handlePortalPasswordSubmit = async (e: React.FormEvent) => {
@@ -252,17 +295,26 @@ export function EmployeePortalAuth({
 
   // --- Portal Password Gate UI ---
   if (mode === "portal-password") {
+    const orgName = orgData?.name || "Organization";
+    const orgInitial = orgName.charAt(0).toUpperCase();
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-              <Shield className="h-6 w-6 text-primary" />
+            <div className="mx-auto">
+              <Avatar className="h-16 w-16">
+                {orgData?.logoUrl && (
+                  <AvatarImage src={orgData.logoUrl} alt={orgName} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
+                  {orgInitial}
+                </AvatarFallback>
+              </Avatar>
             </div>
-            <CardTitle>Organization Portal Access</CardTitle>
+            <CardTitle>{orgName}'s Request Portal</CardTitle>
             <CardDescription>
-              Enter your organization's portal password to access the employee
-              request portal
+              Enter your {orgName}'s portal password to access the request portal
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -281,7 +333,7 @@ export function EmployeePortalAuth({
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Verifying..." : "Verify Password"}
+                {loading ? "Entering..." : "Enter Portal"}
               </Button>
             </form>
           </CardContent>
