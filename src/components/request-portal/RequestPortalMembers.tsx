@@ -25,7 +25,11 @@ interface PortalEmployee {
   registered_at: string;
 }
 
-export function RequestPortalMembers() {
+export function RequestPortalMembers({
+  onMemberProcessed,
+}: {
+  onMemberProcessed?: () => void;
+}) {
   const { user } = useAuth();
   const [employees, setEmployees] = useState<PortalEmployee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +99,7 @@ export function RequestPortalMembers() {
       });
 
       fetchEmployees();
+      onMemberProcessed?.();
     } catch (error) {
       console.error("Error updating employee status:", error);
       toast({
@@ -120,6 +125,7 @@ export function RequestPortalMembers() {
       });
 
       fetchEmployees();
+      onMemberProcessed?.();
     } catch (error) {
       console.error("Error removing employee:", error);
       toast({
@@ -234,6 +240,7 @@ export function RequestPortalMembers() {
                     size="sm"
                     variant="outline"
                     onClick={() => removeEmployee(employee.id)}
+                    className="hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Remove

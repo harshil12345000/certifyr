@@ -56,11 +56,21 @@ export function RequestPortalSettings() {
 
       // Always generate the portal URL dynamically
       const portalUrl = `${window.location.origin}/${orgData.organization_id}/request-portal`;
+      const decodedPassword = settingsData?.password_hash
+        ? (() => {
+            try {
+              return atob(settingsData.password_hash);
+            } catch (error) {
+              console.error("Error decoding portal password:", error);
+              return "";
+            }
+          })()
+        : "";
+
       setSettings({
         enabled: settingsData ? settingsData.enabled : false,
-        password: "",
-        // Don't display stored password
-        portalUrl
+        password: decodedPassword,
+        portalUrl: settingsData?.portal_url ?? portalUrl,
       });
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -165,7 +175,7 @@ export function RequestPortalSettings() {
               password: e.target.value
             }))} placeholder="Enter a secure password" />
                 <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 </Button>
               </div>
             </div>

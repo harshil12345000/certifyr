@@ -17,6 +17,7 @@ import { RequestPortalSkeleton } from "@/components/request-portal/RequestPortal
 export default function RequestPortal() {
   const [activeTab, setActiveTab] = useState("settings");
   const [requestsCount, setRequestsCount] = useState(0);
+  const [membersCount, setMembersCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Fetch requests count from Supabase
@@ -45,6 +46,33 @@ export default function RequestPortal() {
       setRequestsCount(count || 0);
     };
     fetchRequestsCount();
+  }, []);
+
+  // Fetch members count from Supabase
+  useEffect(() => {
+    const fetchMembersCount = async () => {
+      // Import supabase client dynamically to avoid SSR issues
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      if (!user) return setMembersCount(0);
+      // Get user's organization
+      const { data: orgData } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+      if (!orgData) return setMembersCount(0);
+      // Get all portal employees count
+      const { count, error } = await supabase
+        .from("request_portal_employees")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", orgData.organization_id);
+      if (error) return setMembersCount(0);
+      setMembersCount(count || 0);
+    };
+    fetchMembersCount();
   }, []);
 
   useEffect(() => {
@@ -87,7 +115,12 @@ export default function RequestPortal() {
                 {requestsCount}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="members">
+              Members
+              <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary bg-primary text-primary-foreground text-xs font-medium">
+                {membersCount}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="settings" className="space-y-6">
@@ -127,7 +160,33 @@ export default function RequestPortal() {
           </TabsContent>
 
           <TabsContent value="members" className="space-y-6">
-            <RequestPortalMembers />
+            <RequestPortalMembers
+              onMemberProcessed={() => {
+                // Refresh count when a member is processed
+                const fetchMembersCount = async () => {
+                  const { supabase } = await import(
+                    "@/integrations/supabase/client"
+                  );
+                  const { data: userData } = await supabase.auth.getUser();
+                  const user = userData?.user;
+                  if (!user) return setMembersCount(0);
+                  const { data: orgData } = await supabase
+                    .from("organization_members")
+                    .select("organization_id")
+                    .eq("user_id", user.id)
+                    .eq("role", "admin")
+                    .single();
+                  if (!orgData) return setMembersCount(0);
+                  const { count, error } = await supabase
+                    .from("request_portal_employees")
+                    .select("*", { count: "exact", head: true })
+                    .eq("organization_id", orgData.organization_id);
+                  if (error) return setMembersCount(0);
+                  setMembersCount(count || 0);
+                };
+                fetchMembersCount();
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>

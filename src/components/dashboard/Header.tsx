@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Search, Settings, User, LogOut, CircleHelp, CircleX, Check, FileText } from "lucide-react";
+import { Bell, Search, Settings, User, LogOut, CircleHelp, CircleX, Check, FileText, Send, HelpCircle, CircleUserRound, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -129,6 +129,9 @@ export function Header() {
   } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  // Active menu state
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   // Notifications state
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -316,14 +319,21 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? 'notifications' : null)}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative" onClick={markAllAsRead} // Mark all as read when bell or badge is clicked
-            style={{
-              position: 'relative'
-            }}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn(
+                  "relative rounded-full border-2 transition-colors",
+                  activeMenu === 'notifications' 
+                    ? "border-primary bg-primary/20" 
+                    : "border-border/50 hover:border-border"
+                )}
+                onClick={markAllAsRead}
+              >
                 <Bell className="h-5 w-5" />
-                {unread.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-primary-600 text-white text-[0.65rem] font-bold shadow" style={{
+                {unread.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-primary-600 text-white text-[0.65rem] font-bold shadow z-10" style={{
                 minWidth: '1rem',
                 height: '1rem',
                 fontSize: '0.65rem',
@@ -384,27 +394,70 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Support Center Icon */}
-          <div className="relative group flex items-center">
-            
-            <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
-              Feedback & Help Center
-            </span>
-          </div>
+          {/* Feedback Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "rounded-full border-2 transition-colors",
+              activeMenu === 'feedback' 
+                ? "border-primary bg-primary/20" 
+                : "border-border/50 hover:border-border"
+            )}
+            onClick={() => {
+              setActiveMenu('feedback');
+              window.open("https://certifyr.featurebase.app/", "_blank", "noopener,noreferrer");
+              // Reset after a short delay
+              setTimeout(() => setActiveMenu(null), 300);
+            }}
+            title="Feedback"
+          >
+            <Send className="h-5 w-5" />
+          </Button>
 
-          <DropdownMenu>
+          {/* Help Center Icon */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "relative group rounded-full border-2 transition-colors",
+              activeMenu === 'help' 
+                ? "border-primary bg-primary/20" 
+                : "border-border/50 hover:border-border"
+            )}
+            onClick={() => {
+              setActiveMenu('help');
+              window.open("https://certifyr.featurebase.app/help", "_blank", "noopener,noreferrer");
+              // Reset after a short delay
+              setTimeout(() => setActiveMenu(null), 300);
+            }}
+            title="Help Center"
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
+              Help Center
+            </span>
+          </Button>
+
+          {/* Person Icon for Admin and Settings */}
+          <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? 'quickaccess' : null)}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-3">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="text-xs">
-                    {user?.email ? getInitials(user.email) : "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden md:block text-sm">{user?.email}</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn(
+                  "rounded-full border-2 transition-colors",
+                  activeMenu === 'quickaccess' 
+                    ? "border-primary bg-primary/20" 
+                    : "border-border/50 hover:border-border"
+                )}
+                title="Admin & Settings"
+              >
+                <CircleUserRound className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email || "User"}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center cursor-pointer">
@@ -414,14 +467,14 @@ export function Header() {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/admin" className="flex items-center cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Admin Panel</span>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Admin</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600 focus:text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign Out</span>
+                <span>Log Out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
