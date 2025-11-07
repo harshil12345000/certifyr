@@ -56,15 +56,25 @@ export function EmployeePortalAuth({
           .eq("id", portalSettings.organization_id)
           .maybeSingle();
 
-        // Fetch organization logo from branding-assets bucket
-        const logoPath = `${portalSettings.organization_id}/logo.png`;
-        const { data: logoData } = supabase.storage
-          .from("branding-assets")
-          .getPublicUrl(logoPath);
+        // Fetch organization logo from branding_files table
+        const { data: brandingFile } = await supabase
+          .from("branding_files")
+          .select("path")
+          .eq("organization_id", portalSettings.organization_id)
+          .eq("name", "logo")
+          .maybeSingle();
+
+        let logoUrl = null;
+        if (brandingFile?.path) {
+          const { data: logoData } = supabase.storage
+            .from("branding-assets")
+            .getPublicUrl(brandingFile.path);
+          logoUrl = logoData.publicUrl;
+        }
 
         setOrgData({
           name: org?.name || "Organization",
-          logoUrl: logoData?.publicUrl || null,
+          logoUrl,
         });
       } catch {
         // Silent fail - use fallback
