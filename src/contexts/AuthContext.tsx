@@ -175,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signUp = async (email: string, password: string, data: SignUpData) => {
     try {
-      const redirectUrl = `${window.location.origin}/auth/email-confirmed`;
+      const redirectUrl = `${window.location.origin}/auth/email-verified`;
 
       // Create a clean metadata object - ensure we're using the exact field names the database expects
       const metaData: Record<string, any> = {
@@ -214,6 +214,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (data.selectedPlan) {
         metaData.selectedPlan = data.selectedPlan;
       }
+
+      console.log("Attempting signup with redirect URL:", redirectUrl);
+      
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -223,10 +226,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
+      console.log("Signup response:", { signUpData, error });
+
       if (error) {
         console.error("Supabase signup error:", error);
         return { error };
       }
+
+      // User created successfully, email verification required
+      // Don't set session yet - user needs to verify email first
+      console.log("User created successfully, email verification required");
 
       return { error: null };
     } catch (error) {

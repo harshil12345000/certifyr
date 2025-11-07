@@ -27,6 +27,8 @@ import { BookmarksPage } from "./pages/Index";
 import { BookmarksProvider } from "./contexts/BookmarksContext";
 import Auth from "@/pages/Auth";
 import EmailConfirmed from "@/pages/auth/email-confirmed";
+import EmailVerified from "@/pages/auth/email-verified";
+import CheckEmail from "@/pages/auth/check-email";
 import ResetPassword from "@/pages/ResetPassword";
 
 const queryClient = new QueryClient();
@@ -109,6 +111,8 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/signup" element={<Onboarding />} />
                 <Route path="/auth/email-confirmed" element={<EmailConfirmed />} />
+                <Route path="/auth/email-verified" element={<EmailVerified />} />
+                <Route path="/auth/check-email" element={<CheckEmail />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route
                   path="/request-portal"

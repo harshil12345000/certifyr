@@ -69,9 +69,10 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
   const handlePayment = async () => {
     setLocalLoading(true);
-    setError(null);
+    setError("");
+
     try {
-      const { error } = await signUp(data.email, data.password, {
+      const { error: signUpError } = await signUp(data.email, data.password, {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
         organizationName: data.organizationName,
@@ -82,28 +83,50 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         organizationLocation: data.organizationLocation,
         selectedPlan: data.selectedPlan,
       });
-      if (error) {
-        setError(error.message);
+
+      if (signUpError) {
+        // Check if it's a duplicate email error
+        if (signUpError.message.toLowerCase().includes("already registered") || 
+            signUpError.message.toLowerCase().includes("already exists") ||
+            signUpError.message.toLowerCase().includes("already been registered")) {
+          setError("This email is already registered. Please sign in instead.");
+          toast({
+            title: "Email Already Registered",
+            description: "This email is already registered. Redirecting to login...",
+            variant: "destructive",
+          });
+          setTimeout(() => {
+            navigate("/auth");
+          }, 2000);
+          return;
+        }
+        
+        setError(signUpError.message);
         toast({
           title: "Sign Up Failed",
-          description: error.message,
+          description: signUpError.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Success! Your account has been created",
-          description: "You're all set. Redirecting to your dashboard...",
-        });
-        navigate("/dashboard");
+        setLocalLoading(false);
+        return;
       }
+
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
+      });
+
+      // Redirect to check email page
+      setTimeout(() => {
+        navigate("/auth/check-email", { state: { email: data.email } });
+      }, 1000);
     } catch (err: any) {
-      setError("An unexpected error occurred");
+      setError(err.message || "An unexpected error occurred");
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLocalLoading(false);
     }
   };

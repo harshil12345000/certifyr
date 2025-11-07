@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Play } from "lucide-react";
+
 import { motion } from "framer-motion";
 
 interface IntroStageProps {
@@ -31,18 +31,6 @@ export function IntroStage({ onNext }: IntroStageProps) {
             </p>
           </div>
 
-          {/* Demo Video Placeholder */}
-          <div className="relative">
-            <Card className="aspect-video max-w-md mx-auto bg-gradient-to-br from-gray-100 to-gray-200 border-0 flex items-center justify-center group hover:shadow-lg transition-all duration-300 cursor-pointer">
-              <div className="text-center space-y-3">
-                <div className="w-16 h-16 bg-[#1b80ff] rounded-full flex items-center justify-center mx-auto group-hover:bg-blue-700 transition-colors">
-                  <Play className="w-8 h-8 text-white ml-1" />
-                </div>
-                <p className="text-xl font-semibold text-gray-700">Demo Video</p>
-                <p className="text-sm text-gray-500">See how Certifyr works</p>
-              </div>
-            </Card>
-          </div>
 
           {/* Get Started Button */}
           <div className="pt-4">
