@@ -79,9 +79,13 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
     setError("");
 
     try {
+      // TODO: Integrate actual payment processing here
+      // For now, we'll proceed with account creation
+      
+      // Create account with Supabase (this automatically sends verification email)
       const { error: signUpError } = await signUp(data.email, data.password, {
         fullName: data.fullName,
-        phoneNumber: data.phoneNumber,
+        phoneNumber: `${data.countryCode}${data.phoneNumber}`,
         organizationName: data.organizationName,
         organizationType: data.organizationType,
         organizationTypeOther: data.organizationTypeOther,
