@@ -19,23 +19,23 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
     if (!supabaseUrl) {
-      console.error('Missing SUPABASE_URL');
+      console.error('Missing database URL.');
       return new Response(
-        JSON.stringify({ error: 'Server not configured: SUPABASE_URL is missing' }),
+        JSON.stringify({ error: 'Server not configured, database URL is missing' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     if (!anonKey) {
-      console.error('Missing anon key: SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY');
+      console.error('Missing anon key.');
       return new Response(
-        JSON.stringify({ error: 'Server not configured: SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY is missing' }),
+        JSON.stringify({ error: 'Server not configured. Missing anon key.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     if (!serviceRoleKey) {
-      console.error('Missing SUPABASE_SERVICE_ROLE_KEY');
+      console.error('Missing service role key.');
       return new Response(
-        JSON.stringify({ error: 'Server not configured: SUPABASE_SERVICE_ROLE_KEY is missing' }),
+        JSON.stringify({ error: 'Server not configured: Service role key is missing' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -208,7 +208,7 @@ serve(async (req) => {
       await supabaseAdmin.from('organization_invites').delete().eq('id', invite.id);
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to send invitation email. Please ensure email is configured in Supabase settings.',
+          error: 'Failed to send invitation email. Please ensure email is configured in email service settings.',
           details: emailError.message 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
