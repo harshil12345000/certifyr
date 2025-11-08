@@ -416,7 +416,7 @@ export function Header() {
           >
             <Send className="h-5 w-5" />
             <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
-              Send Feedback
+              Feedback
             </span>
           </Button>
 
@@ -440,7 +440,7 @@ export function Header() {
           >
             <HelpCircle className="h-5 w-5" />
             <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
-              Help Center
+              Help
             </span>
           </Button>
 
@@ -459,7 +459,7 @@ export function Header() {
               >
                 <CircleUserRound className="h-5 w-5" />
                 <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
-                  Account Center
+                  Account
                 </span>
               </Button>
             </DropdownMenuTrigger>
