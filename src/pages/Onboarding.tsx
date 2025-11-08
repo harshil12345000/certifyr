@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
-import { IntroStage } from "@/components/onboarding/IntroStage";
+
 import { PersonalInfoStage } from "@/components/onboarding/PersonalInfoStage";
 import { OrganizationInfoStage } from "@/components/onboarding/OrganizationInfoStage";
 import { PasswordStage } from "@/components/onboarding/PasswordStage";
@@ -14,7 +14,9 @@ export interface OnboardingData {
   // Personal Info
   fullName: string;
   email: string;
+  countryCode: string;
   phoneNumber: string;
+  emailVerified: boolean;
   
   // Organization Info
   organizationName: string;
@@ -34,11 +36,10 @@ export interface OnboardingData {
 }
 
 const stages = [
-  { id: 1, name: "Intro", title: "Welcome" },
-  { id: 2, name: "Personal", title: "Personal Information" },
-  { id: 3, name: "Organization", title: "Organization Information" },
-  { id: 4, name: "Password", title: "Password" },
-  { id: 5, name: "Plan", title: "Choose Your Plan" },
+  { id: 1, name: "Personal", title: "Personal Information" },
+  { id: 2, name: "Organization", title: "Organization Information" },
+  { id: 3, name: "Password", title: "Password" },
+  { id: 4, name: "Plan", title: "Choose Your Plan" },
 ];
 
 export default function Onboarding() {
@@ -50,7 +51,9 @@ export default function Onboarding() {
   const [formData, setFormData] = useState<OnboardingData>({
     fullName: "",
     email: "",
+    countryCode: "+91",
     phoneNumber: "",
+    emailVerified: false,
     organizationName: "",
     organizationType: "",
     organizationTypeOther: "",
@@ -59,8 +62,8 @@ export default function Onboarding() {
     organizationLocation: "",
     password: "",
     confirmPassword: "",
-    selectedPlan: "basic",
-    billingPeriod: "monthly",
+    selectedPlan: "pro",
+    billingPeriod: "yearly",
   });
 
   const updateFormData = (data: Partial<OnboardingData>) => {
@@ -119,17 +122,15 @@ export default function Onboarding() {
   const renderStage = () => {
     switch (currentStage) {
       case 1:
-        return <IntroStage onNext={nextStage} />;
-      case 2:
         return (
           <PersonalInfoStage
             data={formData}
             updateData={updateFormData}
             onNext={nextStage}
-            onPrev={prevStage}
+            onPrev={() => navigate("/auth")}
           />
         );
-      case 3:
+      case 2:
         return (
           <OrganizationInfoStage
             data={formData}
@@ -138,7 +139,7 @@ export default function Onboarding() {
             onPrev={prevStage}
           />
         );
-      case 4:
+      case 3:
         return (
           <PasswordStage
             data={formData}
@@ -147,7 +148,7 @@ export default function Onboarding() {
             onPrev={prevStage}
           />
         );
-      case 5:
+      case 4:
         return (
           <PricingStage
             data={formData}

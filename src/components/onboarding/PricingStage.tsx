@@ -40,6 +40,13 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState(false);
+  
+  // Set defaults on mount
+  React.useEffect(() => {
+    if (data.billingPeriod !== 'yearly' || data.selectedPlan !== 'pro') {
+      updateData({ billingPeriod: 'yearly', selectedPlan: 'pro' });
+    }
+  }, []);
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -279,7 +286,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         <Button
           variant="ghost"
           onClick={() => setShowFAQ(!showFAQ)}
-          className="text-blue-600 hover:text-blue-700"
+          className="text-blue-600 hover:text-blue-700 border-2 border-blue-600 hover:bg-blue-50"
         >
           {showFAQ ? "Hide" : "Show"} Frequently Asked Questions
         </Button>
@@ -335,7 +342,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
               Creating Account...
             </>
           ) : (
-            `Subscribe & Continue - $${selectedPrice}${isYearly ? '/year' : '/month'}`
+            `Get ${data.selectedPlan === 'pro' ? 'Pro' : 'Basic'} – $${selectedPrice}${isYearly ? '/year' : '/month'}`
           )}
         </Button>
       </div>
