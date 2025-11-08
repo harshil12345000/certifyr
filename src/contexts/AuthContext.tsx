@@ -65,6 +65,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setSession(initialSession);
           setUser(validUser);
 
+          // Store authToken in localStorage if session exists
+          // Note: We don't set lastLogin here to preserve the original login time
+          // lastLogin should only be set on actual sign-in events
+          if (initialSession?.access_token) {
+            localStorage.setItem("authToken", initialSession.access_token);
+          } else {
+            // Clear localStorage if no valid session
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("lastLogin");
+          }
+
           if (validUser) {
             await ensureUserHasOrganization(validUser);
           }
@@ -88,6 +99,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setSession(session);
       setUser(validUser);
+
+      // Update localStorage based on auth state changes
+      if (session?.access_token) {
+        localStorage.setItem("authToken", session.access_token);
+        // Update lastLogin only on sign in events to preserve original login time
+        if (event === "SIGNED_IN") {
+          localStorage.setItem("lastLogin", Date.now().toString());
+        }
+      } else {
+        // Clear localStorage on sign out or token expiration
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("lastLogin");
+      }
 
       // When user signs in, check if they need to be added to an organization
       if (event === "SIGNED_IN" && validUser) {
@@ -256,17 +280,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
       });
 
-      if (!error && !rememberMe) {
-        // If not remembering, we'll use session storage instead of local storage
-        // This is handled by configuring the storage in the client
-      }
-
       // Immediately update user and session state after successful sign in
       if (!error) {
         const { data: { session: newSession } } = await supabase.auth.getSession();
         let validUser = newSession?.user ?? null;
         setSession(newSession);
         setUser(validUser);
+
+        // Store authToken and lastLogin in localStorage for root route redirect logic
+        if (newSession?.access_token) {
+          localStorage.setItem("authToken", newSession.access_token);
+          localStorage.setItem("lastLogin", Date.now().toString());
+        }
       }
 
       return { error };
@@ -280,6 +305,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
+      // Clear authToken and lastLogin from localStorage
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("lastLogin");
+
       // Force page refresh to ensure clean state
       window.location.href = "/auth";
     } catch (error) {
@@ -287,6 +316,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Force cleanup even if signOut fails
       setUser(null);
       setSession(null);
+      // Clear authToken and lastLogin from localStorage
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("lastLogin");
       window.location.href = "/auth";
     }
   };

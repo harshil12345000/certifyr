@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
@@ -8,6 +8,14 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const pathname = location.pathname;
+
+  // Public routes that should never trigger /auth redirect
+  const publicRoutes = ["/", "/landing"];
+  const isPublicRoute = publicRoutes.some(route => 
+    pathname === route || pathname.startsWith(`${route}/`)
+  );
 
   if (loading) {
     return (
@@ -20,7 +28,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!user && !loading) {
+  // If it's a public route, always allow access
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
+
+  // For protected routes, redirect to /auth if user is not authenticated
+  if (!user) {
     return <Navigate to="/auth" replace />;
   }
 

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RootRedirect } from "@/components/auth/RootRedirect";
 import Index from "@/pages/Index";
 import Documents from "@/pages/Documents";
 import DocumentDetail from "@/pages/DocumentDetail";
@@ -41,14 +42,8 @@ function App() {
           <BrandingProvider>
             <BookmarksProvider>
               <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Root route - handles redirect logic based on localStorage */}
+                <Route path="/" element={<RootRedirect />} />
                 <Route
                   path="/dashboard"
                   element={
