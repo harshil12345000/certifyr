@@ -207,3 +207,11 @@ export function BookmarksPage() {
     </DashboardLayout>;
 }
 export default Index;
+
+declare global {
+  interface Window {
+    Featurebase: (...args: any[]) => void;
+  }
+}
+
+window.Featurebase("boot", { appId: "684fd05695489274401afcbc" });
