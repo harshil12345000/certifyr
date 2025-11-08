@@ -67,7 +67,7 @@ serve(async (req) => {
     // Get inviter from JWT
     const { data: userData, error: getUserError } = await supabaseAuth.auth.getUser();
     if (getUserError || !userData?.user) {
-      console.error('Failed to get user from JWT:', getUserError);
+      console.error('Failed to get user from J.W.T:', getUserError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Please log in again' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
