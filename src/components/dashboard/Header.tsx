@@ -410,7 +410,6 @@ export function Header() {
               // Reset after a short delay
               setTimeout(() => setActiveMenu(null), 300);
             }}
-            title="Feedback"
           >
             <Send className="h-5 w-5" />
           </Button>
