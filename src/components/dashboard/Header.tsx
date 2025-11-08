@@ -325,7 +325,7 @@ export function Header() {
                 variant="ghost" 
                 size="icon" 
                 className={cn(
-                  "relative rounded-full border-2 transition-colors",
+                  "relative group rounded-full border-2 transition-colors",
                   activeMenu === 'notifications' 
                     ? "border-primary bg-primary/20" 
                     : "border-border/50 hover:border-border"
@@ -341,6 +341,9 @@ export function Header() {
               }}>
                     {unread.length}
                   </span>}
+                <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
+                  Notifications
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[23rem]" style={{
@@ -399,7 +402,7 @@ export function Header() {
             variant="ghost"
             size="icon"
             className={cn(
-              "rounded-full border-2 transition-colors",
+              "relative group rounded-full border-2 transition-colors",
               activeMenu === 'feedback' 
                 ? "border-primary bg-primary/20" 
                 : "border-border/50 hover:border-border"
@@ -412,6 +415,9 @@ export function Header() {
             }}
           >
             <Send className="h-5 w-5" />
+            <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
+              Send Feedback
+            </span>
           </Button>
 
           {/* Help Center Icon */}
@@ -445,13 +451,16 @@ export function Header() {
                 variant="ghost" 
                 size="icon" 
                 className={cn(
-                  "rounded-full border-2 transition-colors",
+                  "relative group rounded-full border-2 transition-colors",
                   activeMenu === 'quickaccess' 
                     ? "border-primary bg-primary/20" 
                     : "border-border/50 hover:border-border"
                 )}
               >
                 <CircleUserRound className="h-5 w-5" />
+                <span className="absolute left-1/2 -translate-x-1/2 top-10 z-50 px-3 py-1 rounded bg-background border border-border text-xs font-medium text-black opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-lg">
+                  Account Center
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
