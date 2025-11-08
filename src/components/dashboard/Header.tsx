@@ -439,7 +439,7 @@ export function Header() {
             </span>
           </Button>
 
-          {/* Person Icon for Admin and Settings */}
+          {/* Person Icon for Quick Access */}
           <DropdownMenu onOpenChange={(open) => setActiveMenu(open ? 'quickaccess' : null)}>
             <DropdownMenuTrigger asChild>
               <Button 
@@ -451,7 +451,6 @@ export function Header() {
                     ? "border-primary bg-primary/20" 
                     : "border-border/50 hover:border-border"
                 )}
-                title="Admin & Settings"
               >
                 <CircleUserRound className="h-5 w-5" />
               </Button>
