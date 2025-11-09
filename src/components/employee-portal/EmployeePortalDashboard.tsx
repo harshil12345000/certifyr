@@ -1,37 +1,25 @@
 import { useState, useEffect } from "react";
 import { useEmployeePortal } from "@/contexts/EmployeePortalContext";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmployeeTemplates } from "./EmployeeTemplates";
 import { EmployeeSettings } from "./EmployeeSettings";
 import { EmployeePendingRequests } from "./EmployeePendingRequests";
-import {
-  FileText,
-  Settings,
-  Building2,
-  User,
-  Clock,
-  FolderOpen,
-} from "lucide-react";
-
+import { FileText, Settings, Building2, User, Clock, FolderOpen } from "lucide-react";
 interface EmployeePortalDashboardProps {
   employee: any;
   onSignOut: () => void;
 }
-
 export function EmployeePortalDashboard({
   employee,
-  onSignOut,
+  onSignOut
 }: EmployeePortalDashboardProps) {
-  const { organization, setEmployee } = useEmployeePortal();
+  const {
+    organization,
+    setEmployee
+  } = useEmployeePortal();
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("tab") || "documents";
@@ -54,14 +42,11 @@ export function EmployeePortalDashboard({
     }
     window.history.replaceState({}, "", url.toString());
   }, [activeTab]);
-
   const handleSignOut = () => {
     localStorage.removeItem("employee_portal_session");
     onSignOut();
   };
-
-  return (
-    <div className="min-h-screen bg-background flex">
+  return <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside className="w-64 flex flex-col glass-card border-r border-border/50 min-h-screen h-screen">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
@@ -72,26 +57,17 @@ export function EmployeePortalDashboard({
             <h1 className="text-lg font-semibold leading-tight">
               {organization?.name || "Organization"}
             </h1>
-            <p className="text-xs text-muted-foreground">Employee Portal</p>
+            <p className="text-xs text-muted-foreground">Request Portal</p>
           </div>
         </div>
         <nav className="flex-1 py-6 px-2 space-y-1 overflow-y-auto">
-          <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "documents" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
-            onClick={() => setActiveTab("documents")}
-          >
+          <button className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "documents" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`} onClick={() => setActiveTab("documents")}>
             <FileText className="h-5 w-5 mr-2" /> Documents
           </button>
-          <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "pending" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
-            onClick={() => setActiveTab("pending")}
-          >
+          <button className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "pending" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`} onClick={() => setActiveTab("pending")}>
             <FolderOpen className="h-5 w-5 mr-2" /> My Requests
           </button>
-          <button
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "settings" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
-            onClick={() => setActiveTab("settings")}
-          >
+          <button className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "settings" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`} onClick={() => setActiveTab("settings")}>
             <Settings className="h-5 w-5 mr-2" /> Settings
           </button>
         </nav>
@@ -114,6 +90,5 @@ export function EmployeePortalDashboard({
         {activeTab === "pending" && <EmployeePendingRequests />}
         {activeTab === "settings" && <EmployeeSettings employee={employee} />}
       </main>
-    </div>
-  );
+    </div>;
 }
