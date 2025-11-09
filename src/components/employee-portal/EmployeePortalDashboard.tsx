@@ -77,9 +77,9 @@ export function EmployeePortalDashboard({
     localStorage.removeItem("employee_portal_session");
     onSignOut();
   };
-  return <div className="min-h-screen bg-background flex">
+    return <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col glass-card border-r border-border/50 min-h-screen h-screen">
+      <aside className="fixed left-0 top-0 w-64 flex flex-col glass-card border-r border-border/50 h-screen z-30">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
             {logoUrl ? (
@@ -139,7 +139,7 @@ export function EmployeePortalDashboard({
         </div>
       </aside>
       {/* Main Content */}
-      <main className="flex-1 p-6">
+      <main className="ml-64 min-h-screen p-6 overflow-y-auto">
         {activeTab === "documents" && <EmployeeTemplates />}
         {activeTab === "pending" && <EmployeePendingRequests />}
         {activeTab === "settings" && <EmployeeSettings employee={employee} />}
