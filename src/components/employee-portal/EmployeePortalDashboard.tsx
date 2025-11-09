@@ -74,7 +74,14 @@ export function EmployeePortalDashboard({
         {/* Bottom info: always visible, sticky to bottom */}
         <div className="sticky bottom-0 left-0 w-full bg-background p-4 border-t border-border/30 flex items-center gap-3 z-10">
           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-            <User className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold text-primary">
+              {(employee?.full_name || organization?.name || "Employee")
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)}
+            </span>
           </div>
           <div>
             <p className="text-sm font-medium">
