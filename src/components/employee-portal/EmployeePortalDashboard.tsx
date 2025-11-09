@@ -8,6 +8,7 @@ import { EmployeeTemplates } from "./EmployeeTemplates";
 import { EmployeeSettings } from "./EmployeeSettings";
 import { EmployeePendingRequests } from "./EmployeePendingRequests";
 import { FileText, Settings, Building2, User, Clock, FolderOpen } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 interface EmployeePortalDashboardProps {
   employee: any;
   onSignOut: () => void;
@@ -18,12 +19,42 @@ export function EmployeePortalDashboard({
 }: EmployeePortalDashboardProps) {
   const {
     organization,
-    setEmployee
+    setEmployee,
+    organizationId
   } = useEmployeePortal();
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("tab") || "documents";
   });
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  // Fetch organization logo
+  useEffect(() => {
+    const fetchLogo = async () => {
+      if (!organizationId) return;
+
+      try {
+        const { data: filesData } = await supabase
+          .from("branding_files")
+          .select("name, path")
+          .eq("organization_id", organizationId)
+          .eq("name", "logo")
+          .maybeSingle();
+
+        if (filesData?.path) {
+          const { data: urlData } = supabase.storage
+            .from("branding-assets")
+            .getPublicUrl(filesData.path);
+          setLogoUrl(urlData.publicUrl);
+        }
+      } catch (error) {
+        console.error("Error fetching logo:", error);
+        setLogoUrl(null);
+      }
+    };
+
+    fetchLogo();
+  }, [organizationId]);
 
   // Sync employee prop with context
   useEffect(() => {
@@ -50,8 +81,24 @@ export function EmployeePortalDashboard({
       {/* Sidebar */}
       <aside className="w-64 flex flex-col glass-card border-r border-border/50 min-h-screen h-screen">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
-          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-            <Building2 className="h-5 w-5 text-primary" />
+          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={organization?.name || "Organization"} 
+                className="w-full h-full object-cover"
+                onError={() => setLogoUrl(null)}
+              />
+            ) : (
+              <span className="text-sm font-semibold text-primary">
+                {(organization?.name || "Organization")
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)}
+              </span>
+            )}
           </div>
           <div>
             <h1 className="text-lg font-semibold leading-tight">
