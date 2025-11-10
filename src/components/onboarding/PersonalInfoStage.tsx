@@ -8,7 +8,7 @@ import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,18 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -47,7 +41,14 @@ export function PersonalInfoStage({
   const [loading, setLoading] = useState(false);
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+
+  const filteredCountries = countries.filter(
+    (country) =>
+      country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      country.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,35 +188,54 @@ export function PersonalInfoStage({
                             : "Select country code";
                         })()
                       : "Select country code"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[400px] p-0" align="start">
-                  <Command shouldFilter={true}>
-                    <CommandInput placeholder="Search country..." className="h-9" />
-                    <CommandEmpty>No country found.</CommandEmpty>
-                    <CommandGroup className="max-h-[300px] overflow-auto">
-                      {countries.map((country) => (
-                        <CommandItem
-                          key={`${country.code}-${country.name}`}
-                          value={`${country.name} ${country.code}`}
-                          onSelect={() => {
-                            updateData({ countryCode: country.code });
-                            setOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              data.countryCode === country.code
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          {country.flag} {country.name} ({country.code})
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
+                  <div className="flex flex-col">
+                    <div className="p-2 border-b">
+                      <Input
+                        placeholder="Search country..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <ScrollArea className="h-[300px]">
+                      <div className="p-1">
+                        {filteredCountries.length === 0 ? (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            No country found.
+                          </div>
+                        ) : (
+                          filteredCountries.map((country) => (
+                            <button
+                              key={`${country.code}-${country.name}`}
+                              onClick={() => {
+                                updateData({ countryCode: country.code });
+                                setOpen(false);
+                                setSearchQuery("");
+                              }}
+                              className={cn(
+                                "w-full flex items-center px-2 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                data.countryCode === country.code && "bg-accent"
+                              )}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  data.countryCode === country.code
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {country.flag} {country.name} ({country.code})
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
