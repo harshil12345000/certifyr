@@ -189,9 +189,9 @@ export function PersonalInfoStage({
                       : "Select country code"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search country..." />
+                <PopoverContent className="w-[400px] p-0" align="start">
+                  <Command shouldFilter={true}>
+                    <CommandInput placeholder="Search country..." className="h-9" />
                     <CommandEmpty>No country found.</CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
                       {countries.map((country) => (
