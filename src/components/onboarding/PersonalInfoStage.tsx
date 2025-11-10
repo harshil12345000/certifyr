@@ -42,6 +42,8 @@ export function PersonalInfoStage({
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
+  const [showEmailSuggestions, setShowEmailSuggestions] = useState(false);
   const { toast } = useToast();
 
   const filteredCountries = countries.filter(
@@ -49,6 +51,55 @@ export function PersonalInfoStage({
       country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       country.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const commonDomains = [
+    "gmail.com",
+    "outlook.com",
+    "yahoo.com",
+    "hotmail.com",
+    "icloud.com",
+    "protonmail.com",
+  ];
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    updateData({ email: value });
+    setError(""); // Clear error when user types
+
+    // Generate email suggestions
+    if (value.includes("@")) {
+      const [localPart, domainPart] = value.split("@");
+      if (domainPart && !value.endsWith("@")) {
+        const suggestions = commonDomains
+          .filter((domain) => domain.startsWith(domainPart.toLowerCase()))
+          .map((domain) => `${localPart}@${domain}`)
+          .slice(0, 3);
+        setEmailSuggestions(suggestions);
+        setShowEmailSuggestions(suggestions.length > 0 && domainPart !== suggestions[0]?.split("@")[1]);
+      } else {
+        setShowEmailSuggestions(false);
+      }
+    } else {
+      setShowEmailSuggestions(false);
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    if (data.email && data.email.includes("@")) {
+      // Check if email already exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", data.email.trim())
+        .maybeSingle();
+
+      if (existingProfile) {
+        setError("This email is already used with an existing account. Please choose a different email.");
+      }
+    }
+    // Hide suggestions after a short delay to allow clicking on them
+    setTimeout(() => setShowEmailSuggestions(false), 200);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +116,24 @@ export function PersonalInfoStage({
     if (!data.email.trim() || !data.email.includes("@")) {
       setError("Please enter a valid email address");
       setLoading(false);
+      return;
+    }
+
+    // Check if email already exists before proceeding
+    const { data: existingProfile, error: checkError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", data.email.trim())
+      .maybeSingle();
+
+    if (existingProfile) {
+      setError("This email is already used with an existing account. Please choose a different email.");
+      setLoading(false);
+      toast({
+        title: "Email Already Exists",
+        description: "This email is already registered. Please use a different email or sign in.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -156,16 +225,40 @@ export function PersonalInfoStage({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="john@example.com"
                 value={data.email}
-                onChange={(e) => updateData({ email: e.target.value })}
+                onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
+                onFocus={() => {
+                  if (emailSuggestions.length > 0) {
+                    setShowEmailSuggestions(true);
+                  }
+                }}
                 required
               />
+              {showEmailSuggestions && emailSuggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
+                  {emailSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        updateData({ email: suggestion });
+                        setShowEmailSuggestions(false);
+                        setEmailSuggestions([]);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
