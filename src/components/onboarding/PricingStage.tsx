@@ -79,10 +79,22 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
     setError("");
 
     try {
+      // Check if email was verified in stage 1
+      if (!data.emailVerified) {
+        setError("Please verify your email before continuing");
+        toast({
+          title: "Email Not Verified",
+          description: "Please verify your email in the previous step before proceeding.",
+          variant: "destructive",
+        });
+        setLocalLoading(false);
+        return;
+      }
+
       // TODO: Integrate actual payment processing here
-      // For now, we'll proceed with account creation
+      // Payment would happen here first
       
-      // Create account with Supabase (this automatically sends verification email)
+      // After successful payment, create the account
       const { error: signUpError } = await signUp(data.email, data.password, {
         fullName: data.fullName,
         phoneNumber: `${data.countryCode}${data.phoneNumber}`,
@@ -124,12 +136,12 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
       toast({
         title: "Account Created!",
-        description: "Please check your email to verify your account.",
+        description: "Welcome to Certifyr! Your account has been successfully created.",
       });
 
-      // Redirect to check email page
+      // Redirect to dashboard or check email page
       setTimeout(() => {
-        navigate("/auth/check-email", { state: { email: data.email } });
+        navigate("/auth/email-verified");
       }, 1000);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");

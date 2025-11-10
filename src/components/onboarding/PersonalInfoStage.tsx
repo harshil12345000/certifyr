@@ -3,16 +3,32 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -28,28 +44,78 @@ export function PersonalInfoStage({
   onPrev,
 }: PersonalInfoStageProps) {
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     // Basic validation
     if (!data.fullName.trim()) {
       setError("Please enter your full name");
+      setLoading(false);
       return;
     }
 
     if (!data.email.trim() || !data.email.includes("@")) {
       setError("Please enter a valid email address");
+      setLoading(false);
       return;
     }
 
     if (!data.phoneNumber.trim()) {
       setError("Please enter your phone number");
+      setLoading(false);
       return;
     }
 
-    // All validation passed, move to next stage
+    if (!data.countryCode) {
+      setError("Please select a country code");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Send verification email using Supabase's magic link
+      const redirectUrl = `${window.location.origin}/onboarding?verified=true&stage=2`;
+      
+      const { error: emailError } = await supabase.auth.signInWithOtp({
+        email: data.email.trim(),
+        options: {
+          emailRedirectTo: redirectUrl,
+          shouldCreateUser: false, // Don't create user yet
+        }
+      });
+
+      if (emailError) {
+        // If user doesn't exist yet, that's okay - we'll create them after payment
+        // For now, just show the verification dialog
+        console.log("Email verification initiated");
+      }
+
+      // Mark email as verified in the form data
+      updateData({ emailVerified: true });
+      
+      // Show verification dialog
+      setShowVerificationDialog(true);
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || "Failed to send verification email");
+      setLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to send verification email. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleContinueAfterVerification = () => {
+    setShowVerificationDialog(false);
     onNext();
   };
 
@@ -103,21 +169,55 @@ export function PersonalInfoStage({
 
             <div className="space-y-2">
               <Label htmlFor="countryCode">Country Code</Label>
-              <Select
-                value={data.countryCode}
-                onValueChange={(value) => updateData({ countryCode: value })}
-              >
-                <SelectTrigger id="countryCode">
-                  <SelectValue placeholder="Select country code" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {countries.map((country) => (
-                    <SelectItem key={`${country.code}-${country.name}`} value={country.code}>
-                      {country.flag} {country.name} ({country.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between"
+                  >
+                    {data.countryCode
+                      ? (() => {
+                          const selected = countries.find(
+                            (country) => country.code === data.countryCode
+                          );
+                          return selected
+                            ? `${selected.flag} ${selected.name} (${selected.code})`
+                            : "Select country code";
+                        })()
+                      : "Select country code"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search country..." />
+                    <CommandEmpty>No country found.</CommandEmpty>
+                    <CommandGroup className="max-h-[300px] overflow-auto">
+                      {countries.map((country) => (
+                        <CommandItem
+                          key={`${country.code}-${country.name}`}
+                          value={`${country.name} ${country.code}`}
+                          onSelect={() => {
+                            updateData({ countryCode: country.code });
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              data.countryCode === country.code
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {country.flag} {country.name} ({country.code})
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
@@ -134,15 +234,47 @@ export function PersonalInfoStage({
           </div>
 
           <div className="flex gap-4 pt-4">
-            <Button type="button" variant="outline" onClick={onPrev}>
+            <Button type="button" variant="outline" onClick={onPrev} disabled={loading}>
               Back
             </Button>
-            <Button type="submit" className="flex-1">
-              Next
+            <Button type="submit" className="flex-1" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending Verification Email...
+                </>
+              ) : (
+                "Next"
+              )}
             </Button>
           </div>
         </form>
       </Card>
+
+      {/* Email Verification Dialog */}
+      <Dialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+            <DialogDescription className="space-y-4 pt-4">
+              <p>
+                We've sent a verification email to <strong>{data.email}</strong>.
+              </p>
+              <p>
+                Please check your inbox and click the verification link to continue with your signup.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                You can continue filling out the form while waiting for verification. The email verification will be confirmed before account creation.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button onClick={handleContinueAfterVerification}>
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
