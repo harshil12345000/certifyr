@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Check, Loader2, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -34,6 +35,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [codeSent, setCodeSent] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
+  const [showExistingEmailDialog, setShowExistingEmailDialog] = useState(false);
 
   const handleSendCode = async () => {
     // Validate email first
@@ -45,7 +47,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 
     setSendingCode(true);
     try {
-      // Check if email already exists
+      // Check if email already exists in auth.users (via profiles table which is synced)
       const { data: existingUser } = await supabase
         .from('profiles')
         .select('email')
@@ -53,8 +55,8 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         .maybeSingle();
 
       if (existingUser) {
-        setErrors(prev => ({ ...prev, email: "This email is already registered" }));
         setSendingCode(false);
+        setShowExistingEmailDialog(true);
         return;
       }
 
@@ -402,6 +404,34 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
           </form>
         </CardContent>
       </Card>
+
+      {/* Existing Email Dialog */}
+      <Dialog open={showExistingEmailDialog} onOpenChange={setShowExistingEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Already Exists</DialogTitle>
+            <DialogDescription>
+              This email address is already registered. Please login instead to access your account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowExistingEmailDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowExistingEmailDialog(false);
+                onPrev(); // This goes back to /auth
+              }}
+            >
+              Go to Login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
