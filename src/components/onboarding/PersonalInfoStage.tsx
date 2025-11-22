@@ -4,14 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Check, Loader2, Search } from "lucide-react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -34,6 +33,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [verificationCode, setVerificationCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const handleSendCode = async () => {
     // Validate email first
@@ -310,29 +310,57 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[300px] p-0 bg-background z-50" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search country..." />
-                      <CommandEmpty>No country found.</CommandEmpty>
-                      <CommandGroup className="max-h-[200px] overflow-auto">
-                        {countries.map((country) => (
-                          <CommandItem
-                            key={country.code}
-                            value={`${country.code} - ${country.name}`}
-                            onSelect={() => {
-                              updateData({ countryCode: country.code });
-                              setCountryOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={`mr-2 h-4 w-4 ${
-                                data.countryCode === country.code ? "opacity-100" : "opacity-0"
-                              }`}
-                            />
-                            {country.code} - {country.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
+                    <div className="flex flex-col">
+                      <div className="p-3 border-b">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search country..."
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            className="pl-8"
+                          />
+                        </div>
+                      </div>
+                      <ScrollArea className="h-[200px]">
+                        <div className="p-1">
+                          {countries
+                            .filter(country => 
+                              country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                              country.code.toLowerCase().includes(countrySearch.toLowerCase())
+                            )
+                            .map((country) => (
+                              <button
+                                key={country.code}
+                                type="button"
+                                onClick={() => {
+                                  updateData({ countryCode: country.code });
+                                  setCountryOpen(false);
+                                  setCountrySearch("");
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer ${
+                                  data.countryCode === country.code ? "bg-accent" : ""
+                                }`}
+                              >
+                                <Check
+                                  className={`h-4 w-4 ${
+                                    data.countryCode === country.code ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <span>{country.code} - {country.name}</span>
+                              </button>
+                            ))}
+                          {countries.filter(country => 
+                            country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                            country.code.toLowerCase().includes(countrySearch.toLowerCase())
+                          ).length === 0 && (
+                            <div className="py-6 text-center text-sm text-muted-foreground">
+                              No country found.
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </div>
                   </PopoverContent>
                 </Popover>
               </div>
