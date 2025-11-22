@@ -828,6 +828,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_user_account: { Args: never; Returns: Json }
       get_user_organization_id: { Args: { user_id: string }; Returns: string }
       get_user_organizations: {
         Args: { check_user_id: string }
