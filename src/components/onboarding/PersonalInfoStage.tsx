@@ -34,7 +34,6 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [verificationCode, setVerificationCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
 
   const handleSendCode = async () => {
     // Validate email first
@@ -312,36 +311,26 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                   </PopoverTrigger>
                   <PopoverContent className="w-[300px] p-0 bg-background z-50" align="start">
                     <Command>
-                      <CommandInput 
-                        placeholder="Search country..." 
-                        value={countrySearch}
-                        onValueChange={setCountrySearch}
-                      />
+                      <CommandInput placeholder="Search country..." />
                       <CommandEmpty>No country found.</CommandEmpty>
                       <CommandGroup className="max-h-[200px] overflow-auto">
-                        {countries
-                          .filter(country => 
-                            country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-                            country.code.toLowerCase().includes(countrySearch.toLowerCase())
-                          )
-                          .map((country) => (
-                            <CommandItem
-                              key={country.code}
-                              value={country.code}
-                              onSelect={() => {
-                                updateData({ countryCode: country.code });
-                                setCountryOpen(false);
-                                setCountrySearch("");
-                              }}
-                            >
-                              <Check
-                                className={`mr-2 h-4 w-4 ${
-                                  data.countryCode === country.code ? "opacity-100" : "opacity-0"
-                                }`}
-                              />
-                              {country.code} - {country.name}
-                            </CommandItem>
-                          ))}
+                        {countries.map((country) => (
+                          <CommandItem
+                            key={country.code}
+                            value={`${country.code} - ${country.name}`}
+                            onSelect={() => {
+                              updateData({ countryCode: country.code });
+                              setCountryOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                data.countryCode === country.code ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            {country.code} - {country.name}
+                          </CommandItem>
+                        ))}
                       </CommandGroup>
                     </Command>
                   </PopoverContent>
