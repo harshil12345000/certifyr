@@ -46,11 +46,13 @@ export function PersonalInfoStage({
   const [showEmailSuggestions, setShowEmailSuggestions] = useState(false);
   const { toast } = useToast();
 
-  const filteredCountries = countries.filter(
-    (country) =>
-      country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      country.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCountries = countries
+    .filter(
+      (country) =>
+        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.code.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const commonDomains = [
     "gmail.com",
@@ -157,7 +159,7 @@ export function PersonalInfoStage({
         email: data.email.trim(),
         options: {
           emailRedirectTo: redirectUrl,
-          shouldCreateUser: false, // Don't create user yet
+          shouldCreateUser: true, // Allow user creation for signup
         }
       });
 
@@ -276,9 +278,12 @@ export function PersonalInfoStage({
                           const selected = countries.find(
                             (country) => country.code === data.countryCode
                           );
-                          return selected
-                            ? `${selected.flag} ${selected.name} (${selected.code})`
-                            : "Select country code";
+                          return selected ? (
+                            <span className="flex items-center gap-2">
+                              <span className="text-lg">{selected.flag}</span>
+                              <span>{selected.name} ({selected.code})</span>
+                            </span>
+                          ) : "Select country code";
                         })()
                       : "Select country code"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -310,19 +315,20 @@ export function PersonalInfoStage({
                                 setSearchQuery("");
                               }}
                               className={cn(
-                                "w-full flex items-center px-2 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
                                 data.countryCode === country.code && "bg-accent"
                               )}
                             >
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4",
+                                  "mr-2 h-4 w-4 shrink-0",
                                   data.countryCode === country.code
                                     ? "opacity-100"
                                     : "opacity-0"
                                 )}
                               />
-                              {country.flag} {country.name} ({country.code})
+                              <span className="text-lg shrink-0">{country.flag}</span>
+                              <span className="flex-1 text-left">{country.name} ({country.code})</span>
                             </button>
                           ))
                         )}
