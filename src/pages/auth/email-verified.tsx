@@ -1,20 +1,27 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function EmailVerified() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Auto-redirect after 3 seconds
-    const timer = setTimeout(() => {
-      navigate("/auth");
-    }, 3000);
+    // Store email verification status
+    const email = searchParams.get('email');
+    if (email) {
+      localStorage.setItem('emailVerified', email);
+    }
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    // Sign out immediately to prevent auto-login during signup
+    const signOutUser = async () => {
+      await supabase.auth.signOut();
+    };
+    signOutUser();
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
@@ -34,22 +41,16 @@ export default function EmailVerified() {
                 Your email has been successfully verified.
               </p>
               <p className="text-sm text-gray-600">
-                You can now sign in to your account.
+                Please return to the signup page to complete your registration.
               </p>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-center text-sm text-gray-500">
-                Redirecting to login in 3 seconds...
-              </p>
-              
-              <Button
-                onClick={() => navigate("/auth")}
-                className="w-full"
-              >
-                Continue to Login
-              </Button>
-            </div>
+            <Button
+              onClick={() => navigate("/auth/signup")}
+              className="w-full"
+            >
+              Continue Sign Up
+            </Button>
           </CardContent>
         </Card>
       </div>

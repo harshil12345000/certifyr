@@ -153,13 +153,13 @@ export function PersonalInfoStage({
 
     try {
       // Send verification email using Supabase's magic link
-      const redirectUrl = `${window.location.origin}/onboarding?verified=true&stage=2`;
+      const redirectUrl = `${window.location.origin}/auth/email-verified?email=${encodeURIComponent(data.email.trim())}`;
       
       const { error: emailError } = await supabase.auth.signInWithOtp({
         email: data.email.trim(),
         options: {
           emailRedirectTo: redirectUrl,
-          shouldCreateUser: true, // Allow user creation for signup
+          shouldCreateUser: false, // Don't create user yet - just verify email
         }
       });
 
@@ -168,9 +168,6 @@ export function PersonalInfoStage({
         // For now, just show the verification dialog
         console.log("Email verification initiated");
       }
-
-      // Mark email as verified in the form data
-      updateData({ emailVerified: true });
       
       // Show verification dialog
       setShowVerificationDialog(true);
@@ -188,6 +185,13 @@ export function PersonalInfoStage({
 
   const handleContinueAfterVerification = () => {
     setShowVerificationDialog(false);
+    
+    // Check if email was verified via localStorage
+    const verifiedEmail = localStorage.getItem('emailVerified');
+    if (verifiedEmail === data.email.trim()) {
+      updateData({ emailVerified: true });
+    }
+    
     onNext();
   };
 
@@ -229,20 +233,34 @@ export function PersonalInfoStage({
 
             <div className="space-y-2 relative">
               <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                value={data.email}
-                onChange={handleEmailChange}
-                onBlur={handleEmailBlur}
-                onFocus={() => {
-                  if (emailSuggestions.length > 0) {
-                    setShowEmailSuggestions(true);
-                  }
-                }}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={data.email}
+                  onChange={handleEmailChange}
+                  onBlur={handleEmailBlur}
+                  onFocus={() => {
+                    if (emailSuggestions.length > 0) {
+                      setShowEmailSuggestions(true);
+                    }
+                  }}
+                  required
+                  className={data.emailVerified ? "pr-10" : ""}
+                />
+                {data.emailVerified && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Check className="h-5 w-5 text-green-600" />
+                  </div>
+                )}
+              </div>
+              {data.emailVerified && (
+                <p className="text-sm text-green-600 flex items-center gap-1">
+                  <Check className="h-4 w-4" />
+                  Email verified
+                </p>
+              )}
               {showEmailSuggestions && emailSuggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
                   {emailSuggestions.map((suggestion, index) => (
@@ -380,10 +398,10 @@ export function PersonalInfoStage({
                 We've sent a verification email to <strong>{data.email}</strong>.
               </p>
               <p>
-                Please check your inbox and click the verification link to continue with your signup.
+                Please check your inbox and click the verification link. After verifying, return to this page to complete your signup.
               </p>
               <p className="text-sm text-muted-foreground">
-                You can continue filling out the form while waiting for verification. The email verification will be confirmed before account creation.
+                The verification link will open in a new page. Once verified, come back here and click "Continue" to proceed with the registration.
               </p>
             </DialogDescription>
           </DialogHeader>
