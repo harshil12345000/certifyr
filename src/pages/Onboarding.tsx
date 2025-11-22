@@ -66,6 +66,14 @@ export default function Onboarding() {
     billingPeriod: "yearly",
   });
 
+  // Check on mount if email was verified
+  React.useEffect(() => {
+    const verifiedEmail = localStorage.getItem('emailVerified');
+    if (verifiedEmail && verifiedEmail === formData.email) {
+      setFormData(prev => ({ ...prev, emailVerified: true }));
+    }
+  }, [formData.email]);
+
   const updateFormData = (data: Partial<OnboardingData>) => {
     setFormData(prev => ({ ...prev, ...data }));
   };
@@ -103,6 +111,9 @@ export default function Onboarding() {
           variant: "destructive",
         });
       } else {
+        // Clear the email verification flag from localStorage
+        localStorage.removeItem('emailVerified');
+        
         toast({
           title: "Account Created!",
           description: "Welcome to Certifyr! Continue onboarding to finish setup.",
