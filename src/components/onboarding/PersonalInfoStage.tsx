@@ -1,28 +1,15 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, ChevronsUpDown } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Mail, Check, Loader2 } from "lucide-react";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -31,386 +18,339 @@ interface PersonalInfoStageProps {
   onPrev: () => void;
 }
 
-export function PersonalInfoStage({
+export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   data,
   updateData,
   onNext,
   onPrev,
-}: PersonalInfoStageProps) {
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showVerificationDialog, setShowVerificationDialog] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
-  const [showEmailSuggestions, setShowEmailSuggestions] = useState(false);
+}) => {
   const { toast } = useToast();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
 
-  const filteredCountries = countries
-    .filter(
-      (country) =>
-        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        country.code.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const handleSendCode = async () => {
+    // Validate email first
+    const email = data.email.trim();
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setErrors(prev => ({ ...prev, email: "Please enter a valid email address" }));
+      return;
+    }
 
-  const commonDomains = [
-    "gmail.com",
-    "outlook.com",
-    "yahoo.com",
-    "hotmail.com",
-    "icloud.com",
-    "protonmail.com",
-  ];
+    setSendingCode(true);
+    try {
+      // Check if email already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    updateData({ email: value });
-    setError(""); // Clear error when user types
-
-    // Generate email suggestions
-    if (value.includes("@")) {
-      const [localPart, domainPart] = value.split("@");
-      if (domainPart && !value.endsWith("@")) {
-        const suggestions = commonDomains
-          .filter((domain) => domain.startsWith(domainPart.toLowerCase()))
-          .map((domain) => `${localPart}@${domain}`)
-          .slice(0, 3);
-        setEmailSuggestions(suggestions);
-        setShowEmailSuggestions(suggestions.length > 0 && domainPart !== suggestions[0]?.split("@")[1]);
-      } else {
-        setShowEmailSuggestions(false);
+      if (existingUser) {
+        setErrors(prev => ({ ...prev, email: "This email is already registered" }));
+        setSendingCode(false);
+        return;
       }
-    } else {
-      setShowEmailSuggestions(false);
+
+      // Send verification code
+      const { data: responseData, error } = await supabase.functions.invoke('verify-email-code', {
+        body: { action: 'send', email },
+      });
+
+      if (error) throw error;
+
+      if (responseData?.success) {
+        setCodeSent(true);
+        setErrors(prev => ({ ...prev, email: "" }));
+        toast({
+          title: "Code Sent",
+          description: "Please check your email for the verification code.",
+        });
+      } else {
+        throw new Error(responseData?.message || "Failed to send verification code");
+      }
+    } catch (error: any) {
+      console.error("Error sending verification code:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingCode(false);
     }
   };
 
-  const handleEmailBlur = async () => {
-    if (data.email && data.email.includes("@")) {
-      // Check if email already exists
-      const { data: existingProfile, error: checkError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", data.email.trim())
-        .maybeSingle();
-
-      if (existingProfile) {
-        setError("This email is already used with an existing account. Please choose a different email.");
-      }
+  const handleVerifyCode = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter the 6-digit verification code.",
+        variant: "destructive",
+      });
+      return;
     }
-    // Hide suggestions after a short delay to allow clicking on them
-    setTimeout(() => setShowEmailSuggestions(false), 200);
+
+    setVerifyingCode(true);
+    try {
+      const { data: responseData, error } = await supabase.functions.invoke('verify-email-code', {
+        body: { 
+          action: 'verify', 
+          email: data.email.trim(), 
+          code: verificationCode 
+        },
+      });
+
+      if (error) throw error;
+
+      if (responseData?.success) {
+        updateData({ emailVerified: true });
+        toast({
+          title: "Email Verified",
+          description: "Your email has been successfully verified!",
+        });
+      } else {
+        throw new Error(responseData?.message || "Invalid verification code");
+      }
+    } catch (error: any) {
+      console.error("Error verifying code:", error);
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Invalid code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingCode(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    
+    const newErrors: Record<string, string> = {};
+
+    if (!data.fullName.trim()) newErrors.fullName = "Full name is required";
+    if (!data.email.trim()) newErrors.email = "Email is required";
+    if (!/\S+@\S+\.\S+/.test(data.email)) newErrors.email = "Invalid email format";
+    if (!data.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
+    if (!data.emailVerified) newErrors.email = "Please verify your email first";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
-
-    // Basic validation
-    if (!data.fullName.trim()) {
-      setError("Please enter your full name");
-      setLoading(false);
-      return;
-    }
-
-    if (!data.email.trim() || !data.email.includes("@")) {
-      setError("Please enter a valid email address");
-      setLoading(false);
-      return;
-    }
-
-    // Check if email already exists before proceeding
-    const { data: existingProfile, error: checkError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", data.email.trim())
-      .maybeSingle();
-
-    if (existingProfile) {
-      setError("This email is already used with an existing account. Please choose a different email.");
-      setLoading(false);
-      toast({
-        title: "Email Already Exists",
-        description: "This email is already registered. Please use a different email or sign in.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!data.phoneNumber.trim()) {
-      setError("Please enter your phone number");
-      setLoading(false);
-      return;
-    }
-
-    if (!data.countryCode) {
-      setError("Please select a country code");
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Send verification email using Supabase's magic link
-      const redirectUrl = `${window.location.origin}/auth/email-verified?email=${encodeURIComponent(data.email.trim())}`;
-      
-      const { error: emailError } = await supabase.auth.signInWithOtp({
-        email: data.email.trim(),
-        options: {
-          emailRedirectTo: redirectUrl,
-          shouldCreateUser: true, // Create the account when the email is verified
-        }
-      });
+      // Final check if email exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', data.email.trim())
+        .maybeSingle();
 
-      if (emailError) {
-        console.error("Error sending verification email", emailError);
-        throw emailError;
+      if (existingUser) {
+        setErrors({ email: "This email is already registered" });
+        return;
       }
-      
-      // Show verification dialog
-      setShowVerificationDialog(true);
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message || "Failed to send verification email");
-      setLoading(false);
+
+      onNext();
+    } catch (error) {
+      console.error("Error checking email:", error);
       toast({
         title: "Error",
-        description: "Failed to send verification email. Please try again.",
+        description: "An error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleContinueAfterVerification = () => {
-    setShowVerificationDialog(false);
-    
-    // Check if email was verified via localStorage
-    const verifiedEmail = localStorage.getItem('emailVerified');
-    if (verifiedEmail === data.email.trim()) {
-      updateData({ emailVerified: true });
-    }
-    
-    onNext();
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto"
+      className="w-full max-w-2xl mx-auto"
     >
-      <Card className="p-8 bg-white/70 backdrop-blur-sm border-0 shadow-2xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Personal Information
-            </h2>
-            <p className="text-gray-600">
-              Let's start with some basic information about you
-            </p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
+      <Card className="shadow-xl">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Personal Information</CardTitle>
+          <CardDescription>
+            Let's start by getting to know you
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
-                type="text"
                 placeholder="John Doe"
                 value={data.fullName}
-                onChange={(e) => updateData({ fullName: e.target.value })}
-                required
+                onChange={(e) => {
+                  updateData({ fullName: e.target.value });
+                  setErrors(prev => ({ ...prev, fullName: "" }));
+                }}
+                className={errors.fullName ? "border-destructive" : ""}
               />
+              {errors.fullName && (
+                <p className="text-sm text-destructive">{errors.fullName}</p>
+              )}
             </div>
 
-            <div className="space-y-2 relative">
+            <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={data.email}
-                  onChange={handleEmailChange}
-                  onBlur={handleEmailBlur}
-                  onFocus={() => {
-                    if (emailSuggestions.length > 0) {
-                      setShowEmailSuggestions(true);
-                    }
-                  }}
-                  required
-                  className={data.emailVerified ? "pr-10" : ""}
-                />
-                {data.emailVerified && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Check className="h-5 w-5 text-green-600" />
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={data.email}
+                    onChange={(e) => {
+                      updateData({ email: e.target.value, emailVerified: false });
+                      setErrors(prev => ({ ...prev, email: "" }));
+                      setCodeSent(false);
+                      setVerificationCode("");
+                    }}
+                    disabled={data.emailVerified}
+                    className={errors.email ? "border-destructive" : ""}
+                  />
+                  {!data.emailVerified && (
+                    <Button
+                      type="button"
+                      onClick={handleSendCode}
+                      disabled={sendingCode || !data.email.trim()}
+                      variant="outline"
+                      className="whitespace-nowrap"
+                    >
+                      {sendingCode ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : codeSent ? (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Resend Code
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Code
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {data.emailVerified && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700 font-medium">Verified</span>
+                    </div>
+                  )}
+                </div>
+
+                {codeSent && !data.emailVerified && (
+                  <div className="flex gap-2 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex-1 space-y-2">
+                      <p className="text-sm text-blue-700 font-medium">
+                        Enter the 6-digit code sent to your email
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          placeholder="000000"
+                          maxLength={6}
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                          className="max-w-[150px] text-center text-lg tracking-widest"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleVerifyCode}
+                          disabled={verifyingCode || verificationCode.length !== 6}
+                        >
+                          {verifyingCode ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Verifying...
+                            </>
+                          ) : (
+                            "Verify"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
+
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
-              {data.emailVerified && (
-                <p className="text-sm text-green-600 flex items-center gap-1">
-                  <Check className="h-4 w-4" />
-                  Email verified
-                </p>
-              )}
-              {showEmailSuggestions && emailSuggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
-                  {emailSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        updateData({ email: suggestion });
-                        setShowEmailSuggestions(false);
-                        setEmailSuggestions([]);
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="countryCode">Country Code</Label>
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between"
-                  >
-                    {data.countryCode
-                      ? (() => {
-                          const selected = countries.find(
-                            (country) => country.code === data.countryCode
-                          );
-                          return selected ? (
-                            <span className="flex items-center gap-2">
-                              <span className="text-lg">{selected.flag}</span>
-                              <span>{selected.name} ({selected.code})</span>
-                            </span>
-                          ) : "Select country code";
-                        })()
-                      : "Select country code"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0" align="start">
-                  <div className="flex flex-col">
-                    <div className="p-2 border-b">
-                      <Input
-                        placeholder="Search country..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                    <ScrollArea className="h-[300px]">
-                      <div className="p-1">
-                        {filteredCountries.length === 0 ? (
-                          <div className="py-6 text-center text-sm text-muted-foreground">
-                            No country found.
-                          </div>
-                        ) : (
-                          filteredCountries.map((country) => (
-                            <button
-                              key={`${country.code}-${country.name}`}
-                              onClick={() => {
-                                updateData({ countryCode: country.code });
-                                setOpen(false);
-                                setSearchQuery("");
-                              }}
-                              className={cn(
-                                "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                                data.countryCode === country.code && "bg-accent"
-                              )}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4 shrink-0",
-                                  data.countryCode === country.code
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              <span className="text-lg shrink-0">{country.flag}</span>
-                              <span className="flex-1 text-left">{country.name} ({country.code})</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </PopoverContent>
-              </Popover>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="countryCode">Country Code</Label>
+                <Select 
+                  value={data.countryCode} 
+                  onValueChange={(value) => updateData({ countryCode: value })}
+                >
+                  <SelectTrigger id="countryCode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {countries.map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.code} {country.flag}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={data.phoneNumber}
+                  onChange={(e) => {
+                    updateData({ phoneNumber: e.target.value });
+                    setErrors(prev => ({ ...prev, phoneNumber: "" }));
+                  }}
+                  className={errors.phoneNumber ? "border-destructive" : ""}
+                />
+                {errors.phoneNumber && (
+                  <p className="text-sm text-destructive">{errors.phoneNumber}</p>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                placeholder="1234567890"
-                value={data.phoneNumber}
-                onChange={(e) => updateData({ phoneNumber: e.target.value })}
-                required
-              />
+            <div className="flex justify-between pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onPrev}
+              >
+                Back
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading || !data.emailVerified}
+              >
+                {loading ? "Processing..." : "Next"}
+              </Button>
             </div>
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <Button type="button" variant="outline" onClick={onPrev} disabled={loading}>
-              Back
-            </Button>
-            <Button type="submit" className="flex-1" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sending Verification Email...
-                </>
-              ) : (
-                "Next"
-              )}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </CardContent>
       </Card>
-
-      {/* Email Verification Dialog */}
-      <Dialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verify Your Email</DialogTitle>
-            <DialogDescription className="space-y-4 pt-4">
-              <p>
-                We've sent a verification email to <strong>{data.email}</strong>.
-              </p>
-              <p>
-                Please check your inbox and click the verification link. After verifying, return to this page to complete your signup.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                The verification link will open in a new page. Once verified, come back here and click "Continue" to proceed with the registration.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button onClick={handleContinueAfterVerification}>
-              Continue
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
-}
+};
