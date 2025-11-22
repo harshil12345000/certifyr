@@ -47,18 +47,30 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 
     setSendingCode(true);
     try {
-      // Check if email already exists in auth.users (via profiles table which is synced)
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email)
-        .maybeSingle();
+      // Check if email already exists using edge function
+      console.log("Checking if email exists:", email);
+      const { data: checkResult, error: checkError } = await supabase.functions.invoke(
+        'check-email-exists',
+        {
+          body: { email },
+        }
+      );
 
-      if (existingUser) {
+      if (checkError) {
+        console.error("Error checking email:", checkError);
+        throw checkError;
+      }
+
+      console.log("Email check result:", checkResult);
+
+      if (checkResult?.exists) {
+        console.log("Email already exists, showing dialog");
         setSendingCode(false);
         setShowExistingEmailDialog(true);
         return;
       }
+
+      console.log("Email doesn't exist, sending OTP");
 
       // Send OTP using Supabase's built-in email OTP
       const { error } = await supabase.auth.signInWithOtp({
@@ -68,7 +80,10 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error sending OTP:", error);
+        throw error;
+      }
 
       setCodeSent(true);
       setErrors(prev => ({ ...prev, email: "" }));
@@ -77,7 +92,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         description: "Please check your email for the 6-digit verification code.",
       });
     } catch (error: any) {
-      console.error("Error sending verification code:", error);
+      console.error("Error in handleSendCode:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send verification code. Please try again.",
