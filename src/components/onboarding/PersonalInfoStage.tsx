@@ -9,7 +9,9 @@ import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Check, Loader2 } from "lucide-react";
+import { Mail, Check, Loader2, Search } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -31,6 +33,8 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [verifyingCode, setVerifyingCode] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const handleSendCode = async () => {
     // Validate email first
@@ -294,21 +298,54 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="countryCode">Country Code</Label>
-                <Select 
-                  value={data.countryCode} 
-                  onValueChange={(value) => updateData({ countryCode: value })}
-                >
-                  <SelectTrigger id="countryCode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {countries.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        {country.code} {country.flag}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={countryOpen}
+                      className="w-full justify-between"
+                    >
+                      {data.countryCode || "Select..."}
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 bg-background z-50" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Search country..." 
+                        value={countrySearch}
+                        onValueChange={setCountrySearch}
+                      />
+                      <CommandEmpty>No country found.</CommandEmpty>
+                      <CommandGroup className="max-h-[200px] overflow-auto">
+                        {countries
+                          .filter(country => 
+                            country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                            country.code.toLowerCase().includes(countrySearch.toLowerCase())
+                          )
+                          .map((country) => (
+                            <CommandItem
+                              key={country.code}
+                              value={country.code}
+                              onSelect={() => {
+                                updateData({ countryCode: country.code });
+                                setCountryOpen(false);
+                                setCountrySearch("");
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${
+                                  data.countryCode === country.code ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                              {country.code} - {country.name}
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="col-span-2 space-y-2">
