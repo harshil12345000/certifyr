@@ -55,23 +55,22 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         return;
       }
 
-      // Send verification code
-      const { data: responseData, error } = await supabase.functions.invoke('verify-email-code', {
-        body: { action: 'send', email },
+      // Send OTP using Supabase's built-in email OTP
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false, // Don't create user yet
+        }
       });
 
       if (error) throw error;
 
-      if (responseData?.success) {
-        setCodeSent(true);
-        setErrors(prev => ({ ...prev, email: "" }));
-        toast({
-          title: "Code Sent",
-          description: "Please check your email for the verification code.",
-        });
-      } else {
-        throw new Error(responseData?.message || "Failed to send verification code");
-      }
+      setCodeSent(true);
+      setErrors(prev => ({ ...prev, email: "" }));
+      toast({
+        title: "Code Sent",
+        description: "Please check your email for the 6-digit verification code.",
+      });
     } catch (error: any) {
       console.error("Error sending verification code:", error);
       toast({
@@ -96,25 +95,23 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 
     setVerifyingCode(true);
     try {
-      const { data: responseData, error } = await supabase.functions.invoke('verify-email-code', {
-        body: { 
-          action: 'verify', 
-          email: data.email.trim(), 
-          code: verificationCode 
-        },
+      // Verify OTP using Supabase
+      const { error } = await supabase.auth.verifyOtp({
+        email: data.email.trim(),
+        token: verificationCode,
+        type: 'email'
       });
 
       if (error) throw error;
 
-      if (responseData?.success) {
-        updateData({ emailVerified: true });
-        toast({
-          title: "Email Verified",
-          description: "Your email has been successfully verified!",
-        });
-      } else {
-        throw new Error(responseData?.message || "Invalid verification code");
-      }
+      // Sign out immediately after verification (we don't want them logged in yet)
+      await supabase.auth.signOut();
+
+      updateData({ emailVerified: true });
+      toast({
+        title: "Email Verified",
+        description: "Your email has been successfully verified!",
+      });
     } catch (error: any) {
       console.error("Error verifying code:", error);
       toast({
