@@ -159,14 +159,13 @@ export function PersonalInfoStage({
         email: data.email.trim(),
         options: {
           emailRedirectTo: redirectUrl,
-          shouldCreateUser: false, // Don't create user yet - just verify email
+          shouldCreateUser: true, // Create the account when the email is verified
         }
       });
 
       if (emailError) {
-        // If user doesn't exist yet, that's okay - we'll create them after payment
-        // For now, just show the verification dialog
-        console.log("Email verification initiated");
+        console.error("Error sending verification email", emailError);
+        throw emailError;
       }
       
       // Show verification dialog
