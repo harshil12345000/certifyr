@@ -239,7 +239,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         metaData.selectedPlan = data.selectedPlan;
       }
 
-      console.log("Attempting signup with redirect URL:", redirectUrl);
+      console.log("Attempting signup with metadata:", metaData);
+      console.log("Redirect URL:", redirectUrl);
       
       const { data: signUpData, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -250,17 +251,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
-      console.log("Signup response:", { signUpData, error });
-
       if (error) {
         console.error("Supabase signup error:", error);
         return { error };
       }
 
-      // User created successfully, email verification required
-      // Don't set session yet - user needs to verify email first
-      console.log("User created successfully, email verification required");
-
+      console.log("Signup successful:", signUpData);
+      
+      // If email confirmation is disabled, user will be automatically logged in
+      // and the auth state listener will handle the session update
+      // If email confirmation is enabled, user needs to verify email first
+      
       return { error: null };
     } catch (error) {
       console.error("Unexpected signup error:", error);

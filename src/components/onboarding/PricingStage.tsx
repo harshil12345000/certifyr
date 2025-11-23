@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PricingStageProps {
   data: OnboardingData;
@@ -134,15 +135,32 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         return;
       }
 
-      toast({
-        title: "Account Created!",
-        description: "Welcome to Certifyr! Redirecting to your dashboard...",
-      });
-
-      // Redirect directly to dashboard with user data loaded
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
+      // Check if user was immediately logged in (email confirmation disabled)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Email confirmation is disabled - user is logged in immediately
+        toast({
+          title: "Account Created!",
+          description: "Welcome to Certifyr! Redirecting to your dashboard...",
+        });
+        
+        // Wait for auth state to fully update, then redirect
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      } else {
+        // Email confirmation is enabled - user needs to verify
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account.",
+        });
+        
+        // Redirect to auth page with a message
+        setTimeout(() => {
+          navigate("/auth?verified=pending");
+        }, 2000);
+      }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
       toast({
