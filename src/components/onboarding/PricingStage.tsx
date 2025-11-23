@@ -141,7 +141,7 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
       // Redirect directly to dashboard with user data loaded
       setTimeout(() => {
-        navigate("/");
+        navigate("/dashboard");
       }, 1000);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
