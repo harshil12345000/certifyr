@@ -10,6 +10,8 @@ import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { Search, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrganizationInfoStageProps {
   data: OnboardingData;
@@ -39,11 +41,61 @@ const organizationSizes = [
 export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: OrganizationInfoStageProps) {
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation && data.organizationWebsite) {
+    
+    const newErrors: Record<string, string> = {};
+
+    if (!data.organizationName.trim()) newErrors.organizationName = "Organization name is required";
+    if (!data.organizationType) newErrors.organizationType = "Organization type is required";
+    if (!data.organizationSize) newErrors.organizationSize = "Organization size is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update user profile with organization info
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          organization_name: data.organizationName.trim(),
+          organization_type: data.organizationType,
+          organization_size: data.organizationSize,
+          organization_website: data.organizationWebsite.trim() || null,
+          organization_location: data.organizationLocation.trim() || null,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
       onNext();
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save organization info. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -243,10 +295,10 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
               
               <Button
                 type="submit"
-                disabled={!isValid}
+                disabled={!isValid || loading}
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
               >
-                Next
+                {loading ? "Saving..." : "Next"}
               </Button>
             </div>
           </form>
