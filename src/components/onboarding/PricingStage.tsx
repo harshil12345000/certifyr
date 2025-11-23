@@ -92,92 +92,33 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         return;
       }
 
-      // TODO: Integrate actual payment processing here
-      // Payment would happen here first
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // After successful payment, create the account with ALL metadata
-      console.log("=== SIGNUP DEBUG ===");
-      console.log("Form data being sent:", {
-        email: data.email,
-        fullName: data.fullName,
-        phoneNumber: `${data.countryCode}${data.phoneNumber}`,
-        organizationName: data.organizationName,
-        organizationType: data.organizationType,
-        organizationTypeOther: data.organizationTypeOther,
-        organizationSize: data.organizationSize,
-        organizationWebsite: data.organizationWebsite,
-        organizationLocation: data.organizationLocation,
-        selectedPlan: data.selectedPlan,
-      });
-
-      const { error: signUpError } = await signUp(data.email, data.password, {
-        fullName: data.fullName,
-        phoneNumber: `${data.countryCode}${data.phoneNumber}`,
-        organizationName: data.organizationName,
-        organizationType: data.organizationType,
-        organizationTypeOther: data.organizationTypeOther,
-        organizationSize: data.organizationSize,
-        organizationWebsite: data.organizationWebsite,
-        organizationLocation: data.organizationLocation,
-        selectedPlan: data.selectedPlan,
-      });
-
-      console.log("Signup error:", signUpError);
-      console.log("=== END SIGNUP DEBUG ===");
-
-      if (signUpError) {
-        // Check if it's a duplicate email error
-        if (signUpError.message.toLowerCase().includes("already registered") || 
-            signUpError.message.toLowerCase().includes("already exists") ||
-            signUpError.message.toLowerCase().includes("already been registered")) {
-          setError("This email is already registered. Please sign in instead.");
-          toast({
-            title: "Email Already Registered",
-            description: "This email is already registered. Redirecting to login...",
-            variant: "destructive",
-          });
-          setTimeout(() => {
-            navigate("/auth");
-          }, 2000);
-          return;
-        }
-        
-        setError(signUpError.message);
+      if (!user) {
         toast({
-          title: "Sign Up Failed",
-          description: signUpError.message,
+          title: "Error",
+          description: "You must be logged in to continue.",
           variant: "destructive",
         });
         setLocalLoading(false);
         return;
       }
 
-      // Check if user was immediately logged in (email confirmation disabled)
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // Email confirmation is disabled - user is logged in immediately
-        toast({
-          title: "Account Created!",
-          description: "Welcome to Certifyr! Redirecting to your dashboard...",
-        });
-        
-        // Wait for auth state to fully update, then redirect
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      } else {
-        // Email confirmation is enabled - user needs to verify
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account.",
-        });
-        
-        // Redirect to auth page with a message
-        setTimeout(() => {
-          navigate("/auth?verified=pending");
-        }, 2000);
-      }
+      // Update user profile with plan selection
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ plan: data.selectedPlan })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Welcome to Certifyr!",
+        description: "Your account setup is complete.",
+      });
+
+      // Redirect to dashboard
+      navigate("/");
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
       toast({
