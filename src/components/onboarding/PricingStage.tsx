@@ -136,12 +136,12 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
       toast({
         title: "Account Created!",
-        description: "Welcome to Certifyr! Your account has been successfully created.",
+        description: "Welcome to Certifyr! Redirecting to your dashboard...",
       });
 
-      // Redirect to dashboard or check email page
+      // Redirect directly to dashboard with user data loaded
       setTimeout(() => {
-        navigate("/auth/email-verified");
+        navigate("/");
       }, 1000);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
