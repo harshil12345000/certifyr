@@ -72,7 +72,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         options: {
           data: {
             full_name: data.fullName.trim(),
-            phone_number: `${data.countryCode}${data.phoneNumber}`.trim(),
+            phone_number: `${data.countryCode}-${data.phoneNumber}`.trim(),
           }
         }
       });
