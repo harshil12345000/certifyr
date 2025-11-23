@@ -200,95 +200,6 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={data.email}
-                    onChange={(e) => {
-                      updateData({ email: e.target.value, emailVerified: false });
-                      setErrors(prev => ({ ...prev, email: "" }));
-                      setCodeSent(false);
-                      setVerificationCode("");
-                    }}
-                    disabled={data.emailVerified}
-                    className={errors.email ? "border-destructive" : ""}
-                  />
-                  {!data.emailVerified && (
-                      <Button
-                        type="button"
-                        onClick={handleSendCode}
-                        disabled={sendingCode || !data.email.trim() || data.emailVerified}
-                        variant="outline"
-                        className="whitespace-nowrap"
-                      >
-                        {sendingCode ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Checking...
-                          </>
-                        ) : data.emailVerified ? (
-                          <>
-                            <Check className="mr-2 h-4 w-4" />
-                            Verified
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="mr-2 h-4 w-4" />
-                            Send Code
-                          </>
-                        )}
-                      </Button>
-                  )}
-                  {data.emailVerified && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">Verified</span>
-                    </div>
-                  )}
-                </div>
-
-                {codeSent && !data.emailVerified && (
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      maxLength={6}
-                      className="font-mono text-center text-lg tracking-widest"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleVerifyCode}
-                      disabled={verifyingCode || verificationCode.length !== 6}
-                      className="whitespace-nowrap"
-                    >
-                      {verifyingCode ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Verify Code
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
-            </div>
-
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="countryCode">Country Code</Label>
@@ -375,6 +286,95 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                 />
                 {errors.phoneNumber && (
                   <p className="text-sm text-destructive">{errors.phoneNumber}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={data.email}
+                    onChange={(e) => {
+                      updateData({ email: e.target.value, emailVerified: false });
+                      setErrors(prev => ({ ...prev, email: "" }));
+                      setCodeSent(false);
+                      setVerificationCode("");
+                    }}
+                    disabled={data.emailVerified}
+                    className={errors.email ? "border-destructive" : ""}
+                  />
+                  {!data.emailVerified && (
+                      <Button
+                        type="button"
+                        onClick={handleSendCode}
+                        disabled={sendingCode || !data.email.trim() || data.emailVerified}
+                        variant="outline"
+                        className="whitespace-nowrap"
+                      >
+                        {sendingCode ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Checking...
+                          </>
+                        ) : data.emailVerified ? (
+                          <>
+                            <Check className="mr-2 h-4 w-4" />
+                            Verified
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Send Code
+                          </>
+                        )}
+                      </Button>
+                  )}
+                  {data.emailVerified && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700 font-medium">Verified</span>
+                    </div>
+                  )}
+                </div>
+
+                {codeSent && !data.emailVerified && (
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      maxLength={6}
+                      className="font-mono text-center text-lg tracking-widest"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleVerifyCode}
+                      disabled={verifyingCode || verificationCode.length !== 6}
+                      className="whitespace-nowrap"
+                    >
+                      {verifyingCode ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Verify Code
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
             </div>
