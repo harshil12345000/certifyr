@@ -159,10 +159,20 @@ export function RequestPortalSettings() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-2">
-          <Switch id="portal-enabled" checked={settings.enabled} onCheckedChange={enabled => setSettings(prev => ({
-          ...prev,
-          enabled
-        }))} />
+          <Switch id="portal-enabled" checked={settings.enabled} onCheckedChange={enabled => {
+            setSettings(prev => {
+              // Generate portal URL if enabling for the first time and URL is empty
+              const newPortalUrl = enabled && !prev.portalUrl && organizationId
+                ? `${window.location.origin}/${organizationId}/request-portal`
+                : prev.portalUrl;
+              
+              return {
+                ...prev,
+                enabled,
+                portalUrl: newPortalUrl
+              };
+            });
+          }} />
           <Label htmlFor="portal-enabled">Enable Request Portal</Label>
         </div>
 
