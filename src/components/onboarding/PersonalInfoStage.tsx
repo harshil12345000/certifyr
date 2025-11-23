@@ -41,19 +41,30 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
     // Validate email first
     const email = data.email.trim();
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setErrors(prev => ({ ...prev, email: "Please enter a valid email address" }));
+      setErrors((prev) => ({
+        ...prev,
+        email: "Please enter a valid email address",
+      }));
+      return;
+    }
+
+    // Require phone number before sending code so we store full value in user_profiles
+    const phoneNumber = data.phoneNumber.trim();
+    if (!phoneNumber) {
+      setErrors((prev) => ({
+        ...prev,
+        phoneNumber: "Phone number is required before sending code",
+      }));
       return;
     }
 
     setSendingCode(true);
     try {
       // Check if email already exists using edge function
-      const { data: checkResult, error: checkError } = await supabase.functions.invoke(
-        'check-email-exists',
-        {
+      const { data: checkResult, error: checkError } =
+        await supabase.functions.invoke("check-email-exists", {
           body: { email },
-        }
-      );
+        });
 
       if (checkError) {
         console.error("Error checking email:", checkError);
@@ -66,21 +77,21 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         return;
       }
 
-      // Send OTP to create account early
+      // Send OTP to create account early with full phone (country code + number)
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           data: {
             full_name: data.fullName.trim(),
-            phone_number: `${data.countryCode}-${data.phoneNumber}`.trim(),
-          }
-        }
+            phone_number: `${data.countryCode}-${phoneNumber}`,
+          },
+        },
       });
 
       if (error) throw error;
 
       setCodeSent(true);
-      setErrors(prev => ({ ...prev, email: "" }));
+      setErrors((prev) => ({ ...prev, email: "" }));
       toast({
         title: "Verification Code Sent",
         description: "Please check your email for the verification code.",
@@ -89,7 +100,9 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       console.error("Error in handleSendCode:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send verification code. Please try again.",
+        description:
+          error.message ||
+          "Failed to send verification code. Please try again.",
         variant: "destructive",
       });
     } finally {
