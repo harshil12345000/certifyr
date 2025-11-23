@@ -65,8 +65,8 @@ const Settings = () => {
   const [changingPassword, setChangingPassword] = useState(false);
 
   // Modal state for delete account
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [showDeleteFinalDialog, setShowDeleteFinalDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -202,35 +202,70 @@ const Settings = () => {
     setChangingPassword(false);
   };
 
-  const handleDeleteAccount = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!user) return;
+  const handleConfirmDelete = () => {
+    // Close first dialog and open final confirmation
+    setShowDeleteConfirmDialog(false);
+    setShowDeleteFinalDialog(true);
+  };
 
+  const handleDeleteAccount = async () => {
+    if (!user) {
+      console.error("No user found");
+      return;
+    }
+
+    console.log("Starting account deletion for user:", user.id);
     setDeleting(true);
+    
     try {
-      // Revalidate password before delete
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: deletePassword,
-      });
-      if (signInError) {
-        toast.error("Incorrect password. Please try again.");
+      // Call the database function to delete the account
+      console.log("Calling delete_user_account RPC function...");
+      const { data, error } = await supabase.rpc("delete_user_account" as any);
+
+      console.log("RPC Response:", { data, error });
+
+      if (error) {
+        console.error("Account deletion error:", error);
+        toast.error("Account deletion failed: " + error.message);
         setDeleting(false);
         return;
       }
-      // Use Supabase admin API via edge function! But for this demo, we attempt to delete directly:
-      const { error } = await supabase.auth.admin.deleteUser(user.id); // Will fail if user is not admin
-      if (error) {
-        toast.error("Account deletion failed: " + error.message);
-      } else {
-        toast.success("Account deleted successfully");
-        setShowDeleteDialog(false);
-        await signOut();
+
+      // Check the response
+      const result = data as any;
+      console.log("Deletion result:", result);
+      console.log("Result type:", typeof result);
+      console.log("Result success:", result?.success);
+      console.log("Result error:", result?.error);
+      
+      if (result && result.success === false) {
+        console.error("Deletion failed with result:", result);
+        console.error("Error message:", result.error);
+        toast.error(
+          "Account deletion failed: " + (result.error || "Unknown error")
+        );
+        setDeleting(false);
+        return;
       }
+
+      console.log("Account deleted successfully, redirecting...");
+      toast.success("Account deleted successfully. Redirecting...");
+      setShowDeleteFinalDialog(false);
+
+      // Clear auth data and redirect to landing page
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("lastLogin");
+
+      // Redirect to landing page after a brief delay
+      setTimeout(() => {
+        console.log("Redirecting to home page...");
+        window.location.href = "/";
+      }, 1500);
     } catch (err: any) {
+      console.error("Unexpected error during account deletion:", err);
       toast.error("Error: " + (err?.message || "something went wrong."));
+      setDeleting(false);
     }
-    setDeleting(false);
   };
 
   if (loading) {
@@ -479,7 +514,7 @@ const Settings = () => {
                 <Button
                   variant="destructive"
                   className="w-full md:w-auto"
-                  onClick={() => setShowDeleteDialog(true)}
+                  onClick={() => setShowDeleteConfirmDialog(true)}
                 >
                   Delete Account
                 </Button>
@@ -537,41 +572,81 @@ const Settings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Account Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      {/* First Confirmation Dialog */}
+      <Dialog
+        open={showDeleteConfirmDialog}
+        onOpenChange={setShowDeleteConfirmDialog}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Account</DialogTitle>
+            <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>
-              This will permanently delete your account and all data. Please
-              enter your password to confirm.
+              You are about to permanently delete your account. This action is
+              irreversible and will result in:
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={handleDeleteAccount}>
-            <div>
-              <Label htmlFor="delete-password">Password</Label>
-              <Input
-                id="delete-password"
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setShowDeleteDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" variant="destructive" disabled={deleting}>
-                {deleting ? "Deleting..." : "Delete Account"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <div className="space-y-3 py-4">
+            <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+              <li>Permanent deletion of your profile and personal data</li>
+              <li>Loss of access to all certificates and requests</li>
+              <li>Removal from all organizations</li>
+              <li>Deletion of all notifications and settings</li>
+            </ul>
+            <p className="text-sm font-semibold text-destructive pt-2">
+              This action cannot be undone. All your data will be permanently
+              lost.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowDeleteConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
+              I Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Final Confirmation Dialog */}
+      <Dialog
+        open={showDeleteFinalDialog}
+        onOpenChange={setShowDeleteFinalDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Final Confirmation</DialogTitle>
+            <DialogDescription>
+              Are you absolutely sure you want to delete your account? This is
+              your last chance to cancel.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowDeleteFinalDialog(false)}
+              disabled={deleting}
+            >
+              No, Keep My Account
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Yes, Delete Forever"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

@@ -76,7 +76,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          shouldCreateUser: false, // Don't create user yet
+          shouldCreateUser: true, // Don't create user yet
         }
       });
 
