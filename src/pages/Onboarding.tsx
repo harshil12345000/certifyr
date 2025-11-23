@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
+
 import { PersonalInfoStage } from "@/components/onboarding/PersonalInfoStage";
 import { OrganizationInfoStage } from "@/components/onboarding/OrganizationInfoStage";
 import { PasswordStage } from "@/components/onboarding/PasswordStage";
 import { PricingStage } from "@/components/onboarding/PricingStage";
+
 export interface OnboardingData {
   // Personal Info
   fullName: string;
@@ -15,7 +17,7 @@ export interface OnboardingData {
   countryCode: string;
   phoneNumber: string;
   emailVerified: boolean;
-
+  
   // Organization Info
   organizationName: string;
   organizationType: string;
@@ -23,40 +25,27 @@ export interface OnboardingData {
   organizationSize: string;
   organizationWebsite?: string;
   organizationLocation: string;
-
+  
   // Password
   password: string;
   confirmPassword: string;
-
+  
   // Plan
   selectedPlan: 'basic' | 'pro';
   billingPeriod: 'monthly' | 'yearly';
 }
-const stages = [{
-  id: 1,
-  name: "Personal",
-  title: "Personal Information"
-}, {
-  id: 2,
-  name: "Organization",
-  title: "Organization Information"
-}, {
-  id: 3,
-  name: "Password",
-  title: "Password"
-}, {
-  id: 4,
-  name: "Plan",
-  title: "Choose Your Plan"
-}];
+
+const stages = [
+  { id: 1, name: "Personal", title: "Personal Information" },
+  { id: 2, name: "Organization", title: "Organization Information" },
+  { id: 3, name: "Password", title: "Password" },
+  { id: 4, name: "Plan", title: "Choose Your Plan" },
+];
+
 export default function Onboarding() {
   const navigate = useNavigate();
-  const {
-    signUp
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { signUp } = useAuth();
+  const { toast } = useToast();
   const [currentStage, setCurrentStage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<OnboardingData>({
@@ -74,41 +63,37 @@ export default function Onboarding() {
     password: "",
     confirmPassword: "",
     selectedPlan: "pro",
-    billingPeriod: "yearly"
+    billingPeriod: "yearly",
   });
 
   // Check on mount if email was verified
   React.useEffect(() => {
     const verifiedEmail = localStorage.getItem('emailVerified');
     if (verifiedEmail && verifiedEmail === formData.email) {
-      setFormData(prev => ({
-        ...prev,
-        emailVerified: true
-      }));
+      setFormData(prev => ({ ...prev, emailVerified: true }));
     }
   }, [formData.email]);
+
   const updateFormData = (data: Partial<OnboardingData>) => {
-    setFormData(prev => ({
-      ...prev,
-      ...data
-    }));
+    setFormData(prev => ({ ...prev, ...data }));
   };
+
   const nextStage = () => {
     if (currentStage < stages.length) {
       setCurrentStage(prev => prev + 1);
     }
   };
+
   const prevStage = () => {
     if (currentStage > 1) {
       setCurrentStage(prev => prev - 1);
     }
   };
+
   const handleSignUp = async () => {
     setLoading(true);
     try {
-      const {
-        error
-      } = await signUp(formData.email, formData.password, {
+      const { error } = await signUp(formData.email, formData.password, {
         fullName: formData.fullName,
         phoneNumber: formData.phoneNumber,
         organizationName: formData.organizationName,
@@ -116,67 +101,98 @@ export default function Onboarding() {
         organizationTypeOther: formData.organizationTypeOther,
         organizationSize: formData.organizationSize,
         organizationWebsite: formData.organizationWebsite,
-        organizationLocation: formData.organizationLocation
+        organizationLocation: formData.organizationLocation,
       });
+
       if (error) {
         toast({
           title: "Sign Up Failed",
           description: error.message,
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
         // Clear the email verification flag from localStorage
         localStorage.removeItem('emailVerified');
+        
         toast({
           title: "Account Created!",
-          description: "Welcome to Certifyr! Continue onboarding to finish setup."
+          description: "Welcome to Certifyr! Continue onboarding to finish setup.",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "An unexpected error occurred",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
   const renderStage = () => {
     switch (currentStage) {
       case 1:
-        return <PersonalInfoStage data={formData} updateData={updateFormData} onNext={nextStage} onPrev={() => navigate("/auth")} />;
+        return (
+          <PersonalInfoStage
+            data={formData}
+            updateData={updateFormData}
+            onNext={nextStage}
+            onPrev={() => navigate("/auth")}
+          />
+        );
       case 2:
-        return <OrganizationInfoStage data={formData} updateData={updateFormData} onNext={nextStage} onPrev={prevStage} />;
+        return (
+          <OrganizationInfoStage
+            data={formData}
+            updateData={updateFormData}
+            onNext={nextStage}
+            onPrev={prevStage}
+          />
+        );
       case 3:
-        return <PasswordStage data={formData} updateData={updateFormData} onNext={nextStage} onPrev={prevStage} />;
+        return (
+          <PasswordStage
+            data={formData}
+            updateData={updateFormData}
+            onNext={nextStage}
+            onPrev={prevStage}
+          />
+        );
       case 4:
-        return <PricingStage data={formData} updateData={updateFormData} onNext={handleSignUp} onPrev={prevStage} loading={loading} />;
+        return (
+          <PricingStage
+            data={formData}
+            updateData={updateFormData}
+            onNext={handleSignUp}
+            onPrev={prevStage}
+            loading={loading}
+          />
+        );
       default:
         return null;
     }
   };
-  return <>
+
+  return (
+    <>
       <OnboardingProgress stages={stages} currentStage={currentStage} />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="container mx-auto px-4 pt-40 pb-8">
           <AnimatePresence mode="wait">
-            <motion.div key={currentStage} initial={{
-            opacity: 0,
-            x: 20
-          }} animate={{
-            opacity: 1,
-            x: 0
-          }} exit={{
-            opacity: 0,
-            x: -20
-          }} transition={{
-            duration: 0.3
-          }} className="flex justify-center py-[34px]">
+            <motion.div
+              key={currentStage}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex justify-center"
+            >
               {renderStage()}
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
-    </>;
+    </>
+  );
 }
