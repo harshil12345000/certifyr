@@ -95,7 +95,21 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       // TODO: Integrate actual payment processing here
       // Payment would happen here first
       
-      // After successful payment, create the account
+      // After successful payment, create the account with ALL metadata
+      console.log("=== SIGNUP DEBUG ===");
+      console.log("Form data being sent:", {
+        email: data.email,
+        fullName: data.fullName,
+        phoneNumber: `${data.countryCode}${data.phoneNumber}`,
+        organizationName: data.organizationName,
+        organizationType: data.organizationType,
+        organizationTypeOther: data.organizationTypeOther,
+        organizationSize: data.organizationSize,
+        organizationWebsite: data.organizationWebsite,
+        organizationLocation: data.organizationLocation,
+        selectedPlan: data.selectedPlan,
+      });
+
       const { error: signUpError } = await signUp(data.email, data.password, {
         fullName: data.fullName,
         phoneNumber: `${data.countryCode}${data.phoneNumber}`,
@@ -107,6 +121,9 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         organizationLocation: data.organizationLocation,
         selectedPlan: data.selectedPlan,
       });
+
+      console.log("Signup error:", signUpError);
+      console.log("=== END SIGNUP DEBUG ===");
 
       if (signUpError) {
         // Check if it's a duplicate email error

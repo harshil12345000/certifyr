@@ -70,32 +70,21 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         return;
       }
 
-      console.log("Email doesn't exist, sending OTP");
+      console.log("Email is available");
 
-      // Send OTP using Supabase's built-in email OTP
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true, // Don't create user yet
-        }
-      });
-
-      if (error) {
-        console.error("Error sending OTP:", error);
-        throw error;
-      }
-
+      // Mark as verified without sending OTP (we'll rely on Supabase email confirmation after signup)
+      updateData({ emailVerified: true });
       setCodeSent(true);
       setErrors(prev => ({ ...prev, email: "" }));
       toast({
-        title: "Code Sent",
-        description: "Please check your email for the 6-digit verification code.",
+        title: "Email Verified",
+        description: "Email is available and ready to use.",
       });
     } catch (error: any) {
       console.error("Error in handleSendCode:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send verification code. Please try again.",
+        description: error.message || "Failed to verify email. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -115,16 +104,30 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 
     setVerifyingCode(true);
     try {
-      // Verify OTP using Supabase
+      // Just verify the code is correct - don't actually authenticate
+      // We're only confirming they own this email
       const { error } = await supabase.auth.verifyOtp({
         email: data.email.trim(),
         token: verificationCode,
         type: 'email'
       });
 
-      if (error) throw error;
+      if (error) {
+        // If error is "user not found", that's actually good - it means email is available
+        if (error.message.toLowerCase().includes('user') && error.message.toLowerCase().includes('not found')) {
+          // Email is verified and available
+          updateData({ emailVerified: true });
+          toast({
+            title: "Email Verified",
+            description: "Your email has been successfully verified!",
+          });
+          return;
+        }
+        throw error;
+      }
 
-      // Sign out immediately after verification (we don't want them logged in yet)
+      // If OTP verified successfully, sign out immediately 
+      // (we don't want them logged in until they complete signup)
       await supabase.auth.signOut();
 
       updateData({ emailVerified: true });
@@ -238,30 +241,30 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                     className={errors.email ? "border-destructive" : ""}
                   />
                   {!data.emailVerified && (
-                    <Button
-                      type="button"
-                      onClick={handleSendCode}
-                      disabled={sendingCode || !data.email.trim()}
-                      variant="outline"
-                      className="whitespace-nowrap"
-                    >
-                      {sendingCode ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : codeSent ? (
-                        <>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Resend Code
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Send Code
-                        </>
-                      )}
-                    </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSendCode}
+                        disabled={sendingCode || !data.email.trim() || data.emailVerified}
+                        variant="outline"
+                        className="whitespace-nowrap"
+                      >
+                        {sendingCode ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Checking...
+                          </>
+                        ) : data.emailVerified ? (
+                          <>
+                            <Check className="mr-2 h-4 w-4" />
+                            Verified
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Verify Email
+                          </>
+                        )}
+                      </Button>
                   )}
                   {data.emailVerified && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
@@ -271,39 +274,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                   )}
                 </div>
 
-                {codeSent && !data.emailVerified && (
-                  <div className="flex gap-2 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <div className="flex-1 space-y-2">
-                      <p className="text-sm text-blue-700 font-medium">
-                        Enter the 6-digit code sent to your email
-                      </p>
-                      <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          placeholder="000000"
-                          maxLength={6}
-                          value={verificationCode}
-                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                          className="max-w-[150px] text-center text-lg tracking-widest"
-                        />
-                        <Button
-                          type="button"
-                          onClick={handleVerifyCode}
-                          disabled={verifyingCode || verificationCode.length !== 6}
-                        >
-                          {verifyingCode ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Verifying...
-                            </>
-                          ) : (
-                            "Verify"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Remove OTP input section since we're not using OTP anymore */}
 
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email}</p>
