@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
+import { countries } from "@/lib/countries";
+import { Search, Check } from "lucide-react";
 
 interface OrganizationInfoStageProps {
   data: OnboardingData;
@@ -31,18 +35,11 @@ const organizationSizes = [
   "10000+"
 ];
 
-const countries = [
-  "United States",
-  "Canada", 
-  "United Kingdom",
-  "Germany",
-  "France",
-  "India",
-  "Australia",
-  "Other"
-];
 
 export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: OrganizationInfoStageProps) {
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation && data.organizationWebsite) {
@@ -51,6 +48,13 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
   };
 
   const isValid = data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation && data.organizationWebsite;
+
+  // Get unique country names sorted alphabetically
+  const sortedCountries = [...countries]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .filter((country, index, self) => 
+      index === self.findIndex((c) => c.name === country.name)
+    );
 
   return (
     <motion.div
@@ -143,21 +147,75 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Location *</Label>
-                <Select
-                  value={data.organizationLocation}
-                  onValueChange={(value) => updateData({ organizationLocation: value })}
-                >
-                  <SelectTrigger className="h-12 bg-white/50 border-gray-200 focus:border-blue-500">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={locationOpen} onOpenChange={setLocationOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={locationOpen}
+                      className="h-12 w-full justify-between bg-white/50 border-gray-200 focus:border-blue-500"
+                    >
+                      <span className="truncate">
+                        {data.organizationLocation || "Select country"}
+                      </span>
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-background z-50" align="start">
+                    <div className="flex flex-col">
+                      <div className="p-3 border-b border-border">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search country..."
+                            value={locationSearch}
+                            onChange={(e) => setLocationSearch(e.target.value)}
+                            className="pl-8 bg-background"
+                          />
+                        </div>
+                      </div>
+                      <ScrollArea className="h-[250px]">
+                        <div className="p-1">
+                          {sortedCountries
+                            .filter(country => 
+                              country.name.toLowerCase().includes(locationSearch.toLowerCase())
+                            )
+                            .map((country) => (
+                              <button
+                                key={country.name}
+                                type="button"
+                                onClick={() => {
+                                  updateData({ organizationLocation: country.name });
+                                  setLocationOpen(false);
+                                  setLocationSearch("");
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors ${
+                                  data.organizationLocation === country.name ? "bg-accent text-accent-foreground" : ""
+                                }`}
+                              >
+                                <Check
+                                  className={`h-4 w-4 flex-shrink-0 ${
+                                    data.organizationLocation === country.name ? "opacity-100" : "opacity-0"
+                                  }`}
+                                />
+                                <span className="flex items-center gap-2">
+                                  <span className="text-base">{country.flag}</span>
+                                  <span>{country.name}</span>
+                                </span>
+                              </button>
+                            ))}
+                          {sortedCountries.filter(country => 
+                            country.name.toLowerCase().includes(locationSearch.toLowerCase())
+                          ).length === 0 && (
+                            <div className="py-6 text-center text-sm text-muted-foreground">
+                              No country found.
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
