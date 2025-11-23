@@ -309,6 +309,14 @@ const AdminPage = () => {
         setHasOrganization(true);
 
         const orgData = memberData.organizations;
+        
+        // Fetch user profile data for additional organization details
+        const { data: profileData } = await supabase
+          .from("user_profiles")
+          .select("organization_type, organization_size, organization_website, organization_location")
+          .eq("user_id", user.id)
+          .single();
+
         if (orgData) {
           // Parse address for country
           const addressParts = orgData.address
@@ -323,9 +331,9 @@ const AdminPage = () => {
             country: addressParts[4] || "", // If present
             phoneNumber: orgData.phone || "",
             email: orgData.email || "",
-            organizationType: "",
-            organizationSize: "",
-            organizationWebsite: "",
+            organizationType: profileData?.organization_type || "",
+            organizationSize: profileData?.organization_size || "",
+            organizationWebsite: profileData?.organization_website || "",
           });
         }
 
