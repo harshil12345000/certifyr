@@ -8,10 +8,11 @@ import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Loader2, Search } from "lucide-react";
+import { Check, Loader2, Search, Mail } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -29,21 +30,27 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const { toast } = useToast();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [showExistingEmailDialog, setShowExistingEmailDialog] = useState(false);
+  const [showOtpDisabledDialog, setShowOtpDisabledDialog] = useState(false);
 
-  const handleVerifyEmail = async () => {
+  const handleSendCode = async () => {
     const email = data.email.trim();
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setErrors(prev => ({ ...prev, email: "Please enter a valid email address" }));
       return;
     }
 
-    setCheckingEmail(true);
+    setSendingCode(true);
+    setErrors(prev => ({ ...prev, email: "" }));
+
     try {
-      // Check if email already exists
+      // First check if email already exists
       const { data: checkResult, error: checkError } = await supabase.functions.invoke(
         'check-email-exists',
         {
@@ -57,27 +64,84 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       }
 
       if (checkResult?.exists) {
-        setCheckingEmail(false);
         setShowExistingEmailDialog(true);
         return;
       }
 
-      // Email is valid and doesn't exist, mark as verified
-      updateData({ emailVerified: true });
-      setErrors(prev => ({ ...prev, email: "" }));
+      // Send OTP to email
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+
+      if (otpError) {
+        // Check for OTP disabled error
+        if (otpError.message?.toLowerCase().includes('otp') && 
+            (otpError.message?.toLowerCase().includes('disabled') || 
+             otpError.message?.toLowerCase().includes('not allowed'))) {
+          setShowOtpDisabledDialog(true);
+          return;
+        }
+        throw otpError;
+      }
+
+      setCodeSent(true);
       toast({
-        title: "Email Validated",
-        description: "Your email is valid and available.",
+        title: "Code Sent",
+        description: "Please check your email for the verification code.",
       });
     } catch (error: any) {
-      console.error("Error checking email:", error);
+      console.error("Error sending code:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to validate email. Please try again.",
+        description: error.message || "Failed to send verification code. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setCheckingEmail(false);
+      setSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (verificationCode.length !== 6) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter a valid 6-digit code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVerifyingCode(true);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: data.email,
+        token: verificationCode,
+        type: "email",
+      });
+
+      if (error) throw error;
+
+      updateData({ emailVerified: true });
+      toast({
+        title: "Email Verified",
+        description: "Your email has been successfully verified!",
+      });
+
+      // Sign out immediately after verification
+      await supabase.auth.signOut();
+    } catch (error: any) {
+      console.error("Error verifying code:", error);
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Invalid verification code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingCode(false);
     }
   };
 
@@ -168,27 +232,29 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                     onChange={(e) => {
                       updateData({ email: e.target.value, emailVerified: false });
                       setErrors(prev => ({ ...prev, email: "" }));
+                      setCodeSent(false);
+                      setVerificationCode("");
                     }}
                     disabled={data.emailVerified}
                     className={errors.email ? "border-destructive" : ""}
                   />
-                  {!data.emailVerified && (
+                  {!codeSent && !data.emailVerified && (
                     <Button
                       type="button"
-                      onClick={handleVerifyEmail}
-                      disabled={checkingEmail || !data.email.trim()}
+                      onClick={handleSendCode}
+                      disabled={sendingCode || !data.email.trim()}
                       variant="outline"
                       className="whitespace-nowrap"
                     >
-                      {checkingEmail ? (
+                      {sendingCode ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Checking...
+                          Sending...
                         </>
                       ) : (
                         <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Verify Email
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Code
                         </>
                       )}
                     </Button>
@@ -200,6 +266,45 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                     </div>
                   )}
                 </div>
+
+                {codeSent && !data.emailVerified && (
+                  <div className="space-y-2">
+                    <Label htmlFor="code">Enter Verification Code</Label>
+                    <div className="flex gap-2 items-center">
+                      <InputOTP
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={setVerificationCode}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                      <Button
+                        type="button"
+                        onClick={handleVerifyCode}
+                        disabled={verifyingCode || verificationCode.length !== 6}
+                      >
+                        {verifyingCode ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          "Verify"
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Check your email for the 6-digit verification code
+                    </p>
+                  </div>
+                )}
 
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email}</p>
@@ -339,6 +444,25 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
               }}
             >
               Go to Login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* OTP Disabled Dialog */}
+      <Dialog open={showOtpDisabledDialog} onOpenChange={setShowOtpDisabledDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email OTP Not Enabled</DialogTitle>
+            <DialogDescription>
+              Email OTP verification is currently disabled in your authentication settings. 
+              To enable it, go to your Supabase Dashboard → Authentication → Providers → Email, 
+              then enable both "Email OTP / Magic Link" and "Allow signups via OTP / magic link".
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowOtpDisabledDialog(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
