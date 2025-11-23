@@ -313,29 +313,34 @@ const AdminPage = () => {
         // Fetch user profile data for additional organization details
         const { data: profileData } = await supabase
           .from("user_profiles")
-          .select("organization_type, organization_size, organization_website, organization_location")
+          .select("organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email")
           .eq("user_id", user.id)
           .single();
 
-        if (orgData) {
-          // Parse address for country
-          const addressParts = orgData.address
-            ? orgData.address.split(",").map((x: string) => x.trim())
-            : [];
-          setFormState({
-            organizationName: orgData.name || "",
-            streetAddress: addressParts[0] || "",
-            city: addressParts[1] || "",
-            state: addressParts[2] || "",
-            postalCode: addressParts[3] || "",
-            country: addressParts[4] || "", // If present
-            phoneNumber: orgData.phone || "",
-            email: orgData.email || "",
-            organizationType: profileData?.organization_type || "",
-            organizationSize: profileData?.organization_size || "",
-            organizationWebsite: profileData?.organization_website || "",
-          });
-        }
+        // Use profileData as primary source, fall back to orgData
+        const orgName = profileData?.organization_name || orgData?.name || "";
+        const orgLocation = profileData?.organization_location || orgData?.address || "";
+        const orgPhone = profileData?.phone_number || orgData?.phone || "";
+        const orgEmail = profileData?.email || orgData?.email || "";
+        
+        // Parse address/location for individual fields
+        const addressParts = orgLocation
+          ? orgLocation.split(",").map((x: string) => x.trim())
+          : [];
+          
+        setFormState({
+          organizationName: orgName,
+          streetAddress: addressParts[0] || "",
+          city: addressParts[1] || "",
+          state: addressParts[2] || "",
+          postalCode: addressParts[3] || "",
+          country: addressParts[4] || addressParts[addressParts.length - 1] || "",
+          phoneNumber: orgPhone,
+          email: orgEmail,
+          organizationType: profileData?.organization_type || "",
+          organizationSize: profileData?.organization_size || "",
+          organizationWebsite: profileData?.organization_website || "",
+        });
 
         // Fetch branding files
         await fetchBrandingFiles(memberData.organization_id);
