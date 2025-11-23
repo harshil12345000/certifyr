@@ -290,60 +290,64 @@ const AdminPage = () => {
       }
       setIsLoading(true);
       try {
-        // Check if user has organization membership
-        const { data: memberData, error: memberError } = await supabase
+        // Fetch user profile data first (always created on signup)
+        const { data: profileData } = await supabase
+          .from("user_profiles")
+          .select(
+            "organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email",
+          )
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // Then check if user has organization membership
+        const { data: memberData } = await supabase
           .from("organization_members")
           .select("organization_id, organizations(name, address, phone, email)")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
-        if (memberError || !memberData?.organization_id) {
+        if (!memberData?.organization_id) {
           setOrganizationId(null);
           setHasOrganization(false);
-          setIsLoading(false);
-          return;
+        } else {
+          setOrganizationId(memberData.organization_id);
+          setHasOrganization(true);
         }
 
-        // User has organization membership
-        setOrganizationId(memberData.organization_id);
-        setHasOrganization(true);
-
-        const orgData = memberData.organizations;
-        
-        // Fetch user profile data for additional organization details
-        const { data: profileData } = await supabase
-          .from("user_profiles")
-          .select("organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email")
-          .eq("user_id", user.id)
-          .single();
+        const orgData = memberData?.organizations;
 
         // Use profileData as primary source, fall back to orgData
         const orgName = profileData?.organization_name || orgData?.name || "";
-        const orgLocation = profileData?.organization_location || orgData?.address || "";
+        const orgLocation =
+          profileData?.organization_location || orgData?.address || "";
         const orgPhone = profileData?.phone_number || orgData?.phone || "";
         const orgEmail = profileData?.email || orgData?.email || "";
-        
+
         // Parse address/location for individual fields
         const addressParts = orgLocation
           ? orgLocation.split(",").map((x: string) => x.trim())
           : [];
-          
-        setFormState({
+
+        setFormState((prev) => ({
+          ...prev,
           organizationName: orgName,
           streetAddress: addressParts[0] || "",
           city: addressParts[1] || "",
           state: addressParts[2] || "",
           postalCode: addressParts[3] || "",
-          country: addressParts[4] || addressParts[addressParts.length - 1] || "",
+          country:
+            addressParts[4] || addressParts[addressParts.length - 1] || "",
           phoneNumber: orgPhone,
           email: orgEmail,
           organizationType: profileData?.organization_type || "",
           organizationSize: profileData?.organization_size || "",
           organizationWebsite: profileData?.organization_website || "",
-        });
+        }));
 
-        // Fetch branding files
-        await fetchBrandingFiles(memberData.organization_id);
+        // Fetch branding files only when an organization exists
+        if (memberData?.organization_id) {
+          await fetchBrandingFiles(memberData.organization_id);
+        }
       } catch (error) {
         console.error("Error fetching user profile:", error);
         setHasOrganization(false);
