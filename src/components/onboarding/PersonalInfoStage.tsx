@@ -151,31 +151,8 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      // Final check if email exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', data.email.trim())
-        .maybeSingle();
-
-      if (existingUser) {
-        setErrors({ email: "This email is already registered" });
-        return;
-      }
-
-      onNext();
-    } catch (error) {
-      console.error("Error checking email:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // User already verified email and created account via OTP, just proceed to next stage
+    onNext();
   };
 
   return (
@@ -249,7 +226,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                         ) : (
                           <>
                             <Mail className="mr-2 h-4 w-4" />
-                            Verify Email
+                            Send Code
                           </>
                         )}
                       </Button>
