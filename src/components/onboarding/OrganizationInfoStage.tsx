@@ -198,10 +198,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
                                     data.organizationLocation === country.name ? "opacity-100" : "opacity-0"
                                   }`}
                                 />
-                                <span className="flex items-center gap-2">
-                                  <span className="text-base">{country.flag}</span>
-                                  <span>{country.name}</span>
-                                </span>
+                                <span>{country.name}</span>
                               </button>
                             ))}
                           {sortedCountries.filter(country => 
