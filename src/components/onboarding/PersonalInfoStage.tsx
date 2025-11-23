@@ -12,21 +12,21 @@ import { Mail, Check, Loader2, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-
 interface PersonalInfoStageProps {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }
-
 export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   data,
   updateData,
   onNext,
-  onPrev,
+  onPrev
 }) => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
@@ -36,14 +36,13 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [showExistingEmailDialog, setShowExistingEmailDialog] = useState(false);
-
   const handleSendCode = async () => {
     // Validate email first
     const email = data.email.trim();
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
-        email: "Please enter a valid email address",
+        email: "Please enter a valid email address"
       }));
       return;
     }
@@ -51,26 +50,27 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
     // Require phone number before sending code so we store full value in user_profiles
     const phoneNumber = data.phoneNumber.trim();
     if (!phoneNumber) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
-        phoneNumber: "Phone number is required before sending code",
+        phoneNumber: "Phone number is required before sending code"
       }));
       return;
     }
-
     setSendingCode(true);
     try {
       // Check if email already exists using edge function
-      const { data: checkResult, error: checkError } =
-        await supabase.functions.invoke("check-email-exists", {
-          body: { email },
-        });
-
+      const {
+        data: checkResult,
+        error: checkError
+      } = await supabase.functions.invoke("check-email-exists", {
+        body: {
+          email
+        }
+      });
       if (checkError) {
         console.error("Error checking email:", checkError);
         throw checkError;
       }
-
       if (checkResult?.exists) {
         setSendingCode(false);
         setShowExistingEmailDialog(true);
@@ -78,87 +78,84 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       }
 
       // Send OTP to create account early with full phone (country code + number)
-      const { error } = await supabase.auth.signInWithOtp({
+      const {
+        error
+      } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           data: {
             full_name: data.fullName.trim(),
-            phone_number: `${data.countryCode}-${phoneNumber}`,
-          },
-        },
+            phone_number: `${data.countryCode}-${phoneNumber}`
+          }
+        }
       });
-
       if (error) throw error;
-
       setCodeSent(true);
-      setErrors((prev) => ({ ...prev, email: "" }));
+      setErrors(prev => ({
+        ...prev,
+        email: ""
+      }));
       toast({
         title: "Verification Code Sent",
-        description: "Please check your email for the verification code.",
+        description: "Please check your email for the verification code."
       });
     } catch (error: any) {
       console.error("Error in handleSendCode:", error);
       toast({
         title: "Error",
-        description:
-          error.message ||
-          "Failed to send verification code. Please try again.",
-        variant: "destructive",
+        description: error.message || "Failed to send verification code. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setSendingCode(false);
     }
   };
-
   const handleVerifyCode = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
       toast({
         title: "Invalid Code",
         description: "Please enter the 6-digit verification code.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setVerifyingCode(true);
     try {
       // Verify OTP and create account
-      const { error } = await supabase.auth.verifyOtp({
+      const {
+        error
+      } = await supabase.auth.verifyOtp({
         email: data.email.trim(),
         token: verificationCode,
         type: 'email'
       });
-
       if (error) throw error;
-
-      updateData({ emailVerified: true });
+      updateData({
+        emailVerified: true
+      });
       toast({
         title: "Email Verified",
-        description: "Your account has been created successfully!",
+        description: "Your account has been created successfully!"
       });
     } catch (error: any) {
       console.error("Error verifying code:", error);
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid code. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setVerifyingCode(false);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const newErrors: Record<string, string> = {};
-
     if (!data.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!data.email.trim()) newErrors.email = "Email is required";
     if (!/\S+@\S+\.\S+/.test(data.email)) newErrors.email = "Invalid email format";
     if (!data.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
     if (!data.emailVerified) newErrors.email = "Please verify your email first";
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -167,13 +164,13 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
     // User already verified email and created account via OTP, just proceed to next stage
     onNext();
   };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-2xl mx-auto"
-    >
+  return <motion.div initial={{
+    opacity: 0,
+    y: 20
+  }} animate={{
+    opacity: 1,
+    y: 0
+  }} className="w-full max-w-2xl mx-auto">
       <Card className="shadow-xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Personal Information</CardTitle>
@@ -185,19 +182,16 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                placeholder="John Doe"
-                value={data.fullName}
-                onChange={(e) => {
-                  updateData({ fullName: e.target.value });
-                  setErrors(prev => ({ ...prev, fullName: "" }));
-                }}
-                className={errors.fullName ? "border-destructive" : ""}
-              />
-              {errors.fullName && (
-                <p className="text-sm text-destructive">{errors.fullName}</p>
-              )}
+              <Input id="fullName" placeholder="John Doe" value={data.fullName} onChange={e => {
+              updateData({
+                fullName: e.target.value
+              });
+              setErrors(prev => ({
+                ...prev,
+                fullName: ""
+              }));
+            }} className={errors.fullName ? "border-destructive" : ""} />
+              {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -205,12 +199,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                 <Label htmlFor="countryCode">Country Code</Label>
                 <Popover open={countryOpen} onOpenChange={setCountryOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={countryOpen}
-                      className="w-full justify-between"
-                    >
+                    <Button variant="outline" role="combobox" aria-expanded={countryOpen} className="w-full justify-between">
                       {data.countryCode || "Select..."}
                       <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -220,50 +209,24 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
                       <div className="p-3 border-b">
                         <div className="relative">
                           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder="Search country..."
-                            value={countrySearch}
-                            onChange={(e) => setCountrySearch(e.target.value)}
-                            className="pl-8"
-                          />
+                          <Input placeholder="Search country..." value={countrySearch} onChange={e => setCountrySearch(e.target.value)} className="pl-8" />
                         </div>
                       </div>
                       <ScrollArea className="h-[200px]">
                         <div className="p-1">
-                          {countries
-                            .filter(country => 
-                              country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-                              country.code.toLowerCase().includes(countrySearch.toLowerCase())
-                            )
-                            .map((country) => (
-                              <button
-                                key={country.code}
-                                type="button"
-                                onClick={() => {
-                                  updateData({ countryCode: country.code });
-                                  setCountryOpen(false);
-                                  setCountrySearch("");
-                                }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                                  data.countryCode === country.code ? "bg-accent" : ""
-                                }`}
-                              >
-                                <Check
-                                  className={`h-4 w-4 ${
-                                    data.countryCode === country.code ? "opacity-100" : "opacity-0"
-                                  }`}
-                                />
+                          {countries.filter(country => country.name.toLowerCase().includes(countrySearch.toLowerCase()) || country.code.toLowerCase().includes(countrySearch.toLowerCase())).map(country => <button key={country.code} type="button" onClick={() => {
+                          updateData({
+                            countryCode: country.code
+                          });
+                          setCountryOpen(false);
+                          setCountrySearch("");
+                        }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer ${data.countryCode === country.code ? "bg-accent" : ""}`}>
+                                <Check className={`h-4 w-4 ${data.countryCode === country.code ? "opacity-100" : "opacity-0"}`} />
                                 <span>{country.code} - {country.name}</span>
-                              </button>
-                            ))}
-                          {countries.filter(country => 
-                            country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-                            country.code.toLowerCase().includes(countrySearch.toLowerCase())
-                          ).length === 0 && (
-                            <div className="py-6 text-center text-sm text-muted-foreground">
+                              </button>)}
+                          {countries.filter(country => country.name.toLowerCase().includes(countrySearch.toLowerCase()) || country.code.toLowerCase().includes(countrySearch.toLowerCase())).length === 0 && <div className="py-6 text-center text-sm text-muted-foreground">
                               No country found.
-                            </div>
-                          )}
+                            </div>}
                         </div>
                       </ScrollArea>
                     </div>
@@ -273,20 +236,16 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 
               <div className="col-span-2 space-y-2">
                 <Label htmlFor="phoneNumber">Phone Number</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  placeholder="9876543210"
-                  value={data.phoneNumber}
-                  onChange={(e) => {
-                    updateData({ phoneNumber: e.target.value });
-                    setErrors(prev => ({ ...prev, phoneNumber: "" }));
-                  }}
-                  className={errors.phoneNumber ? "border-destructive" : ""}
-                />
-                {errors.phoneNumber && (
-                  <p className="text-sm text-destructive">{errors.phoneNumber}</p>
-                )}
+                <Input id="phoneNumber" type="tel" placeholder="9876543210" value={data.phoneNumber} onChange={e => {
+                updateData({
+                  phoneNumber: e.target.value
+                });
+                setErrors(prev => ({
+                  ...prev,
+                  phoneNumber: ""
+                }));
+              }} className={errors.phoneNumber ? "border-destructive" : ""} />
+                {errors.phoneNumber && <p className="text-sm text-destructive">{errors.phoneNumber}</p>}
               </div>
             </div>
 
@@ -294,103 +253,58 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
               <Label htmlFor="email">Email Address</Label>
               <div className="space-y-3">
                 <div className="flex gap-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={data.email}
-                    onChange={(e) => {
-                      updateData({ email: e.target.value, emailVerified: false });
-                      setErrors(prev => ({ ...prev, email: "" }));
-                      setCodeSent(false);
-                      setVerificationCode("");
-                    }}
-                    disabled={data.emailVerified}
-                    className={errors.email ? "border-destructive" : ""}
-                  />
-                  {!data.emailVerified && (
-                      <Button
-                        type="button"
-                        onClick={handleSendCode}
-                        disabled={sendingCode || !data.email.trim() || data.emailVerified}
-                        variant="outline"
-                        className="whitespace-nowrap"
-                      >
-                        {sendingCode ? (
-                          <>
+                  <Input id="email" type="email" placeholder="john@example.com" value={data.email} onChange={e => {
+                  updateData({
+                    email: e.target.value,
+                    emailVerified: false
+                  });
+                  setErrors(prev => ({
+                    ...prev,
+                    email: ""
+                  }));
+                  setCodeSent(false);
+                  setVerificationCode("");
+                }} disabled={data.emailVerified} className={errors.email ? "border-destructive" : ""} />
+                  {!data.emailVerified && <Button type="button" onClick={handleSendCode} disabled={sendingCode || !data.email.trim() || data.emailVerified} variant="outline" className="whitespace-nowrap">
+                        {sendingCode ? <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Checking...
-                          </>
-                        ) : data.emailVerified ? (
-                          <>
+                          </> : data.emailVerified ? <>
                             <Check className="mr-2 h-4 w-4" />
                             Verified
-                          </>
-                        ) : (
-                          <>
+                          </> : <>
                             <Mail className="mr-2 h-4 w-4" />
                             Send Code
-                          </>
-                        )}
-                      </Button>
-                  )}
-                  {data.emailVerified && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                          </>}
+                      </Button>}
+                  {data.emailVerified && <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
                       <Check className="h-4 w-4 text-green-600" />
                       <span className="text-sm text-green-700 font-medium">Verified</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
-                {codeSent && !data.emailVerified && (
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      maxLength={6}
-                      className="font-mono text-center text-lg tracking-widest"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleVerifyCode}
-                      disabled={verifyingCode || verificationCode.length !== 6}
-                      className="whitespace-nowrap"
-                    >
-                      {verifyingCode ? (
-                        <>
+                {codeSent && !data.emailVerified && <div className="flex gap-2 px-0">
+                    <Input type="text" placeholder="Enter 6-digit code" value={verificationCode} onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} className="font-mono text-center text-lg tracking-widest mx-0 px-0" />
+                    <Button type="button" onClick={handleVerifyCode} disabled={verifyingCode || verificationCode.length !== 6} className="whitespace-nowrap px-[14px]">
+                      {verifyingCode ? <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Verifying...
-                        </>
-                      ) : (
-                        <>
+                        </> : <>
                           <Check className="mr-2 h-4 w-4" />
                           Verify Code
-                        </>
-                      )}
+                        </>}
                     </Button>
-                  </div>
-                )}
+                  </div>}
 
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
 
             <div className="flex justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onPrev}
-              >
+              <Button type="button" variant="outline" onClick={onPrev}>
                 Back
               </Button>
-              <Button 
-                type="submit" 
-                disabled={loading || !data.emailVerified}
-              >
+              <Button type="submit" disabled={loading || !data.emailVerified}>
                 {loading ? "Processing..." : "Next"}
               </Button>
             </div>
@@ -408,23 +322,17 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowExistingEmailDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowExistingEmailDialog(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => {
-                setShowExistingEmailDialog(false);
-                onPrev(); // This goes back to /auth
-              }}
-            >
+            <Button onClick={() => {
+            setShowExistingEmailDialog(false);
+            onPrev(); // This goes back to /auth
+          }}>
               Go to Login
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
-  );
+    </motion.div>;
 };
