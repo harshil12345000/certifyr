@@ -45,18 +45,19 @@ export function BrandingProvider({ children, organizationId }: { children: React
   const loadBrandingData = async () => {
     // If organizationId is provided, use it directly (for employee portal)
     const orgIdToUse = organizationId || (user?.id ? await (async () => {
-      const { data: memberData, error: memberError } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Use RPC function to get just one organization ID
+      const { data: orgId, error: rpcError } = await supabase.rpc(
+        'get_user_organization_id',
+        { user_id: user.id }
+      );
       
-      if (memberError) {
-        console.error("Error fetching organization membership:", memberError);
+      if (rpcError) {
+        console.error("Error fetching organization ID via RPC:", rpcError);
+        return null;
       }
       
-      console.log("Organization ID for user:", memberData?.organization_id);
-      return memberData?.organization_id;
+      console.log("Organization ID for user:", orgId);
+      return orgId;
     })() : null);
 
     if (!orgIdToUse) {
