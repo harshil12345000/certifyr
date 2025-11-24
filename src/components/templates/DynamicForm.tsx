@@ -67,7 +67,7 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
             control={formControl}
             name={field.name}
             render={({ field: formField }) => {
-              const dateValue = formField.value ? parse(formField.value, "dd/MM/yyyy", new Date()) : undefined;
+              const dateValue = formField.value ? parse(formField.value, "dd/MM/yyyy", new Date()) : new Date();
               
               return (
                 <FormItem className="flex flex-col">
@@ -78,11 +78,10 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !formField.value && "text-muted-foreground"
+                            "w-full pl-3 text-left font-normal"
                           )}
                         >
-                          {formField.value || "Pick a date"}
+                          {formField.value ? formField.value : format(new Date(), "dd/MM/yyyy")}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
