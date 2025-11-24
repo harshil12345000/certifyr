@@ -49,7 +49,7 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({
   const DraggableItem = ({
     id,
     label,
-    icon,
+    icon: IconComponent,
   }: {
     id: FieldType;
     label: string;
@@ -73,7 +73,7 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({
         className="bg-white rounded-md p-3 flex items-center gap-2 shadow-sm hover:bg-gray-100 cursor-grab"
         onMouseDown={() => onDragStartSidebar?.(id)}
       >
-        {icon({ className: "h-4 w-4 text-gray-500" })}
+        <IconComponent className="h-4 w-4 text-gray-500" />
         <span>{label}</span>
       </div>
     );
