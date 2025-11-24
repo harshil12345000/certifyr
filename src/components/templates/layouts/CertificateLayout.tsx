@@ -19,7 +19,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, userProfile } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -369,7 +369,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             <strong>Date:</strong> {formatDate(data.date)}
           </p>
           <p>
-            <strong>Place:</strong> {data.place || "[Place]"}
+            <strong>Place:</strong> {userProfile?.organizationLocation || data.place || "[Place]"}
           </p>
         </div>
 
@@ -396,9 +396,11 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             <div className="h-16 mb-4"></div>
           )}
           <p className="font-bold">
-            {data.signatoryName || "[Authorized Signatory Name]"}
+            {userProfile?.firstName && userProfile?.lastName 
+              ? `${userProfile.firstName} ${userProfile.lastName}` 
+              : data.signatoryName || "[Authorized Signatory Name]"}
           </p>
-          <p>{data.signatoryDesignation || "[Designation]"}</p>
+          <p>{userProfile?.designation || data.signatoryDesignation || "[Designation]"}</p>
           <p className="mb-4">
             {organizationDetails?.name ||
               data.institutionName ||

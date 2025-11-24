@@ -19,7 +19,7 @@ export const TranscriptLayout: React.FC<TranscriptLayoutProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, userProfile } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -205,9 +205,11 @@ export const TranscriptLayout: React.FC<TranscriptLayoutProps> = ({
             <div className="h-16 mb-4"></div>
           )}
           <p className="font-semibold">
-            {data.signatoryName || "[Authorized Signatory Name]"}
+            {userProfile?.firstName && userProfile?.lastName 
+              ? `${userProfile.firstName} ${userProfile.lastName}` 
+              : data.signatoryName || "[Authorized Signatory Name]"}
           </p>
-          <p>{data.signatoryDesignation || "[Designation]"}</p>
+          <p>{userProfile?.designation || data.signatoryDesignation || "[Designation]"}</p>
           <p>{displayInstitutionName}</p>
 
           {qrCodeUrl && (

@@ -43,8 +43,7 @@ const Settings = () => {
     firstName: "",
     lastName: "",
     email: "",
-    jobTitle: "",
-    bio: "",
+    designation: "",
     phone: "",
     location: "",
   });
@@ -95,10 +94,9 @@ const Settings = () => {
             firstName: profile.first_name || "",
             lastName: profile.last_name || "",
             email: profile.email || user.email || "",
-            jobTitle: (profile as any).job_title || "",
-            bio: (profile as any).bio || "",
+            designation: profile.designation || "",
             phone: profile.phone_number || "",
-            location: (profile as any).location || "",
+            location: profile.organization_location || "",
           });
         } else {
           // If no profile exists, just set email from user
@@ -132,10 +130,9 @@ const Settings = () => {
         first_name: formData.firstName.trim() || null,
         last_name: formData.lastName.trim() || null,
         email: formData.email.trim() || user.email,
-        job_title: formData.jobTitle.trim() || null,
-        bio: formData.bio.trim() || null,
+        designation: formData.designation.trim() || null,
         phone_number: formData.phone.trim() || null,
-        location: formData.location.trim() || null,
+        organization_location: formData.location.trim() || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -339,27 +336,14 @@ const Settings = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="jobTitle">Job Title</Label>
+                  <Label htmlFor="designation">Designation</Label>
                   <Input
-                    id="jobTitle"
-                    value={formData.jobTitle}
+                    id="designation"
+                    value={formData.designation}
                     onChange={(e) =>
-                      setFormData({ ...formData, jobTitle: e.target.value })
+                      setFormData({ ...formData, designation: e.target.value })
                     }
-                    placeholder="Enter your job title"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={formData.bio}
-                    onChange={(e) =>
-                      setFormData({ ...formData, bio: e.target.value })
-                    }
-                    placeholder="Tell us about yourself"
-                    rows={3}
+                    placeholder="Enter your designation (e.g., Principal, Director)"
                   />
                 </div>
 
@@ -376,14 +360,14 @@ const Settings = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location">Location (City, Country)</Label>
                     <Input
                       id="location"
                       value={formData.location}
                       onChange={(e) =>
                         setFormData({ ...formData, location: e.target.value })
                       }
-                      placeholder="Enter your location"
+                      placeholder="e.g., Mumbai, India"
                     />
                   </div>
                 </div>

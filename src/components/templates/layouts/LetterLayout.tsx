@@ -19,7 +19,7 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, userProfile } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -330,7 +330,7 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
 
       <div className="mt-16">
         <p><strong>Date:</strong> {formatDate(data.date)}</p>
-        <p><strong>Place:</strong> {data.place || "[Place]"}</p>
+        <p><strong>Place:</strong> {userProfile?.organizationLocation || data.place || "[Place]"}</p>
       </div>
 
       <div className="mt-8 text-right">
@@ -356,9 +356,11 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
           <div className="h-16 mb-4"></div>
         )}
         <p className="font-bold">
-          {data.signatoryName || "[Authorized Signatory Name]"}
+          {userProfile?.firstName && userProfile?.lastName 
+            ? `${userProfile.firstName} ${userProfile.lastName}` 
+            : data.signatoryName || "[Authorized Signatory Name]"}
         </p>
-        <p>{data.signatoryDesignation || "[Designation]"}</p>
+        <p>{userProfile?.designation || data.signatoryDesignation || "[Designation]"}</p>
         <p className="mb-4">
           {organizationDetails?.name ||
             data.institutionName ||
