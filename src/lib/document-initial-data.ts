@@ -24,13 +24,13 @@ import {
   EmbassyAttestationLetterData,
 } from "@/types/corporate-templates";
 
-// Helper function to get today's date in ISO format (YYYY-MM-DD) for date inputs
+// Helper function to get today's date in dd/mm/yyyy format
 const getTodayDateFormatted = (): string => {
   const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const year = today.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 export const getInitialData = (
