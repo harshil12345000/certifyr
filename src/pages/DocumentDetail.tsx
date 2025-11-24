@@ -18,18 +18,13 @@ import { useBranding } from '@/contexts/BrandingContext';
 import { useDocumentHistory } from '@/hooks/useDocumentHistory';
 import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
 
-// Helper function to parse organization location to "City, Country" format
+// Helper function to parse organization location to show only country
 const parseLocation = (location: string | null | undefined): string => {
   if (!location) return '';
-  // Format: "City, Country" or potentially longer format
-  // Extract city (first segment) and country (last segment)
+  // Extract country (last segment after comma)
   const parts = location.split(',').map(part => part.trim());
-  if (parts.length >= 2) {
-    const city = parts[0] || ''; // First segment is city
-    const country = parts[parts.length - 1] || ''; // Last segment is country
-    return city && country ? `${city}, ${country}` : '';
-  }
-  return '';
+  const country = parts[parts.length - 1] || '';
+  return country;
 };
 
 export default function DocumentDetail() {
