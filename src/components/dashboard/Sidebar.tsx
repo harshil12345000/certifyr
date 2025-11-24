@@ -38,11 +38,6 @@ const navItems: NavItem[] = [
     icon: <FileText className="h-5 w-5" />,
   },
   {
-    name: "Old Documents",
-    path: "/old-documents",
-    icon: <FileText className="h-5 w-5" />,
-  },
-  {
     name: "History",
     path: "/history",
     icon: <Clock className="h-5 w-5" />,

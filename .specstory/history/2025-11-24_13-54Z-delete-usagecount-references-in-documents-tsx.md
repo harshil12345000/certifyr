@@ -241,3 +241,414 @@ Removed `usageCount` handling from `src/pages/Documents.tsx` by dropping the fie
 
 ---
 
+_**User (2025-11-24 13:54Z)**_
+
+hide the "old documents" tab from any interface and hide for all sidebars
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+**Searching for old documents references**</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  &quot;pattern&quot;: &quot;Old Documents&quot;,
+  &quot;path&quot;: &quot;&quot;,
+  &quot;outputMode&quot;: &quot;content&quot;,
+  &quot;caseInsensitive&quot;: false
+}
+```
+Result:
+
+```json
+{
+  &quot;success&quot;: {
+    &quot;pattern&quot;: &quot;Old Documents&quot;,
+    &quot;outputMode&quot;: &quot;content&quot;,
+    &quot;workspaceResults&quot;: {
+      &quot;c:/Users/harsh/OneDrive/Desktop/Certifyr/Cursor AI V2/certifyr&quot;: {
+        &quot;content&quot;: {
+          &quot;matches&quot;: [
+            {
+              &quot;file&quot;: &quot;.\\src\\pages\\OldDocuments.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 260,
+                  &quot;content&quot;: &quot;            &lt;h1 className=\&quot;text-2xl font-semibold mb-1\&quot;&gt;Old Documents (Legacy)&lt;/h1&gt;&quot;
+                }
+              ]
+            },
+            {
+              &quot;file&quot;: &quot;.\\src\\components\\dashboard\\Sidebar.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 41,
+                  &quot;content&quot;: &quot;    name: \&quot;Old Documents\&quot;,&quot;
+                }
+              ]
+            }
+          ],
+          &quot;totalLines&quot;: 2,
+          &quot;totalMatchedLines&quot;: 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Checking sidebar and tabs for hiding options**</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: src/components/dashboard/Sidebar.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Searching for UI references**</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  &quot;pattern&quot;: &quot;old-documents&quot;,
+  &quot;path&quot;: &quot;&quot;,
+  &quot;outputMode&quot;: &quot;content&quot;,
+  &quot;caseInsensitive&quot;: false
+}
+```
+Result:
+
+```json
+{
+  &quot;success&quot;: {
+    &quot;pattern&quot;: &quot;old-documents&quot;,
+    &quot;outputMode&quot;: &quot;content&quot;,
+    &quot;workspaceResults&quot;: {
+      &quot;c:/Users/harsh/OneDrive/Desktop/Certifyr/Cursor AI V2/certifyr&quot;: {
+        &quot;content&quot;: {
+          &quot;matches&quot;: [
+            {
+              &quot;file&quot;: &quot;.\\src\\components\\dashboard\\Sidebar.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 42,
+                  &quot;content&quot;: &quot;    path: \&quot;/old-documents\&quot;,&quot;
+                }
+              ]
+            },
+            {
+              &quot;file&quot;: &quot;.\\src\\App.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 68,
+                  &quot;content&quot;: &quot;            path=\&quot;/old-documents\&quot;&quot;
+                }
+              ]
+            }
+          ],
+          &quot;totalLines&quot;: 2,
+          &quot;totalMatchedLines&quot;: 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Considering hiding OldDocuments tab**</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  &quot;pattern&quot;: &quot;Old Documents&quot;,
+  &quot;path&quot;: &quot;&quot;,
+  &quot;outputMode&quot;: &quot;content&quot;,
+  &quot;caseInsensitive&quot;: false
+}
+```
+Result:
+
+```json
+{
+  &quot;success&quot;: {
+    &quot;pattern&quot;: &quot;Old Documents&quot;,
+    &quot;outputMode&quot;: &quot;content&quot;,
+    &quot;workspaceResults&quot;: {
+      &quot;c:/Users/harsh/OneDrive/Desktop/Certifyr/Cursor AI V2/certifyr&quot;: {
+        &quot;content&quot;: {
+          &quot;matches&quot;: [
+            {
+              &quot;file&quot;: &quot;.\\src\\pages\\OldDocuments.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 260,
+                  &quot;content&quot;: &quot;            &lt;h1 className=\&quot;text-2xl font-semibold mb-1\&quot;&gt;Old Documents (Legacy)&lt;/h1&gt;&quot;
+                }
+              ]
+            },
+            {
+              &quot;file&quot;: &quot;.\\src\\components\\dashboard\\Sidebar.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 41,
+                  &quot;content&quot;: &quot;    name: \&quot;Old Documents\&quot;,&quot;
+                }
+              ]
+            }
+          ],
+          &quot;totalLines&quot;: 2,
+          &quot;totalMatchedLines&quot;: 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Checking navigation locations for "old documents"**</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  &quot;pattern&quot;: &quot;old documents&quot;,
+  &quot;path&quot;: &quot;&quot;,
+  &quot;outputMode&quot;: &quot;content&quot;,
+  &quot;caseInsensitive&quot;: true
+}
+```
+Result:
+
+```json
+{
+  &quot;success&quot;: {
+    &quot;pattern&quot;: &quot;old documents&quot;,
+    &quot;outputMode&quot;: &quot;content&quot;,
+    &quot;workspaceResults&quot;: {
+      &quot;c:/Users/harsh/OneDrive/Desktop/Certifyr/Cursor AI V2/certifyr&quot;: {
+        &quot;content&quot;: {
+          &quot;matches&quot;: [
+            {
+              &quot;file&quot;: &quot;.\\src\\pages\\OldDocuments.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 260,
+                  &quot;content&quot;: &quot;            &lt;h1 className=\&quot;text-2xl font-semibold mb-1\&quot;&gt;Old Documents (Legacy)&lt;/h1&gt;&quot;
+                }
+              ]
+            },
+            {
+              &quot;file&quot;: &quot;.\\src\\components\\dashboard\\Sidebar.tsx&quot;,
+              &quot;matches&quot;: [
+                {
+                  &quot;lineNumber&quot;: 41,
+                  &quot;content&quot;: &quot;    name: \&quot;Old Documents\&quot;,&quot;
+                }
+              ]
+            }
+          ],
+          &quot;totalLines&quot;: 2,
+          &quot;totalMatchedLines&quot;: 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Removing old documents tab from sidebars**</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Evaluating next steps**</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Deciding how to hide the 'Old Documents' tab**</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="apply_patch">
+<details>
+<summary>Tool use: **apply_patch**</summary>
+
+
+Parameters:
+
+```json
+{
+  &quot;relativeWorkspacePath&quot;: &quot;src/components/dashboard/Sidebar.tsx&quot;
+}
+```
+Additional data:
+
+```json
+{
+  &quot;codeblockId&quot;: &quot;96519615-fcc4-4a28-9dc2-c7004e5dc92e&quot;
+}
+```
+Result:
+
+```json
+{
+  &quot;diff&quot;: {
+    &quot;chunks&quot;: [
+      {
+        &quot;diffString&quot;: &quot;      icon: &lt;FileText className=\&quot;h-5 w-5\&quot; /&gt;,\n    },\n-   {\n-     name: \&quot;Old Documents\&quot;,\n-     path: \&quot;/old-documents\&quot;,\n-     icon: &lt;FileText className=\&quot;h-5 w-5\&quot; /&gt;,\n-   },\n    {\n      name: \&quot;History\&quot;,&quot;,
+        &quot;oldStart&quot;: 38,
+        &quot;newStart&quot;: 38,
+        &quot;oldLines&quot;: 9,
+        &quot;newLines&quot;: 4,
+        &quot;linesRemoved&quot;: 5
+      }
+    ],
+    &quot;editor&quot;: &quot;EDITOR_AI&quot;
+  },
+  &quot;shouldAutoFixLints&quot;: true,
+  &quot;resultForModel&quot;: &quot;Success. Updated the following files:\nM src/components/dashboard/Sidebar.tsx&quot;,
+  &quot;contentsAfterEdit&quot;: &quot;import { useState } from \&quot;react\&quot;;\nimport { Link, useLocation } from \&quot;react-router-dom\&quot;;\nimport { cn } from \&quot;@/lib/utils\&quot;;\nimport {\n  Home,\n  FileText,\n  Users,\n  Settings,\n  Menu,\n  X,\n  ChevronsLeft,\n  ChevronsRight,\n  DoorOpen,\n  Bookmark,\n  Send,\n  HelpCircle,\n  Clock,\n} from \&quot;lucide-react\&quot;;\nimport { Button } from \&quot;@/components/ui/button\&quot;;\nimport { SidebarLogo } from \&quot;./SidebarLogo\&quot;;\nimport { useAuth } from \&quot;@/contexts/AuthContext\&quot;;\nimport { useBranding } from \&quot;@/contexts/BrandingContext\&quot;;\nimport { Avatar, AvatarImage, AvatarFallback } from \&quot;@/components/ui/avatar\&quot;;\nimport { toast } from \&quot;@/components/ui/use-toast\&quot;;\nimport React from \&quot;react\&quot;;\n\ntype NavItem = {\n  name: string;\n  path: string;\n  icon: React.ReactNode;\n};\n\nconst navItems: NavItem[] = [\n  { name: \&quot;Dashboard\&quot;, path: \&quot;/dashboard\&quot;, icon: &lt;Home className=\&quot;h-5 w-5\&quot; /&gt; },\n  {\n    name: \&quot;Documents\&quot;,\n    path: \&quot;/documents\&quot;,\n    icon: &lt;FileText className=\&quot;h-5 w-5\&quot; /&gt;,\n  },\n  {\n    name: \&quot;History\&quot;,\n    path: \&quot;/history\&quot;,\n    icon: &lt;Clock className=\&quot;h-5 w-5\&quot; /&gt;,\n  },\n  {\n    name: \&quot;Request Portal\&quot;,\n    path: \&quot;/request-portal\&quot;,\n    icon: &lt;DoorOpen className=\&quot;h-5 w-5\&quot; /&gt;,\n  },\n  { name: \&quot;Admin\&quot;, path: \&quot;/admin\&quot;, icon: &lt;Users className=\&quot;h-5 w-5\&quot; /&gt; },\n  {\n    name: \&quot;Settings\&quot;,\n    path: \&quot;/settings\&quot;,\n    icon: &lt;Settings className=\&quot;h-5 w-5\&quot; /&gt;,\n  },\n];\n\n// Memoized SidebarProfile component\nconst SidebarProfile = React.memo(function SidebarProfile({\n  logoUrl,\n  userAvatarUrl,\n  displayName,\n  email,\n  initials,\n  isCollapsed,\n  toast,\n}: {\n  logoUrl: string | null;\n  userAvatarUrl: string | null;\n  displayName: string;\n  email: string;\n  initials: string;\n  isCollapsed: boolean;\n  toast: any;\n}) {\n  return (\n    &lt;div\n      className={cn(\n        \&quot;flex items-center p-4 border-t border-border/30\&quot;,\n        isCollapsed ? \&quot;justify-center\&quot; : \&quot;justify-start\&quot;,\n      )}\n    &gt;\n      &lt;Avatar className=\&quot;h-8 w-8\&quot;&gt;\n        {logoUrl ? (\n          &lt;AvatarImage\n            src={logoUrl}\n            alt={displayName}\n            onError={(e) =&gt; {\n              const target = e.target as HTMLImageElement;\n              console.error(\n                \&quot;[Sidebar] Logo image failed to load:\&quot;,\n                logoUrl,\n              );\n              toast({\n                title: \&quot;Logo failed to load\&quot;,\n                description:\n                  \&quot;Your organization logo could not be loaded. Please check your network or storage settings.\&quot;,\n                variant: \&quot;destructive\&quot;,\n              });\n              if (userAvatarUrl &amp;&amp; !target.src.endsWith(userAvatarUrl)) {\n                target.src = userAvatarUrl;\n              } else {\n                target.style.display = \&quot;none\&quot;;\n              }\n            }}\n          /&gt;\n        ) : userAvatarUrl ? (\n          &lt;AvatarImage\n            src={userAvatarUrl}\n            alt={displayName}\n            onError={(e) =&gt; {\n              (e.target as HTMLImageElement).style.display = \&quot;none\&quot;;\n              console.error(\n                \&quot;[Sidebar] User avatar image failed to load:\&quot;,\n                userAvatarUrl,\n              );\n              toast({\n                title: \&quot;Avatar failed to load\&quot;,\n                description: \&quot;Your user avatar could not be loaded.\&quot;,\n                variant: \&quot;destructive\&quot;,\n              });\n            }}\n          /&gt;\n        ) : null}\n        &lt;AvatarFallback&gt;{initials}&lt;/AvatarFallback&gt;\n      &lt;/Avatar&gt;\n      {!isCollapsed &amp;&amp; (\n        &lt;div className=\&quot;ml-3\&quot;&gt;\n          &lt;p className=\&quot;text-sm font-medium\&quot;&gt;{displayName}&lt;/p&gt;\n          &lt;p className=\&quot;text-xs text-muted-foreground\&quot;&gt;{email}&lt;/p&gt;\n        &lt;/div&gt;\n      )}\n    &lt;/div&gt;\n  );\n});\n\nexport function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean; setIsCollapsed: (v: boolean) =&gt; void }) {\n  const [isMobileOpen, setIsMobileOpen] = useState(false);\n  const location = useLocation();\n  const { user } = useAuth();\n  const { logoUrl, organizationDetails } = useBranding();\n\n  // Get name and avatar from user metadata if available\n  const name =\n    user?.user_metadata?.full_name ||\n    user?.user_metadata?.name ||\n    user?.email ||\n    \&quot;User\&quot;;\n  const email = user?.email || \&quot;\&quot;;\n  const userAvatarUrl = user?.user_metadata?.avatar_url || \&quot;\&quot;;\n\n  // Use organization logo as profile picture, fallback to user avatar\n  const profileImageUrl = logoUrl || userAvatarUrl || \&quot;\&quot;;\n\n  const initials = name\n    ? name\n        .split(\&quot; \&quot;)\n        .map((n: string) =&gt; n[0])\n        .join(\&quot;\&quot;)\n        .toUpperCase()\n        .slice(0, 2)\n    : email\n      ? email.slice(0, 2).toUpperCase()\n      : \&quot;U\&quot;;\n\n  // Use organization name if available, otherwise use user name\n  const displayName = organizationDetails?.name || name;\n\n  // TODO: Replace with real admin check\n  const isAdmin = true;\n\n  // Filter navItems for Pro-only features\n  // const isProUser = user?.app_metadata?.plan === \&quot;pro\&quot; || false;\n  // const filteredNavItems = navItems.filter(item =&gt; {\n  //   if ((item.name === \&quot;Request Portal\&quot; || item.name === \&quot;Admin\&quot;) &amp;&amp; !isProUser) {\n  //     return false;\n  //   }\n  //   return true;\n  // });\n\n  return (\n    &lt;&gt;\n      {/* Mobile Sidebar Toggle */}\n      &lt;Button\n        variant=\&quot;outline\&quot;\n        size=\&quot;icon\&quot;\n        className=\&quot;fixed top-4 left-4 z-50 md:hidden\&quot;\n        onClick={() =&gt; setIsMobileOpen(!isMobileOpen)}\n      &gt;\n        {isMobileOpen ? (\n          &lt;X className=\&quot;h-5 w-5\&quot; /&gt;\n        ) : (\n          &lt;Menu className=\&quot;h-5 w-5\&quot; /&gt;\n        )}\n      &lt;/Button&gt;\n\n      {/* Sidebar */}\n      &lt;aside\n        className={cn(\n          \&quot;fixed inset-y-0 left-0 z-40 flex flex-col glass-card border-r border-border/50\&quot;,\n          isCollapsed ? \&quot;w-20\&quot; : \&quot;w-64\&quot;,\n          isMobileOpen ? \&quot;translate-x-0\&quot; : \&quot;-translate-x-full md:translate-x-0\&quot;,\n          \&quot;transition-all duration-300 ease-in-out\&quot;,\n        )}\n      &gt;\n        {/* Toggle button - above logo when collapsed */}\n        {isCollapsed &amp;&amp; (\n          &lt;div className=\&quot;flex justify-center pt-4 pb-2\&quot;&gt;\n            &lt;Button\n              variant=\&quot;ghost\&quot;\n              size=\&quot;icon\&quot;\n              className=\&quot;hidden md:flex h-8 w-8\&quot;\n              onClick={() =&gt; setIsCollapsed(!isCollapsed)}\n            &gt;\n              &lt;ChevronsRight className=\&quot;h-4 w-4\&quot; /&gt;\n            &lt;/Button&gt;\n          &lt;/div&gt;\n        )}\n\n        &lt;div className={cn(\n          \&quot;flex items-center p-4 h-16\&quot;,\n          isCollapsed ? \&quot;justify-center\&quot; : \&quot;justify-between\&quot;\n        )}&gt;\n          &lt;SidebarLogo collapsed={isCollapsed} /&gt;\n          {!isCollapsed &amp;&amp; (\n            &lt;Button\n              variant=\&quot;ghost\&quot;\n              size=\&quot;icon\&quot;\n              className=\&quot;hidden md:flex h-8 w-8\&quot;\n              onClick={() =&gt; setIsCollapsed(!isCollapsed)}\n            &gt;\n              &lt;ChevronsLeft className=\&quot;h-4 w-4\&quot; /&gt;\n            &lt;/Button&gt;\n          )}\n        &lt;/div&gt;\n\n        &lt;div className={cn(\&quot;flex-1 overflow-y-auto\&quot;, isCollapsed ? \&quot;py-3\&quot; : \&quot;py-6\&quot;)}&gt;\n          &lt;nav className=\&quot;px-2 space-y-1\&quot;&gt;\n            {navItems.map((item, idx) =&gt; (\n              &lt;&gt;\n                &lt;Link\n                  key={item.path}\n                  to={item.path}\n                  className={cn(\n                    \&quot;flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all\&quot;,\n                    location.pathname === item.path\n                      ? \&quot;bg-primary-500/10 text-primary-600\&quot;\n                      : \&quot;text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500\&quot;,\n                    isCollapsed ? \&quot;justify-center\&quot; : \&quot;justify-start\&quot;,\n                  )}\n                &gt;\n                  &lt;span className=\&quot;flex-shrink-0\&quot;&gt;{item.icon}&lt;/span&gt;\n                  {!isCollapsed &amp;&amp; &lt;span className=\&quot;ml-3\&quot;&gt;{item.name}&lt;/span&gt;}\n                &lt;/Link&gt;\n                {/* Insert Bookmarks tab right after Documents */}\n                {isAdmin &amp;&amp; item.name === \&quot;Documents\&quot; &amp;&amp; (\n                  &lt;Link\n                    to=\&quot;/bookmarks\&quot;\n                    className={cn(\n                      \&quot;flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all\&quot;,\n                      location.pathname === \&quot;/bookmarks\&quot;\n                        ? \&quot;bg-primary-500/10 text-primary-600\&quot;\n                        : \&quot;text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500\&quot;,\n                      isCollapsed ? \&quot;justify-center\&quot; : \&quot;justify-start\&quot;,\n                    )}\n                  &gt;\n                    &lt;span className=\&quot;flex-shrink-0\&quot;&gt;\n                      &lt;Bookmark className=\&quot;h-5 w-5\&quot; /&gt;\n                    &lt;/span&gt;\n                    {!isCollapsed &amp;&amp; &lt;span className=\&quot;ml-3\&quot;&gt;Bookmarks&lt;/span&gt;}\n                  &lt;/Link&gt;\n                )}\n              &lt;/&gt;\n            ))}\n          &lt;/nav&gt;\n        &lt;/div&gt;\n\n        {/* Bottom Profile Section */}\n        &lt;SidebarProfile\n          logoUrl={logoUrl}\n          userAvatarUrl={userAvatarUrl}\n          displayName={displayName}\n          email={email}\n          initials={initials}\n          isCollapsed={isCollapsed}\n          toast={toast}\n        /&gt;\n      &lt;/aside&gt;\n\n      {/* Overlay for mobile */}\n      {isMobileOpen &amp;&amp; (\n        &lt;div\n          className=\&quot;fixed inset-0 bg-black/30 z-30 md:hidden\&quot;\n          onClick={() =&gt; setIsMobileOpen(false)}\n        /&gt;\n      )}\n    &lt;/&gt;\n  );\n}\n&quot;
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Ensuring complete tab removal**</details></think>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="read_lints">
+<details>
+          <summary>Tool use: **read_lints** • Read lints for 1 file</summary>
+      
+Lint paths:
+
+- `src/components/dashboard/Sidebar.tsx`
+
+Lint results
+
+
+**No lint errors found**
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Preparing final summary message**</details></think>
+
+---
+
+Removed the `Old Documents` entry from `Sidebar.tsx`, so the tab no longer renders in any sidebar. Existing routes (like `/old-documents`) stay intact, so deep links still work even though no navigation item points to them.
+
+```34:47:src/components/dashboard/Sidebar.tsx
+const navItems: NavItem[] = [
+  { name: "Dashboard", path: "/dashboard", icon: <Home className="h-5 w-5" /> },
+  { name: "Documents", path: "/documents", icon: <FileText className="h-5 w-5" /> },
+  { name: "History", path: "/history", icon: <Clock className="h-5 w-5" /> },
+  { name: "Request Portal", path: "/request-portal", icon: <DoorOpen className="h-5 w-5" /> },
+  { name: "Admin", path: "/admin", icon: <Users className="h-5 w-5" /> },
+  { name: "Settings", path: "/settings", icon: <Settings className="h-5 w-5" /> },
+];
+```
+
+Let me know if you’d like to disable the `/old-documents` route entirely or swap it for a different destination.
+
+---
+
