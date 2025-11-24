@@ -30,6 +30,7 @@ export interface SectionConfig {
 export interface DocumentConfig {
   id: string;
   name: string;
+  description?: string;
   category: string;
   layoutType: 'certificate' | 'letter' | 'agreement' | 'transcript';
   sections: SectionConfig[];
