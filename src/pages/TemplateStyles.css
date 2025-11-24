@@ -1,9 +1,8 @@
 /* A4 document styling */
 .a4-document {
-  /* A4 dimensions: 210mm x 297mm */
+  /* A4 dimensions: 210mm x 297mm - maintain aspect ratio */
   width: 100%;
-  max-width: 100%;
-  min-height: 297mm;
+  min-height: auto;
   margin: 0 auto;
   background: white;
   box-sizing: border-box;

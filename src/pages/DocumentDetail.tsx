@@ -244,7 +244,7 @@ export default function DocumentDetail() {
                 </div>
 
                 {/* Preview Content */}
-                <div ref={previewRef} className="scale-[0.7] origin-top">
+                <div ref={previewRef} className="w-full">
                   <DynamicPreview config={documentConfig} data={formData} />
                 </div>
               </CardContent>
