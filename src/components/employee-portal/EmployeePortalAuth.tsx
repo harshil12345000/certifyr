@@ -218,13 +218,23 @@ export function EmployeePortalAuth({
         return;
       }
 
-      // Check for existing employee
-      const { data: existing } = await supabase
+      // Check for existing employee by email
+      const { data: existingByEmail } = await supabase
         .from("request_portal_employees")
         .select("id")
         .eq("organization_id", portalSettings.organization_id)
-        .or(`full_name.eq.${register.fullName},email.eq.${register.email}`)
+        .eq("email", register.email)
         .maybeSingle();
+
+      // Check for existing employee by full name
+      const { data: existingByName } = await supabase
+        .from("request_portal_employees")
+        .select("id")
+        .eq("organization_id", portalSettings.organization_id)
+        .eq("full_name", register.fullName)
+        .maybeSingle();
+
+      const existing = existingByEmail || existingByName;
 
       if (existing) {
         toast({
