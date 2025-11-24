@@ -270,13 +270,10 @@ const AdminPage = () => {
   // Helper function to parse country from an address/location string (e.g., on signup)
   function parseCountry(address: string | null): string {
     if (!address) return "";
-    const parts = address.split(",").map((p) => p.trim());
-    if (parts.length > 3) {
-      // Assume format like: street, city, state, postal, country
-      return parts[parts.length - 1] || "";
-    } else if (parts.length === 3) {
-      // Could be city, state, country
-      return parts[2] || "";
+    const parts = address.split("||").map((p) => p.trim());
+    if (parts.length >= 5) {
+      // Format: street||city||state||postal||country
+      return parts[4] || "";
     }
     return "";
   }
@@ -331,9 +328,9 @@ const AdminPage = () => {
         const orgPhone = profileData?.phone_number || orgData?.phone || "";
         const orgEmail = profileData?.email || orgData?.email || "";
 
-        // Parse address/location for individual fields
+        // Parse address/location for individual fields using || delimiter
         const addressParts = orgLocation
-          ? orgLocation.split(",").map((x: string) => x.trim())
+          ? orgLocation.split("||").map((x: string) => x.trim())
           : [];
 
         setFormState((prev) => ({
@@ -343,8 +340,7 @@ const AdminPage = () => {
           city: addressParts[1] || "",
           state: addressParts[2] || "",
           postalCode: addressParts[3] || "",
-          country:
-            addressParts[4] || addressParts[addressParts.length - 1] || "",
+          country: addressParts[4] || "",
           phoneNumber: orgPhone,
           email: orgEmail,
           organizationType: profileData?.organization_type || "",
@@ -449,7 +445,7 @@ const AdminPage = () => {
     try {
       let currentOrgId = organizationId;
 
-      // Create full address string from components (with country at the end)
+      // Create full address string from components using || delimiter
       const fullAddress = [
         formState.streetAddress,
         formState.city,
@@ -458,7 +454,7 @@ const AdminPage = () => {
         formState.country,
       ]
         .filter(Boolean)
-        .join(", ");
+        .join("||");
 
       // Create or update organization
       if (formState.organizationName) {
