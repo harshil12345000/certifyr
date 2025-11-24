@@ -264,15 +264,6 @@ const Documents = () => {
           </div>
         </div>
 
-        {/* Tabs for New vs Old System */}
-        <Tabs defaultValue="documents" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="old-documents">Old Documents</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="documents" className="space-y-6 mt-6">
-
         {/* Search and filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -426,24 +417,6 @@ const Documents = () => {
             );
           })}
         </div>
-          </TabsContent>
-
-          <TabsContent value="old-documents" className="space-y-6 mt-6">
-            <div className="glass-card p-6">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-medium mb-2">Legacy Document System</h3>
-                <p className="text-muted-foreground mb-4">
-                  The old document system has been preserved for backward compatibility.
-                  <br />
-                  We recommend using the new "Documents" tab for better features and performance.
-                </p>
-                <Button onClick={() => navigate("/old-documents")}>
-                  View Old Documents
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
     </DashboardLayout>
   );
