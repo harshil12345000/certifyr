@@ -45,7 +45,6 @@ const Settings = () => {
     email: "",
     designation: "",
     phone: "",
-    location: "",
   });
 
   const [preferences, setPreferences] = useState({
@@ -96,7 +95,6 @@ const Settings = () => {
             email: profile.email || user.email || "",
             designation: profile.designation || "",
             phone: profile.phone_number || "",
-            location: profile.organization_location || "",
           });
         } else {
           // If no profile exists, just set email from user
@@ -132,7 +130,6 @@ const Settings = () => {
         email: formData.email.trim() || user.email,
         designation: formData.designation.trim() || null,
         phone_number: formData.phone.trim() || null,
-        organization_location: formData.location.trim() || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -347,29 +344,16 @@ const Settings = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="location">Location (City, Country)</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) =>
-                        setFormData({ ...formData, location: e.target.value })
-                      }
-                      placeholder="e.g., Mumbai, India"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    placeholder="Enter your phone number"
+                  />
                 </div>
 
                 <Button
