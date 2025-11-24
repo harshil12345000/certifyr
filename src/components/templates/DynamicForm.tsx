@@ -16,6 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format, parse } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface DynamicFormProps {
   config: any;
@@ -61,19 +66,45 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
           <FormField
             control={formControl}
             name={field.name}
-            render={({ field: formField }) => (
-              <FormItem>
-                <FormLabel>{label}</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...formField} 
-                    placeholder="dd/mm/yyyy"
-                    maxLength={10}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field: formField }) => {
+              const dateValue = formField.value ? parse(formField.value, "dd/MM/yyyy", new Date()) : undefined;
+              
+              return (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{label}</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !formField.value && "text-muted-foreground"
+                          )}
+                        >
+                          {formField.value || "Pick a date"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateValue}
+                        onSelect={(date) => {
+                          if (date) {
+                            formField.onChange(format(date, "dd/MM/yyyy"));
+                          }
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         );
 
