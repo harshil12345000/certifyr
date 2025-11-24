@@ -45,15 +45,22 @@ export function BrandingProvider({ children, organizationId }: { children: React
   const loadBrandingData = async () => {
     // If organizationId is provided, use it directly (for employee portal)
     const orgIdToUse = organizationId || (user?.id ? await (async () => {
-      const { data: memberData } = await supabase
+      const { data: memberData, error: memberError } = await supabase
         .from("organization_members")
         .select("organization_id")
         .eq("user_id", user.id)
         .maybeSingle();
+      
+      if (memberError) {
+        console.error("Error fetching organization membership:", memberError);
+      }
+      
+      console.log("Organization ID for user:", memberData?.organization_id);
       return memberData?.organization_id;
     })() : null);
 
     if (!orgIdToUse) {
+      console.log("No organization ID found, skipping branding data load");
       setLogoUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
@@ -67,11 +74,15 @@ export function BrandingProvider({ children, organizationId }: { children: React
 
     try {
       // Fetch organization details
-      const { data: orgData } = await supabase
+      const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("name, address, phone, email")
         .eq("id", orgIdToUse)
         .maybeSingle();
+
+      if (orgError) {
+        console.error("Error fetching organization details:", orgError);
+      }
 
       if (orgData) {
         const orgDetails = {
@@ -80,18 +91,24 @@ export function BrandingProvider({ children, organizationId }: { children: React
           phone: orgData.phone,
           email: orgData.email,
         };
+        console.log("Loaded organization details:", orgDetails);
         setOrganizationDetails(orgDetails);
       } else {
+        console.log("No organization details found");
         setOrganizationDetails(null);
       }
 
       // Fetch branding files
-      const { data: filesData } = await supabase
+      const { data: filesData, error: filesError } = await supabase
         .from("branding_files")
         .select("name, path")
         .eq("organization_id", orgIdToUse);
 
-      if (filesData) {
+      if (filesError) {
+        console.error("Error fetching branding files:", filesError);
+      }
+
+      if (filesData && filesData.length > 0) {
         let newLogoUrl: string | null = null;
         let newSignatureUrl: string | null = null;
 
@@ -107,13 +124,16 @@ export function BrandingProvider({ children, organizationId }: { children: React
           }
         });
 
+        console.log("Loaded branding assets - Logo:", newLogoUrl, "Signature:", newSignatureUrl);
         setLogoUrl(newLogoUrl);
         setSignatureUrl(newSignatureUrl);
       } else {
+        console.log("No branding files found for organization");
         setLogoUrl(null);
         setSignatureUrl(null);
       }
-    } catch {
+    } catch (error) {
+      console.error("Error loading branding data:", error);
       setLogoUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
