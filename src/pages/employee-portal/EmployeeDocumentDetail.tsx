@@ -112,15 +112,42 @@ const getTemplateDescription = (templateId: string) => {
   return TEMPLATE_DESCRIPTIONS[templateId] || "";
 };
 
-export default function EmployeeTemplateDetail() {
-  const { id } = useParams();
+export default function EmployeeDocumentDetail() {
+  const { slug, id } = useParams<{ slug: string; id: string }>();
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [tab, setTab] = useState("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestStatus, setRequestStatus] = useState<"pending" | "approved" | "rejected">("pending");
-  const { employee, organizationId } = useEmployeePortal();
+  const { employee } = useEmployeePortal();
   const { toast } = useToast();
+
+  // Resolve slug to organization ID
+  useEffect(() => {
+    const resolveSlug = async () => {
+      if (!slug) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("portal_slug", slug)
+          .maybeSingle();
+
+        if (error || !data) {
+          console.error("Error resolving slug:", error);
+          return;
+        }
+
+        setOrganizationId(data.id);
+      } catch (error) {
+        console.error("Error resolving organization slug:", error);
+      }
+    };
+
+    resolveSlug();
+  }, [slug]);
 
   // Scroll to top when component mounts or template changes
   useEffect(() => {
@@ -153,7 +180,7 @@ export default function EmployeeTemplateDetail() {
   const requestId = searchParams.get("requestId");
 
   useEffect(() => {
-    if (requestId && employee) {
+    if (requestId && employee && organizationId) {
       const fetchRequestData = async () => {
         try {
           const { data: request, error } = await supabase
@@ -184,7 +211,7 @@ export default function EmployeeTemplateDetail() {
 
       fetchRequestData();
     }
-  }, [requestId, employee, toast]);
+  }, [requestId, employee, organizationId, toast]);
 
   if (!id || !(id in TEMPLATE_FORM_MAP)) {
     return (
@@ -250,7 +277,7 @@ export default function EmployeeTemplateDetail() {
         description: "Your document request has been submitted for approval",
       });
 
-      navigate(`/${organizationId}/request-portal?tab=pending`);
+      navigate(`/portal/${slug}?tab=pending`);
     } catch (error) {
       console.error("Error submitting request:", error);
       toast({
@@ -313,15 +340,17 @@ export default function EmployeeTemplateDetail() {
                 </div>
               )}
               <div className="p-6">
-                <BrandingProvider organizationId={organizationId}>
-                  {PreviewComponent && (
-                    <PreviewComponent
-                      data={formData as any}
-                      isEmployeePreview={false}
-                      requestStatus={requestStatus}
-                    />
-                  )}
-                </BrandingProvider>
+                {organizationId && (
+                  <BrandingProvider organizationId={organizationId}>
+                    {PreviewComponent && (
+                      <PreviewComponent
+                        data={formData as any}
+                        isEmployeePreview={false}
+                        requestStatus={requestStatus}
+                      />
+                    )}
+                  </BrandingProvider>
+                )}
               </div>
             </div>
           </TabsContent>

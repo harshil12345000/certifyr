@@ -162,6 +162,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 email: userProfile.email,
                 phone: userProfile.phone_number,
                 address: userProfile.organization_location,
+                portal_slug: userProfile.organization_name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '')
               },
             ])
             .select()

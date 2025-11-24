@@ -119,28 +119,16 @@ function App() {
                   }
                 />
                 <Route
-                  path="/:organizationId/request-portal"
+                  path="/portal/:slug"
                   element={<EmployeePortal />}
                 />
                 <Route
-                  path="/:organizationId/request-portal/documents/:id"
-                  element={
-                    <EmployeePortalProvider
-                      organizationId={window.location.pathname.split("/")[1]}
-                    >
-                      <EmployeeDocumentDetail />
-                    </EmployeePortalProvider>
-                  }
+                  path="/portal/:slug/documents/:id"
+                  element={<EmployeeDocumentDetail />}
                 />
                 <Route
-                  path="/:organizationId/request-portal/templates/:id"
-                  element={
-                    <EmployeePortalProvider
-                      organizationId={window.location.pathname.split("/")[1]}
-                    >
-                      <EmployeeDocumentDetail />
-                    </EmployeePortalProvider>
-                  }
+                  path="/portal/:slug/templates/:id"
+                  element={<EmployeeDocumentDetail />}
                 />
                 <Route
                   path="/admin"
