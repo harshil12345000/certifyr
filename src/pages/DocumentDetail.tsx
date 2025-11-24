@@ -47,6 +47,7 @@ export default function DocumentDetail() {
   // Initialize form data state with default values
   const [formData, setFormData] = useState<any>(() => getInitialData(id || ''));
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('form');
 
   // Auto-populate form data with organization and user profile information
   useEffect(() => {
@@ -248,7 +249,7 @@ export default function DocumentDetail() {
         </div>
 
         {/* Form and Preview Tabs */}
-        <Tabs defaultValue="form" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -260,7 +261,10 @@ export default function DocumentDetail() {
                 <DynamicForm
                   config={documentConfig}
                   initialData={formData}
-                  onSubmit={setFormData}
+                  onSubmit={(data) => {
+                    setFormData(data);
+                    setActiveTab('preview');
+                  }}
                 />
               </CardContent>
             </Card>
