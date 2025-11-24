@@ -42,6 +42,7 @@ export interface DocumentConfig {
 export const bonafideConfig: DocumentConfig = {
   id: "bonafide",
   name: "Bonafide Certificate",
+  description: "Standard bonafide certificate for students or employees.",
   category: "academic",
   layoutType: "certificate",
   
@@ -240,6 +241,7 @@ export const characterConfig: DocumentConfig = {
 export const experienceConfig: DocumentConfig = {
   id: "experience",
   name: "Experience Certificate",
+  description: "Formal letter confirming an individual's work experience.",
   category: "employment",
   layoutType: "certificate",
   
@@ -301,6 +303,7 @@ export const experienceConfig: DocumentConfig = {
 export const transferConfig: DocumentConfig = {
   id: "transfer",
   name: "Transfer Certificate",
+  description: "Certificate for students moving between institutions",
   category: "academic",
   layoutType: "certificate",
   
@@ -361,6 +364,7 @@ export const transferConfig: DocumentConfig = {
 export const academicTranscriptConfig: DocumentConfig = {
   id: "academic-transcript",
   name: "Academic Transcript",
+  description: "Official academic record and transcript",
   category: "academic",
   layoutType: "transcript",
   
@@ -420,6 +424,7 @@ export const academicTranscriptConfig: DocumentConfig = {
 export const completionConfig: DocumentConfig = {
   id: "completion",
   name: "Completion Certificate",
+  description: "Certificate for courses, training programs, internships",
   category: "academic",
   layoutType: "certificate",
   
@@ -476,6 +481,7 @@ export const completionConfig: DocumentConfig = {
 export const incomeConfig: DocumentConfig = {
   id: "income",
   name: "Income Certificate",
+  description: "Certificate stating employee income details",
   category: "employment",
   layoutType: "certificate",
   
@@ -540,6 +546,7 @@ export const incomeConfig: DocumentConfig = {
 export const maternityLeaveConfig: DocumentConfig = {
   id: "maternity-leave",
   name: "Maternity Leave Application",
+  description: "Application for maternity leave benefits",
   category: "employment",
   layoutType: "letter",
   
@@ -614,6 +621,7 @@ export const maternityLeaveConfig: DocumentConfig = {
 export const offerLetterConfig: DocumentConfig = {
   id: "offer-letter",
   name: "Offer Letter",
+  description: "Formal job offer letter to candidates",
   category: "employment",
   layoutType: "letter",
   
@@ -682,6 +690,7 @@ export const offerLetterConfig: DocumentConfig = {
 export const nocVisaConfig: DocumentConfig = {
   id: "noc-visa",
   name: "NOC for Visa",
+  description: "No Objection Certificate for employees/students applying for a visa.",
   category: "travel",
   layoutType: "letter",
   
@@ -740,6 +749,7 @@ export const nocVisaConfig: DocumentConfig = {
 export const bankVerificationConfig: DocumentConfig = {
   id: "bank-verification",
   name: "Bank Account Verification",
+  description: "Letter confirming account details for banks",
   category: "financial",
   layoutType: "letter",
   
@@ -808,6 +818,7 @@ export const bankVerificationConfig: DocumentConfig = {
 export const addressProofConfig: DocumentConfig = {
   id: "address-proof",
   name: "Address Proof Certificate",
+  description: "Certificate verifying residential address",
   category: "legal",
   layoutType: "certificate",
   
@@ -896,6 +907,7 @@ export const addressProofConfig: DocumentConfig = {
 export const ndaConfig: DocumentConfig = {
   id: "nda",
   name: "Non-Disclosure Agreement",
+  description: "Confidentiality agreement between parties",
   category: "corporate",
   layoutType: "agreement",
   
@@ -950,6 +962,7 @@ export const ndaConfig: DocumentConfig = {
 export const employmentAgreementConfig: DocumentConfig = {
   id: "employment-agreement",
   name: "Employment Agreement",
+  description: "Comprehensive employment contract",
   category: "corporate",
   layoutType: "agreement",
   
@@ -1013,6 +1026,7 @@ export const employmentAgreementConfig: DocumentConfig = {
 export const articlesOfIncorporationConfig: DocumentConfig = {
   id: "articles-incorporation",
   name: "Articles of Incorporation",
+  description: "Certificate of Incorporation for new corporations",
   category: "corporate",
   layoutType: "agreement",
   
@@ -1087,6 +1101,7 @@ export const articlesOfIncorporationConfig: DocumentConfig = {
 export const corporateBylawsConfig: DocumentConfig = {
   id: "corporate-bylaws",
   name: "Corporate Bylaws",
+  description: "Corporate governance and operating procedures",
   category: "corporate",
   layoutType: "agreement",
   
@@ -1151,6 +1166,7 @@ export const corporateBylawsConfig: DocumentConfig = {
 export const foundersAgreementConfig: DocumentConfig = {
   id: "founders-agreement",
   name: "Founders' Agreement",
+  description: "Agreement between company founders",
   category: "corporate",
   layoutType: "agreement",
   
@@ -1225,6 +1241,7 @@ export const foundersAgreementConfig: DocumentConfig = {
 export const stockPurchaseAgreementConfig: DocumentConfig = {
   id: "stock-purchase-agreement",
   name: "Stock Purchase Agreement",
+  description: "Agreement for purchasing company shares",
   category: "corporate",
   layoutType: "agreement",
   
@@ -1288,6 +1305,7 @@ export const stockPurchaseAgreementConfig: DocumentConfig = {
 export const embassyAttestationConfig: DocumentConfig = {
   id: "embassy-attestation",
   name: "Embassy Attestation",
+  description: "Letter for document attestation at embassies",
   category: "travel",
   layoutType: "letter",
   
@@ -1354,6 +1372,7 @@ export const embassyAttestationConfig: DocumentConfig = {
 export const embassyAttestationLetterConfig: DocumentConfig = {
   id: "embassy-attestation-letter",
   name: "Embassy Attestation Letter",
+  description: "Letter for document attestation at embassies",
   category: "travel",
   layoutType: "letter",
   
