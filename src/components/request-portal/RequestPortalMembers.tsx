@@ -26,8 +26,10 @@ interface PortalEmployee {
 }
 
 export function RequestPortalMembers({
+  organizationId,
   onMemberProcessed,
 }: {
+  organizationId: string;
   onMemberProcessed?: () => void;
 }) {
   const { user } = useAuth();
@@ -35,31 +37,24 @@ export function RequestPortalMembers({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchEmployees();
-  }, [user]);
+    if (organizationId) {
+      fetchEmployees();
+    }
+  }, [organizationId]);
 
   const fetchEmployees = async () => {
-    if (!user) return;
+    if (!organizationId) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Get user's organization
-      const { data: orgData } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-
-      if (!orgData) {
-        setLoading(false);
-        return;
-      }
 
       // Get portal employees
       const { data: employeesData, error } = await supabase
         .from("request_portal_employees")
         .select("*")
-        .eq("organization_id", orgData.organization_id)
+        .eq("organization_id", organizationId)
         .order("registered_at", { ascending: false });
 
       if (error) throw error;

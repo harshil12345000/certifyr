@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrganizationId } from "@/hooks/useOrganizationId";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Card,
   CardContent,
@@ -19,70 +21,45 @@ export default function RequestPortal() {
   const [requestsCount, setRequestsCount] = useState(0);
   const [membersCount, setMembersCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { orgId, loading: orgLoading } = useOrganizationId();
 
   // Fetch requests count from Supabase
   useEffect(() => {
+    if (!orgId) return;
     const fetchRequestsCount = async () => {
-      // Import supabase client dynamically to avoid SSR issues
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
-      if (!user) return setRequestsCount(0);
-      // Get user's organization
-      const { data: orgData } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-      if (!orgData) return setRequestsCount(0);
-      // Get pending document requests count
-      const { count, error } = await supabase
+      const { count } = await supabase
         .from("document_requests")
         .select("*", { count: "exact", head: true })
-        .eq("organization_id", orgData.organization_id)
+        .eq("organization_id", orgId)
         .eq("status", "pending");
-      if (error) return setRequestsCount(0);
       setRequestsCount(count || 0);
     };
     fetchRequestsCount();
-  }, []);
+  }, [orgId]);
 
   // Fetch members count from Supabase
   useEffect(() => {
+    if (!orgId) return;
     const fetchMembersCount = async () => {
-      // Import supabase client dynamically to avoid SSR issues
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
-      if (!user) return setMembersCount(0);
-      // Get user's organization
-      const { data: orgData } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-      if (!orgData) return setMembersCount(0);
-      // Get all portal employees count
-      const { count, error } = await supabase
+      const { count } = await supabase
         .from("request_portal_employees")
         .select("*", { count: "exact", head: true })
-        .eq("organization_id", orgData.organization_id);
-      if (error) return setMembersCount(0);
+        .eq("organization_id", orgId);
       setMembersCount(count || 0);
     };
     fetchMembersCount();
-  }, []);
+  }, [orgId]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500); // Simulate loading for 500ms
-    return () => clearTimeout(timer);
-  }, []);
+    if (!orgLoading) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [orgLoading]);
 
-  if (loading) {
+  if (loading || orgLoading) {
     return (
       <DashboardLayout>
         <RequestPortalSkeleton />
@@ -129,62 +106,29 @@ export default function RequestPortal() {
 
           <TabsContent value="requests" className="space-y-6">
             <RequestPortalRequests
-              onRequestProcessed={() => {
-                // Refresh count when a request is processed
-                // (re-run fetchRequestsCount)
-                const fetchRequestsCount = async () => {
-                  const { supabase } = await import(
-                    "@/integrations/supabase/client"
-                  );
-                  const { data: userData } = await supabase.auth.getUser();
-                  const user = userData?.user;
-                  if (!user) return setRequestsCount(0);
-                  const { data: orgData } = await supabase
-                    .from("organization_members")
-                    .select("organization_id")
-                    .eq("user_id", user.id)
-                    .eq("role", "admin")
-                    .single();
-                  if (!orgData) return setRequestsCount(0);
-                  const { count, error } = await supabase
-                    .from("document_requests")
-                    .select("*", { count: "exact", head: true })
-                    .eq("organization_id", orgData.organization_id)
-                    .eq("status", "pending");
-                  if (error) return setRequestsCount(0);
-                  setRequestsCount(count || 0);
-                };
-                fetchRequestsCount();
+              organizationId={orgId || ""}
+              onRequestProcessed={async () => {
+                if (!orgId) return;
+                const { count } = await supabase
+                  .from("document_requests")
+                  .select("*", { count: "exact", head: true })
+                  .eq("organization_id", orgId)
+                  .eq("status", "pending");
+                setRequestsCount(count || 0);
               }}
             />
           </TabsContent>
 
           <TabsContent value="members" className="space-y-6">
             <RequestPortalMembers
-              onMemberProcessed={() => {
-                // Refresh count when a member is processed
-                const fetchMembersCount = async () => {
-                  const { supabase } = await import(
-                    "@/integrations/supabase/client"
-                  );
-                  const { data: userData } = await supabase.auth.getUser();
-                  const user = userData?.user;
-                  if (!user) return setMembersCount(0);
-                  const { data: orgData } = await supabase
-                    .from("organization_members")
-                    .select("organization_id")
-                    .eq("user_id", user.id)
-                    .eq("role", "admin")
-                    .single();
-                  if (!orgData) return setMembersCount(0);
-                  const { count, error } = await supabase
-                    .from("request_portal_employees")
-                    .select("*", { count: "exact", head: true })
-                    .eq("organization_id", orgData.organization_id);
-                  if (error) return setMembersCount(0);
-                  setMembersCount(count || 0);
-                };
-                fetchMembersCount();
+              organizationId={orgId || ""}
+              onMemberProcessed={async () => {
+                if (!orgId) return;
+                const { count } = await supabase
+                  .from("request_portal_employees")
+                  .select("*", { count: "exact", head: true })
+                  .eq("organization_id", orgId);
+                setMembersCount(count || 0);
               }}
             />
           </TabsContent>
