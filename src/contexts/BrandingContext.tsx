@@ -19,6 +19,7 @@ interface UserProfileData {
   firstName: string | null;
   lastName: string | null;
   organizationLocation: string | null;
+  designation: string | null;
 }
 
 interface BrandingContextType {
@@ -148,7 +149,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
       if (user?.id) {
         const { data: profileData, error: profileError } = await supabase
           .from("user_profiles")
-          .select("first_name, last_name, organization_location")
+          .select("first_name, last_name, organization_location, designation")
           .eq("user_id", user.id)
           .maybeSingle();
 
@@ -161,6 +162,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
             firstName: profileData.first_name,
             lastName: profileData.last_name,
             organizationLocation: profileData.organization_location,
+            designation: profileData.designation,
           });
         } else {
           setUserProfile(null);

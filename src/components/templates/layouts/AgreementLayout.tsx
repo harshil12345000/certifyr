@@ -19,7 +19,7 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, userProfile } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -406,10 +406,14 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
             ) : (
               <div className="h-16 border-b-2 border-gray-300 mb-4"></div>
             )}
-            <p className="font-bold">{data.signatoryName || "[Signatory Name]"}</p>
-            <p>{data.signatoryDesignation || "[Designation]"}</p>
+            <p className="font-bold">
+              {userProfile?.firstName && userProfile?.lastName 
+                ? `${userProfile.firstName} ${userProfile.lastName}` 
+                : data.signatoryName || "[Signatory Name]"}
+            </p>
+            <p>{userProfile?.designation || data.signatoryDesignation || "[Designation]"}</p>
             <p>Date: {formatDate(data.date)}</p>
-            <p>Place: {data.place || "[Place]"}</p>
+            <p>Place: {userProfile?.organizationLocation || data.place || "[Place]"}</p>
           </div>
 
           {qrCodeUrl && (
