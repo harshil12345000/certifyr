@@ -1462,7 +1462,7 @@ export const documentConfigs: Record<string, DocumentConfig> = {
 
 // Helper function to get config by template ID
 export const getDocumentConfig = (templateId: string): DocumentConfig | undefined => {
-  // Extract base template ID (e.g., "bonafide-1" -> "bonafide")
-  const baseId = templateId.split("-")[0];
+  // Extract base template ID by removing numeric suffix (e.g., "academic-transcript-1" -> "academic-transcript")
+  const baseId = templateId.replace(/-\d+$/, '');
   return documentConfigs[baseId];
 };
