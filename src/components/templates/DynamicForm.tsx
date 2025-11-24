@@ -34,11 +34,16 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
+    mode: 'onChange', // Validate on change instead of on submit
   });
 
-  // Reset form values when initialData changes
+  // Reset form values when initialData changes and revalidate
   React.useEffect(() => {
-    form.reset(initialData);
+    form.reset(initialData, { 
+      keepErrors: false, // Clear any existing errors
+      keepDirty: false,
+      keepTouched: false,
+    });
   }, [initialData, form]);
 
   const renderField = (field: any, formControl: any) => {
@@ -231,12 +236,19 @@ function generateZodSchema(config: any) {
           }
           break;
         case "date":
-          fieldSchema = z.string().regex(
-            /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
-            { message: `${field.label} must be in dd/mm/yyyy format` }
-          );
+          fieldSchema = z.string()
+            .regex(
+              /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+              { message: `${field.label} must be in dd/mm/yyyy format` }
+            )
+            .or(z.literal("")); // Allow empty string initially
           if (field.required) {
-            fieldSchema = fieldSchema.min(1, { message: `${field.label} is required` });
+            fieldSchema = z.string()
+              .min(1, { message: `${field.label} is required` })
+              .regex(
+                /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+                { message: `${field.label} must be in dd/mm/yyyy format` }
+              );
           }
           break;
         case "select":
