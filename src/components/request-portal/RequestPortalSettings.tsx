@@ -87,7 +87,7 @@ export function RequestPortalSettings() {
       }
 
       // Generate the portal URL using slug
-      const portalUrl = `${window.location.origin}/portal/${orgData.portal_slug}`;
+      const portalUrl = `${window.location.origin}/portal/${orgData.portal_slug || 'your-org'}`;
       
       const decodedPassword = settingsData?.password_hash ? (() => {
         try {
@@ -102,8 +102,13 @@ export function RequestPortalSettings() {
         enabled: settingsData?.enabled ?? false,
         password: decodedPassword,
         portalUrl,
-        portalSlug: orgData.portal_slug
+        portalSlug: orgData.portal_slug || ""
       });
+      
+      // Set slug as available initially since it's the org's own slug
+      if (orgData.portal_slug) {
+        setSlugAvailable(true);
+      }
     } catch (error) {
       console.error("Error fetching settings:", error);
       toast({
@@ -172,10 +177,19 @@ export function RequestPortalSettings() {
   };
 
   const saveSettings = async () => {
-    if (!user || !organizationId) {
+    if (!user) {
       toast({
         title: "Error",
-        description: "User or organization not found",
+        description: "User not authenticated",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!organizationId) {
+      toast({
+        title: "Error",
+        description: "Organization not found. Please refresh the page.",
         variant: "destructive"
       });
       return;
@@ -280,17 +294,17 @@ export function RequestPortalSettings() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-2">
-          <Switch id="portal-enabled" checked={settings.enabled} onCheckedChange={enabled => {
-          setSettings(prev => {
-            // Generate portal URL if enabling for the first time and URL is empty
-            const newPortalUrl = enabled && !prev.portalUrl && organizationId ? `${window.location.origin}/${organizationId}/request-portal` : prev.portalUrl;
-            return {
-              ...prev,
-              enabled,
-              portalUrl: newPortalUrl
-            };
-          });
-        }} />
+          <Switch 
+            id="portal-enabled" 
+            checked={settings.enabled} 
+            disabled={!organization}
+            onCheckedChange={enabled => {
+              setSettings(prev => ({
+                ...prev,
+                enabled
+              }));
+            }} 
+          />
           <Label htmlFor="portal-enabled">Enable Request Portal</Label>
         </div>
 
