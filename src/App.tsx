@@ -16,6 +16,7 @@ import Settings from "@/pages/Settings";
 import History from "@/pages/History";
 import RequestPortal from "@/pages/RequestPortal";
 import Branding from "@/pages/admin/branding";
+import TempBonafideComparison from "@/pages/TempBonafideComparison";
 import AdminDocuments from "@/pages/admin/documents";
 import AdminDocumentBuilder from "@/pages/admin/documents/DocumentBuilder";
 import NotFound from "@/pages/NotFound";
@@ -202,6 +203,14 @@ function App() {
                 />
                 <Route path="/verify/:hash" element={<VerifyDocument />} />
                 <Route path="/no-access" element={<NoAccess />} />
+                <Route
+                  path="/temp-doc/bonafide"
+                  element={
+                    <ProtectedRoute>
+                      <TempBonafideComparison />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/bookmarks"
                   element={
