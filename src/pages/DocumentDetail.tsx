@@ -71,33 +71,35 @@ export default function DocumentDetail() {
           </div>
         </div>
 
-        {/* Form and Preview */}
-        <Card>
-          <CardContent className="pt-6">
-            <Tabs defaultValue="form" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="form">Form</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-              </TabsList>
-              <TabsContent value="form" className="space-y-4">
-                <div className="max-h-[600px] overflow-y-auto pr-2">
-                  <DynamicForm
-                    config={documentConfig}
-                    initialData={formData}
-                    onSubmit={setFormData}
-                  />
+        {/* Form and Preview Tabs */}
+        <Tabs defaultValue="form" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="form">Form</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="form">
+            <Card>
+              <CardContent className="pt-6">
+                <DynamicForm
+                  config={documentConfig}
+                  initialData={formData}
+                  onSubmit={setFormData}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="preview">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="scale-[0.7] origin-top">
+                  <DynamicPreview config={documentConfig} data={formData} />
                 </div>
-              </TabsContent>
-              <TabsContent value="preview" className="space-y-4">
-                <div className="max-h-[600px] overflow-y-auto pr-2">
-                  <div className="scale-[0.7] origin-top">
-                    <DynamicPreview config={documentConfig} data={formData} />
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
