@@ -118,7 +118,7 @@ const Index = () => {
               </Button>
             </div>
             <div className="space-y-4">
-              {popularTemplates.slice(0, 3).map(template => <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+              {popularTemplates.slice(0, 2).map(template => <div key={template.id} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
                   <div className="rounded-full w-9 h-9 bg-primary-500/10 text-primary-500 flex items-center justify-center">
                     <FileText className="h-4 w-4" />
                   </div>
