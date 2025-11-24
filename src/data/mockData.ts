@@ -45,13 +45,6 @@ export const popularTemplates = [
     usageCount: 980,
   },
   {
-    id: "character-1",
-    title: "Character Certificate",
-    description: "Certificate attesting to an individual's moral character.",
-    category: "General",
-    usageCount: 750,
-  },
-  {
     id: "noc-visa-1",
     title: "NOC for Visa Application",
     description:
