@@ -405,6 +405,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          portal_slug: string
         }
         Insert: {
           address?: string | null
@@ -413,6 +414,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          portal_slug: string
         }
         Update: {
           address?: string | null
@@ -421,6 +423,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          portal_slug?: string
         }
         Relationships: []
       }
@@ -832,6 +835,10 @@ export type Database = {
     }
     Functions: {
       delete_user_account: { Args: never; Returns: Json }
+      generate_unique_slug: {
+        Args: { org_id: string; org_name: string }
+        Returns: string
+      }
       get_user_organization_id: { Args: { user_id: string }; Returns: string }
       get_user_organizations: {
         Args: { check_user_id: string }
