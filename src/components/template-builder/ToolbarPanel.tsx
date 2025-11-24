@@ -2,7 +2,6 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Text,
-  List,
   ImageIcon,
   Hash,
   Mail,
@@ -13,7 +12,6 @@ import {
   Circle,
   FileText,
   File,
-  Image,
   PenTool,
   Table,
   QrCode,
@@ -41,7 +39,7 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({
     { id: "radio", label: "Radio Group", icon: Circle },
     { id: "textarea", label: "Text Area", icon: FileText },
     { id: "file", label: "File Upload", icon: File },
-    { id: "image", label: "Image Upload", icon: Image },
+    { id: "image", label: "Image Upload", icon: ImageIcon },
     { id: "signature", label: "Signature", icon: PenTool },
     { id: "table", label: "Table", icon: Table },
     { id: "qr", label: "QR Code", icon: QrCode },
