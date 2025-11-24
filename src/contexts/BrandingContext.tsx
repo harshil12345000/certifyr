@@ -88,7 +88,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
       if (orgData) {
         const orgDetails = {
           name: orgData.name,
-          address: orgData.address,
+          address: orgData.address ? orgData.address.replace(/\|\|/g, ", ") : null,
           phone: orgData.phone,
           email: orgData.email,
         };
