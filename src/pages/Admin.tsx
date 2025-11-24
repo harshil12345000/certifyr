@@ -299,22 +299,30 @@ const AdminPage = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        // Then check if user has organization membership
-        const { data: memberData } = await supabase
-          .from("organization_members")
-          .select("organization_id, organizations(name, address, phone, email)")
-          .eq("user_id", user.id)
-          .maybeSingle();
+        // Get user's organization ID using RPC function
+        const { data: orgId, error: rpcError } = await supabase.rpc(
+          'get_user_organization_id',
+          { user_id: user.id }
+        );
 
-        if (!memberData?.organization_id) {
+        if (rpcError || !orgId) {
           setOrganizationId(null);
           setHasOrganization(false);
         } else {
-          setOrganizationId(memberData.organization_id);
+          setOrganizationId(orgId);
           setHasOrganization(true);
         }
 
-        const orgData = memberData?.organizations;
+        // Fetch organization details separately
+        let orgData = null;
+        if (orgId) {
+          const { data: orgDetails } = await supabase
+            .from("organizations")
+            .select("name, address, phone, email")
+            .eq("id", orgId)
+            .maybeSingle();
+          orgData = orgDetails;
+        }
 
         // Use profileData as primary source, fall back to orgData
         const orgName = profileData?.organization_name || orgData?.name || "";
@@ -345,8 +353,8 @@ const AdminPage = () => {
         }));
 
         // Fetch branding files only when an organization exists
-        if (memberData?.organization_id) {
-          await fetchBrandingFiles(memberData.organization_id);
+        if (orgId) {
+          await fetchBrandingFiles(orgId);
         }
       } catch (error) {
         console.error("Error fetching user profile:", error);
