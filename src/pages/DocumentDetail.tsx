@@ -50,19 +50,42 @@ export default function DocumentDetail() {
 
   // Auto-populate form data with user profile information
   useEffect(() => {
-    if (brandingLoading || !userProfile) return;
+    if (brandingLoading) {
+      console.log("Branding still loading, waiting...");
+      return;
+    }
 
-    // Only update if fields are empty (preserve user edits)
-    setFormData((prev: any) => ({
-      ...prev,
-      // Auto-populate place from organization location
-      place: prev.place || parseLocation(userProfile.organizationLocation),
-      // Auto-populate signatory name from user profile
-      signatoryName: prev.signatoryName || 
-        `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim(),
-      // Auto-populate signatory designation from user profile
-      signatoryDesignation: prev.signatoryDesignation || userProfile.designation || '',
-    }));
+    if (!userProfile) {
+      console.log("No user profile available");
+      return;
+    }
+
+    console.log("Auto-populating fields from user profile:", userProfile);
+
+    // Parse location
+    const parsedPlace = parseLocation(userProfile.organizationLocation);
+    const parsedSignatoryName = userProfile.firstName && userProfile.lastName 
+      ? `${userProfile.firstName} ${userProfile.lastName}`.trim()
+      : '';
+    const parsedDesignation = userProfile.designation || '';
+
+    console.log("Parsed values:", {
+      place: parsedPlace,
+      signatoryName: parsedSignatoryName,
+      signatoryDesignation: parsedDesignation
+    });
+
+    // AGGRESSIVELY set all fields - always overwrite with profile data
+    setFormData((prev: any) => {
+      const updated = {
+        ...prev,
+        place: parsedPlace || prev.place,
+        signatoryName: parsedSignatoryName || prev.signatoryName,
+        signatoryDesignation: parsedDesignation || prev.signatoryDesignation,
+      };
+      console.log("Updated formData:", updated);
+      return updated;
+    });
   }, [userProfile, brandingLoading]);
 
   if (!documentConfig) {
