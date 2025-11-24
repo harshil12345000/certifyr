@@ -4,15 +4,13 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, FileText, Printer, Save } from 'lucide-react';
+import { ArrowLeft, Download, Printer, Save } from 'lucide-react';
 import { DynamicForm } from '@/components/templates/DynamicForm';
 import { DynamicPreview } from '@/components/templates/DynamicPreview';
 import { getDocumentConfig } from '@/config/documentConfigs';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
-import { saveAs } from 'file-saver';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -77,56 +75,67 @@ export default function DocumentDetail() {
     }
   };
 
-  const handleDownloadDocx = async () => {
+  const handlePrint = () => {
     if (!previewRef.current) return;
     
-    setIsProcessing(true);
-    try {
-      const textContent = previewRef.current.innerText;
-      
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: textContent.split('\n').map(line => 
-            new Paragraph({
-              children: [new TextRun(line)],
-            })
-          ),
-        }],
-      });
-      
-      const blob = await Packer.toBlob(doc);
-      saveAs(blob, `${documentConfig?.name || 'document'}.docx`);
-      
-      toast.success('Word document downloaded successfully');
-    } catch (error) {
-      console.error('DOCX download error:', error);
-      toast.error('Failed to download Word document');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handlePrint = () => {
     const printWindow = window.open('', '', 'height=842,width=595');
-    if (!printWindow || !previewRef.current) return;
+    if (!printWindow) return;
     
-    printWindow.document.write('<html><head><title>Print</title>');
-    printWindow.document.write('<style>');
-    printWindow.document.write('@page { size: A4; margin: 0; }');
-    printWindow.document.write('body { margin: 0; padding: 0; }');
-    printWindow.document.write('</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write(previewRef.current.innerHTML);
-    printWindow.document.write('</body></html>');
+    // Get all stylesheets from the current document
+    const styleSheets = Array.from(document.styleSheets);
+    let allStyles = '';
+    
+    styleSheets.forEach(sheet => {
+      try {
+        const rules = Array.from(sheet.cssRules || sheet.rules || []);
+        rules.forEach(rule => {
+          allStyles += rule.cssText + '\n';
+        });
+      } catch (e) {
+        // Handle CORS errors for external stylesheets
+        console.warn('Could not access stylesheet:', e);
+      }
+    });
+    
+    // Build the print document with all styles
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Document</title>
+          <style>
+            @page { 
+              size: A4; 
+              margin: 0; 
+            }
+            body { 
+              margin: 0; 
+              padding: 0;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            * {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            ${allStyles}
+          </style>
+        </head>
+        <body>
+          ${previewRef.current.innerHTML}
+        </body>
+      </html>
+    `);
     
     printWindow.document.close();
-    printWindow.focus();
     
+    // Wait for content and styles to load before printing
     setTimeout(() => {
+      printWindow.focus();
       printWindow.print();
       printWindow.close();
-    }, 250);
+    }, 500);
   };
 
   const handleSaveDocument = async () => {
@@ -137,27 +146,44 @@ export default function DocumentDetail() {
     
     setIsProcessing(true);
     try {
-      // Get user's organization ID
-      const { data: orgData } = await supabase
-        .from('user_statistics')
+      // Get user's organization from organization_members
+      const { data: orgMember, error: orgError } = await supabase
+        .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
+        .eq('status', 'active')
         .single();
       
-      const { error } = await supabase
+      if (orgError || !orgMember?.organization_id) {
+        toast.error('You must be part of an organization to save documents');
+        console.error('Organization lookup error:', orgError);
+        return;
+      }
+      
+      // Save document to history
+      const { error: saveError } = await supabase
         .from('document_history')
         .insert({
           user_id: user.id,
-          organization_id: orgData?.organization_id || '',
+          organization_id: orgMember.organization_id,
           template_id: documentConfig?.id || id || '',
           document_name: documentConfig?.name || 'Untitled Document',
           form_data: formData,
           status: 'completed',
+          is_editable: true,
         });
       
-      if (error) throw error;
+      if (saveError) throw saveError;
       
       toast.success('Document saved to History');
+      
+      // Increment documents_created stat
+      await supabase.rpc('increment_user_stat', {
+        p_user_id: user.id,
+        p_organization_id: orgMember.organization_id,
+        p_stat_field: 'documents_created'
+      });
+      
     } catch (error) {
       console.error('Save document error:', error);
       toast.error('Failed to save document');
@@ -212,14 +238,6 @@ export default function DocumentDetail() {
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download PDF
-                  </Button>
-                  <Button 
-                    onClick={handleDownloadDocx} 
-                    disabled={isProcessing}
-                    variant="outline"
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Download .Docx
                   </Button>
                   <Button 
                     onClick={handlePrint}
