@@ -8,6 +8,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RootRedirect } from "@/components/auth/RootRedirect";
 import Index from "@/pages/Index";
 import Documents from "@/pages/Documents";
+import NewDocuments from "@/pages/NewDocuments";
+import OldDocuments from "@/pages/OldDocuments";
 import DocumentDetail from "@/pages/DocumentDetail";
 import DocumentBuilder from "@/pages/DocumentBuilder";
 import Onboarding from "@/pages/Onboarding";
@@ -54,14 +56,22 @@ function App() {
                   }
                 />
                   {/* New routes */}
-                  <Route
-                    path="/documents"
-                    element={
-                      <ProtectedRoute>
-                        <Documents />
-                      </ProtectedRoute>
-                    }
-                  />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <NewDocuments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/old-documents"
+            element={
+              <ProtectedRoute>
+                <OldDocuments />
+              </ProtectedRoute>
+            }
+          />
                   <Route
                     path="/documents/:id"
                     element={
