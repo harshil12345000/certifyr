@@ -14,7 +14,7 @@ import {
   FileText,
   File,
   Image,
-  Signature,
+  PenTool,
   Table,
   QrCode,
   LucideIcon,
@@ -42,7 +42,7 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({
     { id: "textarea", label: "Text Area", icon: FileText },
     { id: "file", label: "File Upload", icon: File },
     { id: "image", label: "Image Upload", icon: Image },
-    { id: "signature", label: "Signature", icon: Signature },
+    { id: "signature", label: "Signature", icon: PenTool },
     { id: "table", label: "Table", icon: Table },
     { id: "qr", label: "QR Code", icon: QrCode },
   ];
