@@ -815,7 +815,7 @@ const AdminPage = () => {
                   <CardDescription>
                     {organizationId
                       ? "Upload your organization's logo and digital signature."
-                      : "Branding features require organization membership. Contact your admin to join an organization."}
+                      : "Please add all your information in the Organization tab before uploading your branding."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
