@@ -148,6 +148,7 @@ export const bonafideConfig: DocumentConfig = {
           label: "Place",
           type: "text",
           required: true,
+          placeholder: "City, Country",
           validation: { minLength: 2, message: "Place is required" }
         }
       ]
@@ -282,7 +283,7 @@ export const experienceConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "date", label: "Issue Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true, validation: { minLength: 2, message: "Place is required" } }
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country", validation: { minLength: 2, message: "Place is required" } }
       ]
     },
     {
@@ -412,7 +413,7 @@ export const academicTranscriptConfig: DocumentConfig = {
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
       ]
     }
@@ -525,7 +526,7 @@ export const incomeConfig: DocumentConfig = {
       fields: [
         { name: "purpose", label: "Purpose", type: "textarea", required: true },
         { name: "date", label: "Issue Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true }
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" }
       ]
     },
     {
@@ -600,7 +601,7 @@ export const maternityLeaveConfig: DocumentConfig = {
       fields: [
         { name: "institutionName", label: "Institution Name", type: "text", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true }
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" }
       ]
     },
     {
@@ -676,7 +677,7 @@ export const offerLetterConfig: DocumentConfig = {
       fields: [
         { name: "institutionName", label: "Institution Name", type: "text", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
@@ -728,7 +729,7 @@ export const nocVisaConfig: DocumentConfig = {
       fields: [
         { name: "institutionName", label: "Institution Name", type: "text", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true }
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" }
       ]
     },
     {
@@ -797,7 +798,7 @@ export const bankVerificationConfig: DocumentConfig = {
         { name: "purpose", label: "Purpose", type: "text", required: true },
         { name: "institutionName", label: "Institution Name", type: "text", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true }
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" }
       ]
     },
     {
@@ -885,7 +886,7 @@ export const addressProofConfig: DocumentConfig = {
       fields: [
         { name: "purpose", label: "Purpose", type: "text", required: true },
         { name: "institutionName", label: "Institution Name", type: "text", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "date", label: "Date", type: "date", required: true }
       ]
     },
@@ -948,7 +949,7 @@ export const ndaConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
@@ -1012,7 +1013,7 @@ export const employmentAgreementConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
@@ -1089,7 +1090,7 @@ export const articlesOfIncorporationConfig: DocumentConfig = {
       fields: [
         { name: "filingDate", label: "Filing Date", type: "date", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
       ]
     }
@@ -1152,7 +1153,7 @@ export const corporateBylawsConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
@@ -1227,7 +1228,7 @@ export const foundersAgreementConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
@@ -1291,7 +1292,7 @@ export const stockPurchaseAgreementConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }
@@ -1358,7 +1359,7 @@ export const embassyAttestationConfig: DocumentConfig = {
       fields: [
         { name: "institutionName", label: "Institution Name", type: "text", required: true },
         { name: "date", label: "Date", type: "date", required: true },
-        { name: "place", label: "Place", type: "text", required: true },
+        { name: "place", label: "Place", type: "text", required: true, placeholder: "City, Country" },
         { name: "signatoryName", label: "Signatory Name", type: "text", required: true },
         { name: "signatoryDesignation", label: "Designation", type: "text", required: true },
         { name: "includeDigitalSignature", label: "Digital Signature", type: "switch", defaultValue: false }

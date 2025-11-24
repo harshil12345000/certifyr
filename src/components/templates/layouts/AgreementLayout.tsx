@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "../Letterhead";
 import { QRCode } from "../QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
+import { parse } from "date-fns";
 
 interface AgreementLayoutProps {
   config: any;
@@ -39,11 +40,16 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "[Date]";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    try {
+      const parsedDate = parse(dateStr, "dd/MM/yyyy", new Date());
+      return parsedDate.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
   };
 
   const handleImageError = (
