@@ -297,7 +297,6 @@ export function RequestPortalSettings() {
           <Switch 
             id="portal-enabled" 
             checked={settings.enabled} 
-            disabled={!organization}
             onCheckedChange={enabled => {
               setSettings(prev => ({
                 ...prev,
