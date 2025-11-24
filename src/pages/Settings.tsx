@@ -123,6 +123,13 @@ const Settings = () => {
     try {
       console.log("Saving profile data:", formData);
 
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
       const profileData = {
         user_id: user.id,
         first_name: formData.firstName.trim() || null,
@@ -133,23 +140,35 @@ const Settings = () => {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from("user_profiles")
-        .upsert(profileData, {
-          onConflict: "user_id",
-        });
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        console.log("Updating existing profile");
+        result = await supabase
+          .from("user_profiles")
+          .update(profileData)
+          .eq("user_id", user.id);
+      } else {
+        // Insert new profile
+        console.log("Inserting new profile");
+        result = await supabase
+          .from("user_profiles")
+          .insert(profileData);
+      }
+
+      const { error } = result;
 
       if (error) {
         console.error("Error saving profile:", error);
-        toast.error("Failed to save profile");
+        toast.error("Failed to save profile: " + error.message);
         return;
       }
 
       console.log("Profile saved successfully");
       toast.success("Profile updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Unexpected error saving profile:", error);
-      toast.error("Failed to save profile");
+      toast.error("Failed to save profile: " + (error?.message || "Unknown error"));
     } finally {
       setSaving(false);
     }
