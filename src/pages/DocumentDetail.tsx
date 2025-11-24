@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useDocumentHistory } from '@/hooks/useDocumentHistory';
 import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
+import { usePreviewTracking } from '@/hooks/usePreviewTracking';
 
 // Helper function to parse organization location to show only country
 const parseLocation = (location: string | null | undefined): string => {
@@ -35,6 +36,7 @@ export default function DocumentDetail() {
   const { organizationId } = useOrganizationSecurity();
   const { saveDocument } = useDocumentHistory();
   const { userProfile, organizationDetails, isLoading: brandingLoading } = useBranding();
+  const { trackPreviewGeneration } = usePreviewTracking();
   const previewRef = useRef<HTMLDivElement>(null);
   
   // Find the document config by ID
@@ -274,9 +276,11 @@ export default function DocumentDetail() {
                 <DynamicForm
                   config={documentConfig}
                   initialData={formData}
-                  onSubmit={(data) => {
+                  onSubmit={async (data) => {
                     setFormData(data);
                     setActiveTab('preview');
+                    // Track preview generation when Update Preview is clicked
+                    await trackPreviewGeneration(documentConfig?.id || id || '', 'update');
                   }}
                 />
               </CardContent>
