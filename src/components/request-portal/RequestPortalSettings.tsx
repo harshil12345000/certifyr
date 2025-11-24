@@ -56,21 +56,18 @@ export function RequestPortalSettings() {
 
       // Always generate the portal URL dynamically
       const portalUrl = `${window.location.origin}/${orgData.organization_id}/request-portal`;
-      const decodedPassword = settingsData?.password_hash
-        ? (() => {
-            try {
-              return atob(settingsData.password_hash);
-            } catch (error) {
-              console.error("Error decoding portal password:", error);
-              return "";
-            }
-          })()
-        : "";
-
+      const decodedPassword = settingsData?.password_hash ? (() => {
+        try {
+          return atob(settingsData.password_hash);
+        } catch (error) {
+          console.error("Error decoding portal password:", error);
+          return "";
+        }
+      })() : "";
       setSettings({
         enabled: settingsData ? settingsData.enabled : false,
         password: decodedPassword,
-        portalUrl: settingsData?.portal_url ?? portalUrl,
+        portalUrl: settingsData?.portal_url ?? portalUrl
       });
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -160,19 +157,16 @@ export function RequestPortalSettings() {
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-2">
           <Switch id="portal-enabled" checked={settings.enabled} onCheckedChange={enabled => {
-            setSettings(prev => {
-              // Generate portal URL if enabling for the first time and URL is empty
-              const newPortalUrl = enabled && !prev.portalUrl && organizationId
-                ? `${window.location.origin}/${organizationId}/request-portal`
-                : prev.portalUrl;
-              
-              return {
-                ...prev,
-                enabled,
-                portalUrl: newPortalUrl
-              };
-            });
-          }} />
+          setSettings(prev => {
+            // Generate portal URL if enabling for the first time and URL is empty
+            const newPortalUrl = enabled && !prev.portalUrl && organizationId ? `${window.location.origin}/${organizationId}/request-portal` : prev.portalUrl;
+            return {
+              ...prev,
+              enabled,
+              portalUrl: newPortalUrl
+            };
+          });
+        }} />
           <Label htmlFor="portal-enabled">Enable Request Portal</Label>
         </div>
 
@@ -194,7 +188,7 @@ export function RequestPortalSettings() {
               <Label htmlFor="portal-url">Portal URL</Label>
               <div className="flex gap-2">
                 <Input id="portal-url" value={settings.portalUrl} readOnly className="flex-1" />
-                <Button type="button" variant="outline" size="sm" onClick={copyUrl} className="py-0">
+                <Button type="button" variant="outline" size="sm" onClick={copyUrl} className="my-0 py-[19px]">
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
