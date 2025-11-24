@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,29 @@ import { ArrowLeft, Download, Printer, Save } from 'lucide-react';
 import { DynamicForm } from '@/components/templates/DynamicForm';
 import { DynamicPreview } from '@/components/templates/DynamicPreview';
 import { getDocumentConfig } from '@/config/documentConfigs';
+import { getInitialData } from '@/lib/document-initial-data';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { useDocumentHistory } from '@/hooks/useDocumentHistory';
 import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
+
+// Helper function to parse organization location to "City, Country" format
+const parseLocation = (location: string | null | undefined): string => {
+  if (!location) return '';
+  // Format: "1111, 27 Antath Street||Pune||Maharashtra||412115||India"
+  // Extract city (3rd segment) and country (last segment)
+  const parts = location.split('||').map(part => part.trim());
+  if (parts.length >= 2) {
+    const city = parts[1] || ''; // Second segment is city
+    const country = parts[parts.length - 1] || ''; // Last segment is country
+    return `${city}, ${country}`;
+  }
+  return location;
+};
 
 export default function DocumentDetail() {
   const { id } = useParams();
@@ -22,14 +38,32 @@ export default function DocumentDetail() {
   const { user } = useAuth();
   const { organizationId } = useOrganizationSecurity();
   const { saveDocument } = useDocumentHistory();
+  const { userProfile, organizationDetails, isLoading: brandingLoading } = useBranding();
   const previewRef = useRef<HTMLDivElement>(null);
   
   // Find the document config by ID
   const documentConfig = getDocumentConfig(id || '');
   
-  // Initialize form data state
-  const [formData, setFormData] = useState<any>({});
+  // Initialize form data state with default values
+  const [formData, setFormData] = useState<any>(() => getInitialData(id || ''));
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Auto-populate form data with user profile information
+  useEffect(() => {
+    if (brandingLoading || !userProfile) return;
+
+    // Only update if fields are empty (preserve user edits)
+    setFormData((prev: any) => ({
+      ...prev,
+      // Auto-populate place from organization location
+      place: prev.place || parseLocation(userProfile.organizationLocation),
+      // Auto-populate signatory name from user profile
+      signatoryName: prev.signatoryName || 
+        `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim(),
+      // Auto-populate signatory designation from user profile
+      signatoryDesignation: prev.signatoryDesignation || userProfile.designation || '',
+    }));
+  }, [userProfile, brandingLoading]);
 
   if (!documentConfig) {
     return (
