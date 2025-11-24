@@ -60,19 +60,19 @@ export default function History() {
                 Create Document
               </Button>
             </CardContent>
-          </Card> : <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {history.map(item => <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-1">
+          </Card> : <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+            {history.map(item => <Card key={item.id} className="hover:shadow-lg transition-shadow flex flex-col">
+                <CardHeader className="flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg break-words">
                         {item.document_name} for {item.form_data?.fullName || item.form_data?.employeeName || item.form_data?.studentName || "Unknown"}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {formatDate(item.updated_at)}
                       </CardDescription>
                     </div>
-                    <Badge variant="outline" className="ml-2">
+                    <Badge variant="outline" className="ml-2 shrink-0">
                       {item.status}
                     </Badge>
                   </div>
