@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentHistory } from '@/hooks/useDocumentHistory';
 import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
+import { useBranding } from '@/contexts/BrandingContext';
+import { format } from 'date-fns';
 
 export default function DocumentDetail() {
   const { id } = useParams();
@@ -22,14 +24,54 @@ export default function DocumentDetail() {
   const { user } = useAuth();
   const { organizationId } = useOrganizationSecurity();
   const { saveDocument } = useDocumentHistory();
+  const { userProfile } = useBranding();
   const previewRef = useRef<HTMLDivElement>(null);
   
   // Find the document config by ID
   const documentConfig = getDocumentConfig(id || '');
   
+  // Get today's date in dd/MM/yyyy format
+  const getTodayDateFormatted = (): string => {
+    const today = new Date();
+    return format(today, 'dd/MM/yyyy');
+  };
+  
+  // Parse organization location to extract city and country
+  const parseLocation = (location: string | null): string => {
+    if (!location) return '';
+    // Assuming format might be "City, State, Country" or "City, Country"
+    // We want the last two parts for "City, Country"
+    const parts = location.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      // Return last two parts as "City, Country"
+      return `${parts[parts.length - 2]}, ${parts[parts.length - 1]}`;
+    }
+    return location;
+  };
+  
+  // Initialize form data with pre-populated fields
+  const getInitialFormData = () => {
+    const signatoryName = userProfile?.firstName && userProfile?.lastName
+      ? `${userProfile.firstName} ${userProfile.lastName}`
+      : '';
+    
+    return {
+      date: getTodayDateFormatted(),
+      place: parseLocation(userProfile?.organizationLocation || ''),
+      signatoryName: signatoryName,
+      signatoryDesignation: '',
+      includeDigitalSignature: false,
+    };
+  };
+  
   // Initialize form data state
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>(getInitialFormData());
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Update form data when user profile loads
+  useEffect(() => {
+    setFormData(getInitialFormData());
+  }, [userProfile]);
 
   if (!documentConfig) {
     return (
