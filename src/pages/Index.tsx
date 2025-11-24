@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
-import { RecentDocuments } from "@/components/dashboard/RecentDocuments";
 import { popularTemplates } from "@/data/mockData";
 import { TemplateCard } from "@/components/dashboard/TemplateCard";
 import { Button } from "@/components/ui/button";
@@ -136,12 +135,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-        {/* Recent Documents */}
-        <RecentDocuments 
-          documents={lastDocuments || []} 
-          loading={documentsLoading && !lastDocuments} 
-        />
 
         {/* Recent Templates */}
       </div>
