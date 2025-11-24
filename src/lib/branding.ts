@@ -35,7 +35,7 @@ export async function getOrganizationId(): Promise<string> {
 
   if (orgError || !orgMember) {
     throw new BrandingError(
-      "User is not a member of any organization",
+      "Fill out all the information in the organization tab first.",
       "ORG_ERROR",
     );
   }
