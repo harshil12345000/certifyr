@@ -17,6 +17,7 @@ import {
   Signature,
   Table,
   QrCode,
+  LucideIcon,
 } from "lucide-react";
 import { FieldType } from "@/types/template-builder";
 
@@ -29,7 +30,7 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({
   draggable = false,
   onDragStartSidebar,
 }) => {
-  const fieldTypes: { id: FieldType; label: string; icon: any }[] = [
+  const fieldTypes: { id: FieldType; label: string; icon: LucideIcon }[] = [
     { id: "text", label: "Text Field", icon: Text },
     { id: "number", label: "Number", icon: Hash },
     { id: "email", label: "Email", icon: Mail },
@@ -53,7 +54,7 @@ export const ToolbarPanel: React.FC<ToolbarPanelProps> = ({
   }: {
     id: FieldType;
     label: string;
-    icon: any;
+    icon: LucideIcon;
   }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({
       id,
