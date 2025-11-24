@@ -189,6 +189,7 @@ export const bonafideConfig: DocumentConfig = {
 export const characterConfig: DocumentConfig = {
   id: "character",
   name: "Character Certificate",
+  description: "Certificate attesting to an individual's moral character.",
   category: "academic",
   layoutType: "certificate",
   
