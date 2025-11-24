@@ -117,7 +117,9 @@ const NewDocuments = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -156,7 +158,7 @@ const NewDocuments = () => {
           <div>
             <h1 className="text-2xl font-semibold mb-1">Documents</h1>
             <p className="text-muted-foreground">
-              Select a document and start editing            
+              Browse and use our collection of legally reliable documents.                    
             </p>
           </div>
         </div>
@@ -223,15 +225,7 @@ const NewDocuments = () => {
               {filteredDocuments.map(docMeta => {
             const config = documentConfigs[docMeta.configKey];
             if (!config) return null;
-            return <TemplateCard
-                key={docMeta.id}
-                id={docMeta.id}
-                title={config.name}
-                description={config.description || config.name}
-                category={docMeta.category}
-                isAdmin={true}
-                linkPath={`/documents/${docMeta.id}`}
-              />;
+            return <TemplateCard key={docMeta.id} id={docMeta.id} title={config.name} description={config.description || config.name} category={docMeta.category} isAdmin={true} linkPath={`/documents/${docMeta.id}`} />;
           })}
             </div>}
         </div>
