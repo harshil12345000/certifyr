@@ -44,6 +44,7 @@ const Settings = () => {
     lastName: "",
     email: "",
     jobTitle: "",
+    designation: "",
     bio: "",
     phone: "",
     location: "",
@@ -96,6 +97,7 @@ const Settings = () => {
             lastName: profile.last_name || "",
             email: profile.email || user.email || "",
             jobTitle: (profile as any).job_title || "",
+            designation: profile.designation || "",
             bio: (profile as any).bio || "",
             phone: profile.phone_number || "",
             location: (profile as any).location || "",
@@ -133,9 +135,11 @@ const Settings = () => {
         last_name: formData.lastName.trim() || null,
         email: formData.email.trim() || user.email,
         job_title: formData.jobTitle.trim() || null,
+        designation: formData.designation.trim() || null,
         bio: formData.bio.trim() || null,
         phone_number: formData.phone.trim() || null,
         location: formData.location.trim() || null,
+        organization_location: formData.location.trim() || null,
         updated_at: new Date().toISOString(),
       };
 
