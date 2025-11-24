@@ -52,6 +52,17 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
     }
   };
 
+  const parseLocation = (location: string | null | undefined): string => {
+    if (!location) return "";
+    const parts = location.split(",").map(part => part.trim());
+    if (parts.length >= 2) {
+      const city = parts[0] || "";
+      const country = parts[parts.length - 1] || "";
+      return city && country ? `${city}, ${country}` : "";
+    }
+    return "";
+  };
+
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement>,
     type: string,
@@ -330,7 +341,7 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
 
       <div className="mt-16">
         <p><strong>Date:</strong> {formatDate(data.date)}</p>
-        <p><strong>Place:</strong> {userProfile?.organizationLocation || data.place || "[Place]"}</p>
+        <p><strong>Place:</strong> {parseLocation(organizationDetails?.address) || data.place || "[Place]"}</p>
       </div>
 
       <div className="mt-8 text-right">
