@@ -1,24 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Printer, Save } from 'lucide-react';
 import { DynamicForm } from '@/components/templates/DynamicForm';
 import { DynamicPreview } from '@/components/templates/DynamicPreview';
 import { getDocumentConfig } from '@/config/documentConfigs';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { saveAs } from 'file-saver';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DocumentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const previewRef = useRef<HTMLDivElement>(null);
   
   // Find the document config by ID
   const documentConfig = getDocumentConfig(id || '');
   
   // Initialize form data state
   const [formData, setFormData] = useState<any>({});
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!documentConfig) {
     return (
@@ -34,40 +43,141 @@ export default function DocumentDetail() {
     );
   }
 
-  const handleDownload = () => {
-    // TODO: Implement PDF download
-    toast.info('Download feature coming soon');
+  const handleDownloadPDF = async () => {
+    if (!previewRef.current) return;
+    
+    setIsProcessing(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${documentConfig?.name || 'document'}.pdf`);
+      
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast.error('Failed to download PDF');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleShare = () => {
-    // TODO: Implement document sharing
-    toast.info('Share feature coming soon');
+  const handleDownloadDocx = async () => {
+    if (!previewRef.current) return;
+    
+    setIsProcessing(true);
+    try {
+      const textContent = previewRef.current.innerText;
+      
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: textContent.split('\n').map(line => 
+            new Paragraph({
+              children: [new TextRun(line)],
+            })
+          ),
+        }],
+      });
+      
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${documentConfig?.name || 'document'}.docx`);
+      
+      toast.success('Word document downloaded successfully');
+    } catch (error) {
+      console.error('DOCX download error:', error);
+      toast.error('Failed to download Word document');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePrint = () => {
+    const printWindow = window.open('', '', 'height=842,width=595');
+    if (!printWindow || !previewRef.current) return;
+    
+    printWindow.document.write('<html><head><title>Print</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write('@page { size: A4; margin: 0; }');
+    printWindow.document.write('body { margin: 0; padding: 0; }');
+    printWindow.document.write('</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(previewRef.current.innerHTML);
+    printWindow.document.write('</body></html>');
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  const handleSaveDocument = async () => {
+    if (!user) {
+      toast.error('You must be logged in to save documents');
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      // Get user's organization ID
+      const { data: orgData } = await supabase
+        .from('user_statistics')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const { error } = await supabase
+        .from('document_history')
+        .insert({
+          user_id: user.id,
+          organization_id: orgData?.organization_id || '',
+          template_id: documentConfig?.id || id || '',
+          document_name: documentConfig?.name || 'Untitled Document',
+          form_data: formData,
+          status: 'completed',
+        });
+      
+      if (error) throw error;
+      
+      toast.success('Document saved to History');
+    } catch (error) {
+      console.error('Save document error:', error);
+      toast.error('Failed to save document');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <DashboardLayout>
       <div className="container mx-auto py-6 px-4">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/documents')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{documentConfig.name}</h1>
-              <p className="text-sm text-muted-foreground">{documentConfig.description}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleShare}>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
-            </Button>
-            <Button onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
+        <div className="mb-6 flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/documents')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{documentConfig.name}</h1>
+            <p className="text-sm text-muted-foreground">{documentConfig.description}</p>
           </div>
         </div>
 
@@ -93,7 +203,43 @@ export default function DocumentDetail() {
           <TabsContent value="preview">
             <Card>
               <CardContent className="pt-6">
-                <div className="scale-[0.7] origin-top">
+                {/* Action Buttons */}
+                <div className="flex gap-2 mb-6 pb-4 border-b">
+                  <Button 
+                    onClick={handleDownloadPDF} 
+                    disabled={isProcessing}
+                    variant="default"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </Button>
+                  <Button 
+                    onClick={handleDownloadDocx} 
+                    disabled={isProcessing}
+                    variant="outline"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Download .Docx
+                  </Button>
+                  <Button 
+                    onClick={handlePrint}
+                    variant="outline"
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print
+                  </Button>
+                  <Button 
+                    onClick={handleSaveDocument} 
+                    disabled={isProcessing}
+                    variant="outline"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Document
+                  </Button>
+                </div>
+
+                {/* Preview Content */}
+                <div ref={previewRef} className="scale-[0.7] origin-top">
                   <DynamicPreview config={documentConfig} data={formData} />
                 </div>
               </CardContent>
