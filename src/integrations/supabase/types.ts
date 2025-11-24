@@ -839,6 +839,15 @@ export type Database = {
         Args: { org_id: string; org_name: string }
         Returns: string
       }
+      get_organization_statistics: {
+        Args: { org_id: string }
+        Returns: {
+          documents_created: number
+          portal_members: number
+          requested_documents: number
+          total_verifications: number
+        }[]
+      }
       get_user_organization_id: { Args: { user_id: string }; Returns: string }
       get_user_organizations: {
         Args: { check_user_id: string }

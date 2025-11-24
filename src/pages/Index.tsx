@@ -21,44 +21,37 @@ const Index = () => {
   const {
     user
   } = useAuth();
-  const [refreshIndex, setRefreshIndex] = useState(0);
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
   const [lastActivityData, setLastActivityData] = useState<any>(null);
   const [lastDocuments, setLastDocuments] = useState<any>(null);
 
-  // Periodically refresh data every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRefreshIndex(i => i + 1);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // Real-time updates are now handled by the hooks themselves
   const {
     stats,
     loading: statsLoading,
     error
-  } = useUserStats(refreshIndex);
+  } = useUserStats();
   const {
     activityData,
     loading: activityLoading
-  } = useUserActivity(refreshIndex);
+  } = useUserActivity();
   const {
     documents,
     loading: documentsLoading
-  } = useUserDocuments(5, refreshIndex);
+  } = useUserDocuments(5);
   const isLoading = statsLoading || activityLoading || documentsLoading;
 
   // Update last loaded values when not loading
   useEffect(() => {
-    if (!statsLoading) setLastStats(stats);
+    if (!statsLoading && stats) setLastStats(stats);
   }, [stats, statsLoading]);
   useEffect(() => {
-    if (!activityLoading) setLastActivityData(activityData);
+    if (!activityLoading && activityData) setLastActivityData(activityData);
   }, [activityData, activityLoading]);
   useEffect(() => {
-    if (!documentsLoading) setLastDocuments(documents);
+    if (!documentsLoading && documents) setLastDocuments(documents);
   }, [documents, documentsLoading]);
 
   // Always show last loaded value, or fallback to default (0/[])

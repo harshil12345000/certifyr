@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizationId } from "./useOrganizationId";
 
 interface UserStats {
   documentsCreated: number;
@@ -9,19 +10,163 @@ interface UserStats {
   totalVerifications: number;
 }
 
-// Add helper to get organization_id for the current user
+/**
+ * Hook to fetch organization-wide statistics with real-time updates
+ * Queries directly from source tables for 100% accuracy
+ */
+export function useUserStats(refreshIndex?: number) {
+  const { user } = useAuth();
+  const { orgId, loading: orgLoading } = useOrganizationId();
+  const [stats, setStats] = useState<UserStats>({
+    documentsCreated: 0,
+    portalMembers: 0,
+    requestedDocuments: 0,
+    totalVerifications: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || orgLoading) {
+      return;
+    }
+
+    if (!orgId) {
+      // User has no organization, set stats to 0
+      setStats({
+        documentsCreated: 0,
+        portalMembers: 0,
+        requestedDocuments: 0,
+        totalVerifications: 0,
+      });
+      setLoading(false);
+      return;
+    }
+
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Call the database function for accurate, atomic statistics
+        const { data, error: rpcError } = await supabase.rpc(
+          "get_organization_statistics",
+          { org_id: orgId }
+        );
+
+        if (rpcError) {
+          throw rpcError;
+        }
+
+        if (data && data.length > 0) {
+          const result = data[0];
+          setStats({
+            documentsCreated: Number(result.documents_created) || 0,
+            portalMembers: Number(result.portal_members) || 0,
+            requestedDocuments: Number(result.requested_documents) || 0,
+            totalVerifications: Number(result.total_verifications) || 0,
+          });
+        } else {
+          setStats({
+            documentsCreated: 0,
+            portalMembers: 0,
+            requestedDocuments: 0,
+            totalVerifications: 0,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching statistics:", err);
+        setError("Failed to fetch statistics");
+        setStats({
+          documentsCreated: 0,
+          portalMembers: 0,
+          requestedDocuments: 0,
+          totalVerifications: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+
+    // Set up real-time subscriptions for instant updates
+    const channel = supabase
+      .channel("organization-stats")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "preview_generations",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "organization_members",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "document_requests",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "verified_documents",
+          filter: `organization_id=eq.${orgId}`,
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, orgId, orgLoading, refreshIndex]);
+
+  return { stats, loading: loading || orgLoading, error };
+}
+
+// Legacy helper function - kept for backward compatibility but no longer used internally
 export async function getOrganizationIdForUser(userId: string) {
   const { data, error } = await supabase
     .from("organization_members")
     .select("organization_id")
     .eq("user_id", userId)
     .eq("role", "admin")
-    .single();
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+
   if (error || !data?.organization_id) return null;
   return data.organization_id;
 }
 
-// Add helper to increment a stat in user_statistics
+// Legacy helper function - kept for backward compatibility
 export async function incrementUserStat({
   userId,
   organizationId,
@@ -38,136 +183,9 @@ export async function incrementUserStat({
       p_stat_field: statField,
     });
     if (error) {
-      // Silently fail
+      console.error("Error incrementing stat:", error);
     }
-    } catch (error) {
-    // Silently fail
+  } catch (error) {
+    console.error("Unexpected error incrementing stat:", error);
   }
-}
-
-export function useUserStats(refreshIndex?: number) {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<UserStats>({
-    documentsCreated: 0,
-    portalMembers: 0,
-    requestedDocuments: 0,
-    totalVerifications: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Get user's organization
-        const orgId = await getOrganizationIdForUser(user.id);
-
-        // Fetch all stats in parallel for better performance
-        const [userStatsResult, previewGenerationsCount] = await Promise.all([
-          // Get user statistics from user_statistics table
-          (async () => {
-            let userStats = null;
-            
-            // Try to get stats with organization_id first
-            if (orgId) {
-              const { data: orgStats } = await supabase
-                .from("user_statistics")
-                .select("total_verifications, requested_documents, portal_members")
-                .eq("user_id", user.id)
-                .eq("organization_id", orgId)
-                .maybeSingle();
-              
-              if (orgStats) {
-                userStats = orgStats;
-              }
-            }
-            
-            // If no stats found with organization_id, try without it (backward compatibility)
-            if (!userStats) {
-              const { data: legacyStats } = await supabase
-                .from("user_statistics")
-                .select("total_verifications, requested_documents, portal_members")
-                .eq("user_id", user.id)
-                .is("organization_id", null)
-                .maybeSingle();
-              
-              if (legacyStats) {
-                userStats = legacyStats;
-              }
-            }
-
-            // If still no stats, create a new entry
-            if (!userStats) {
-              const { data: newStats, error: createError } = await supabase
-                .from("user_statistics")
-                .insert({
-                  user_id: user.id,
-                  organization_id: orgId,
-                  total_verifications: 0,
-                  requested_documents: 0,
-                  portal_members: 0,
-                })
-                .select()
-                .single();
-
-              if (!createError && newStats) {
-                userStats = newStats;
-              }
-            }
-
-            return userStats;
-          })(),
-
-          // Get preview generations count
-          (async () => {
-            const query = supabase
-              .from("preview_generations")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id);
-
-            // Add organization filter if available
-            if (orgId) {
-              query.eq("organization_id", orgId);
-            } else {
-              query.is("organization_id", null);
-            }
-
-            const { count } = await query;
-
-            return count || 0;
-          })()
-        ]);
-
-        // Set the stats with proper fallbacks
-        setStats({
-          documentsCreated: previewGenerationsCount,
-          portalMembers: userStatsResult?.portal_members || 0,
-          requestedDocuments: userStatsResult?.requested_documents || 0,
-          totalVerifications: userStatsResult?.total_verifications || 0,
-        });
-      } catch (err) {
-        setError("Failed to fetch user statistics");
-        setStats({
-          documentsCreated: 0,
-          portalMembers: 0,
-          requestedDocuments: 0,
-          totalVerifications: 0,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [user, refreshIndex]);
-
-  return { stats, loading, error };
 }
