@@ -107,9 +107,10 @@ export default function DocumentDetail() {
               size: A4; 
               margin: 0; 
             }
-            body { 
+            html, body { 
               margin: 0; 
               padding: 0;
+              background: #ffffff !important;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
               color-adjust: exact;
