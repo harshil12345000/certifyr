@@ -22,14 +22,14 @@ import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
 const parseLocation = (location: string | null | undefined): string => {
   if (!location) return '';
   // Format: "1111, 27 Antath Street||Pune||Maharashtra||412115||India"
-  // Extract city (3rd segment) and country (last segment)
+  // Extract city (2nd segment) and country (last segment)
   const parts = location.split('||').map(part => part.trim());
   if (parts.length >= 2) {
     const city = parts[1] || ''; // Second segment is city
     const country = parts[parts.length - 1] || ''; // Last segment is country
-    return `${city}, ${country}`;
+    return city && country ? `${city}, ${country}` : '';
   }
-  return location;
+  return '';
 };
 
 export default function DocumentDetail() {
@@ -48,26 +48,25 @@ export default function DocumentDetail() {
   const [formData, setFormData] = useState<any>(() => getInitialData(id || ''));
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Auto-populate form data with user profile information
+  // Auto-populate form data with organization and user profile information
   useEffect(() => {
     if (brandingLoading) {
       console.log("Branding still loading, waiting...");
       return;
     }
 
-    if (!userProfile) {
-      console.log("No user profile available");
-      return;
-    }
+    console.log("Auto-populating fields from organization and user profile");
+    console.log("Organization details:", organizationDetails);
+    console.log("User profile:", userProfile);
 
-    console.log("Auto-populating fields from user profile:", userProfile);
-
-    // Parse location
-    const parsedPlace = parseLocation(userProfile.organizationLocation);
-    const parsedSignatoryName = userProfile.firstName && userProfile.lastName 
+    // Parse location from organization details
+    const parsedPlace = parseLocation(organizationDetails?.address);
+    
+    // Get signatory details from user profile
+    const parsedSignatoryName = userProfile?.firstName && userProfile?.lastName 
       ? `${userProfile.firstName} ${userProfile.lastName}`.trim()
       : '';
-    const parsedDesignation = userProfile.designation || '';
+    const parsedDesignation = userProfile?.designation || '';
 
     console.log("Parsed values:", {
       place: parsedPlace,
@@ -75,7 +74,7 @@ export default function DocumentDetail() {
       signatoryDesignation: parsedDesignation
     });
 
-    // AGGRESSIVELY set all fields - always overwrite with profile data
+    // Update form data with parsed values
     setFormData((prev: any) => {
       const updated = {
         ...prev,
@@ -86,7 +85,7 @@ export default function DocumentDetail() {
       console.log("Updated formData:", updated);
       return updated;
     });
-  }, [userProfile, brandingLoading]);
+  }, [organizationDetails, userProfile, brandingLoading]);
 
   if (!documentConfig) {
     return (
