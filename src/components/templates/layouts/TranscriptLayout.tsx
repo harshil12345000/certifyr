@@ -57,12 +57,8 @@ export const TranscriptLayout: React.FC<TranscriptLayoutProps> = ({
   const parseLocation = (location: string | null | undefined): string => {
     if (!location) return "";
     const parts = location.split(",").map(part => part.trim());
-    if (parts.length >= 2) {
-      const city = parts[0] || "";
-      const country = parts[parts.length - 1] || "";
-      return city && country ? `${city}, ${country}` : "";
-    }
-    return "";
+    const country = parts[parts.length - 1] || "";
+    return country;
   };
 
   const handleImageError = (
