@@ -76,9 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             localStorage.removeItem("lastLogin");
           }
 
-          if (validUser) {
-            await ensureUserHasOrganization(validUser);
-          }
+          // Organization handling removed from here to prevent race condition
+          // It will be handled in the auth state change listener only
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -133,6 +132,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const ensureUserHasOrganization = async (user: User) => {
     try {
+      console.log(`[ORG CHECK] Starting for user ${user.id}`);
+      
+      // Check if user already has an active admin membership to prevent duplicates
+      const { data: existingMembership, error: membershipError } = await supabase
+        .from("organization_members")
+        .select("organization_id, role, status")
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      if (membershipError) {
+        console.error("[ORG ERROR] Error checking memberships:", membershipError);
+      }
+
+      if (existingMembership && existingMembership.length > 0) {
+        if (existingMembership.length > 1) {
+          console.error(`[ORG ERROR] User ${user.id} has ${existingMembership.length} active memberships!`, existingMembership);
+        }
+        console.log(`[ORG CHECK] User already has organization, skipping creation`);
+        return;
+      }
+
       // Get user profile to check for organization data
       const { data: userProfile } = await supabase
         .from("user_profiles")
@@ -175,10 +195,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             return;
           }
           orgId = newOrg.id;
+          console.log(`[ORG CHECK] Created new organization ${orgId}`);
         }
       }
       if (!orgId) return;
-      // Upsert user as admin in organization_members
+      
+      // Upsert user as admin in organization_members with conflict handling
       const { error: upsertError } = await supabase
         .from("organization_members")
         .upsert(
@@ -188,13 +210,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             role: "admin",
             status: "active",
           },
-          { onConflict: "organization_id,user_id" },
+          { 
+            onConflict: "organization_id,user_id",
+            ignoreDuplicates: true
+          },
         );
       if (upsertError) {
         console.error(
           "Error upserting user to organization_members:",
           upsertError,
         );
+      } else {
+        console.log(`[ORG CHECK] Added user to organization ${orgId}`);
       }
     } catch (error) {
       console.error("Error in ensureUserHasOrganization:", error);
