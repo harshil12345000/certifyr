@@ -15,6 +15,7 @@ export interface TemplateCardProps {
   isAdmin?: boolean;
   forceBookmarked?: boolean;
   onBookmarkClick?: (e: React.MouseEvent) => void;
+  linkPath?: string;
 }
 
 export function TemplateCard({
@@ -26,9 +27,11 @@ export function TemplateCard({
   isAdmin = false,
   forceBookmarked = false,
   onBookmarkClick,
+  linkPath,
 }: TemplateCardProps) {
   const { isBookmarked, addBookmark, removeBookmark } = useBookmarks();
   const bookmarked = forceBookmarked || isBookmarked(id);
+  const href = linkPath || `/templates/${id}`;
   return (
     <div className={cn("glass-card p-5 flex flex-col", className)}>
       <div className="mb-4 flex items-start justify-between">
@@ -63,7 +66,7 @@ export function TemplateCard({
       <p className="text-sm text-muted-foreground mb-4">{description}</p>
       <div className="mt-auto flex items-center justify-end">
         <Button variant="ghost" size="sm" className="gap-1" asChild>
-          <Link to={`/templates/${id}`}>
+          <Link to={href}>
             Use <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
