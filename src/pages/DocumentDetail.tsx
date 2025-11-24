@@ -217,6 +217,7 @@ export default function DocumentDetail() {
                 <div className="flex gap-2 mb-6 pb-4 border-b">
                   <Button 
                     onClick={handleDownloadPDF} 
+                    onMouseDown={(e) => e.preventDefault()}
                     disabled={isProcessing}
                     variant="default"
                   >
@@ -225,6 +226,7 @@ export default function DocumentDetail() {
                   </Button>
                   <Button 
                     onClick={handlePrint}
+                    onMouseDown={(e) => e.preventDefault()}
                     variant="outline"
                   >
                     <Printer className="mr-2 h-4 w-4" />
@@ -232,6 +234,7 @@ export default function DocumentDetail() {
                   </Button>
                   <Button 
                     onClick={handleSaveDocument} 
+                    onMouseDown={(e) => e.preventDefault()}
                     disabled={isProcessing}
                     variant="outline"
                   >
