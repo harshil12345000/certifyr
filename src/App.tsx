@@ -76,20 +76,12 @@ function App() {
             path="/documents/:id"
             element={
               <ProtectedRoute>
-                <DocumentBuilder />
+                <DocumentDetail />
               </ProtectedRoute>
             }
           />
           <Route
             path="/document-builder/:id"
-            element={
-              <ProtectedRoute>
-                <DocumentBuilder />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents/:id/edit"
             element={
               <ProtectedRoute>
                 <DocumentBuilder />
