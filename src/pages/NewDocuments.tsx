@@ -90,7 +90,7 @@ const NewDocuments = () => {
   };
 
   const handleDocumentClick = (documentId: string) => {
-    navigate(`/document-builder/${documentId}`);
+    navigate(`/documents/${documentId}`);
   };
 
   if (loading) {

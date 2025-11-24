@@ -72,33 +72,31 @@ function App() {
               </ProtectedRoute>
             }
           />
-                  <Route
-                    path="/documents/:id"
-                    element={
-                      <ProtectedRoute>
-                        <DocumentDetail />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/documents/:id/edit"
-                    element={
-                      <ProtectedRoute>
-                        <DocumentBuilder />
-                      </ProtectedRoute>
-                    }
-                  />
-                  
-                  {/* Legacy template routes for backward compatibility */}
-                  <Route
-                    path="/templates"
-                    element={
-                      <ProtectedRoute>
-                        <Documents />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
+          <Route
+            path="/documents/:id"
+            element={
+              <ProtectedRoute>
+                <DocumentBuilder />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/document-builder/:id"
+            element={
+              <ProtectedRoute>
+                <DocumentBuilder />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents/:id/edit"
+            element={
+              <ProtectedRoute>
+                <DocumentBuilder />
+              </ProtectedRoute>
+            }
+          />
+          <Route
                     path="/templates/:id"
                     element={
                       <ProtectedRoute>
