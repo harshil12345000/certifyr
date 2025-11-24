@@ -59,7 +59,7 @@ export default function DocumentDetail() {
       date: getTodayDateFormatted(),
       place: parseLocation(userProfile?.organizationLocation || ''),
       signatoryName: signatoryName,
-      signatoryDesignation: '',
+      signatoryDesignation: userProfile?.designation || '',
       includeDigitalSignature: false,
     };
   };
