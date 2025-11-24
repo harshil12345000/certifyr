@@ -21,11 +21,11 @@ import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
 // Helper function to parse organization location to "City, Country" format
 const parseLocation = (location: string | null | undefined): string => {
   if (!location) return '';
-  // Format: "1111, 27 Antath Street||Pune||Maharashtra||412115||India"
-  // Extract city (2nd segment) and country (last segment)
-  const parts = location.split('||').map(part => part.trim());
+  // Format: "City, Country" or potentially longer format
+  // Extract city (first segment) and country (last segment)
+  const parts = location.split(',').map(part => part.trim());
   if (parts.length >= 2) {
-    const city = parts[1] || ''; // Second segment is city
+    const city = parts[0] || ''; // First segment is city
     const country = parts[parts.length - 1] || ''; // Last segment is country
     return city && country ? `${city}, ${country}` : '';
   }
