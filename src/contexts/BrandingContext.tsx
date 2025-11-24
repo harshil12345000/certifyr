@@ -15,10 +15,17 @@ interface OrganizationDetails {
   email: string | null;
 }
 
+interface UserProfileData {
+  firstName: string | null;
+  lastName: string | null;
+  organizationLocation: string | null;
+}
+
 interface BrandingContextType {
   logoUrl: string | null;
   signatureUrl: string | null;
   organizationDetails: OrganizationDetails | null;
+  userProfile: UserProfileData | null;
   organizationId: string | null;
   isLoading: boolean;
   refreshBranding: () => Promise<void>;
@@ -28,6 +35,7 @@ const BrandingContext = createContext<BrandingContextType>({
   logoUrl: null,
   signatureUrl: null,
   organizationDetails: null,
+  userProfile: null,
   organizationId: null,
   isLoading: false,
   refreshBranding: async () => {},
@@ -38,6 +46,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [organizationDetails, setOrganizationDetails] =
     useState<OrganizationDetails | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -65,6 +74,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
       setLogoUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
+      setUserProfile(null);
       setCurrentOrgId(null);
       setIsLoading(false);
       return;
@@ -133,11 +143,35 @@ export function BrandingProvider({ children, organizationId }: { children: React
         setLogoUrl(null);
         setSignatureUrl(null);
       }
+
+      // Fetch user profile data if user is available
+      if (user?.id) {
+        const { data: profileData, error: profileError } = await supabase
+          .from("user_profiles")
+          .select("first_name, last_name, organization_location")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching user profile:", profileError);
+        }
+
+        if (profileData) {
+          setUserProfile({
+            firstName: profileData.first_name,
+            lastName: profileData.last_name,
+            organizationLocation: profileData.organization_location,
+          });
+        } else {
+          setUserProfile(null);
+        }
+      }
     } catch (error) {
       console.error("Error loading branding data:", error);
       setLogoUrl(null);
       setSignatureUrl(null);
       setOrganizationDetails(null);
+      setUserProfile(null);
     } finally {
       setIsLoading(false);
     }
@@ -158,6 +192,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
         logoUrl,
         signatureUrl,
         organizationDetails,
+        userProfile,
         organizationId: currentOrgId,
         isLoading,
         refreshBranding,
