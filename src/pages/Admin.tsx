@@ -270,10 +270,13 @@ const AdminPage = () => {
   // Helper function to parse country from an address/location string (e.g., on signup)
   function parseCountry(address: string | null): string {
     if (!address) return "";
-    const parts = address.split("||").map((p) => p.trim());
+    const parts = address.split(",").map((p) => p.trim());
     if (parts.length >= 5) {
-      // Format: street||city||state||postal||country
-      return parts[4] || "";
+      // Last part is country when we have 5+ parts
+      return parts[parts.length - 1] || "";
+    } else if (parts.length >= 3) {
+      // Could be city, state, country
+      return parts[parts.length - 1] || "";
     }
     return "";
   }
@@ -328,19 +331,54 @@ const AdminPage = () => {
         const orgPhone = profileData?.phone_number || orgData?.phone || "";
         const orgEmail = profileData?.email || orgData?.email || "";
 
-        // Parse address/location for individual fields using || delimiter
+        // Parse address/location for individual fields
+        // Address format: street, city, state, postal, country
+        // Street address may contain commas, so we parse from the end
         const addressParts = orgLocation
-          ? orgLocation.split("||").map((x: string) => x.trim())
+          ? orgLocation.split(",").map((x: string) => x.trim())
           : [];
+
+        let streetAddress = "";
+        let city = "";
+        let state = "";
+        let postalCode = "";
+        let country = "";
+
+        if (addressParts.length >= 5) {
+          // We have at least 5 parts, last 4 are city, state, postal, country
+          // Everything before that is street address
+          country = addressParts[addressParts.length - 1];
+          postalCode = addressParts[addressParts.length - 2];
+          state = addressParts[addressParts.length - 3];
+          city = addressParts[addressParts.length - 4];
+          // Join remaining parts as street address
+          streetAddress = addressParts
+            .slice(0, addressParts.length - 4)
+            .join(", ");
+        } else if (addressParts.length === 4) {
+          country = addressParts[3];
+          postalCode = addressParts[2];
+          state = addressParts[1];
+          city = addressParts[0];
+        } else if (addressParts.length === 3) {
+          country = addressParts[2];
+          state = addressParts[1];
+          city = addressParts[0];
+        } else if (addressParts.length === 2) {
+          country = addressParts[1];
+          city = addressParts[0];
+        } else if (addressParts.length === 1) {
+          streetAddress = addressParts[0];
+        }
 
         setFormState((prev) => ({
           ...prev,
           organizationName: orgName,
-          streetAddress: addressParts[0] || "",
-          city: addressParts[1] || "",
-          state: addressParts[2] || "",
-          postalCode: addressParts[3] || "",
-          country: addressParts[4] || "",
+          streetAddress,
+          city,
+          state,
+          postalCode,
+          country,
           phoneNumber: orgPhone,
           email: orgEmail,
           organizationType: profileData?.organization_type || "",
@@ -445,7 +483,7 @@ const AdminPage = () => {
     try {
       let currentOrgId = organizationId;
 
-      // Create full address string from components using || delimiter
+      // Create full address string from components using commas
       const fullAddress = [
         formState.streetAddress,
         formState.city,
@@ -454,7 +492,7 @@ const AdminPage = () => {
         formState.country,
       ]
         .filter(Boolean)
-        .join("||");
+        .join(", ");
 
       // Create or update organization
       if (formState.organizationName) {
