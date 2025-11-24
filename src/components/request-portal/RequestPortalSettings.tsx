@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganizationId } from "@/hooks/useOrganizationId";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -22,9 +23,8 @@ interface Organization {
   portal_slug: string;
 }
 export function RequestPortalSettings() {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const { orgId, loading: orgLoading } = useOrganizationId();
   const [settings, setSettings] = useState<PortalSettings>({
     enabled: false,
     password: "",
@@ -34,37 +34,28 @@ export function RequestPortalSettings() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [organization, setOrganization] = useState<Organization | null>(null);
+  
   useEffect(() => {
-    fetchSettings();
-  }, [user]);
+    if (!orgLoading && orgId) {
+      fetchSettings();
+    }
+  }, [orgId, orgLoading]);
+  
   const fetchSettings = async () => {
-    if (!user) return;
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      // Get user's organization with slug
-      const { data: orgMemberData, error: orgError } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-        
-      if (orgError || !orgMemberData) {
-        console.error("Error fetching organization:", orgError);
-        setLoading(false);
-        return;
-      }
-      
-      setOrganizationId(orgMemberData.organization_id);
-
       // Get organization details
       const { data: orgData, error: orgDataError } = await supabase
         .from("organizations")
         .select("id, name, portal_slug")
-        .eq("id", orgMemberData.organization_id)
+        .eq("id", orgId)
         .single();
         
       if (orgDataError || !orgData) {
@@ -147,7 +138,7 @@ export function RequestPortalSettings() {
       }
 
       // Slug is available if no organization found, or if it's the current organization
-      setSlugAvailable(!data || data.id === organizationId);
+      setSlugAvailable(!data || data.id === orgId);
     } catch (error) {
       console.error("Error checking slug availability:", error);
       setSlugAvailable(null);
@@ -177,16 +168,7 @@ export function RequestPortalSettings() {
   };
 
   const saveSettings = async () => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!organizationId) {
+    if (!user || !orgId) {
       toast({
         title: "Error",
         description: "Organization not found. Please refresh the page.",
@@ -228,7 +210,7 @@ export function RequestPortalSettings() {
       const { error: orgError } = await supabase
         .from("organizations")
         .update({ portal_slug: settings.portalSlug })
-        .eq("id", organizationId);
+        .eq("id", orgId);
 
       if (orgError) {
         console.error("Error updating organization slug:", orgError);
@@ -242,7 +224,7 @@ export function RequestPortalSettings() {
       const { error: settingsError } = await supabase
         .from("request_portal_settings")
         .upsert({
-          organization_id: organizationId,
+          organization_id: orgId,
           enabled: settings.enabled,
           password_hash: passwordHash,
           portal_url: settings.portalUrl
@@ -277,7 +259,7 @@ export function RequestPortalSettings() {
       description: "Portal URL copied to clipboard"
     });
   };
-  if (loading) {
+  if (loading || orgLoading) {
     return <Card>
         <CardHeader>
           <CardTitle>Portal Settings</CardTitle>

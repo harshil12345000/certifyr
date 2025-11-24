@@ -63,8 +63,10 @@ interface DocumentRequest {
 }
 
 export function RequestPortalRequests({
+  organizationId,
   onRequestProcessed,
 }: {
+  organizationId: string;
   onRequestProcessed?: () => void;
 }) {
   const { user } = useAuth();
@@ -72,25 +74,18 @@ export function RequestPortalRequests({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRequests();
-  }, [user]);
+    if (organizationId) {
+      fetchRequests();
+    }
+  }, [organizationId]);
 
   const fetchRequests = async () => {
-    if (!user) return;
+    if (!organizationId) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Get user's organization
-      const { data: orgData } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-
-      if (!orgData) {
-        setLoading(false);
-        return;
-      }
 
       // Get pending document requests with employee info
       const { data: requestsData, error } = await supabase
@@ -107,7 +102,7 @@ export function RequestPortalRequests({
           )
         `,
         )
-        .eq("organization_id", orgData.organization_id)
+        .eq("organization_id", organizationId)
         .eq("status", "pending")
         .order("requested_at", { ascending: false });
 
