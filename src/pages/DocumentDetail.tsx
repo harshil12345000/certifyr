@@ -13,11 +13,15 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDocumentHistory } from '@/hooks/useDocumentHistory';
+import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
 
 export default function DocumentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { organizationId } = useOrganizationSecurity();
+  const { saveDocument } = useDocumentHistory();
   const previewRef = useRef<HTMLDivElement>(null);
   
   // Find the document config by ID
@@ -147,43 +151,22 @@ export default function DocumentDetail() {
     
     setIsProcessing(true);
     try {
-      // Get user's organization from organization_members
-      const { data: orgMember, error: orgError } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
+      // Use the hook's saveDocument function which handles organization lookup,
+      // duplicate checking, and syncing with document_drafts
+      const result = await saveDocument(
+        documentConfig?.name || 'Untitled Document',
+        formData,
+        documentConfig?.id || id || ''
+      );
       
-      if (orgError || !orgMember?.organization_id) {
-        toast.error('You must be part of an organization to save documents');
-        console.error('Organization lookup error:', orgError);
-        return;
-      }
-      
-      // Save document to history
-      const { error: saveError } = await supabase
-        .from('document_history')
-        .insert({
-          user_id: user.id,
-          organization_id: orgMember.organization_id,
-          template_id: documentConfig?.id || id || '',
-          document_name: documentConfig?.name || 'Untitled Document',
-          form_data: formData,
-          status: 'completed',
-          is_editable: true,
+      if (result && organizationId) {
+        // Increment documents_created stat
+        await supabase.rpc('increment_user_stat', {
+          p_user_id: user.id,
+          p_organization_id: organizationId,
+          p_stat_field: 'documents_created'
         });
-      
-      if (saveError) throw saveError;
-      
-      toast.success('Document saved to History');
-      
-      // Increment documents_created stat
-      await supabase.rpc('increment_user_stat', {
-        p_user_id: user.id,
-        p_organization_id: orgMember.organization_id,
-        p_stat_field: 'documents_created'
-      });
+      }
       
     } catch (error) {
       console.error('Save document error:', error);
