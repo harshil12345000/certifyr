@@ -480,6 +480,10 @@ const AdminPage = () => {
               address: fullAddress,
               phone: formState.phoneNumber,
               email: formState.email,
+              portal_slug: formState.organizationName
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
             })
             .select()
             .single();

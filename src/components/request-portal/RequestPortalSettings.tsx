@@ -13,6 +13,13 @@ interface PortalSettings {
   enabled: boolean;
   password: string;
   portalUrl: string;
+  portalSlug: string;
+}
+
+interface Organization {
+  id: string;
+  name: string;
+  portal_slug: string;
 }
 export function RequestPortalSettings() {
   const {
@@ -21,41 +28,67 @@ export function RequestPortalSettings() {
   const [settings, setSettings] = useState<PortalSettings>({
     enabled: false,
     password: "",
-    portalUrl: ""
+    portalUrl: "",
+    portalSlug: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [checkingSlug, setCheckingSlug] = useState(false);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   useEffect(() => {
     fetchSettings();
   }, [user]);
   const fetchSettings = async () => {
     if (!user) return;
     try {
-      // Get user's organization
-      const {
-        data: orgData,
-        error: orgError
-      } = await supabase.from("organization_members").select("organization_id").eq("user_id", user.id).eq("role", "admin").single();
-      if (orgError || !orgData) {
+      // Get user's organization with slug
+      const { data: orgMemberData, error: orgError } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+        
+      if (orgError || !orgMemberData) {
         console.error("Error fetching organization:", orgError);
         setLoading(false);
         return;
       }
-      setOrganizationId(orgData.organization_id);
+      
+      setOrganizationId(orgMemberData.organization_id);
+
+      // Get organization details
+      const { data: orgData, error: orgDataError } = await supabase
+        .from("organizations")
+        .select("id, name, portal_slug")
+        .eq("id", orgMemberData.organization_id)
+        .single();
+        
+      if (orgDataError || !orgData) {
+        console.error("Error fetching organization details:", orgDataError);
+        setLoading(false);
+        return;
+      }
+      
+      setOrganization(orgData);
 
       // Get portal settings
-      const {
-        data: settingsData,
-        error: settingsError
-      } = await supabase.from("request_portal_settings").select("*").eq("organization_id", orgData.organization_id).maybeSingle();
+      const { data: settingsData, error: settingsError } = await supabase
+        .from("request_portal_settings")
+        .select("*")
+        .eq("organization_id", orgData.id)
+        .maybeSingle();
+        
       if (settingsError) {
         console.error("Error fetching settings:", settingsError);
       }
 
-      // Always generate the portal URL dynamically
-      const portalUrl = `${window.location.origin}/${orgData.organization_id}/request-portal`;
+      // Generate the portal URL using slug
+      const portalUrl = `${window.location.origin}/portal/${orgData.portal_slug}`;
+      
       const decodedPassword = settingsData?.password_hash ? (() => {
         try {
           return atob(settingsData.password_hash);
@@ -64,10 +97,12 @@ export function RequestPortalSettings() {
           return "";
         }
       })() : "";
+      
       setSettings({
-        enabled: settingsData ? settingsData.enabled : false,
+        enabled: settingsData?.enabled ?? false,
         password: decodedPassword,
-        portalUrl: settingsData?.portal_url ?? portalUrl
+        portalUrl,
+        portalSlug: orgData.portal_slug
       });
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -80,6 +115,62 @@ export function RequestPortalSettings() {
       setLoading(false);
     }
   };
+  const checkSlugAvailability = async (slug: string) => {
+    if (!slug || slug.length < 3) {
+      setSlugAvailable(null);
+      return;
+    }
+
+    // Validate format
+    if (!/^[a-z][a-z0-9-]{2,49}$/.test(slug)) {
+      setSlugAvailable(false);
+      return;
+    }
+
+    setCheckingSlug(true);
+    try {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("portal_slug", slug)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking slug:", error);
+        setSlugAvailable(null);
+        return;
+      }
+
+      // Slug is available if no organization found, or if it's the current organization
+      setSlugAvailable(!data || data.id === organizationId);
+    } catch (error) {
+      console.error("Error checking slug availability:", error);
+      setSlugAvailable(null);
+    } finally {
+      setCheckingSlug(false);
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    // Convert to lowercase and replace spaces with hyphens
+    let slug = value.toLowerCase().replace(/\s+/g, '-');
+    // Remove any invalid characters
+    slug = slug.replace(/[^a-z0-9-]/g, '');
+    
+    setSettings(prev => ({
+      ...prev,
+      portalSlug: slug,
+      portalUrl: `${window.location.origin}/portal/${slug}`
+    }));
+
+    // Check availability after a short delay
+    const timeoutId = setTimeout(() => {
+      checkSlugAvailability(slug);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  };
+
   const saveSettings = async () => {
     if (!user || !organizationId) {
       toast({
@@ -89,6 +180,7 @@ export function RequestPortalSettings() {
       });
       return;
     }
+    
     if (!settings.password.trim()) {
       toast({
         title: "Error",
@@ -97,26 +189,58 @@ export function RequestPortalSettings() {
       });
       return;
     }
+
+    if (!settings.portalSlug || settings.portalSlug.length < 3) {
+      toast({
+        title: "Error",
+        description: "Portal name must be at least 3 characters",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (slugAvailable === false) {
+      toast({
+        title: "Error",
+        description: "Portal name is already taken",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
     try {
-      // Hash the password (simple hash for demo - use bcrypt in production)
+      // Update organization slug
+      const { error: orgError } = await supabase
+        .from("organizations")
+        .update({ portal_slug: settings.portalSlug })
+        .eq("id", organizationId);
+
+      if (orgError) {
+        console.error("Error updating organization slug:", orgError);
+        throw orgError;
+      }
+
+      // Hash the password
       const passwordHash = btoa(settings.password);
 
       // Upsert portal settings
-      const {
-        error
-      } = await supabase.from("request_portal_settings").upsert({
-        organization_id: organizationId,
-        enabled: settings.enabled,
-        password_hash: passwordHash,
-        portal_url: settings.portalUrl
-      }, {
-        onConflict: "organization_id"
-      });
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
+      const { error: settingsError } = await supabase
+        .from("request_portal_settings")
+        .upsert({
+          organization_id: organizationId,
+          enabled: settings.enabled,
+          password_hash: passwordHash,
+          portal_url: settings.portalUrl
+        }, {
+          onConflict: "organization_id"
+        });
+
+      if (settingsError) {
+        console.error("Error saving portal settings:", settingsError);
+        throw settingsError;
       }
+
       toast({
         title: "Success",
         description: "Portal settings saved successfully"
@@ -172,13 +296,50 @@ export function RequestPortalSettings() {
 
         {settings.enabled && <>
             <div className="space-y-2">
+              <Label htmlFor="portal-name">Portal Name</Label>
+              <div className="relative">
+                <Input 
+                  id="portal-name" 
+                  value={settings.portalSlug} 
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  placeholder="e.g., acme-corp"
+                  className="pr-20"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm">
+                  {checkingSlug && <span className="text-muted-foreground">Checking...</span>}
+                  {!checkingSlug && slugAvailable === true && settings.portalSlug.length >= 3 && (
+                    <span className="text-green-600">✓ Available</span>
+                  )}
+                  {!checkingSlug && slugAvailable === false && (
+                    <span className="text-destructive">✗ Taken</span>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Only lowercase letters, numbers, and hyphens. Must start with a letter (3-50 characters).
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="password">Portal Password</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? "text" : "password"} value={settings.password} onChange={e => setSettings(prev => ({
-              ...prev,
-              password: e.target.value
-            }))} placeholder="Enter a secure password" />
-                <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"} 
+                  value={settings.password} 
+                  onChange={e => setSettings(prev => ({
+                    ...prev,
+                    password: e.target.value
+                  }))} 
+                  placeholder="Enter a secure password" 
+                />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" 
+                  onClick={() => setShowPassword(!showPassword)}
+                >
                   {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 </Button>
               </div>
@@ -187,15 +348,29 @@ export function RequestPortalSettings() {
             <div className="space-y-2">
               <Label htmlFor="portal-url">Portal URL</Label>
               <div className="flex gap-2">
-                <Input id="portal-url" value={settings.portalUrl} readOnly className="flex-1" />
-                <Button type="button" variant="outline" size="sm" onClick={copyUrl} className="my-0 py-[19px]">
+                <Input 
+                  id="portal-url" 
+                  value={settings.portalUrl} 
+                  readOnly 
+                  className="flex-1" 
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={copyUrl} 
+                  className="my-0 py-[19px]"
+                >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
             <Alert className="bg-transparent rounded-sm">
-              <AlertDescription>Share this URL with your employees or students to allow them to request documents. They will need to enter the portal password and be approved by an admin.</AlertDescription>
+              <AlertDescription>
+                Share this URL with your employees or students to allow them to request documents. 
+                They will need to enter the portal password and be approved by an admin.
+              </AlertDescription>
             </Alert>
           </>}
 

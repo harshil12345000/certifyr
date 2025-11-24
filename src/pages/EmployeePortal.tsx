@@ -7,15 +7,56 @@ import { EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
 import { EmployeePortalSkeleton } from "@/components/employee-portal/EmployeePortalSkeleton";
 
 export default function EmployeePortal() {
-  const { organizationId } = useParams<{ organizationId: string }>();
+  const { slug } = useParams<{ slug: string }>();
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
   const [portalSettings, setPortalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [employee, setEmployee] = useState<any>(null);
 
+  // Resolve slug to organization ID
   useEffect(() => {
-    if (!organizationId) return;
+    const resolveSlug = async () => {
+      if (!slug) {
+        setSlugError("Invalid portal URL");
+        setLoading(false);
+        return;
+      }
 
+      try {
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("portal_slug", slug)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error resolving slug:", error);
+          setSlugError("Error loading portal");
+          setLoading(false);
+          return;
+        }
+
+        if (!data) {
+          setSlugError("Portal not found");
+          setLoading(false);
+          return;
+        }
+
+        setOrganizationId(data.id);
+      } catch (error) {
+        console.error("Error resolving organization slug:", error);
+        setSlugError("Error loading portal");
+        setLoading(false);
+      }
+    };
+
+    resolveSlug();
+  }, [slug]);
+
+  useEffect(() => {
     const fetchPortalSettings = async () => {
+      if (!organizationId) return;
       try {
         const { data, error } = await supabase
           .from("request_portal_settings")
@@ -72,6 +113,17 @@ export default function EmployeePortal() {
 
   if (loading) {
     return <EmployeePortalSkeleton />;
+  }
+
+  if (slugError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="bg-card p-8 rounded shadow text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-2">Portal Not Available</h2>
+          <p className="text-muted-foreground">{slugError}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!portalSettings) {
