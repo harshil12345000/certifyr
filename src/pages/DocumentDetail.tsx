@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +30,7 @@ const parseLocation = (location: string | null | undefined): string => {
 export default function DocumentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { organizationId } = useOrganizationSecurity();
   const { saveDocument } = useDocumentHistory();
@@ -39,13 +40,30 @@ export default function DocumentDetail() {
   // Find the document config by ID
   const documentConfig = getDocumentConfig(id || '');
   
-  // Initialize form data state with default values
-  const [formData, setFormData] = useState<any>(() => getInitialData(id || ''));
+  // Check if we have saved history data from navigation state
+  const historyData = location.state?.historyData;
+  
+  // Initialize form data state - use history data if available, otherwise use defaults
+  const [formData, setFormData] = useState<any>(() => {
+    if (historyData?.form_data) {
+      console.log("Loading saved document data:", historyData.form_data);
+      return historyData.form_data;
+    }
+    return getInitialData(id || '');
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('form');
 
   // Auto-populate form data with organization and user profile information
+  // Only run if we don't have history data (which already has all the values)
   useEffect(() => {
+    // Skip auto-population if we loaded from history
+    if (historyData?.form_data) {
+      console.log("Skipping auto-population - using saved history data");
+      toast.success("Document loaded from history");
+      return;
+    }
+
     if (brandingLoading) {
       console.log("Branding still loading, waiting...");
       return;
@@ -81,7 +99,7 @@ export default function DocumentDetail() {
       console.log("Updated formData:", updated);
       return updated;
     });
-  }, [organizationDetails, userProfile, brandingLoading]);
+  }, [organizationDetails, userProfile, brandingLoading, historyData]);
 
   if (!documentConfig) {
     return (
