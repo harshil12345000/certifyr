@@ -36,6 +36,11 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
     defaultValues: initialData,
   });
 
+  // Reset form values when initialData changes
+  React.useEffect(() => {
+    form.reset(initialData);
+  }, [initialData, form]);
+
   const renderField = (field: any, formControl: any) => {
     const watchedValues = form.watch();
     
