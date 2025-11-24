@@ -24,6 +24,15 @@ import {
   EmbassyAttestationLetterData,
 } from "@/types/corporate-templates";
 
+// Helper function to get today's date in dd/mm/yyyy format
+const getTodayDateFormatted = (): string => {
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, '0');
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const year = today.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 export const getInitialData = (
   templateId: string,
 ):
@@ -38,7 +47,7 @@ export const getInitialData = (
   | EmbassyAttestationLetterData => {
   const commonFields = {
     institutionName: "",
-    date: new Date().toISOString().split("T")[0],
+    date: getTodayDateFormatted(),
     place: "",
     signatoryName: "",
     signatoryDesignation: "",
@@ -92,7 +101,7 @@ export const getInitialData = (
         employerName: "",
         jobTitle: "",
         department: "",
-        startDate: new Date().toISOString().split("T")[0],
+        startDate: getTodayDateFormatted(),
         employmentType: "full-time" as const,
         salary: "",
         payFrequency: "monthly" as const,
@@ -106,7 +115,7 @@ export const getInitialData = (
         confidentialityClause: "",
         nonCompeteClause: "",
         governingLaw: "",
-        effectiveDate: new Date().toISOString().split("T")[0],
+        effectiveDate: getTodayDateFormatted(),
         ...commonFields,
       } as EmploymentAgreementData;
 
@@ -129,7 +138,7 @@ export const getInitialData = (
         permittedDisclosure: "",
         nonDisclosurePeriod: "",
         returnOfMaterials: "",
-        effectiveDate: new Date().toISOString().split("T")[0],
+        effectiveDate: getTodayDateFormatted(),
         ...commonFields,
       } as NDAData;
 
@@ -153,7 +162,7 @@ export const getInitialData = (
         exitProvisions: "",
         termination: "",
         governingLaw: "",
-        effectiveDate: new Date().toISOString().split("T")[0],
+        effectiveDate: getTodayDateFormatted(),
         ...commonFields,
       } as FoundersAgreementData;
 
@@ -181,10 +190,10 @@ export const getInitialData = (
         covenants: "",
         indemnification: "",
         paymentTerms: "",
-        closingDate: new Date().toISOString().split("T")[0],
+        closingDate: getTodayDateFormatted(),
         governingLaw: "",
         purchaserAddress: "",
-        effectiveDate: new Date().toISOString().split("T")[0],
+        effectiveDate: getTodayDateFormatted(),
         ...commonFields,
       } as StockPurchaseAgreementData;
 
@@ -211,7 +220,7 @@ export const getInitialData = (
         incorporatorAddress: "",
         incorporatorTitle: "",
         incorporatorSignature: "",
-        filingDate: new Date().toISOString().split("T")[0],
+        filingDate: getTodayDateFormatted(),
         ...commonFields,
       } as ArticlesOfIncorporationData;
 
@@ -243,7 +252,7 @@ export const getInitialData = (
         amendmentProcess: "",
         amendmentProcedure: "",
         dissolutionProcess: "",
-        adoptionDate: new Date().toISOString().split("T")[0],
+        adoptionDate: getTodayDateFormatted(),
         ...commonFields,
       } as CorporateBylawsData;
 
@@ -413,8 +422,8 @@ export const getInitialData = (
         candidateAddress: "",
         jobTitle: "",
         department: "",
-        startDate: new Date().toISOString().split("T")[0],
-        dateOfOffer: new Date().toISOString().split("T")[0],
+        startDate: getTodayDateFormatted(),
+        dateOfOffer: getTodayDateFormatted(),
         salary: "",
         salaryAmount: "",
         salaryCurrency: "",
@@ -460,7 +469,7 @@ export const getInitialData = (
         courseOrDesignation: "",
         department: "",
         purpose: "",
-        date: new Date().toISOString().split("T")[0],
+        date: getTodayDateFormatted(),
         place: "",
         signatoryName: "",
         signatoryDesignation: "",

@@ -65,7 +65,11 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
               <FormItem>
                 <FormLabel>{label}</FormLabel>
                 <FormControl>
-                  <Input type="date" {...formField} />
+                  <Input 
+                    {...formField} 
+                    placeholder="dd/mm/yyyy"
+                    maxLength={10}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -192,7 +196,13 @@ function generateZodSchema(config: any) {
           }
           break;
         case "date":
-          fieldSchema = z.string().min(1, { message: `${field.label} is required` });
+          fieldSchema = z.string().regex(
+            /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+            { message: `${field.label} must be in dd/mm/yyyy format` }
+          );
+          if (field.required) {
+            fieldSchema = fieldSchema.min(1, { message: `${field.label} is required` });
+          }
           break;
         case "select":
           const values = field.options.map((o: any) => o.value);
