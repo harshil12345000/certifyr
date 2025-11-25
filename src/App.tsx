@@ -118,7 +118,6 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                {/* New portal routes with slug */}
                 <Route
                   path="/portal/:slug"
                   element={<EmployeePortal />}
@@ -129,19 +128,6 @@ function App() {
                 />
                 <Route
                   path="/portal/:slug/templates/:id"
-                  element={<EmployeeDocumentDetail />}
-                />
-                {/* Legacy portal routes with organization ID - for backward compatibility */}
-                <Route
-                  path="/:orgId/request-portal"
-                  element={<EmployeePortal />}
-                />
-                <Route
-                  path="/:orgId/request-portal/documents/:id"
-                  element={<EmployeeDocumentDetail />}
-                />
-                <Route
-                  path="/:orgId/request-portal/templates/:id"
                   element={<EmployeeDocumentDetail />}
                 />
                 <Route
