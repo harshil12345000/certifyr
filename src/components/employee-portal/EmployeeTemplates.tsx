@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEmployeePortal } from "@/contexts/EmployeePortalContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -138,7 +138,27 @@ export function EmployeeTemplates() {
   const { employee, organizationId } = useEmployeePortal();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [portalSlug, setPortalSlug] = useState<string>("");
   const navigate = useNavigate();
+
+  // Fetch portal slug
+  useEffect(() => {
+    const fetchPortalSlug = async () => {
+      if (!organizationId) return;
+      
+      const { data } = await supabase
+        .from("organizations")
+        .select("portal_slug")
+        .eq("id", organizationId)
+        .maybeSingle();
+      
+      if (data?.portal_slug) {
+        setPortalSlug(data.portal_slug);
+      }
+    };
+    
+    fetchPortalSlug();
+  }, [organizationId]);
 
   // Filter templates based on search and category filters
   const filteredTemplates = uniqueTemplates.filter((template) => {
@@ -256,7 +276,7 @@ export function EmployeeTemplates() {
                 className="ml-auto flex items-center gap-1"
                 onClick={() =>
                   navigate(
-                    `/${organizationId}/request-portal/documents/${template.id}`,
+                    `/portal/${portalSlug}/documents/${template.id}`,
                   )
                 }
               >
