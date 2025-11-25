@@ -113,7 +113,7 @@ const getTemplateDescription = (templateId: string) => {
 };
 
 export default function EmployeeDocumentDetail() {
-  const { slug, id } = useParams<{ slug: string; id: string }>();
+  const { slug, id, orgId } = useParams<{ slug?: string; id: string; orgId?: string }>();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -123,31 +123,38 @@ export default function EmployeeDocumentDetail() {
   const { employee } = useEmployeePortal();
   const { toast } = useToast();
 
-  // Resolve slug to organization ID
+  // Resolve slug to organization ID, or use orgId directly for legacy URLs
   useEffect(() => {
-    const resolveSlug = async () => {
-      if (!slug) return;
+    const resolveIdentifier = async () => {
+      // If orgId is provided (legacy URL format), use it directly
+      if (orgId) {
+        setOrganizationId(orgId);
+        return;
+      }
 
-      try {
-        const { data, error } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("portal_slug", slug)
-          .maybeSingle();
+      // If slug is provided (new URL format), resolve it
+      if (slug) {
+        try {
+          const { data, error } = await supabase
+            .from("organizations")
+            .select("id")
+            .eq("portal_slug", slug)
+            .maybeSingle();
 
-        if (error || !data) {
-          console.error("Error resolving slug:", error);
-          return;
+          if (error || !data) {
+            console.error("Error resolving slug:", error);
+            return;
+          }
+
+          setOrganizationId(data.id);
+        } catch (error) {
+          console.error("Error resolving organization slug:", error);
         }
-
-        setOrganizationId(data.id);
-      } catch (error) {
-        console.error("Error resolving organization slug:", error);
       }
     };
 
-    resolveSlug();
-  }, [slug]);
+    resolveIdentifier();
+  }, [slug, orgId]);
 
   // Scroll to top when component mounts or template changes
   useEffect(() => {
@@ -277,7 +284,7 @@ export default function EmployeeDocumentDetail() {
         description: "Your document request has been submitted for approval",
       });
 
-      navigate(`/portal/${slug}?tab=pending`);
+      navigate(`/portal/${slug || orgId}?tab=pending`);
     } catch (error) {
       console.error("Error submitting request:", error);
       toast({

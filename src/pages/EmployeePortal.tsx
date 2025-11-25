@@ -7,16 +7,24 @@ import { EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
 import { EmployeePortalSkeleton } from "@/components/employee-portal/EmployeePortalSkeleton";
 
 export default function EmployeePortal() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, orgId } = useParams<{ slug?: string; orgId?: string }>();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [portalSettings, setPortalSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [employee, setEmployee] = useState<any>(null);
 
-  // Resolve slug to organization ID
+  // Resolve slug to organization ID, or use orgId directly for legacy URLs
   useEffect(() => {
-    const resolveSlug = async () => {
+    const resolveIdentifier = async () => {
+      // If orgId is provided (legacy URL format), use it directly
+      if (orgId) {
+        setOrganizationId(orgId);
+        setLoading(false);
+        return;
+      }
+
+      // If slug is provided (new URL format), resolve it
       if (!slug) {
         setSlugError("Invalid portal URL");
         setLoading(false);
@@ -51,8 +59,8 @@ export default function EmployeePortal() {
       }
     };
 
-    resolveSlug();
-  }, [slug]);
+    resolveIdentifier();
+  }, [slug, orgId]);
 
   useEffect(() => {
     const fetchPortalSettings = async () => {
