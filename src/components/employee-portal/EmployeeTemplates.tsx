@@ -256,7 +256,7 @@ export function EmployeeTemplates() {
                 className="ml-auto flex items-center gap-1"
                 onClick={() =>
                   navigate(
-                    `/${organizationId}/request-portal/templates/${template.id}`,
+                    `/${organizationId}/request-portal/documents/${template.id}`,
                   )
                 }
               >
