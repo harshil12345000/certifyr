@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface EmployeePortalContextType {
   organizationId: string;
+  portalSlug: string;
   organization: any;
   employee: any;
   setEmployee: (employee: any) => void;
@@ -27,11 +28,13 @@ export function useEmployeePortal() {
 interface EmployeePortalProviderProps {
   children: React.ReactNode;
   organizationId: string;
+  portalSlug: string;
 }
 
 export function EmployeePortalProvider({
   children,
   organizationId,
+  portalSlug,
 }: EmployeePortalProviderProps) {
   const [employee, setEmployee] = useState<any>(null);
   const [organization, setOrganization] = useState<any>(null);
@@ -71,7 +74,7 @@ export function EmployeePortalProvider({
         if (!dbEmployee) {
           // Employee was deleted, clear session and reload to portal auth
           localStorage.removeItem(`employee_portal_${organizationId}`);
-          window.location.href = `/${organizationId}/request-portal`;
+          window.location.href = `/portal/${portalSlug}`;
           return;
         }
         setEmployee(employeeData);
@@ -100,6 +103,7 @@ export function EmployeePortalProvider({
 
   const value = {
     organizationId,
+    portalSlug,
     organization,
     employee,
     setEmployee: handleSetEmployee,

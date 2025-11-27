@@ -19,7 +19,7 @@ export function EmployeePortalLayout({
   children,
   activeTab = "templates",
 }: EmployeePortalLayoutProps) {
-  const { employee, organization } = useEmployeePortal();
+  const { employee, organization, portalSlug } = useEmployeePortal();
   const [selectedTab, setSelectedTab] = useState(activeTab);
   const navigate = useNavigate();
 
@@ -47,21 +47,21 @@ export function EmployeePortalLayout({
         </div>
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
           <Link
-            to={`/${organization?.id}/request-portal`}
+            to={`/portal/${portalSlug}`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "templates" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("templates")}
           >
             <FileText className="h-5 w-5 mr-2" /> Documents
           </Link>
           <Link
-            to={`/${organization?.id}/request-portal?tab=pending`}
+            to={`/portal/${portalSlug}?tab=pending`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "pending" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("pending")}
           >
             <FolderOpen className="h-5 w-5 mr-2" /> My Requests
           </Link>
           <Link
-            to={`/${organization?.id}/request-portal?tab=settings`}
+            to={`/portal/${portalSlug}?tab=settings`}
             className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "settings" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("settings")}
           >
