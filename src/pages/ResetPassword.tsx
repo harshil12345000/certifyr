@@ -48,103 +48,55 @@ export default function ResetPassword() {
   const passwordStrength = getPasswordStrength(password);
   const isPasswordValid = passwordStrength.score >= 3;
 
-  // Validate the reset token on component mount
+  // Validate the reset token on component mount - simplified flow
   useEffect(() => {
     const validateToken = async () => {
       setIsValidating(true);
       
       try {
-        // First, check if we already have a valid session (from /auth/confirm redirect)
-        const { data: { session } } = await supabase.auth.getSession();
+        // Clear stale data first
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("lastLogin");
+        
+        // Check if we already have a valid session (from /auth/confirm)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session check failed:', sessionError);
+          setIsValidToken(false);
+          setIsValidating(false);
+          return;
+        }
+        
         if (session) {
+          // Valid session exists, token is valid
           console.log('Valid session found from /auth/confirm redirect');
           setIsValidToken(true);
           setTokenInfo({ type: 'recovery', hasToken: true });
           setIsValidating(false);
           return;
         }
-
-        // Try hash format first (implicit flow: #access_token=...&type=recovery)
-        const hash = window.location.hash;
-        const hashParams = new URLSearchParams(hash.substring(1));
         
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const hashType = hashParams.get('type');
-
-        console.log('Password reset validation (hash format):', {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          type: hashType,
-          urlHash: hash.substring(0, 80) + '...'
-        });
-
-        if (accessToken && hashType === 'recovery') {
-          console.log('Valid recovery token found in hash, establishing session...');
+        // No session - check for old format with access_token in hash
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token=')) {
+          // Try to get session again after hash-based auth
+          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
           
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || ''
-          });
-
-          if (error) {
-            console.error('Failed to establish recovery session:', error);
-            toast({
-              title: "Invalid Reset Link",
-              description: "This password reset link is invalid or has expired. Please request a new one.",
-              variant: "destructive",
-            });
+          if (retryError || !retrySession) {
+            console.error('Session validation failed:', retryError);
             setIsValidToken(false);
           } else {
-            console.log('Recovery session established successfully from hash');
+            console.log('Valid hash-based session found');
             setIsValidToken(true);
             setTokenInfo({ type: 'recovery', hasToken: true });
           }
-          setIsValidating(false);
-          return;
+        } else {
+          // No valid token found
+          console.warn('No valid recovery token found in URL');
+          setIsValidToken(false);
+          setTokenInfo({ type: '', hasToken: false });
         }
-
-        // Try query parameter format (PKCE flow: ?token_hash=...&type=recovery)
-        const search = window.location.search;
-        const queryParams = new URLSearchParams(search);
-        const tokenHash = queryParams.get('token_hash');
-        const queryType = queryParams.get('type') as 'recovery' | null;
-
-        console.log('Password reset validation (query format):', {
-          hasTokenHash: !!tokenHash,
-          type: queryType
-        });
-
-        if (tokenHash && queryType === 'recovery') {
-          console.log('Valid token_hash found, verifying OTP...');
-          
-          // Verify OTP directly (do NOT sign out before this - it invalidates the token)
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: queryType,
-          });
-
-          if (error || !data.session) {
-            console.error('Token verification failed:', error);
-            toast({
-              title: "Invalid Reset Link",
-              description: "This password reset link is invalid or has expired. Please request a new one.",
-              variant: "destructive",
-            });
-            setIsValidToken(false);
-          } else {
-            console.log('Token verified successfully via verifyOtp');
-            setIsValidToken(true);
-            setTokenInfo({ type: 'recovery', hasToken: true });
-          }
-          setIsValidating(false);
-          return;
-        }
-
-        // No valid token found in any format
-        console.warn('No valid recovery token found in URL');
-        setIsValidToken(false);
-        setTokenInfo({ type: hashType || queryType || '', hasToken: false });
       } catch (error) {
         console.error('Token validation error:', error);
         setIsValidToken(false);
