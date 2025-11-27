@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getInitialData } from "@/lib/document-initial-data";
 import { EmployeePortalLayout } from "@/components/employee-portal/EmployeePortalLayout";
 import { FormData } from "@/types/templates";
-import { useEmployeePortal } from "@/contexts/EmployeePortalContext";
+import { useEmployeePortal, EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BrandingProvider } from "@/contexts/BrandingContext";
@@ -112,9 +112,16 @@ const getTemplateDescription = (templateId: string) => {
   return TEMPLATE_DESCRIPTIONS[templateId] || "";
 };
 
-export default function EmployeeDocumentDetail() {
-  const { slug, id } = useParams<{ slug: string; id: string }>();
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+// Inner component that uses the EmployeePortal context
+function EmployeeDocumentDetailContent({ 
+  id, 
+  slug, 
+  organizationId 
+}: { 
+  id: string; 
+  slug: string; 
+  organizationId: string;
+}) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [tab, setTab] = useState("form");
@@ -122,32 +129,6 @@ export default function EmployeeDocumentDetail() {
   const [requestStatus, setRequestStatus] = useState<"pending" | "approved" | "rejected">("pending");
   const { employee } = useEmployeePortal();
   const { toast } = useToast();
-
-  // Resolve slug to organization ID
-  useEffect(() => {
-    const resolveSlug = async () => {
-      if (!slug) return;
-
-      try {
-        const { data, error } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("portal_slug", slug)
-          .maybeSingle();
-
-        if (error || !data) {
-          console.error("Error resolving slug:", error);
-          return;
-        }
-
-        setOrganizationId(data.id);
-      } catch (error) {
-        console.error("Error resolving organization slug:", error);
-      }
-    };
-
-    resolveSlug();
-  }, [slug]);
 
   // Scroll to top when component mounts or template changes
   useEffect(() => {
@@ -357,5 +338,73 @@ export default function EmployeeDocumentDetail() {
         </Tabs>
       </div>
     </EmployeePortalLayout>
+  );
+}
+
+// Outer wrapper component that resolves slug and wraps in provider
+export default function EmployeeDocumentDetail() {
+  const { slug, id } = useParams<{ slug: string; id: string }>();
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Resolve slug to organization ID
+  useEffect(() => {
+    const resolveSlug = async () => {
+      if (!slug) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("portal_slug", slug)
+          .maybeSingle();
+
+        if (error || !data) {
+          console.error("Error resolving slug:", error);
+          setLoading(false);
+          return;
+        }
+
+        setOrganizationId(data.id);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error resolving organization slug:", error);
+        setLoading(false);
+      }
+    };
+
+    resolveSlug();
+  }, [slug]);
+
+  if (loading || !organizationId || !slug || !id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!(id in TEMPLATE_FORM_MAP)) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
+        <p className="text-muted-foreground">
+          No template found for ID: <span className="font-mono">{id}</span>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <EmployeePortalProvider organizationId={organizationId} portalSlug={slug}>
+      <EmployeeDocumentDetailContent 
+        id={id} 
+        slug={slug} 
+        organizationId={organizationId} 
+      />
+    </EmployeePortalProvider>
   );
 }
