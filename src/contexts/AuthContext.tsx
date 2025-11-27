@@ -57,7 +57,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Get initial session
         const {
           data: { session: initialSession },
+          error: sessionError
         } = await supabase.auth.getSession();
+
+        // Handle refresh token errors - clear everything and start fresh
+        if (sessionError) {
+          console.warn('Session error detected:', sessionError);
+          
+          if (sessionError.message?.includes('Refresh Token') || 
+              sessionError.message?.includes('refresh_token_not_found') ||
+              sessionError.message?.includes('Invalid Refresh Token')) {
+            console.warn('Stale/invalid refresh token detected, clearing auth data...');
+            await supabase.auth.signOut();
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("lastLogin");
+            // Clear all Supabase localStorage keys
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-')) {
+                localStorage.removeItem(key);
+              }
+            });
+            setUser(null);
+            setSession(null);
+            setLoading(false);
+            return;
+          }
+        }
 
         let validUser = initialSession?.user ?? null;
 
@@ -81,6 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
+        // On any error, clear auth state
+        await supabase.auth.signOut();
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("lastLogin");
+        setUser(null);
+        setSession(null);
       } finally {
         if (mounted) {
           setLoading(false);
