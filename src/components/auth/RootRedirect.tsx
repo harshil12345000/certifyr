@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * RootRedirect component handles the root (/) route logic:
- * - Checks for authToken and lastLogin in localStorage
- * - If both exist and lastLogin is within 7 days, redirects to /dashboard
+ * - Checks for actual Supabase session (not localStorage)
+ * - If valid session exists, redirects to /dashboard
  * - Otherwise, renders the landing page content at / (URL stays as /)
  */
 export const RootRedirect = () => {
@@ -14,27 +15,29 @@ export const RootRedirect = () => {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const checkAuthAndRedirect = () => {
-      const authToken = localStorage.getItem("authToken");
-      const lastLogin = localStorage.getItem("lastLogin");
-
-      // Check if both token and lastLogin exist
-      if (authToken && lastLogin) {
-        const lastLoginTime = parseInt(lastLogin, 10);
-        const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-        const now = Date.now();
-        const timeSinceLogin = now - lastLoginTime;
-
-        // If lastLogin is within the last 7 days, redirect to dashboard
-        if (timeSinceLogin < sevenDaysInMs && timeSinceLogin >= 0) {
-          navigate("/dashboard", { replace: true });
+    const checkAuthAndRedirect = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session) {
+          // Clear any stale tokens
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("lastLogin");
+          setShouldShowLanding(true);
+          setIsChecking(false);
           return;
         }
+        
+        // Valid session exists, redirect to dashboard
+        navigate("/dashboard", { replace: true });
+      } catch (e) {
+        console.error("Error checking session:", e);
+        // On error, show landing and clear stale data
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("lastLogin");
+        setShouldShowLanding(true);
+        setIsChecking(false);
       }
-
-      // Otherwise, show landing page at / (URL stays as /)
-      setShouldShowLanding(true);
-      setIsChecking(false);
     };
 
     checkAuthAndRedirect();
