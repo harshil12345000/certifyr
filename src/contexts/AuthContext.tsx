@@ -306,20 +306,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     rememberMe = false,
   ) => {
     try {
-      // Configure session persistence based on rememberMe
+      const cleanedEmail = email.trim().toLowerCase();
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanedEmail,
         password,
       });
 
-      // Immediately update user and session state after successful sign in
       if (!error) {
         const { data: { session: newSession } } = await supabase.auth.getSession();
-        let validUser = newSession?.user ?? null;
+        const validUser = newSession?.user ?? null;
         setSession(newSession);
         setUser(validUser);
 
-        // Store authToken and lastLogin in localStorage for root route redirect logic
         if (newSession?.access_token) {
           localStorage.setItem("authToken", newSession.access_token);
           localStorage.setItem("lastLogin", Date.now().toString());
@@ -331,7 +330,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return { error };
     }
   };
-
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
