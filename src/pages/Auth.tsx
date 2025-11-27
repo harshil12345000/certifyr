@@ -28,21 +28,23 @@ const Auth = () => {
   const [signInPassword, setSignInPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Force clear ALL auth data on mount - aggressive cleanup
+  // Clear any stale session data when landing on auth page
   useEffect(() => {
-    const clearAllAuthData = () => {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("lastLogin");
-      
-      // Clear all Supabase storage keys
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-')) {
-          localStorage.removeItem(key);
+    const clearStaleSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        // If there's an error or no valid session but localStorage has tokens, clear them
+        if (error || !session) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("lastLogin");
         }
-      });
+      } catch (e) {
+        // If getSession throws, definitely clear localStorage
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("lastLogin");
+      }
     };
-    
-    clearAllAuthData();
+    clearStaleSession();
   }, []);
 
   if (user) {
@@ -154,20 +156,6 @@ const Auth = () => {
                 ) : (
                   "Sign In"
                 )}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full mt-2"
-                onClick={async () => {
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  try { await supabase.auth.signOut(); } catch (e) { /* ignore */ }
-                  window.location.reload();
-                }}
-              >
-                Clear All Auth Data & Reload
               </Button>
             </form>
             <div className="mt-4 space-y-2">

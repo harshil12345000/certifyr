@@ -14,15 +14,6 @@ export default function AuthConfirm() {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        // Clear any existing stale session data BEFORE verification
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("lastLogin");
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('sb-')) {
-            localStorage.removeItem(key);
-          }
-        });
-
         // Get token_hash and type from query parameters
         const tokenHash = searchParams.get('token_hash');
         const type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | null;
@@ -34,7 +25,7 @@ export default function AuthConfirm() {
           return;
         }
 
-        // Verify the OTP token
+        // Verify the OTP token (do NOT sign out before this - it will invalidate the token)
         const { data, error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: type,
@@ -42,7 +33,7 @@ export default function AuthConfirm() {
 
         if (verifyError) {
           console.error('Token verification error:', verifyError);
-          setError(verifyError.message || 'Failed to verify token. The link may have expired or been used already.');
+          setError(verifyError.message || 'Failed to verify token');
           setIsVerifying(false);
           return;
         }
@@ -53,10 +44,6 @@ export default function AuthConfirm() {
           return;
         }
 
-        // Store the new session explicitly
-        localStorage.setItem("authToken", data.session.access_token);
-        localStorage.setItem("lastLogin", Date.now().toString());
-
         // Success! Redirect to the intended destination
         if (type === 'recovery') {
           navigate('/reset-password');
@@ -65,7 +52,7 @@ export default function AuthConfirm() {
         }
       } catch (err) {
         console.error('Unexpected error during verification:', err);
-        setError('An unexpected error occurred. Please try again.');
+        setError('An unexpected error occurred');
         setIsVerifying(false);
       }
     };

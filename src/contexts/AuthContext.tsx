@@ -60,30 +60,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           error: sessionError
         } = await supabase.auth.getSession();
 
-        // AGGRESSIVE: If there's ANY error with the session, clear ALL auth data
+        // Handle refresh token errors - clear everything and start fresh
         if (sessionError) {
-          console.warn('Session error detected, performing aggressive cleanup:', sessionError);
+          console.warn('Session error detected:', sessionError);
           
-          // Force sign out to reset internal Supabase state
-          try { 
-            await supabase.auth.signOut(); 
-          } catch (e) { 
-            console.warn('Error during signOut:', e);
+          if (sessionError.message?.includes('Refresh Token') || 
+              sessionError.message?.includes('refresh_token_not_found') ||
+              sessionError.message?.includes('Invalid Refresh Token')) {
+            console.warn('Stale/invalid refresh token detected, clearing auth data...');
+            await supabase.auth.signOut();
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("lastLogin");
+            // Clear all Supabase localStorage keys
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-')) {
+                localStorage.removeItem(key);
+              }
+            });
+            setUser(null);
+            setSession(null);
+            setLoading(false);
+            return;
           }
-          
-          // Clear ALL localStorage including Supabase keys
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("lastLogin");
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('sb-')) {
-              localStorage.removeItem(key);
-            }
-          });
-          
-          setUser(null);
-          setSession(null);
-          setLoading(false);
-          return;
         }
 
         let validUser = initialSession?.user ?? null;
@@ -107,18 +105,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           // It will be handled in the auth state change listener only
         }
       } catch (error) {
-        console.error("Error initializing auth, performing aggressive cleanup:", error);
-        
-        // Aggressive cleanup on any error
-        try { await supabase.auth.signOut(); } catch (e) { /* ignore */ }
+        console.error("Error initializing auth:", error);
+        // On any error, clear auth state
+        await supabase.auth.signOut();
         localStorage.removeItem("authToken");
         localStorage.removeItem("lastLogin");
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('sb-')) {
-            localStorage.removeItem(key);
-          }
-        });
-        
         setUser(null);
         setSession(null);
       } finally {
