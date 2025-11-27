@@ -51,7 +51,7 @@ const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
 };
 
 export function EmployeePendingRequests() {
-  const { employee, organizationId } = useEmployeePortal();
+  const { employee, organizationId, portalSlug } = useEmployeePortal();
   const { trackDocumentCreation } = useDocumentTracking();
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,9 +191,11 @@ export function EmployeePendingRequests() {
           You haven't submitted any document requests yet.
         </p>
         <Button
-          onClick={() =>
-            (window.location.href = `/${organizationId}/request-portal`)
-          }
+          onClick={() => {
+            if (portalSlug) {
+              window.location.href = `/portal/${portalSlug}`;
+            }
+          }}
         >
           Browse Templates
         </Button>

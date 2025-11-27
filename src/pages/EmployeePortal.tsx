@@ -141,7 +141,7 @@ export default function EmployeePortal() {
   }
 
   return (
-    <EmployeePortalProvider organizationId={organizationId!}>
+    <EmployeePortalProvider organizationId={organizationId!} portalSlug={slug!}>
       {employee && employee.status === "approved" ? (
         <EmployeePortalDashboard
           employee={employee}
