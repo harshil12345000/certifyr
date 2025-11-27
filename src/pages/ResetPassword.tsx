@@ -118,9 +118,7 @@ export default function ResetPassword() {
         if (tokenHash && queryType === 'recovery') {
           console.log('Valid token_hash found, verifying OTP...');
           
-          // Clear any stale sessions first
-          await supabase.auth.signOut();
-
+          // Verify OTP directly (do NOT sign out before this - it invalidates the token)
           const { data, error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: queryType,

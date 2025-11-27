@@ -25,10 +25,7 @@ export default function AuthConfirm() {
           return;
         }
 
-        // Clear any existing invalid sessions
-        await supabase.auth.signOut();
-
-        // Verify the OTP token
+        // Verify the OTP token (do NOT sign out before this - it will invalidate the token)
         const { data, error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: type,

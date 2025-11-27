@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,25 @@ const Auth = () => {
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Clear any stale session data when landing on auth page
+  useEffect(() => {
+    const clearStaleSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        // If there's an error or no valid session but localStorage has tokens, clear them
+        if (error || !session) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("lastLogin");
+        }
+      } catch (e) {
+        // If getSession throws, definitely clear localStorage
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("lastLogin");
+      }
+    };
+    clearStaleSession();
+  }, []);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
