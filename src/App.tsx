@@ -30,6 +30,7 @@ import NoAccess from "@/pages/employee-portal/NoAccess";
 import { BookmarksPage } from "./pages/Index";
 import { BookmarksProvider } from "./contexts/BookmarksContext";
 import Auth from "@/pages/Auth";
+import AuthConfirm from "@/pages/auth/confirm";
 import EmailConfirmed from "@/pages/auth/email-confirmed";
 import EmailVerified from "@/pages/auth/email-verified";
 import CheckEmail from "@/pages/auth/check-email";
@@ -105,6 +106,7 @@ function App() {
                     }
                   />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/confirm" element={<AuthConfirm />} />
                 <Route path="/auth/signup" element={<Onboarding />} />
                 <Route path="/auth/email-confirmed" element={<EmailConfirmed />} />
                 <Route path="/auth/email-verified" element={<EmailVerified />} />

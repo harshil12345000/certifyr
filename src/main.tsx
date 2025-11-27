@@ -5,6 +5,7 @@ import "./index.css";
 // Handle Supabase auth redirects (recovery, confirmation, etc.)
 const hash = window.location.hash;
 const search = window.location.search;
+const currentPath = window.location.pathname;
 
 // Helper to extract parameters from hash or search
 const getParam = (key: string) => {
@@ -14,19 +15,30 @@ const getParam = (key: string) => {
 };
 
 const hasAccessToken = hash.includes('access_token') || search.includes('access_token');
+const hasTokenHash = search.includes('token_hash=');
 const hasCode = hash.includes('code=') || search.includes('code=');
 const type = getParam('type');
 
-if (hasAccessToken || hasCode) {
+// Only redirect if we're not already on the target page
+if ((hasAccessToken || hasCode || hasTokenHash) && !currentPath.includes('/auth/confirm') && !currentPath.includes('/reset-password')) {
   // Preserve the complete parameter string
   const suffix = hash.length > 0 ? hash : search;
   
   if (type === 'recovery') {
-    // Password reset - redirect to reset-password page with all parameters
-    window.location.replace('/reset-password' + suffix);
-  } else {
-    // Email confirmation and other auth tokens - redirect to confirmation page
-    window.location.replace('/auth/email-confirmed' + suffix);
+    // Password reset with token_hash - redirect to /auth/confirm first
+    if (hasTokenHash) {
+      window.location.replace('/auth/confirm' + suffix + '&next=/reset-password');
+    } else {
+      // Old format with access_token - direct to reset-password
+      window.location.replace('/reset-password' + suffix);
+    }
+  } else if (type === 'signup' || type === 'email') {
+    // Email confirmation - use confirm page for token_hash
+    if (hasTokenHash) {
+      window.location.replace('/auth/confirm' + suffix);
+    } else {
+      window.location.replace('/auth/email-confirmed' + suffix);
+    }
   }
 }
 
