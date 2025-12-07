@@ -23,20 +23,24 @@ export function useOrganizationSecurity() {
 
     const fetchMembership = async () => {
       try {
+        // Use maybeSingle() to handle cases with no results or multiple memberships
         const { data, error } = await supabase
           .from("organization_members")
           .select("organization_id, role, status")
           .eq("user_id", user.id)
           .eq("status", "active")
-          .single();
+          .limit(1)
+          .maybeSingle();
 
-        if (error && error.code !== "PGRST116") {
+        if (error) {
           console.error("Error fetching organization membership:", error);
+          setMembership(null);
+        } else {
+          setMembership(data || null);
         }
-
-        setMembership(data || null);
       } catch (err) {
         console.error("Unexpected error fetching membership:", err);
+        setMembership(null);
       } finally {
         setLoading(false);
       }
