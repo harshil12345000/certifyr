@@ -80,18 +80,11 @@ export function RequestPortalSettings() {
       // Generate the portal URL using slug
       const portalUrl = `${window.location.origin}/portal/${orgData.portal_slug || 'your-org'}`;
       
-      const decodedPassword = settingsData?.password_hash ? (() => {
-        try {
-          return atob(settingsData.password_hash);
-        } catch (error) {
-          console.error("Error decoding portal password:", error);
-          return "";
-        }
-      })() : "";
-      
+      // Password is now bcrypt hashed - we don't decode it
+      // User must enter a new password if they want to change it
       setSettings({
         enabled: settingsData?.enabled ?? false,
-        password: decodedPassword,
+        password: "", // Don't pre-fill - bcrypt is one-way
         portalUrl,
         portalSlug: orgData.portal_slug || ""
       });
@@ -217,24 +210,20 @@ export function RequestPortalSettings() {
         throw orgError;
       }
 
-      // Hash the password
-      const passwordHash = btoa(settings.password);
-
-      // Upsert portal settings
-      const { error: settingsError } = await supabase
-        .from("request_portal_settings")
-        .upsert({
+      // Save portal password via edge function (bcrypt hashing)
+      const { data, error: funcError } = await supabase.functions.invoke("portal-auth", {
+        body: {
+          action: "save_portal_password",
           organization_id: orgId,
+          password: settings.password,
           enabled: settings.enabled,
-          password_hash: passwordHash,
-          portal_url: settings.portalUrl
-        }, {
-          onConflict: "organization_id"
-        });
+          portal_url: settings.portalUrl,
+        },
+      });
 
-      if (settingsError) {
-        console.error("Error saving portal settings:", settingsError);
-        throw settingsError;
+      if (funcError || !data?.success) {
+        console.error("Error saving portal settings:", funcError || data?.error);
+        throw new Error(data?.error || "Failed to save portal settings");
       }
 
       toast({

@@ -100,10 +100,16 @@ export function EmployeePortalAuth({
         return;
       }
 
-      // Check portal password against stored hash
-      const passwordHash = btoa(portalPassword);
+      // Verify password via edge function (bcrypt)
+      const { data, error } = await supabase.functions.invoke("portal-auth", {
+        body: {
+          action: "verify_portal_password",
+          organization_id: portalSettings.organization_id,
+          password: portalPassword,
+        },
+      });
 
-      if (passwordHash !== portalSettings.password_hash) {
+      if (error || !data?.success) {
         toast({
           title: "Error",
           description: "Invalid organization portal password.",
@@ -146,27 +152,27 @@ export function EmployeePortalAuth({
         return;
       }
 
-      const passwordHash = btoa(signIn.password);
-      const { data, error } = await supabase
-        .from("request_portal_employees")
-        .select("*")
-        .eq("organization_id", portalSettings.organization_id)
-        .eq("email", signIn.email)
-        .eq("password_hash", passwordHash)
-        .eq("status", "approved")
-        .single();
+      // Sign in via edge function (bcrypt)
+      const { data, error } = await supabase.functions.invoke("portal-auth", {
+        body: {
+          action: "employee_signin",
+          organization_id: portalSettings.organization_id,
+          email: signIn.email,
+          password: signIn.password,
+        },
+      });
 
-      if (error || !data) {
+      if (error || !data?.success) {
         toast({
           title: "Error",
-          description: "Invalid email, password, or account not yet approved.",
+          description: data?.error || "Invalid email, password, or account not yet approved.",
           variant: "destructive",
         });
         return;
       }
 
       toast({ title: "Success", description: "Successfully signed in!" });
-      onEmployeeAuthenticated(data);
+      onEmployeeAuthenticated(data.employee);
     } catch (err) {
       console.error("Sign in error:", err);
       toast({
@@ -218,76 +224,29 @@ export function EmployeePortalAuth({
         return;
       }
 
-      // Check for existing employee by email
-      const { data: existingByEmail } = await supabase
-        .from("request_portal_employees")
-        .select("id")
-        .eq("organization_id", portalSettings.organization_id)
-        .eq("email", register.email)
-        .maybeSingle();
-
-      // Check for existing employee by full name
-      const { data: existingByName } = await supabase
-        .from("request_portal_employees")
-        .select("id")
-        .eq("organization_id", portalSettings.organization_id)
-        .eq("full_name", register.fullName)
-        .maybeSingle();
-
-      const existing = existingByEmail || existingByName;
-
-      if (existing) {
-        toast({
-          title: "Error",
-          description: "An employee with this name or email already exists.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Insert new employee (pending status)
-      const passwordHash = btoa(register.password);
-      // Get current user from Supabase auth
-      const { data: authUser } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from("request_portal_employees")
-        .insert({
+      // Register via edge function (bcrypt)
+      const { data, error } = await supabase.functions.invoke("portal-auth", {
+        body: {
+          action: "employee_register",
           organization_id: portalSettings.organization_id,
           full_name: register.fullName,
           email: register.email,
           employee_id: register.employeeId || null,
           phone_number: register.phoneNumber || null,
           manager_name: register.managerName || null,
-          password_hash: passwordHash,
-          status: "pending",
-          user_id: authUser?.user?.id || null,
-        })
-        .select()
-        .single();
+          password: register.password,
+        },
+      });
 
-      if (error) {
-        console.error("Registration error:", error);
+      if (error || !data?.success) {
+        console.error("Registration error:", error || data?.error);
         toast({
           title: "Error",
-          description: "Failed to register. Please try again.",
+          description: data?.error || "Failed to register. Please try again.",
           variant: "destructive",
         });
         return;
       }
-
-      // Notify admin (insert notification)
-      await supabase.from("notifications").insert({
-        org_id: portalSettings.organization_id,
-        type: "employee_registration",
-        subject: `${register.fullName} Requested Portal Access`,
-        body: `${register.fullName} has requested access to your organization's Certifyr Request Portal.\n\nDetails:\n• Email: ${register.email}\n• Employee ID: ${register.employeeId || "Not provided"}\n• Phone: ${register.phoneNumber || "Not provided"}\n• Manager: ${register.managerName || "Not provided"}\n\nPlease review and approve/reject this request in Request Portal → Members.`,
-        data: {
-          email: register.email,
-          employeeId: register.employeeId,
-          phoneNumber: register.phoneNumber,
-          managerName: register.managerName,
-        },
-      });
 
       setMode("pending");
       toast({
