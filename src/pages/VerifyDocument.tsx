@@ -5,32 +5,33 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, XCircle, AlertTriangle, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { logQRVerification } from "@/lib/qr-utils";
 import { VerificationModal } from "@/components/templates/VerificationModal";
 import { downloadPDF } from "@/lib/document-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface VerifiedDocument {
-  id: string;
-  template_type: string;
-  document_data: any;
-  generated_at: string;
-  expires_at: string | null;
-  is_active: boolean;
-  organization_id: string | null;
-  user_id: string | null;
+interface VerificationResponse {
+  valid: boolean;
+  status: "verified" | "expired" | "inactive" | "not_found" | "error";
+  message: string;
+  document?: {
+    id: string;
+    template_type: string;
+    generated_at: string;
+    expires_at: string | null;
+    is_active: boolean;
+  };
+  organization?: {
+    name: string;
+    logo_url: string | null;
+  } | null;
 }
 
 const VerifyDocument = () => {
   const { hash } = useParams<{ hash: string }>();
-  const [document, setDocument] = useState<VerifiedDocument | null>(null);
+  const [verificationData, setVerificationData] = useState<VerificationResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
-  const [organizationDetails, setOrganizationDetails] = useState<{ name: string } | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [brandingLoading, setBrandingLoading] = useState(true);
 
   useEffect(() => {
     const verifyDocument = async () => {
@@ -41,111 +42,49 @@ const VerifyDocument = () => {
           message: "Invalid verification link",
         };
         setVerificationResult(result);
-        setError("Invalid verification link");
+        setVerificationData({
+          valid: false,
+          status: "not_found",
+          message: "Invalid verification link",
+        });
         setLoading(false);
         setShowModal(true);
-        await logQRVerification(hash || "", "not_found");
         return;
       }
 
       try {
-        // Fetch document
-        const { data, error: fetchError } = await supabase
-          .from("verified_documents")
-          .select("*")
-          .eq("verification_hash", hash)
-          .single();
+        // Call the secure verification Edge Function
+        const { data, error } = await supabase.functions.invoke("verify-document", {
+          body: { hash },
+        });
 
-        if (fetchError || !data) {
+        if (error) {
+          console.error("Verification error:", error);
           const result = {
             isValid: false,
             status: "not_found" as const,
-            message: "Document not found or verification failed",
+            message: "An error occurred during verification",
           };
           setVerificationResult(result);
-          setError("Document not found or verification failed");
-          await logQRVerification(hash, "not_found");
+          setVerificationData({
+            valid: false,
+            status: "error",
+            message: "An error occurred during verification",
+          });
         } else {
-          setDocument(data);
-          if (data.organization_id) {
-            const { data: orgData } = await supabase
-              .from("organizations")
-              .select("name")
-              .eq("id", data.organization_id)
-              .single();
-
-            if (orgData) {
-              setOrganizationDetails(orgData);
-
-              const { data: fileData } = await supabase
-                .from("branding_files")
-                .select("path")
-                .eq("organization_id", data.organization_id)
-                .eq("name", "logo")
-                .single();
-
-              if (fileData?.path) {
-                const { data: urlData } = supabase.storage
-                  .from("branding-assets")
-                  .getPublicUrl(fileData.path);
-                setLogoUrl(urlData.publicUrl);
-              }
-            }
-          }
-          const isExpired =
-            data.expires_at && new Date(data.expires_at) < new Date();
-          const isActive = data.is_active;
-
-          if (isExpired) {
-            const result = {
-              isValid: false,
-              status: "expired" as const,
-              document: data,
-              message: "This document has expired",
-            };
-            setVerificationResult(result);
-            await logQRVerification(
-              hash,
-              "expired",
-              data.id,
-              data.template_type,
-              data.organization_id,
-              data.user_id,
-            );
-          } else if (!isActive) {
-            const result = {
-              isValid: false,
-              status: "not_found" as const,
-              document: data,
-              message: "This document is no longer active",
-            };
-            setVerificationResult(result);
-            await logQRVerification(
-              hash,
-              "not_found",
-              data.id,
-              data.template_type,
-              data.organization_id,
-              data.user_id,
-            );
-          } else {
-            const result = {
-              isValid: true,
-              status: "verified" as const,
-              document: data,
-              message: "Document is valid and verified",
-            };
-            setVerificationResult(result);
-            await logQRVerification(
-              hash,
-              "verified",
-              data.id,
-              data.template_type,
-              data.organization_id,
-              data.user_id,
-            );
-          }
+          const response = data as VerificationResponse;
+          setVerificationData(response);
+          
+          const result = {
+            isValid: response.valid,
+            status: response.status === "verified" ? "verified" as const : 
+                   response.status === "expired" ? "expired" as const : "not_found" as const,
+            document: response.document,
+            message: response.message,
+          };
+          setVerificationResult(result);
         }
+        
         setShowModal(true);
       } catch (err) {
         console.error("Verification error:", err);
@@ -155,12 +94,14 @@ const VerifyDocument = () => {
           message: "An error occurred during verification",
         };
         setVerificationResult(result);
-        setError("An error occurred during verification");
+        setVerificationData({
+          valid: false,
+          status: "error",
+          message: "An error occurred during verification",
+        });
         setShowModal(true);
-        await logQRVerification(hash, "not_found");
       } finally {
         setLoading(false);
-        setBrandingLoading(false);
       }
     };
 
@@ -183,17 +124,15 @@ const VerifyDocument = () => {
   };
 
   const getDocumentDisplayName = () => {
-    if (!document) return "";
-    const templateName = getTemplateDisplayName(document.template_type);
-    const fullName = document.document_data?.fullName || "Unknown";
-    return `${templateName} for ${fullName}`;
+    if (!verificationData?.document) return "";
+    return getTemplateDisplayName(verificationData.document.template_type);
   };
 
   const handleDownloadReport = async () => {
-    if (!document) return;
+    if (!verificationData?.document) return;
 
     try {
-      // Create a temporary verification report element
+      const doc = verificationData.document;
       const reportContent = `
         <div class="a4-document p-8 bg-white text-gray-800 font-sans">
           <div class="text-center mb-8">
@@ -202,9 +141,9 @@ const VerifyDocument = () => {
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div><strong>Document:</strong> ${getDocumentDisplayName()}</div>
-              <div><strong>Generated:</strong> ${new Date(document.generated_at).toLocaleDateString()}</div>
-              <div><strong>Status:</strong> ${document.is_active && (!document.expires_at || new Date(document.expires_at) > new Date()) ? "Valid" : "Invalid"}</div>
-              ${document.expires_at ? `<div><strong>Expires:</strong> ${new Date(document.expires_at).toLocaleDateString()}</div>` : ""}
+              <div><strong>Generated:</strong> ${new Date(doc.generated_at).toLocaleDateString()}</div>
+              <div><strong>Status:</strong> ${verificationData.valid ? "Valid" : "Invalid"}</div>
+              ${doc.expires_at ? `<div><strong>Expires:</strong> ${new Date(doc.expires_at).toLocaleDateString()}</div>` : ""}
             </div>
             <div class="mt-8">
               <p><strong>Verification Hash:</strong> ${hash}</p>
@@ -214,16 +153,13 @@ const VerifyDocument = () => {
         </div>
       `;
 
-      // Create temporary element using global document object
       const tempDiv = globalThis.document.createElement("div");
       tempDiv.innerHTML = reportContent;
       tempDiv.className = "fixed -left-full top-0";
       globalThis.document.body.appendChild(tempDiv);
 
-      // Generate PDF
-      await downloadPDF(`verification-report-${document.template_type}.pdf`);
+      await downloadPDF(`verification-report-${doc.template_type}.pdf`);
 
-      // Clean up using global document object
       globalThis.document.body.removeChild(tempDiv);
     } catch (error) {
       console.error("Error generating verification report:", error);
@@ -231,9 +167,9 @@ const VerifyDocument = () => {
     }
   };
 
-  const isExpired =
-    document?.expires_at && new Date(document.expires_at) < new Date();
-  const isActive = document?.is_active;
+  const isExpired = verificationData?.status === "expired";
+  const isActive = verificationData?.document?.is_active ?? false;
+  const isValid = verificationData?.valid ?? false;
 
   if (loading) {
     return (
@@ -249,7 +185,7 @@ const VerifyDocument = () => {
         <Card>
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              {error || !document ? (
+              {!verificationData || verificationData.status === "not_found" || verificationData.status === "error" ? (
                 <XCircle className="h-16 w-16 text-red-500" />
               ) : isExpired || !isActive ? (
                 <AlertTriangle className="h-16 w-16 text-yellow-500" />
@@ -258,10 +194,10 @@ const VerifyDocument = () => {
               )}
             </div>
             <CardTitle className="text-2xl">
-              {error
-                ? "Verification Failed"
-                : !document
-                  ? "Document Not Found"
+              {!verificationData || verificationData.status === "not_found"
+                ? "Document Not Found"
+                : verificationData.status === "error"
+                  ? "Verification Failed"
                   : isExpired
                     ? "Document Expired"
                     : !isActive
@@ -270,24 +206,26 @@ const VerifyDocument = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {error && (
+            {(verificationData?.status === "not_found" || verificationData?.status === "error") && (
               <div className="text-center text-red-600">
-                <p>{error}</p>
+                <p>{verificationData.message}</p>
               </div>
             )}
 
-            {document && (
+            {verificationData?.document && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {!brandingLoading && organizationDetails && (
+                  {verificationData.organization && (
                     <div className="col-span-2">
                       <label className="font-semibold">Organization:</label>
                       <div className="flex items-center gap-3 mt-1">
                         <Avatar>
-                          {logoUrl && <AvatarImage src={logoUrl} alt="Organization Logo" />}
-                          <AvatarFallback>{organizationDetails.name?.[0] || "?"}</AvatarFallback>
+                          {verificationData.organization.logo_url && (
+                            <AvatarImage src={verificationData.organization.logo_url} alt="Organization Logo" />
+                          )}
+                          <AvatarFallback>{verificationData.organization.name?.[0] || "?"}</AvatarFallback>
                         </Avatar>
-                        <span className="font-medium text-base">{organizationDetails.name || "-"}</span>
+                        <span className="font-medium text-base">{verificationData.organization.name || "-"}</span>
                       </div>
                     </div>
                   )}
@@ -298,18 +236,24 @@ const VerifyDocument = () => {
                   <div>
                     <label className="font-semibold">Generated:</label>
                     <p>
-                      {new Date(document.generated_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
+                      {new Date(verificationData.document.generated_at).toLocaleString(undefined, { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit', 
+                        timeZoneName: 'short' 
+                      })}
                     </p>
                   </div>
                   <div>
                     <label className="font-semibold">Status:</label>
                     <div>
                       <Badge
-                        variant={
-                          isActive && !isExpired ? "default" : "destructive"
-                        }
+                        variant={isValid ? "default" : "destructive"}
                       >
-                        {isActive && !isExpired
+                        {isValid
                           ? "Valid"
                           : isExpired
                             ? "Expired"
@@ -317,11 +261,19 @@ const VerifyDocument = () => {
                       </Badge>
                     </div>
                   </div>
-                  {document.expires_at && (
+                  {verificationData.document.expires_at && (
                     <div>
                       <label className="font-semibold">Expires:</label>
                       <p>
-                        {new Date(document.expires_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
+                        {new Date(verificationData.document.expires_at).toLocaleString(undefined, { 
+                          year: 'numeric', 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit', 
+                          second: '2-digit', 
+                          timeZoneName: 'short' 
+                        })}
                       </p>
                     </div>
                   )}
