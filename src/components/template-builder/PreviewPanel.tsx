@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
+import DOMPurify from "dompurify";
 import { Section, Field } from "@/types/template-builder";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,9 +67,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     const replaced = html.replace(
       /\[(.+?)\]/g,
       (match, p1) =>
-        `<span class="font-semibold">${sampleData[p1.trim()] || `[${p1}]`}</span>`,
+        `<span class="font-semibold">${DOMPurify.sanitize(sampleData[p1.trim()] || `[${p1}]`)}</span>`,
     );
-    return <div dangerouslySetInnerHTML={{ __html: replaced }} />;
+    const sanitized = DOMPurify.sanitize(replaced);
+    return <div dangerouslySetInnerHTML={{ __html: sanitized }} />;
   }
 
   const handleDownloadPDF = async () => {
@@ -230,7 +232,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                   className="w-full min-h-[200px] border rounded p-2 text-base mb-2 focus:outline-none bg-white"
                   contentEditable
                   suppressContentEditableWarning
-                  dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
                   onBlur={(e) => {
                     setBodyHtml(e.currentTarget.innerHTML);
                     setIsEditingBody(false);

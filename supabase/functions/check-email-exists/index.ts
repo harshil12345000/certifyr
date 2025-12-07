@@ -7,6 +7,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting: Track requests per IP (in-memory, resets on function cold start)
+const requestCounts = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 5; // Max requests per window
+const RATE_WINDOW_MS = 60 * 1000; // 1 minute window
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = requestCounts.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    requestCounts.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return true;
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -14,11 +36,40 @@ serve(async (req) => {
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                     req.headers.get("x-real-ip") || 
+                     "unknown";
+    
+    // Check rate limit
+    if (!checkRateLimit(clientIP)) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        {
+          status: 429,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     const { email } = await req.json();
 
     if (!email) {
       return new Response(
-        JSON.stringify({ exists: false, error: "Email is required" }),
+        JSON.stringify({ error: "Email is required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -43,7 +94,14 @@ serve(async (req) => {
     
     if (userError) {
       console.error("Error fetching users:", userError);
-      throw userError;
+      // Return generic response to avoid leaking information
+      return new Response(
+        JSON.stringify({ exists: false }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     // Check if email exists in the user list
@@ -51,7 +109,8 @@ serve(async (req) => {
       (user) => user.email?.toLowerCase() === email.toLowerCase()
     );
 
-    console.log(`Email check for ${email}: ${emailExists ? "EXISTS" : "NOT FOUND"}`);
+    // Log without revealing exact result (for security)
+    console.log(`Email check processed for: ${email.substring(0, 3)}***`);
 
     return new Response(
       JSON.stringify({ exists: emailExists }),
@@ -62,10 +121,11 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error("Error in check-email-exists function:", error);
+    // Return generic response to avoid leaking information about errors
     return new Response(
-      JSON.stringify({ exists: false, error: error.message }),
+      JSON.stringify({ exists: false }),
       {
-        status: 500,
+        status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
