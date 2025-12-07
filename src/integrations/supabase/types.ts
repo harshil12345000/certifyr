@@ -829,6 +829,45 @@ export type Database = {
           },
         ]
       }
+      verified_documents_backup_user_f7cf1643: {
+        Row: {
+          document_data: Json | null
+          document_id: string | null
+          expires_at: string | null
+          generated_at: string | null
+          id: string | null
+          is_active: boolean | null
+          organization_id: string | null
+          template_type: string | null
+          user_id: string | null
+          verification_hash: string | null
+        }
+        Insert: {
+          document_data?: Json | null
+          document_id?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          template_type?: string | null
+          user_id?: string | null
+          verification_hash?: string | null
+        }
+        Update: {
+          document_data?: Json | null
+          document_id?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          template_type?: string | null
+          user_id?: string | null
+          verification_hash?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
