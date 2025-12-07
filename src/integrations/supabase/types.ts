@@ -831,7 +831,32 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_portal_info: {
+        Row: {
+          enabled: boolean | null
+          organization_id: string | null
+          portal_url: string | null
+        }
+        Insert: {
+          enabled?: boolean | null
+          organization_id?: string | null
+          portal_url?: string | null
+        }
+        Update: {
+          enabled?: boolean | null
+          organization_id?: string | null
+          portal_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_portal_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       delete_user_account: { Args: never; Returns: Json }
@@ -879,6 +904,10 @@ export type Database = {
       }
       user_is_org_admin: {
         Args: { org_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      validate_portal_password: {
+        Args: { p_organization_id: string; p_password: string }
         Returns: boolean
       }
     }
