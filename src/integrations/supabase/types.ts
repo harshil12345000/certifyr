@@ -872,6 +872,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_org_member_admin: {
+        Args: { check_org_id: string; check_user_id: string }
+        Returns: boolean
+      }
       is_organization_admin: {
         Args: { check_org_id: string; check_user_id: string }
         Returns: boolean
