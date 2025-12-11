@@ -73,7 +73,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
       }
 
       // Update user profile with organization info
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('user_profiles')
         .update({
           organization_name: data.organizationName.trim(),
@@ -84,11 +84,84 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
         })
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Check if user already has an organization
+      const { data: existingMembership } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (!existingMembership) {
+        // Generate unique portal slug
+        const { data: uniqueSlug, error: slugError } = await supabase.rpc(
+          'generate_unique_slug',
+          { org_name: data.organizationName.trim(), org_id: '00000000-0000-0000-0000-000000000000' }
+        );
+
+        let finalSlug = uniqueSlug;
+        if (slugError || !uniqueSlug) {
+          finalSlug = data.organizationName.trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') + '-' + Date.now();
+        }
+        if (!/^[a-z]/.test(finalSlug)) {
+          finalSlug = 'org-' + finalSlug;
+        }
+
+        // Create organization
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert({
+            name: data.organizationName.trim(),
+            address: data.organizationLocation.trim() || null,
+            portal_slug: finalSlug,
+          })
+          .select()
+          .single();
+
+        if (orgError) {
+          console.error("Organization creation error:", orgError);
+          throw orgError;
+        }
+
+        // Add user as admin member
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert({
+            organization_id: newOrg.id,
+            user_id: user.id,
+            role: 'admin',
+            status: 'active',
+          });
+
+        if (memberError) {
+          console.error("Member creation error:", memberError);
+          throw memberError;
+        }
+
+        // Initialize user statistics
+        await supabase
+          .from('user_statistics')
+          .insert({
+            user_id: user.id,
+            organization_id: newOrg.id,
+            documents_created: 0,
+            documents_signed: 0,
+            pending_documents: 0,
+            portal_members: 0,
+            requested_documents: 0,
+            total_verifications: 0,
+          });
+      }
 
       onNext();
     } catch (error: any) {
-      console.error("Error updating profile:", error);
+      console.error("Error saving organization:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to save organization info. Please try again.",
