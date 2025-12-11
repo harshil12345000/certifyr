@@ -204,6 +204,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (org?.id) {
           orgId = org.id;
         } else {
+          // Generate unique slug using database function
+          const { data: uniqueSlug, error: slugError } = await supabase.rpc(
+            'generate_unique_slug',
+            { org_name: userProfile.organization_name, org_id: '00000000-0000-0000-0000-000000000000' }
+          );
+          
+          // Fallback slug if RPC fails
+          let finalSlug = uniqueSlug;
+          if (slugError || !uniqueSlug) {
+            finalSlug = userProfile.organization_name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '') + '-' + Date.now();
+            console.warn("Slug generation RPC failed, using fallback:", slugError);
+          }
+          
+          // Ensure slug starts with a letter
+          if (!/^[a-z]/.test(finalSlug)) {
+            finalSlug = 'org-' + finalSlug;
+          }
+          
           // Create organization if not exists
           const { data: newOrg, error: orgError } = await supabase
             .from("organizations")
@@ -213,10 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 email: userProfile.email,
                 phone: userProfile.phone_number,
                 address: userProfile.organization_location,
-                portal_slug: userProfile.organization_name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/^-+|-+$/g, '')
+                portal_slug: finalSlug
               },
             ])
             .select()
