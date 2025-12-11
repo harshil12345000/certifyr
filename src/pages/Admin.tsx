@@ -681,8 +681,6 @@ const AdminPage = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="organization">Organization</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
-            <TabsTrigger value="users">Collaborators</TabsTrigger>
-            <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
@@ -838,9 +836,6 @@ const AdminPage = () => {
             </form>
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
-            <UserPermissionsPanel organizationId={organizationId} />
-          </TabsContent>
 
           <TabsContent value="branding" className="space-y-6">
             <form onSubmit={handleSubmit}>
