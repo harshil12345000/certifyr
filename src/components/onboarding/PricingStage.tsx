@@ -79,8 +79,8 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
 
     try {
       // Validate all required data
-      if (!data.emailVerified) {
-        throw new Error("Please verify your email before continuing");
+      if (!data.email.trim()) {
+        throw new Error("Email is required");
       }
       if (!data.password) {
         throw new Error("Password is required");
