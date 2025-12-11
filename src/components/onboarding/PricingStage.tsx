@@ -7,7 +7,6 @@ import { Check, Star, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,8 +35,7 @@ const proFeatures = [
   "Priority Email Support"
 ];
 
-export function PricingStage({ data, updateData, onNext, onPrev, loading }: PricingStageProps) {
-  const { signUp } = useAuth();
+export function PricingStage({ data, updateData, onPrev, loading }: PricingStageProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState(false);
@@ -75,57 +73,93 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
 
   const selectedPrice = pricing[data.selectedPlan][data.billingPeriod];
 
-  const handlePayment = async () => {
+  const handleCompleteSignup = async () => {
     setLocalLoading(true);
     setError("");
 
     try {
-      // Check if email was verified in stage 1
+      // Validate all required data
       if (!data.emailVerified) {
-        setError("Please verify your email before continuing");
-        toast({
-          title: "Email Not Verified",
-          description: "Please verify your email in the previous step before proceeding.",
-          variant: "destructive",
-        });
-        setLocalLoading(false);
-        return;
+        throw new Error("Please verify your email before continuing");
+      }
+      if (!data.password) {
+        throw new Error("Password is required");
+      }
+      if (!data.organizationName.trim()) {
+        throw new Error("Organization name is required");
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to continue.",
-          variant: "destructive",
-        });
-        setLocalLoading(false);
-        return;
+      const email = data.email.trim().toLowerCase();
+      const redirectUrl = `${window.location.origin}/`;
+
+      // Step 1: Create the user account with password
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: data.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: data.fullName.trim(),
+            phone_number: `${data.countryCode}-${data.phoneNumber.trim()}`,
+            organization_name: data.organizationName.trim(),
+            organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
+            organization_size: data.organizationSize,
+            organization_website: data.organizationWebsite?.trim() || null,
+            organization_location: data.organizationLocation?.trim() || null,
+            selectedPlan: data.selectedPlan,
+          }
+        }
+      });
+
+      if (signUpError) {
+        throw signUpError;
       }
 
-      // Update user profile with plan selection
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ plan: data.selectedPlan })
-        .eq('user_id', user.id);
+      if (!signUpData.user) {
+        throw new Error("Failed to create user account");
+      }
 
-      if (updateError) throw updateError;
+      // Step 2: Create organization using security definer function
+      const { data: onboardingResult, error: onboardingError } = await supabase.rpc(
+        'complete_user_onboarding',
+        {
+          p_user_id: signUpData.user.id,
+          p_organization_name: data.organizationName.trim(),
+          p_organization_address: data.organizationLocation?.trim() || null,
+          p_organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
+          p_organization_size: data.organizationSize,
+          p_organization_website: data.organizationWebsite?.trim() || null,
+          p_organization_location: data.organizationLocation?.trim() || null,
+          p_plan: data.selectedPlan,
+        }
+      );
+
+      if (onboardingError) {
+        console.error("Onboarding error:", onboardingError);
+        throw onboardingError;
+      }
+
+      const result = onboardingResult as { success: boolean; error?: string; message?: string };
+      if (!result.success) {
+        throw new Error(result.error || "Failed to complete onboarding");
+      }
 
       toast({
         title: "Welcome to Certifyr!",
-        description: "Your account setup is complete.",
+        description: "Your account and organization have been created successfully.",
       });
 
       // Redirect to dashboard
       navigate("/");
     } catch (err: any) {
+      console.error("Signup error:", err);
       setError(err.message || "An unexpected error occurred");
       toast({
         title: "Error",
         description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
       setLocalLoading(false);
     }
   };
@@ -318,13 +352,13 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
           variant="outline"
           onClick={onPrev}
           className="px-8 py-3 border-gray-300 hover:bg-gray-50 transition-transform hover:scale-105"
-          disabled={loading}
+          disabled={loading || localLoading}
         >
           Back
         </Button>
         
         <Button
-          onClick={handlePayment}
+          onClick={handleCompleteSignup}
           disabled={loading || localLoading}
           className="px-8 py-3 bg-[#1b80ff] hover:bg-blue-700 text-lg font-semibold text-white transition-transform duration-200 hover:scale-105"
         >

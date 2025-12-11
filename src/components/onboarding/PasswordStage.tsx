@@ -3,12 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface PasswordStageProps {
   data: OnboardingData;
@@ -20,44 +18,13 @@ interface PasswordStageProps {
 export function PasswordStage({ data, updateData, onNext, onPrev }: PasswordStageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
 
-    setLoading(true);
-    try {
-      // User was created via OTP in PersonalInfoStage (passwordless)
-      // Now set the password on the existing user account
-      const { error } = await supabase.auth.updateUser({
-        password: data.password
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Password Set",
-        description: "Your password has been set successfully.",
-      });
-      
-      // Store password confirmation for later use
-      updateData({ password: data.password, confirmPassword: data.confirmPassword });
-      
-      onNext();
-    } catch (error: any) {
-      console.error("Error setting password:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to set password. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Just proceed to next stage - password will be used when creating account
+    onNext();
   };
 
   const passwordStrength = {
@@ -196,7 +163,6 @@ export function PasswordStage({ data, updateData, onNext, onPrev }: PasswordStag
                 type="button"
                 variant="outline"
                 onClick={onPrev}
-                disabled={loading}
                 className="px-8 py-3 border-gray-300 hover:bg-gray-50 transition-transform hover:scale-105"
               >
                 Back
@@ -204,17 +170,10 @@ export function PasswordStage({ data, updateData, onNext, onPrev }: PasswordStag
               
               <Button
                 type="submit"
-                disabled={!isValid || loading}
+                disabled={!isValid}
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Setting Password...
-                  </>
-                ) : (
-                  "Next"
-                )}
+                Next
               </Button>
             </div>
           </form>
