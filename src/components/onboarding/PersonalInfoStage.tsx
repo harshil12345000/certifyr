@@ -8,7 +8,7 @@ import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Check, Loader2, Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -28,193 +28,52 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 }) => {
   const { toast } = useToast();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [verifyingCode, setVerifyingCode] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [showExistingEmailDialog, setShowExistingEmailDialog] = useState(false);
-
-  const handleSendCode = async () => {
-    // Validate email first
-    const email = data.email.trim().toLowerCase();
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setErrors(prev => ({
-        ...prev,
-        email: "Please enter a valid email address"
-      }));
-      return;
-    }
-
-    // Require full name
-    if (!data.fullName.trim()) {
-      setErrors(prev => ({
-        ...prev,
-        fullName: "Full name is required"
-      }));
-      return;
-    }
-
-    // Require phone number before sending code
-    const phoneNumber = data.phoneNumber.trim();
-    if (!phoneNumber) {
-      setErrors(prev => ({
-        ...prev,
-        phoneNumber: "Phone number is required before sending code"
-      }));
-      return;
-    }
-    
-    setSendingCode(true);
-    try {
-      // Check if email already exists using edge function
-      const { data: checkResult, error: checkError } = await supabase.functions.invoke("check-email-exists", {
-        body: { email }
-      });
-
-      if (checkError) {
-        console.error("Error checking email:", checkError);
-        throw checkError;
-      }
-
-      if (checkResult?.exists) {
-        setSendingCode(false);
-        setShowExistingEmailDialog(true);
-        return;
-      }
-
-      // Send OTP for email verification only (no account creation)
-      // We use magiclink type which doesn't create a user, just verifies the email
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: false, // Don't create user, just send verification code
-        }
-      });
-      
-      // If user doesn't exist, that's expected - we'll create them at the end
-      // The OTP will still be sent for verification purposes
-      if (error && !error.message.includes("User not found")) {
-        throw error;
-      }
-      
-      // Update data with normalized email
-      updateData({ email: email });
-      
-      setCodeSent(true);
-      setErrors(prev => ({
-        ...prev,
-        email: ""
-      }));
-      toast({
-        title: "Verification Code Sent",
-        description: "Please check your email for the verification code."
-      });
-    } catch (error: any) {
-      console.error("Error in handleSendCode:", error);
-      // If the error is "User not found", that's expected behavior
-      // We'll still mark the code as sent so user can proceed
-      if (error.message?.includes("Signups not allowed") || error.message?.includes("User not found")) {
-        // For new users, we'll use a different approach - send OTP with shouldCreateUser: true
-        try {
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email: data.email.trim().toLowerCase(),
-            options: {
-              shouldCreateUser: true,
-              data: {
-                full_name: data.fullName.trim(),
-                phone_number: `${data.countryCode}-${data.phoneNumber.trim()}`
-              }
-            }
-          });
-          
-          if (otpError) throw otpError;
-          
-          setCodeSent(true);
-          setErrors(prev => ({ ...prev, email: "" }));
-          toast({
-            title: "Verification Code Sent",
-            description: "Please check your email for the verification code."
-          });
-        } catch (retryError: any) {
-          toast({
-            title: "Error",
-            description: retryError.message || "Failed to send verification code. Please try again.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to send verification code. Please try again.",
-          variant: "destructive"
-        });
-      }
-    } finally {
-      setSendingCode(false);
-    }
-  };
-  
-  const handleVerifyCode = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
-      toast({
-        title: "Invalid Code",
-        description: "Please enter the 6-digit verification code.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setVerifyingCode(true);
-    try {
-      // Verify OTP - this confirms the email is valid
-      const { data: verifyData, error } = await supabase.auth.verifyOtp({
-        email: data.email.trim().toLowerCase(),
-        token: verificationCode,
-        type: 'email'
-      });
-      
-      if (error) throw error;
-      
-      // Email is now verified - sign out so we can create proper account at the end
-      // The user will be created with password in PricingStage
-      await supabase.auth.signOut();
-      
-      updateData({ emailVerified: true });
-      
-      toast({
-        title: "Email Verified",
-        description: "Your email has been verified successfully!"
-      });
-    } catch (error: any) {
-      console.error("Error verifying code:", error);
-      toast({
-        title: "Verification Failed",
-        description: error.message || "Invalid code. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setVerifyingCode(false);
-    }
-  };
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
+    
     if (!data.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!data.email.trim()) newErrors.email = "Email is required";
     if (!/\S+@\S+\.\S+/.test(data.email)) newErrors.email = "Invalid email format";
     if (!data.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
-    if (!data.emailVerified) newErrors.email = "Please verify your email first";
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // Just proceed to next stage - no account creation here
-    onNext();
+    // Check if email already exists
+    setCheckingEmail(true);
+    try {
+      const email = data.email.trim().toLowerCase();
+      const { data: checkResult, error: checkError } = await supabase.functions.invoke("check-email-exists", {
+        body: { email }
+      });
+
+      if (checkError) {
+        console.error("Error checking email:", checkError);
+        // Continue anyway - we'll catch it at signup
+      } else if (checkResult?.exists) {
+        setShowExistingEmailDialog(true);
+        setCheckingEmail(false);
+        return;
+      }
+
+      // Normalize and store email
+      updateData({ email: email });
+      onNext();
+    } catch (error) {
+      console.error("Error checking email:", error);
+      // Continue anyway
+      onNext();
+    } finally {
+      setCheckingEmail(false);
+    }
   };
 
   return (
@@ -328,97 +187,26 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={data.email}
-                    onChange={e => {
-                      updateData({ email: e.target.value, emailVerified: false });
-                      setErrors(prev => ({ ...prev, email: "" }));
-                      setCodeSent(false);
-                      setVerificationCode("");
-                    }}
-                    disabled={data.emailVerified}
-                    className={errors.email ? "border-destructive" : ""}
-                  />
-                  {!data.emailVerified && (
-                    <Button
-                      type="button"
-                      onClick={handleSendCode}
-                      disabled={sendingCode || !data.email.trim() || data.emailVerified}
-                      variant="outline"
-                      className="whitespace-nowrap"
-                    >
-                      {sendingCode ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Checking...
-                        </>
-                      ) : data.emailVerified ? (
-                        <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Verified
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Send Code
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  {data.emailVerified && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">Verified</span>
-                    </div>
-                  )}
-                </div>
-
-                {codeSent && !data.emailVerified && (
-                  <div className="flex gap-2 px-0">
-                    <Input
-                      type="text"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCode}
-                      onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      maxLength={6}
-                      className="font-mono text-center text-lg tracking-widest mx-0 px-0"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleVerifyCode}
-                      disabled={verifyingCode || verificationCode.length !== 6}
-                      className="whitespace-nowrap px-[14px]"
-                    >
-                      {verifyingCode ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Verify Code
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
+              <Input
+                id="email"
+                type="email"
+                placeholder="john@example.com"
+                value={data.email}
+                onChange={e => {
+                  updateData({ email: e.target.value });
+                  setErrors(prev => ({ ...prev, email: "" }));
+                }}
+                className={errors.email ? "border-destructive" : ""}
+              />
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
 
             <div className="flex justify-between pt-4">
               <Button type="button" variant="outline" onClick={onPrev}>
                 Back
               </Button>
-              <Button type="submit" disabled={loading || !data.emailVerified}>
-                {loading ? "Processing..." : "Next"}
+              <Button type="submit" disabled={checkingEmail}>
+                {checkingEmail ? "Checking..." : "Next"}
               </Button>
             </div>
           </form>

@@ -16,7 +16,6 @@ export interface OnboardingData {
   email: string;
   countryCode: string;
   phoneNumber: string;
-  emailVerified: boolean;
   
   // Organization Info
   organizationName: string;
@@ -53,7 +52,6 @@ export default function Onboarding() {
     email: "",
     countryCode: "+91",
     phoneNumber: "",
-    emailVerified: false,
     organizationName: "",
     organizationType: "",
     organizationTypeOther: "",
@@ -65,14 +63,6 @@ export default function Onboarding() {
     selectedPlan: "pro",
     billingPeriod: "yearly",
   });
-
-  // Check on mount if email was verified
-  React.useEffect(() => {
-    const verifiedEmail = localStorage.getItem('emailVerified');
-    if (verifiedEmail && verifiedEmail === formData.email) {
-      setFormData(prev => ({ ...prev, emailVerified: true }));
-    }
-  }, [formData.email]);
 
   const updateFormData = (data: Partial<OnboardingData>) => {
     setFormData(prev => ({ ...prev, ...data }));
