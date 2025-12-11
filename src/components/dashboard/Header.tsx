@@ -171,11 +171,11 @@ export function Header() {
     if (!user) return;
     setLoadingNotifications(true);
     const fetchNotifications = async () => {
-      // 1. Fetch admin's organization
+      // 1. Fetch user's organization (any role, not just admin)
       const {
         data: orgs,
         error: orgsError
-      } = await supabase.from("organization_members").select("organization_id").eq("user_id", user.id).eq("role", "admin").single();
+      } = await supabase.from("organization_members").select("organization_id").eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle();
       if (orgsError || !orgs?.organization_id) {
         setNotifications([]);
         setUnread([]);
@@ -215,6 +215,26 @@ export function Header() {
       setLoadingNotifications(false);
     };
     fetchNotifications();
+
+    // Set up real-time subscription for new notifications
+    const channel = supabase
+      .channel("header-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   // Mark as read in database
