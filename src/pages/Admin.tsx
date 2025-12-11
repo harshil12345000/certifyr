@@ -267,16 +267,6 @@ const AdminPage = () => {
     signature: null,
   });
 
-  // Helper function to parse country from an address/location string (e.g., on signup)
-  function parseCountry(address: string | null): string {
-    if (!address) return "";
-    const parts = address.split("||").map((p) => p.trim());
-    if (parts.length >= 5) {
-      // Format: street||city||state||postal||country
-      return parts[4] || "";
-    }
-    return "";
-  }
 
   // Fetch user profile data and organization data
   useEffect(() => {
@@ -328,19 +318,27 @@ const AdminPage = () => {
         const orgPhone = profileData?.phone_number || orgData?.phone || "";
         const orgEmail = profileData?.email || orgData?.email || "";
 
-        // Parse address/location for individual fields using || delimiter
-        const addressParts = orgLocation
-          ? orgLocation.split("||").map((x: string) => x.trim())
+        // Parse address for individual fields using || delimiter
+        // org.address uses || delimiter: street||city||state||postal||country
+        // organization_location from signup just contains country name (no delimiter)
+        const orgAddress = orgData?.address || "";
+        const addressParts = orgAddress
+          ? orgAddress.split("||").map((x: string) => x.trim())
           : [];
+        
+        // Check if orgLocation has delimiters (full address) or is just country name
+        const signupCountry = profileData?.organization_location || "";
+        const hasAddressDelimiters = orgAddress.includes("||");
 
         setFormState((prev) => ({
           ...prev,
           organizationName: orgName,
-          streetAddress: addressParts[0] || "",
-          city: addressParts[1] || "",
-          state: addressParts[2] || "",
-          postalCode: addressParts[3] || "",
-          country: addressParts[4] || "",
+          streetAddress: hasAddressDelimiters ? (addressParts[0] || "") : "",
+          city: hasAddressDelimiters ? (addressParts[1] || "") : "",
+          state: hasAddressDelimiters ? (addressParts[2] || "") : "",
+          postalCode: hasAddressDelimiters ? (addressParts[3] || "") : "",
+          // Use parsed country from address if available, otherwise use signup country
+          country: hasAddressDelimiters ? (addressParts[4] || "") : signupCountry,
           phoneNumber: orgPhone,
           email: orgEmail,
           organizationType: profileData?.organization_type || "",
