@@ -42,11 +42,12 @@ const navItems: NavItem[] = [
     path: "/history",
     icon: <Clock className="h-5 w-5" />,
   },
-  {
-    name: "Request Portal",
-    path: "/request-portal",
-    icon: <DoorOpen className="h-5 w-5" />,
-  },
+  // Request Portal tab hidden for now
+  // {
+  //   name: "Request Portal",
+  //   path: "/request-portal",
+  //   icon: <DoorOpen className="h-5 w-5" />,
+  // },
   { name: "Admin", path: "/admin", icon: <Users className="h-5 w-5" /> },
   {
     name: "Settings",
