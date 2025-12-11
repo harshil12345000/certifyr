@@ -470,6 +470,31 @@ const AdminPage = () => {
 
           if (orgUpdateError) throw orgUpdateError;
         } else {
+          // Generate a base portal slug
+          let baseSlug = formState.organizationName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          
+          // Ensure slug starts with a letter
+          if (!/^[a-z]/.test(baseSlug)) {
+            baseSlug = 'org-' + baseSlug;
+          }
+          
+          // Ensure minimum length of 3 characters
+          if (baseSlug.length < 3) {
+            baseSlug = baseSlug + '-org';
+          }
+
+          // Generate a unique slug using the database function
+          const { data: uniqueSlug, error: slugError } = await supabase.rpc(
+            'generate_unique_slug',
+            { org_name: formState.organizationName, org_id: '00000000-0000-0000-0000-000000000000' }
+          );
+          
+          const finalSlug = slugError ? baseSlug + '-' + Date.now() : uniqueSlug;
+          console.log("Creating new organization with slug:", finalSlug);
+          
           // Create new organization
           const { data: newOrg, error: orgCreateError } = await supabase
             .from("organizations")
@@ -478,15 +503,15 @@ const AdminPage = () => {
               address: fullAddress,
               phone: formState.phoneNumber,
               email: formState.email,
-              portal_slug: formState.organizationName
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '')
+              portal_slug: finalSlug
             })
             .select()
             .single();
 
-          if (orgCreateError) throw orgCreateError;
+          if (orgCreateError) {
+            console.error("Organization create error:", orgCreateError);
+            throw orgCreateError;
+          }
 
           currentOrgId = newOrg.id;
           setOrganizationId(currentOrgId);
@@ -498,9 +523,13 @@ const AdminPage = () => {
               organization_id: currentOrgId,
               user_id: user.id,
               role: "admin",
+              status: "active",
             });
 
-          if (memberError) throw memberError;
+          if (memberError) {
+            console.error("Organization member insert error:", memberError);
+            throw memberError;
+          }
         }
       }
 
