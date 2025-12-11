@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizationId } from "@/hooks/useOrganizationId";
 import { toast } from "sonner";
 import { Trash2, Eye, EyeOff, Calendar } from "lucide-react";
 
@@ -26,6 +27,7 @@ interface Announcement {
 export const AnnouncementAdminPanel: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -33,16 +35,24 @@ export const AnnouncementAdminPanel: React.FC = () => {
     is_global: false,
   });
   const { user } = useAuth();
+  const { orgId, loading: orgLoading } = useOrganizationId();
 
   useEffect(() => {
-    fetchAnnouncements();
-  }, []);
+    if (!orgLoading && orgId) {
+      fetchAnnouncements();
+    } else if (!orgLoading && !orgId) {
+      setLoading(false);
+    }
+  }, [orgId, orgLoading]);
 
   const fetchAnnouncements = async () => {
+    if (!orgId) return;
+    
     try {
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
+        .eq('organization_id', orgId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -57,10 +67,15 @@ export const AnnouncementAdminPanel: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !orgId) {
+      toast.error('Organization not found');
+      return;
+    }
 
+    setSubmitting(true);
     try {
-      const { error } = await supabase
+      // Create the announcement
+      const { data: announcementData, error: announcementError } = await supabase
         .from('announcements')
         .insert({
           title: formData.title,
@@ -68,10 +83,29 @@ export const AnnouncementAdminPanel: React.FC = () => {
           expires_at: formData.expires_at || null,
           is_global: formData.is_global,
           created_by: user.id,
-          organization_id: formData.is_global ? null : user.id, // Use user.id as org proxy
+          organization_id: orgId,
+        })
+        .select()
+        .single();
+
+      if (announcementError) throw announcementError;
+
+      // Create a notification for all users in the organization
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          org_id: orgId,
+          subject: `New Announcement: ${formData.title}`,
+          body: formData.content,
+          type: 'announcement',
+          data: { announcement_id: announcementData.id },
+          read_by: [],
         });
 
-      if (error) throw error;
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Don't fail the whole operation if notification fails
+      }
 
       toast.success('Announcement created successfully');
       setFormData({ title: "", content: "", expires_at: "", is_global: false });
@@ -79,6 +113,8 @@ export const AnnouncementAdminPanel: React.FC = () => {
     } catch (error) {
       console.error('Error creating announcement:', error);
       toast.error('Failed to create announcement');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -122,8 +158,18 @@ export const AnnouncementAdminPanel: React.FC = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
+  if (loading || orgLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (!orgId) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">No organization found. Please set up your organization first.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -176,8 +222,8 @@ export const AnnouncementAdminPanel: React.FC = () => {
               <Label htmlFor="is_global">Global Announcement</Label>
             </div>
 
-            <Button type="submit" className="w-full">
-              Create Announcement
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? "Creating..." : "Create Announcement"}
             </Button>
           </form>
         </CardContent>
