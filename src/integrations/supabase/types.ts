@@ -849,6 +849,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_user_onboarding: {
+        Args: {
+          p_organization_address?: string
+          p_organization_location?: string
+          p_organization_name: string
+          p_organization_size?: string
+          p_organization_type?: string
+          p_organization_website?: string
+          p_plan?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       delete_user_account: { Args: never; Returns: Json }
       generate_unique_slug: {
         Args: { org_id: string; org_name: string }

@@ -10,8 +10,6 @@ import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { Search, Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface OrganizationInfoStageProps {
   data: OnboardingData;
@@ -41,11 +39,9 @@ const organizationSizes = [
 export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: OrganizationInfoStageProps) {
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const newErrors: Record<string, string> = {};
@@ -59,117 +55,9 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
       return;
     }
 
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to continue.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update user profile with organization info
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .update({
-          organization_name: data.organizationName.trim(),
-          organization_type: data.organizationType,
-          organization_size: data.organizationSize,
-          organization_website: data.organizationWebsite.trim() || null,
-          organization_location: data.organizationLocation.trim() || null,
-        })
-        .eq('user_id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Check if user already has an organization
-      const { data: existingMembership } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (!existingMembership) {
-        // Generate unique portal slug
-        const { data: uniqueSlug, error: slugError } = await supabase.rpc(
-          'generate_unique_slug',
-          { org_name: data.organizationName.trim(), org_id: '00000000-0000-0000-0000-000000000000' }
-        );
-
-        let finalSlug = uniqueSlug;
-        if (slugError || !uniqueSlug) {
-          finalSlug = data.organizationName.trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '') + '-' + Date.now();
-        }
-        if (!/^[a-z]/.test(finalSlug)) {
-          finalSlug = 'org-' + finalSlug;
-        }
-
-        // Create organization
-        const { data: newOrg, error: orgError } = await supabase
-          .from('organizations')
-          .insert({
-            name: data.organizationName.trim(),
-            address: data.organizationLocation.trim() || null,
-            portal_slug: finalSlug,
-          })
-          .select()
-          .single();
-
-        if (orgError) {
-          console.error("Organization creation error:", orgError);
-          throw orgError;
-        }
-
-        // Add user as admin member
-        const { error: memberError } = await supabase
-          .from('organization_members')
-          .insert({
-            organization_id: newOrg.id,
-            user_id: user.id,
-            role: 'admin',
-            status: 'active',
-          });
-
-        if (memberError) {
-          console.error("Member creation error:", memberError);
-          throw memberError;
-        }
-
-        // Initialize user statistics
-        await supabase
-          .from('user_statistics')
-          .insert({
-            user_id: user.id,
-            organization_id: newOrg.id,
-            documents_created: 0,
-            documents_signed: 0,
-            pending_documents: 0,
-            portal_members: 0,
-            requested_documents: 0,
-            total_verifications: 0,
-          });
-      }
-
-      onNext();
-    } catch (error: any) {
-      console.error("Error saving organization:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save organization info. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Just proceed to next stage - no DB operations here
+    // All data will be saved at the end in PricingStage
+    onNext();
   };
 
   const isValid = data.organizationName && data.organizationType && data.organizationSize && data.organizationLocation && data.organizationWebsite;
@@ -368,10 +256,10 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
               
               <Button
                 type="submit"
-                disabled={!isValid || loading}
+                disabled={!isValid}
                 className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform hover:scale-105"
               >
-                {loading ? "Saving..." : "Next"}
+                Next
               </Button>
             </div>
           </form>
