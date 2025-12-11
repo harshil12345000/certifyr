@@ -231,26 +231,8 @@ const NewDocuments = () => {
         </div>
 
         {/* Categories Overview */}
-        <h2 className="text-lg font-medium mt-8 mb-4">Browse by Category</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {categories.map(category => {
-          const count = documentMetadata.filter(d => d.category === category).length;
-          return <div key={category} className="glass-card p-5 flex flex-col cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
-            setSelectedCategories([category]);
-            setSearchQuery("");
-          }}>
-                <div className="mb-2">
-                  <Badge variant="outline" className="bg-primary/10 border-primary/20">
-                    {count} Documents
-                  </Badge>
-                </div>
-                <h3 className="font-medium text-lg mb-1">{category}</h3>
-                <Button variant="ghost" className="justify-start p-0 hover:bg-transparent hover:text-primary mt-auto" size="sm">
-                  View category <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>;
-        })}
-        </div>
+        
+        
       </div>
     </DashboardLayout>;
 };
