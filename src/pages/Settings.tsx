@@ -261,19 +261,22 @@ const Settings = () => {
         return;
       }
 
-      console.log("Account deleted successfully, redirecting...");
+      console.log("Account deleted successfully, signing out...");
       toast.success("Account deleted successfully. Redirecting...");
       setShowDeleteFinalDialog(false);
 
-      // Clear auth data and redirect to landing page
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("lastLogin");
+      // Sign out first to clear the session completely
+      await signOut();
 
-      // Redirect to landing page after a brief delay
+      // Clear any remaining auth data
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Force redirect to auth page after a brief delay
       setTimeout(() => {
-        console.log("Redirecting to home page...");
-        window.location.href = "/";
-      }, 1500);
+        console.log("Redirecting to auth page...");
+        window.location.href = "/auth";
+      }, 1000);
     } catch (err: any) {
       console.error("Unexpected error during account deletion:", err);
       toast.error("Error: " + (err?.message || "something went wrong."));
