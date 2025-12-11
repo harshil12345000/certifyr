@@ -105,7 +105,7 @@ const Index = () => {
           {/* Popular Templates - 3/7 width */}
           <div className="glass-card p-6 lg:col-span-3">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Popular Templates</h2>
+              <h2 className="text-lg font-medium">Popular Documents</h2>
               <Button variant="ghost" size="sm" className="text-primary">
                 View All
               </Button>
@@ -193,11 +193,11 @@ export function BookmarksPage() {
     </DashboardLayout>;
 }
 export default Index;
-
 declare global {
   interface Window {
     Featurebase: (...args: any[]) => void;
   }
 }
-
-window.Featurebase("boot", { appId: "684fd05695489274401afcbc" });
+window.Featurebase("boot", {
+  appId: "684fd05695489274401afcbc"
+});
