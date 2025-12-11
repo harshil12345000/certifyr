@@ -38,7 +38,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [showExistingEmailDialog, setShowExistingEmailDialog] = useState(false);
   const handleSendCode = async () => {
     // Validate email first
-    const email = data.email.trim();
+    const email = data.email.trim().toLowerCase();
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setErrors(prev => ({
         ...prev,
@@ -47,7 +47,16 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       return;
     }
 
-    // Require phone number before sending code so we store full value in user_profiles
+    // Require full name
+    if (!data.fullName.trim()) {
+      setErrors(prev => ({
+        ...prev,
+        fullName: "Full name is required"
+      }));
+      return;
+    }
+
+    // Require phone number before sending code
     const phoneNumber = data.phoneNumber.trim();
     if (!phoneNumber) {
       setErrors(prev => ({
@@ -56,6 +65,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       }));
       return;
     }
+    
     setSendingCode(true);
     try {
       // Check if email already exists using edge function
@@ -77,10 +87,9 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
         return;
       }
 
-      // Send OTP to create account early with full phone (country code + number)
-      const {
-        error
-      } = await supabase.auth.signInWithOtp({
+      // Send OTP for email verification - this creates a temporary/pending user
+      // that will be properly activated when password is set in PasswordStage
+      const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           data: {
@@ -89,7 +98,12 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
           }
         }
       });
+      
       if (error) throw error;
+      
+      // Update data with normalized email
+      updateData({ email: email });
+      
       setCodeSent(true);
       setErrors(prev => ({
         ...prev,
@@ -110,6 +124,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
       setSendingCode(false);
     }
   };
+  
   const handleVerifyCode = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
       toast({
@@ -121,21 +136,24 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
     }
     setVerifyingCode(true);
     try {
-      // Verify OTP and create account
-      const {
-        error
-      } = await supabase.auth.verifyOtp({
-        email: data.email.trim(),
+      // Verify OTP - this confirms the email is valid
+      const { data: verifyData, error } = await supabase.auth.verifyOtp({
+        email: data.email.trim().toLowerCase(),
         token: verificationCode,
         type: 'email'
       });
+      
       if (error) throw error;
+      
+      // Email is now verified, user account exists but is passwordless
+      // We'll set the password in PasswordStage
       updateData({
         emailVerified: true
       });
+      
       toast({
         title: "Email Verified",
-        description: "Your account has been created successfully!"
+        description: "Your email has been verified successfully!"
       });
     } catch (error: any) {
       console.error("Error verifying code:", error);
