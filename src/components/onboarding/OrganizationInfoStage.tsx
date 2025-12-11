@@ -18,6 +18,7 @@ interface OrganizationInfoStageProps {
   updateData: (data: Partial<OnboardingData>) => void;
   onNext: () => void;
   onPrev: () => void;
+  loading?: boolean;
 }
 
 const organizationTypes = [
@@ -38,12 +39,14 @@ const organizationSizes = [
 ];
 
 
-export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: OrganizationInfoStageProps) {
+export function OrganizationInfoStage({ data, updateData, onNext, onPrev, loading: externalLoading }: OrganizationInfoStageProps) {
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [internalLoading, setInternalLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  
+  const loading = externalLoading || internalLoading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +62,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
       return;
     }
 
-    setLoading(true);
+    setInternalLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -95,7 +98,7 @@ export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: Orga
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setInternalLoading(false);
     }
   };
 

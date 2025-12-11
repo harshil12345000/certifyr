@@ -7,10 +7,6 @@ import { Check, Star, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 interface PricingStageProps {
   data: OnboardingData;
@@ -37,9 +33,6 @@ const proFeatures = [
 ];
 
 export function PricingStage({ data, updateData, onNext, onPrev, loading }: PricingStageProps) {
-  const { signUp } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState(false);
   
   // Set defaults on mount
@@ -48,7 +41,6 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
       updateData({ billingPeriod: 'yearly', selectedPlan: 'pro' });
     }
   }, []);
-  const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pricing = {
@@ -76,58 +68,8 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
   const selectedPrice = pricing[data.selectedPlan][data.billingPeriod];
 
   const handlePayment = async () => {
-    setLocalLoading(true);
-    setError("");
-
-    try {
-      // Check if email was verified in stage 1
-      if (!data.emailVerified) {
-        setError("Please verify your email before continuing");
-        toast({
-          title: "Email Not Verified",
-          description: "Please verify your email in the previous step before proceeding.",
-          variant: "destructive",
-        });
-        setLocalLoading(false);
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to continue.",
-          variant: "destructive",
-        });
-        setLocalLoading(false);
-        return;
-      }
-
-      // Update user profile with plan selection
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ plan: data.selectedPlan })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Welcome to Certifyr!",
-        description: "Your account setup is complete.",
-      });
-
-      // Redirect to dashboard
-      navigate("/");
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
-      toast({
-        title: "Error",
-        description: err.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-      setLocalLoading(false);
-    }
+    // Just call onNext - the parent handles the actual submission
+    onNext();
   };
 
   return (
@@ -325,13 +267,13 @@ export function PricingStage({ data, updateData, onNext, onPrev, loading }: Pric
         
         <Button
           onClick={handlePayment}
-          disabled={loading || localLoading}
+          disabled={loading}
           className="px-8 py-3 bg-[#1b80ff] hover:bg-blue-700 text-lg font-semibold text-white transition-transform duration-200 hover:scale-105"
         >
-          {(loading || localLoading) ? (
+          {loading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Creating Account...
+              Completing Setup...
             </>
           ) : (
             `Get ${data.selectedPlan === 'pro' ? 'Pro' : 'Basic'} – $${selectedPrice}${isYearly ? '/year' : '/month'}`
