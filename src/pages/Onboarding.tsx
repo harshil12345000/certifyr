@@ -1,21 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
+import { supabase } from "@/integrations/supabase/client";
 
 import { PersonalInfoStage } from "@/components/onboarding/PersonalInfoStage";
 import { OrganizationInfoStage } from "@/components/onboarding/OrganizationInfoStage";
-import { PasswordStage } from "@/components/onboarding/PasswordStage";
 import { PricingStage } from "@/components/onboarding/PricingStage";
 
 export interface OnboardingData {
-  // Personal Info
+  // Personal Info + Password (combined in stage 1)
   fullName: string;
   email: string;
   countryCode: string;
   phoneNumber: string;
+  password: string;
+  confirmPassword: string;
   emailVerified: boolean;
   
   // Organization Info
@@ -26,25 +28,20 @@ export interface OnboardingData {
   organizationWebsite?: string;
   organizationLocation: string;
   
-  // Password
-  password: string;
-  confirmPassword: string;
-  
   // Plan
   selectedPlan: 'basic' | 'pro';
   billingPeriod: 'monthly' | 'yearly';
 }
 
 const stages = [
-  { id: 1, name: "Personal", title: "Personal Information" },
+  { id: 1, name: "Account", title: "Create Your Account" },
   { id: 2, name: "Organization", title: "Organization Information" },
-  { id: 3, name: "Password", title: "Password" },
-  { id: 4, name: "Plan", title: "Choose Your Plan" },
+  { id: 3, name: "Plan", title: "Choose Your Plan" },
 ];
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [currentStage, setCurrentStage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -53,6 +50,8 @@ export default function Onboarding() {
     email: "",
     countryCode: "+91",
     phoneNumber: "",
+    password: "",
+    confirmPassword: "",
     emailVerified: false,
     organizationName: "",
     organizationType: "",
@@ -60,19 +59,18 @@ export default function Onboarding() {
     organizationSize: "",
     organizationWebsite: "",
     organizationLocation: "",
-    password: "",
-    confirmPassword: "",
     selectedPlan: "pro",
     billingPeriod: "yearly",
   });
 
-  // Check on mount if email was verified
-  React.useEffect(() => {
-    const verifiedEmail = localStorage.getItem('emailVerified');
-    if (verifiedEmail && verifiedEmail === formData.email) {
+  // If user is already authenticated and has completed stage 1, move to stage 2
+  useEffect(() => {
+    if (user && currentStage === 1) {
+      // User is logged in, they've completed account creation
       setFormData(prev => ({ ...prev, emailVerified: true }));
+      setCurrentStage(2);
     }
-  }, [formData.email]);
+  }, [user, currentStage]);
 
   const updateFormData = (data: Partial<OnboardingData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -90,39 +88,79 @@ export default function Onboarding() {
     }
   };
 
-  const handleSignUp = async () => {
-    setLoading(true);
-    try {
-      const { error } = await signUp(formData.email, formData.password, {
-        fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber,
-        organizationName: formData.organizationName,
-        organizationType: formData.organizationType,
-        organizationTypeOther: formData.organizationTypeOther,
-        organizationSize: formData.organizationSize,
-        organizationWebsite: formData.organizationWebsite,
-        organizationLocation: formData.organizationLocation,
-      });
-
-      if (error) {
-        toast({
-          title: "Sign Up Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        // Clear the email verification flag from localStorage
-        localStorage.removeItem('emailVerified');
-        
-        toast({
-          title: "Account Created!",
-          description: "Welcome to Certifyr! Continue onboarding to finish setup.",
-        });
-      }
-    } catch (error) {
+  const handleOrganizationSubmit = async () => {
+    if (!user) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "You must be logged in to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Update user_profiles with organization info
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          organization_name: formData.organizationName.trim(),
+          organization_type: formData.organizationType === "Other" 
+            ? formData.organizationTypeOther?.trim() 
+            : formData.organizationType,
+          organization_size: formData.organizationSize,
+          organization_website: formData.organizationWebsite?.trim() || null,
+          organization_location: formData.organizationLocation.trim(),
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      nextStage();
+    } catch (error: any) {
+      console.error("Error updating organization:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save organization info.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePlanSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Update plan in user_profiles
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ plan: formData.selectedPlan })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Welcome to Certifyr!",
+        description: "Your account setup is complete.",
+      });
+
+      // Redirect to dashboard
+      navigate("/");
+    } catch (error: any) {
+      console.error("Error updating plan:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save plan selection.",
         variant: "destructive",
       });
     } finally {
@@ -146,25 +184,17 @@ export default function Onboarding() {
           <OrganizationInfoStage
             data={formData}
             updateData={updateFormData}
-            onNext={nextStage}
+            onNext={handleOrganizationSubmit}
             onPrev={prevStage}
+            loading={loading}
           />
         );
       case 3:
         return (
-          <PasswordStage
-            data={formData}
-            updateData={updateFormData}
-            onNext={nextStage}
-            onPrev={prevStage}
-          />
-        );
-      case 4:
-        return (
           <PricingStage
             data={formData}
             updateData={updateFormData}
-            onNext={handleSignUp}
+            onNext={handlePlanSubmit}
             onPrev={prevStage}
             loading={loading}
           />
