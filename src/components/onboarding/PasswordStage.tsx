@@ -29,7 +29,8 @@ export function PasswordStage({ data, updateData, onNext, onPrev }: PasswordStag
 
     setLoading(true);
     try {
-      // Set the password on the user account (user was created via OTP in PersonalInfoStage)
+      // User was created via OTP in PersonalInfoStage (passwordless)
+      // Now set the password on the existing user account
       const { error } = await supabase.auth.updateUser({
         password: data.password
       });
@@ -42,6 +43,9 @@ export function PasswordStage({ data, updateData, onNext, onPrev }: PasswordStag
         title: "Password Set",
         description: "Your password has been set successfully.",
       });
+      
+      // Store password confirmation for later use
+      updateData({ password: data.password, confirmPassword: data.confirmPassword });
       
       onNext();
     } catch (error: any) {
