@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,9 +20,7 @@ export default function ResetPassword() {
   const [isValidating, setIsValidating] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [tokenInfo, setTokenInfo] = useState({ type: '', hasToken: false });
 
-  // Password strength validation
   const getPasswordStrength = (password: string) => {
     if (!password) return { score: 0, text: "", color: "" };
     
@@ -48,27 +46,20 @@ export default function ResetPassword() {
   const passwordStrength = getPasswordStrength(password);
   const isPasswordValid = passwordStrength.score >= 3;
 
-  // Validate the reset token on component mount
   useEffect(() => {
     const validateToken = async () => {
       setIsValidating(true);
       
       try {
-        console.log('ResetPassword: Validating token');
-        console.log('URL hash:', window.location.hash);
-        console.log('URL search:', window.location.search);
-
-        // First, check if we already have a valid session (from /auth/confirm redirect)
+        // Check for existing valid session first
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          console.log('Valid session found, proceeding with password reset');
           setIsValidToken(true);
-          setTokenInfo({ type: 'recovery', hasToken: true });
           setIsValidating(false);
           return;
         }
 
-        // Try hash format first (implicit flow: #access_token=...&type=recovery)
+        // Try hash format (implicit flow: #access_token=...&type=recovery)
         const hash = window.location.hash;
         if (hash) {
           const hashParams = new URLSearchParams(hash.substring(1));
@@ -76,67 +67,45 @@ export default function ResetPassword() {
           const refreshToken = hashParams.get('refresh_token');
           const hashType = hashParams.get('type');
 
-          console.log('Hash params found:', { hasAccessToken: !!accessToken, type: hashType });
-
           if (accessToken && hashType === 'recovery') {
-            console.log('Valid recovery token found in hash, establishing session...');
-            
             const { error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || ''
             });
 
-            if (error) {
-              console.error('Failed to establish recovery session:', error);
-              setIsValidToken(false);
-              setTokenInfo({ type: 'recovery', hasToken: true });
-            } else {
-              console.log('Recovery session established successfully from hash');
+            if (!error) {
               setIsValidToken(true);
-              setTokenInfo({ type: 'recovery', hasToken: true });
+              setIsValidating(false);
+              // Clear hash from URL
+              window.history.replaceState(null, '', window.location.pathname);
+              return;
             }
-            setIsValidating(false);
-            return;
           }
         }
 
         // Try query parameter format (PKCE flow: ?token_hash=...&type=recovery)
-        const search = window.location.search;
-        if (search) {
-          const queryParams = new URLSearchParams(search);
-          const tokenHash = queryParams.get('token_hash');
-          const queryType = queryParams.get('type') as 'recovery' | null;
+        const queryParams = new URLSearchParams(window.location.search);
+        const tokenHash = queryParams.get('token_hash');
+        const queryType = queryParams.get('type') as 'recovery' | null;
 
-          console.log('Query params found:', { hasTokenHash: !!tokenHash, type: queryType });
+        if (tokenHash && queryType === 'recovery') {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: queryType,
+          });
 
-          if (tokenHash && queryType === 'recovery') {
-            console.log('Valid token_hash found, verifying OTP...');
-            
-            const { data, error } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: queryType,
-            });
-
-            if (error || !data.session) {
-              console.error('Token verification failed:', error);
-              setIsValidToken(false);
-              setTokenInfo({ type: 'recovery', hasToken: true });
-            } else {
-              console.log('Token verified successfully via verifyOtp');
-              setIsValidToken(true);
-              setTokenInfo({ type: 'recovery', hasToken: true });
-            }
+          if (!error && data.session) {
+            setIsValidToken(true);
             setIsValidating(false);
+            // Clear query params from URL
+            window.history.replaceState(null, '', window.location.pathname);
             return;
           }
         }
 
-        // No valid token found in any format
-        console.warn('No valid recovery token found in URL and no active session');
+        // No valid token found
         setIsValidToken(false);
-        setTokenInfo({ type: '', hasToken: false });
       } catch (error) {
-        console.error('Token validation error:', error);
         setIsValidToken(false);
       } finally {
         setIsValidating(false);
@@ -144,7 +113,7 @@ export default function ResetPassword() {
     };
 
     validateToken();
-  }, [toast]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,30 +139,23 @@ export default function ResetPassword() {
     setIsLoading(true);
     
     try {
-      console.log('Updating password...');
-      
-      // Update password
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
       if (updateError) {
-        console.error('Password update failed:', updateError);
-        
         toast({
           title: "Update Failed",
           description: updateError.message || "Failed to update password. Please request a new reset link.",
           variant: "destructive",
         });
         
-        // If session expired, redirect to forgot password
         if (updateError.message.includes('session') || updateError.message.includes('expired')) {
           setTimeout(() => navigate('/auth'), 3000);
         }
         return;
       }
 
-      console.log('Password updated successfully');
       setIsComplete(true);
       
       toast({
@@ -201,12 +163,10 @@ export default function ResetPassword() {
         description: "Your password has been successfully updated.",
       });
 
-      // Sign out and redirect to login
       await supabase.auth.signOut();
       setTimeout(() => navigate('/auth'), 2000);
 
     } catch (error) {
-      console.error('Unexpected error during password update:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -217,7 +177,6 @@ export default function ResetPassword() {
     }
   };
 
-  // Loading state during token validation
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -233,7 +192,6 @@ export default function ResetPassword() {
     );
   }
 
-  // Invalid token state
   if (!isValidToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -245,11 +203,11 @@ export default function ResetPassword() {
               </div>
             </div>
             <CardTitle className="text-center">Invalid or Expired Link</CardTitle>
-            <CardDescription className="text-center">
-              This password reset link is {tokenInfo.hasToken ? 'expired' : 'invalid or missing'}.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-center text-sm text-muted-foreground">
+              This password reset link is invalid or has expired.
+            </p>
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <p className="text-sm font-medium">Troubleshooting:</p>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
@@ -260,7 +218,7 @@ export default function ResetPassword() {
               </ul>
             </div>
           </CardContent>
-          <CardFooter className="flex gap-2">
+          <CardFooter>
             <Button 
               variant="outline"
               onClick={() => navigate('/auth')} 
@@ -275,7 +233,6 @@ export default function ResetPassword() {
     );
   }
 
-  // Success state
   if (isComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -287,10 +244,12 @@ export default function ResetPassword() {
               </div>
             </div>
             <CardTitle className="text-center">Password Updated</CardTitle>
-            <CardDescription className="text-center">
-              Your password has been successfully changed. You can now sign in with your new password.
-            </CardDescription>
           </CardHeader>
+          <CardContent>
+            <p className="text-center text-sm text-muted-foreground">
+              Your password has been successfully changed. You can now sign in with your new password.
+            </p>
+          </CardContent>
           <CardFooter>
             <Button onClick={() => navigate('/auth')} className="w-full">
               Continue to Sign In
@@ -301,15 +260,11 @@ export default function ResetPassword() {
     );
   }
 
-  // Main password reset form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create New Password</CardTitle>
-          <CardDescription>
-            Enter your new password below. Make sure it's strong and secure.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -334,11 +289,7 @@ export default function ResetPassword() {
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
               {password && (
@@ -348,9 +299,7 @@ export default function ResetPassword() {
                     passwordStrength.score >= 3 ? 'bg-green-400' :
                     passwordStrength.score >= 2 ? 'bg-yellow-500' : 'bg-destructive'
                   }`} />
-                  <span className={passwordStrength.color}>
-                    {passwordStrength.text}
-                  </span>
+                  <span className={passwordStrength.color}>{passwordStrength.text}</span>
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
@@ -378,17 +327,11 @@ export default function ResetPassword() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   disabled={isLoading}
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
               {confirmPassword && password !== confirmPassword && (
-                <p className="text-sm text-destructive">
-                  Passwords do not match
-                </p>
+                <p className="text-sm text-destructive">Passwords do not match</p>
               )}
             </div>
 
