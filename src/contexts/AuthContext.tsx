@@ -125,10 +125,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
+      console.log('[AUTH] State change event:', event);
+
       let validUser = session?.user ?? null;
 
       setSession(session);
       setUser(validUser);
+
+      // Handle PASSWORD_RECOVERY event - don't interfere with the recovery flow
+      if (event === "PASSWORD_RECOVERY") {
+        console.log('[AUTH] Password recovery event detected');
+        // Don't set localStorage tokens during recovery - let the reset password page handle it
+        setLoading(false);
+        return;
+      }
 
       // Update localStorage based on auth state changes
       if (session?.access_token) {

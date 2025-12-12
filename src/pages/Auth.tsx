@@ -47,7 +47,11 @@ const Auth = () => {
     clearStaleSession();
   }, []);
 
-  if (user) {
+  // Don't redirect if this is a password recovery flow
+  const isRecoveryFlow = window.location.pathname.includes('reset-password') || 
+                         window.location.pathname.includes('auth/confirm');
+  
+  if (user && !isRecoveryFlow) {
     return <Navigate to="/dashboard" replace />;
   }
   if (loading) {
