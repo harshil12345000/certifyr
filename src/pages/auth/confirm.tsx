@@ -14,42 +14,111 @@ export default function AuthConfirm() {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        // Get token_hash and type from query parameters
-        const tokenHash = searchParams.get('token_hash');
-        const type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | null;
+        console.log('AuthConfirm: Starting token verification');
+        console.log('URL search params:', window.location.search);
+        console.log('URL hash:', window.location.hash);
+
+        // Try to get parameters from query string first (PKCE flow)
+        let tokenHash = searchParams.get('token_hash');
+        let type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | 'magiclink' | null;
         const next = searchParams.get('next') || '/dashboard';
 
-        if (!tokenHash || !type) {
-          setError('Invalid confirmation link - missing required parameters');
-          setIsVerifying(false);
+        // If not in query params, try hash fragment (implicit flow)
+        if (!tokenHash && window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          const hashType = hashParams.get('type');
+
+          console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, hashType });
+
+          if (accessToken && hashType === 'recovery') {
+            // For recovery via hash (implicit flow), set the session directly
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
+
+            if (sessionError) {
+              console.error('Failed to set recovery session:', sessionError);
+              setError('Invalid or expired recovery link');
+              setIsVerifying(false);
+              return;
+            }
+
+            console.log('Recovery session established from hash, redirecting to reset-password');
+            navigate('/reset-password', { replace: true });
+            return;
+          }
+
+          // For other hash-based auth (signup confirmation, etc.)
+          if (accessToken) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
+
+            if (sessionError) {
+              console.error('Failed to set session from hash:', sessionError);
+              setError('Invalid or expired link');
+              setIsVerifying(false);
+              return;
+            }
+
+            console.log('Session established from hash, redirecting to:', next);
+            navigate(next, { replace: true });
+            return;
+          }
+        }
+
+        // Handle PKCE flow with token_hash
+        if (tokenHash && type) {
+          console.log('Verifying OTP with token_hash, type:', type);
+
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: type,
+          });
+
+          if (verifyError) {
+            console.error('Token verification error:', verifyError);
+            setError(verifyError.message || 'Failed to verify token');
+            setIsVerifying(false);
+            return;
+          }
+
+          if (!data.session) {
+            setError('Verification succeeded but no session was created');
+            setIsVerifying(false);
+            return;
+          }
+
+          console.log('OTP verified successfully, type:', type);
+
+          // Redirect based on type
+          if (type === 'recovery') {
+            navigate('/reset-password', { replace: true });
+          } else {
+            navigate(next, { replace: true });
+          }
           return;
         }
 
-        // Verify the OTP token (do NOT sign out before this - it will invalidate the token)
-        const { data, error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: type,
-        });
-
-        if (verifyError) {
-          console.error('Token verification error:', verifyError);
-          setError(verifyError.message || 'Failed to verify token');
-          setIsVerifying(false);
+        // Check if we already have a valid session (might have been set by Supabase client automatically)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('Existing session found, checking for recovery flow');
+          // Check if this is a password recovery session
+          // The session user might have aal1 which indicates recovery
+          navigate('/reset-password', { replace: true });
           return;
         }
 
-        if (!data.session) {
-          setError('Verification succeeded but no session was created');
-          setIsVerifying(false);
-          return;
-        }
+        // No valid token found in any format
+        console.error('No valid token found in URL');
+        setError('Invalid confirmation link - missing required parameters');
+        setIsVerifying(false);
 
-        // Success! Redirect to the intended destination
-        if (type === 'recovery') {
-          navigate('/reset-password');
-        } else {
-          navigate(next);
-        }
       } catch (err) {
         console.error('Unexpected error during verification:', err);
         setError('An unexpected error occurred');
