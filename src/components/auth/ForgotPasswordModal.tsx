@@ -71,8 +71,9 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     setIsLoading(true);
     
     try {
-      // CRITICAL: This URL must be added to Supabase Auth > URL Configuration > Redirect URLs
-      const redirectUrl = `${window.location.origin}/reset-password`;
+      // CRITICAL: Use /auth/confirm to properly handle PKCE token verification
+      // This URL must be added to Supabase Auth > URL Configuration > Redirect URLs
+      const redirectUrl = `${window.location.origin}/auth/confirm`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
