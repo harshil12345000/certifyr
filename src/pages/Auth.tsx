@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import { AuthSkeleton } from "@/components/auth/AuthSkeleton";
 import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 
 const Auth = () => {
+  const [searchParams] = useSearchParams();
   const { user, signIn, loading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,15 @@ const Auth = () => {
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Capture plan intent from URL (e.g., /auth?plan=pro)
+  useEffect(() => {
+    const planParam = searchParams.get('plan');
+    if (planParam && (planParam === 'basic' || planParam === 'pro')) {
+      // Store plan intent in sessionStorage for use during signup/onboarding
+      sessionStorage.setItem('selectedPlanIntent', planParam);
+    }
+  }, [searchParams]);
 
   // Clear any stale session data when landing on auth page
   useEffect(() => {
@@ -175,7 +185,10 @@ const Auth = () => {
               </div>
               <div className="text-center text-sm text-gray-500">
                 New to Certifyr?{' '}
-                <Link to="/auth/signup" className="text-blue-600 hover:underline font-medium">
+                <Link 
+                  to={`/auth/signup${searchParams.get('plan') ? `?plan=${searchParams.get('plan')}` : ''}`} 
+                  className="text-blue-600 hover:underline font-medium"
+                >
                   Create an Account
                 </Link>
               </div>
