@@ -601,6 +601,54 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          active_plan: string | null
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          polar_checkout_id: string | null
+          polar_customer_id: string | null
+          polar_subscription_id: string | null
+          selected_plan: string | null
+          subscription_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_plan?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          polar_checkout_id?: string | null
+          polar_customer_id?: string | null
+          polar_subscription_id?: string | null
+          selected_plan?: string | null
+          subscription_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_plan?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          polar_checkout_id?: string | null
+          polar_customer_id?: string | null
+          polar_subscription_id?: string | null
+          selected_plan?: string | null
+          subscription_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_announcement_reads: {
         Row: {
           announcement_id: string
@@ -867,6 +915,7 @@ export type Database = {
         Args: { org_id: string; org_name: string }
         Returns: string
       }
+      get_active_plan: { Args: { check_user_id: string }; Returns: string }
       get_organization_statistics: {
         Args: { org_id: string }
         Returns: {
@@ -892,6 +941,10 @@ export type Database = {
           role: string
         }[]
       }
+      has_active_subscription: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       increment_user_stat: {
         Args: {
           p_organization_id: string
@@ -912,6 +965,18 @@ export type Database = {
       is_user_admin_of_org: {
         Args: { org_id: string; user_id: string }
         Returns: boolean
+      }
+      update_subscription_from_webhook: {
+        Args: {
+          p_active_plan: string
+          p_current_period_end: string
+          p_current_period_start: string
+          p_polar_customer_id: string
+          p_polar_subscription_id: string
+          p_subscription_status: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       user_belongs_to_organization: {
         Args: { org_uuid: string; user_uuid: string }
