@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { RootRedirect } from "@/components/auth/RootRedirect";
 import Index from "@/pages/Index";
 import Documents from "@/pages/Documents";
@@ -35,6 +36,8 @@ import EmailConfirmed from "@/pages/auth/email-confirmed";
 import EmailVerified from "@/pages/auth/email-verified";
 import CheckEmail from "@/pages/auth/check-email";
 import ResetPassword from "@/pages/ResetPassword";
+import Checkout from "@/pages/Checkout";
+import CheckoutSuccess from "@/pages/CheckoutSuccess";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +55,26 @@ function App() {
                   path="/dashboard"
                   element={
                     <ProtectedRoute>
-                      <Index />
+                      <SubscriptionGate>
+                        <Index />
+                      </SubscriptionGate>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Checkout routes - protected but no subscription required */}
+                <Route
+                  path="/checkout"
+                  element={
+                    <ProtectedRoute>
+                      <Checkout />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/checkout/success"
+                  element={
+                    <ProtectedRoute>
+                      <CheckoutSuccess />
                     </ProtectedRoute>
                   }
                 />
