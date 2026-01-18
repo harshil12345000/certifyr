@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+
+// External Framer landing page URL
+const FRAMER_LANDING_URL = "https://certifyr.framer.website/";
 
 /**
  * RootRedirect component handles the root (/) route logic:
  * - Checks for authToken and lastLogin in localStorage
  * - If both exist and lastLogin is within 7 days, redirects to /dashboard
- * - Otherwise, renders the landing page content at / (URL stays as /)
+ * - Otherwise, redirects to the external Framer landing page
  */
 export const RootRedirect = () => {
   const navigate = useNavigate();
-  const [shouldShowLanding, setShouldShowLanding] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkAuthAndRedirect = () => {
@@ -21,7 +22,7 @@ export const RootRedirect = () => {
       // Check if both token and lastLogin exist
       if (authToken && lastLogin) {
         const lastLoginTime = parseInt(lastLogin, 10);
-        const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+        const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
         const now = Date.now();
         const timeSinceLogin = now - lastLoginTime;
 
@@ -32,38 +33,21 @@ export const RootRedirect = () => {
         }
       }
 
-      // Otherwise, show landing page at / (URL stays as /)
-      setShouldShowLanding(true);
-      setIsChecking(false);
+      // Otherwise, redirect to external Framer landing page
+      window.location.href = FRAMER_LANDING_URL;
     };
 
     checkAuthAndRedirect();
   }, [navigate]);
 
-  // If checking, show loading state
-  if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+  // Show loading state while checking auth
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Redirecting...</p>
       </div>
-    );
-  }
-
-  // Show landing page in iframe to keep URL as /
-  if (shouldShowLanding) {
-    return (
-      <iframe
-        src="/landing/index.html"
-        className="w-full h-screen border-0"
-        title="Landing Page"
-        style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%" }}
-      />
-    );
-  }
-
-  return null;
+    </div>
+  );
 };
 
