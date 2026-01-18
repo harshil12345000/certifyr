@@ -83,7 +83,7 @@ export function useSubscription() {
     };
   }, [user?.id]);
 
-  const updateSelectedPlan = async (plan: 'basic' | 'pro') => {
+  const updateSelectedPlan = async (plan: 'basic' | 'pro' | 'ultra') => {
     if (!user?.id) return { error: new Error('Not authenticated') };
 
     const { error: updateError } = await supabase

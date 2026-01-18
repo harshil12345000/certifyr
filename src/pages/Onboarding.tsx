@@ -31,7 +31,7 @@ export interface OnboardingData {
   confirmPassword: string;
   
   // Plan
-  selectedPlan: 'basic' | 'pro';
+  selectedPlan: 'basic' | 'pro' | 'ultra';
   billingPeriod: 'monthly' | 'yearly';
 }
 
@@ -50,16 +50,30 @@ export default function Onboarding() {
   const [currentStage, setCurrentStage] = useState(1);
   const [loading, setLoading] = useState(false);
   
-  // Get initial plan from URL param or sessionStorage
-  const getInitialPlan = (): 'basic' | 'pro' => {
+  // Parse plan from URL param or sessionStorage
+  // Format: mbasic, ybasic, mpro, ypro, multra, yultra
+  const getInitialPlanAndBilling = (): { plan: 'basic' | 'pro' | 'ultra'; billing: 'monthly' | 'yearly' } => {
     const urlPlan = searchParams.get('plan');
-    if (urlPlan === 'basic' || urlPlan === 'pro') return urlPlan;
-    
     const storedPlan = sessionStorage.getItem('selectedPlanIntent');
-    if (storedPlan === 'basic' || storedPlan === 'pro') return storedPlan;
+    const planParam = urlPlan || storedPlan || '';
     
-    return 'pro'; // Default to pro
+    // Parse the plan parameter (e.g., mpro -> monthly pro, ybasic -> yearly basic)
+    if (planParam.startsWith('m')) {
+      const planType = planParam.slice(1);
+      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
+        return { plan: planType, billing: 'monthly' };
+      }
+    } else if (planParam.startsWith('y')) {
+      const planType = planParam.slice(1);
+      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
+        return { plan: planType, billing: 'yearly' };
+      }
+    }
+    
+    return { plan: 'pro', billing: 'yearly' }; // Default to yearly pro
   };
+  
+  const initialPlanData = getInitialPlanAndBilling();
   
   const [formData, setFormData] = useState<OnboardingData>({
     fullName: "",
@@ -74,19 +88,21 @@ export default function Onboarding() {
     organizationLocation: "",
     password: "",
     confirmPassword: "",
-    selectedPlan: getInitialPlan(),
-    billingPeriod: "yearly",
+    selectedPlan: initialPlanData.plan,
+    billingPeriod: initialPlanData.billing,
   });
   
   // Handle plan upgrade (only allows upgrades, never downgrades)
-  const handlePlanUpgrade = (plan: 'pro') => {
-    // Only allow upgrading to pro, never downgrading
-    if (plan === 'pro' && formData.selectedPlan !== 'pro') {
-      setFormData(prev => ({ ...prev, selectedPlan: 'pro' }));
-      sessionStorage.setItem('selectedPlanIntent', 'pro');
+  const handlePlanUpgrade = (plan: 'pro' | 'ultra') => {
+    const planHierarchy = { basic: 1, pro: 2, ultra: 3 };
+    // Only allow upgrading, never downgrading
+    if (planHierarchy[plan] > planHierarchy[formData.selectedPlan]) {
+      setFormData(prev => ({ ...prev, selectedPlan: plan }));
+      const billingPrefix = formData.billingPeriod === 'monthly' ? 'm' : 'y';
+      sessionStorage.setItem('selectedPlanIntent', `${billingPrefix}${plan}`);
       toast({
         title: "Plan Updated",
-        description: "You've selected the Pro plan!",
+        description: `You've selected the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`,
       });
     }
   };

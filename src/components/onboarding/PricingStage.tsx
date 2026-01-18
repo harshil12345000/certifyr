@@ -35,15 +35,24 @@ const proFeatures = [
   "Priority Email Support"
 ];
 
+const ultraFeatures = [
+  "Everything in Pro",
+  "Unlimited Admin Invites",
+  "Custom Integrations",
+  "Dedicated Support",
+  "SLA Guarantee"
+];
+
 export function PricingStage({ data, updateData, onPrev, loading }: PricingStageProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState(false);
   
-  // Set defaults on mount
+  // Set defaults on mount - keep user's selection if valid
   React.useEffect(() => {
-    if (data.billingPeriod !== 'yearly' || data.selectedPlan !== 'pro') {
-      updateData({ billingPeriod: 'yearly', selectedPlan: 'pro' });
+    const validPlans = ['basic', 'pro', 'ultra'];
+    if (!validPlans.includes(data.selectedPlan)) {
+      updateData({ selectedPlan: 'pro' });
     }
   }, []);
   const [localLoading, setLocalLoading] = useState(false);
@@ -57,13 +66,17 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
     pro: {
       monthly: 20,
       yearly: 200
+    },
+    ultra: {
+      monthly: 50,
+      yearly: 500
     }
   };
 
   const isYearly = data.billingPeriod === 'yearly';
   const yearlyDiscount = 37.5;
 
-  const handlePlanSelect = (plan: 'basic' | 'pro') => {
+  const handlePlanSelect = (plan: 'basic' | 'pro' | 'ultra') => {
     updateData({ selectedPlan: plan });
   };
 
@@ -145,12 +158,16 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
       }
 
       toast({
-        title: "Welcome to Certifyr!",
-        description: "Your account and organization have been created successfully.",
+        title: "Account Created!",
+        description: "Please complete your subscription to access Certifyr.",
       });
 
-      // Redirect to dashboard
-      navigate("/");
+      // Store plan info for checkout page
+      const billingPrefix = data.billingPeriod === 'monthly' ? 'm' : 'y';
+      sessionStorage.setItem('selectedPlanIntent', `${billingPrefix}${data.selectedPlan}`);
+
+      // Redirect to checkout page for payment
+      navigate("/checkout");
     } catch (err: any) {
       console.error("Signup error:", err);
       setError(err.message || "An unexpected error occurred");
@@ -203,7 +220,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
       <div className="flex flex-row justify-center gap-x-4 mb-4 pt-3 mt-x-5">
         {/* Basic Plan */}
         <Card className={cn(
-          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-sm w-full",
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-xs w-full",
           data.selectedPlan === 'basic' 
             ? "ring-2 ring-blue-600 bg-blue-50/50 backdrop-blur-sm" 
             : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
@@ -252,7 +269,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
 
         {/* Pro Plan */}
         <Card className={cn(
-          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-sm w-full",
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-xs w-full",
           data.selectedPlan === 'pro' 
             ? "ring-2 ring-[#1b80ff] bg-[#eaf4ff] backdrop-blur-sm" 
             : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
@@ -297,6 +314,61 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             
             <ul className="space-y-3">
               {proFeatures.map((feature, index) => (
+                <li key={index} className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Ultra Plan */}
+        <Card className={cn(
+          "relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-xs w-full",
+          data.selectedPlan === 'ultra' 
+            ? "ring-2 ring-purple-600 bg-purple-50/50 backdrop-blur-sm" 
+            : "bg-white/70 backdrop-blur-sm hover:bg-white/80"
+        )}>
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <Badge className="bg-purple-600 text-white px-4 py-1">
+              Enterprise
+            </Badge>
+          </div>
+          
+          <CardHeader className="text-center pb-4 pt-8">
+            <CardTitle className="text-xl font-semibold">Ultra</CardTitle>
+            <div className="py-4">
+              <div className="text-4xl font-bold text-gray-800">
+                ${pricing.ultra[data.billingPeriod]}
+              </div>
+              <div className="text-gray-500">
+                {isYearly ? "per year" : "per month"}
+              </div>
+              {isYearly && (
+                <div className="text-sm text-green-600 font-medium">
+                  Save ${(pricing.ultra.monthly * 12) - pricing.ultra.yearly} yearly
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            <Button
+              onClick={() => handlePlanSelect('ultra')}
+              variant={data.selectedPlan === 'ultra' ? "default" : "outline"}
+              className={cn(
+                "w-full mb-6 h-12 transition-all duration-200 transition-transform hover:scale-105",
+                data.selectedPlan === 'ultra'
+                  ? "bg-purple-600 text-white border border-purple-600"
+                  : "bg-white text-purple-600 border border-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600"
+              )}
+            >
+              {data.selectedPlan === 'ultra' ? "Selected" : "Select Ultra"}
+            </Button>
+            
+            <ul className="space-y-3">
+              {ultraFeatures.map((feature, index) => (
                 <li key={index} className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
                   <span className="text-sm text-gray-700">{feature}</span>
