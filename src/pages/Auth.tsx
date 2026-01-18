@@ -29,12 +29,16 @@ const Auth = () => {
   const [signInPassword, setSignInPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Capture plan intent from URL (e.g., /auth?plan=pro)
+  // Capture plan intent from URL (e.g., /auth?plan=mpro, ybasic, etc.)
+  // Format: m = monthly, y = yearly; basic, pro, ultra
   useEffect(() => {
     const planParam = searchParams.get('plan');
-    if (planParam && (planParam === 'basic' || planParam === 'pro')) {
-      // Store plan intent in sessionStorage for use during signup/onboarding
-      sessionStorage.setItem('selectedPlanIntent', planParam);
+    if (planParam) {
+      const validPlans = ['mbasic', 'ybasic', 'mpro', 'ypro', 'multra', 'yultra'];
+      if (validPlans.includes(planParam)) {
+        // Store plan intent in sessionStorage for use during signup/onboarding
+        sessionStorage.setItem('selectedPlanIntent', planParam);
+      }
     }
   }, [searchParams]);
 

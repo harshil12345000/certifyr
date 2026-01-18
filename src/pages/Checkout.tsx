@@ -22,6 +22,10 @@ const POLAR_CONFIG = {
       monthly: 'POLAR_PRO_MONTHLY_PRODUCT_ID',
       yearly: 'POLAR_PRO_YEARLY_PRODUCT_ID',
     },
+    ultra: {
+      monthly: 'POLAR_ULTRA_MONTHLY_PRODUCT_ID',
+      yearly: 'POLAR_ULTRA_YEARLY_PRODUCT_ID',
+    },
   },
   // Replace with your Polar checkout base URL
   checkoutBaseUrl: 'https://polar.sh/checkout',
@@ -32,6 +36,7 @@ const POLAR_CONFIG = {
 const pricing = {
   basic: { monthly: 10, yearly: 100 },
   pro: { monthly: 20, yearly: 200 },
+  ultra: { monthly: 50, yearly: 500 },
 };
 
 const basicFeatures = [
@@ -50,6 +55,14 @@ const proFeatures = [
   'Priority Email Support',
 ];
 
+const ultraFeatures = [
+  'Everything in Pro',
+  'Unlimited Admin Invites',
+  'Custom Integrations',
+  'Dedicated Support',
+  'SLA Guarantee',
+];
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -57,9 +70,28 @@ export default function Checkout() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra'>('pro');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Parse plan from sessionStorage (format: mbasic, ypro, etc.)
+  const parsePlanFromStorage = (): { plan: 'basic' | 'pro' | 'ultra'; billing: 'monthly' | 'yearly' } | null => {
+    const storedPlan = sessionStorage.getItem('selectedPlanIntent');
+    if (!storedPlan) return null;
+    
+    if (storedPlan.startsWith('m')) {
+      const planType = storedPlan.slice(1);
+      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
+        return { plan: planType, billing: 'monthly' };
+      }
+    } else if (storedPlan.startsWith('y')) {
+      const planType = storedPlan.slice(1);
+      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
+        return { plan: planType, billing: 'yearly' };
+      }
+    }
+    return null;
+  };
 
   // If user already has active subscription, redirect to dashboard
   useEffect(() => {
@@ -68,15 +100,19 @@ export default function Checkout() {
     }
   }, [subLoading, hasActiveSubscription, navigate]);
 
-  // Initialize from subscription or URL params
+  // Initialize from sessionStorage or subscription
   useEffect(() => {
-    const planParam = searchParams.get('plan') as 'basic' | 'pro' | null;
-    if (planParam && (planParam === 'basic' || planParam === 'pro')) {
-      setSelectedPlan(planParam);
+    const storedPlanData = parsePlanFromStorage();
+    if (storedPlanData) {
+      setSelectedPlan(storedPlanData.plan);
+      setBillingPeriod(storedPlanData.billing);
     } else if (subscription?.selected_plan) {
-      setSelectedPlan(subscription.selected_plan as 'basic' | 'pro');
+      const plan = subscription.selected_plan as 'basic' | 'pro' | 'ultra';
+      if (plan === 'basic' || plan === 'pro' || plan === 'ultra') {
+        setSelectedPlan(plan);
+      }
     }
-  }, [searchParams, subscription]);
+  }, [subscription]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -191,7 +227,7 @@ export default function Checkout() {
         </div>
 
         {/* Plan Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Basic Plan */}
           <Card
             className={cn(
@@ -263,6 +299,44 @@ export default function Checkout() {
               </ul>
             </CardContent>
           </Card>
+
+          {/* Ultra Plan */}
+          <Card
+            className={cn(
+              'cursor-pointer transition-all duration-300 hover:shadow-xl relative',
+              selectedPlan === 'ultra'
+                ? 'ring-2 ring-purple-600 bg-purple-50/50'
+                : 'bg-white/70 hover:bg-white/80'
+            )}
+            onClick={() => setSelectedPlan('ultra')}
+          >
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge className="bg-purple-600 text-white px-4 py-1">
+                Enterprise
+              </Badge>
+            </div>
+            <CardHeader className="text-center pb-4 pt-8">
+              <CardTitle className="text-xl font-semibold">Ultra</CardTitle>
+              <div className="py-4">
+                <div className="text-4xl font-bold text-gray-800">
+                  ${pricing.ultra[billingPeriod]}
+                </div>
+                <div className="text-gray-500">
+                  {isYearly ? 'per year' : 'per month'}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {ultraFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Summary & CTA */}
@@ -271,7 +345,7 @@ export default function Checkout() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
-                  {selectedPlan === 'pro' ? 'Pro' : 'Basic'} Plan
+                  {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan
                 </h3>
                 <p className="text-gray-600">
                   Billed {isYearly ? 'yearly' : 'monthly'}

@@ -5,18 +5,23 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface UpgradeCTAProps {
-  currentPlan: 'basic' | 'pro';
-  onUpgrade: (plan: 'pro') => void;
+  currentPlan: 'basic' | 'pro' | 'ultra';
+  onUpgrade: (plan: 'pro' | 'ultra') => void;
   className?: string;
 }
 
 export function UpgradeCTA({ currentPlan, onUpgrade, className }: UpgradeCTAProps) {
   const [dismissed, setDismissed] = useState(false);
 
-  // Don't show if already on Pro or dismissed
-  if (currentPlan === 'pro' || dismissed) {
+  // Don't show if already on Ultra or dismissed
+  if (currentPlan === 'ultra' || dismissed) {
     return null;
   }
+
+  const upgradeTo = currentPlan === 'basic' ? 'pro' : 'ultra';
+  const upgradeText = currentPlan === 'basic' 
+    ? 'Upgrade to Pro for QR Verification, Request Portal & more!'
+    : 'Upgrade to Ultra for unlimited features!';
 
   return (
     <div
@@ -32,7 +37,7 @@ export function UpgradeCTA({ currentPlan, onUpgrade, className }: UpgradeCTAProp
           </div>
           <div>
             <p className="font-medium text-sm sm:text-base">
-              Upgrade to Pro for QR Verification, Request Portal & more!
+              {upgradeText}
             </p>
             <p className="text-xs sm:text-sm text-blue-100 hidden sm:block">
               Get all premium features starting at $20/month
@@ -42,12 +47,12 @@ export function UpgradeCTA({ currentPlan, onUpgrade, className }: UpgradeCTAProp
         
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => onUpgrade('pro')}
+            onClick={() => onUpgrade(upgradeTo)}
             size="sm"
             className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
           >
             <ArrowUp className="w-4 h-4 mr-1" />
-            Upgrade
+            Upgrade to {upgradeTo.charAt(0).toUpperCase() + upgradeTo.slice(1)}
           </Button>
           <button
             onClick={() => setDismissed(true)}
