@@ -51,23 +51,15 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   
   // Parse plan from URL param or sessionStorage
-  // Format: mbasic, ybasic, mpro, ypro, multra, yultra
+  // Format: basic, pro, ultra
   const getInitialPlanAndBilling = (): { plan: 'basic' | 'pro' | 'ultra'; billing: 'monthly' | 'yearly' } => {
     const urlPlan = searchParams.get('plan');
     const storedPlan = sessionStorage.getItem('selectedPlanIntent');
     const planParam = urlPlan || storedPlan || '';
     
-    // Parse the plan parameter (e.g., mpro -> monthly pro, ybasic -> yearly basic)
-    if (planParam.startsWith('m')) {
-      const planType = planParam.slice(1);
-      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
-        return { plan: planType, billing: 'monthly' };
-      }
-    } else if (planParam.startsWith('y')) {
-      const planType = planParam.slice(1);
-      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
-        return { plan: planType, billing: 'yearly' };
-      }
+    // Parse the plan parameter (e.g., basic, pro, ultra)
+    if (planParam === 'basic' || planParam === 'pro' || planParam === 'ultra') {
+      return { plan: planParam, billing: 'yearly' }; // Default to yearly billing
     }
     
     return { plan: 'pro', billing: 'yearly' }; // Default to yearly pro
