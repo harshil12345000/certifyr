@@ -13,6 +13,8 @@ export default function CheckoutSuccess() {
   // Poll for subscription activation (webhook may take a moment)
   useEffect(() => {
     if (hasActiveSubscription) {
+      // Clear the subscription check flag so dashboard loads properly
+      sessionStorage.removeItem('subscriptionCheckedOnce');
       // Subscription is active, redirect to dashboard after a brief delay
       const timer = setTimeout(() => {
         navigate('/dashboard', { replace: true });

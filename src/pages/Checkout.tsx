@@ -74,21 +74,14 @@ export default function Checkout() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Parse plan from sessionStorage (format: mbasic, ypro, etc.)
+  // Parse plan from sessionStorage (format: basic, pro, ultra)
   const parsePlanFromStorage = (): { plan: 'basic' | 'pro' | 'ultra'; billing: 'monthly' | 'yearly' } | null => {
     const storedPlan = sessionStorage.getItem('selectedPlanIntent');
     if (!storedPlan) return null;
     
-    if (storedPlan.startsWith('m')) {
-      const planType = storedPlan.slice(1);
-      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
-        return { plan: planType, billing: 'monthly' };
-      }
-    } else if (storedPlan.startsWith('y')) {
-      const planType = storedPlan.slice(1);
-      if (planType === 'basic' || planType === 'pro' || planType === 'ultra') {
-        return { plan: planType, billing: 'yearly' };
-      }
+    // Simple plan format: basic, pro, ultra (default to yearly)
+    if (storedPlan === 'basic' || storedPlan === 'pro' || storedPlan === 'ultra') {
+      return { plan: storedPlan, billing: 'yearly' };
     }
     return null;
   };
