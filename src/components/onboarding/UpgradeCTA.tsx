@@ -20,8 +20,8 @@ export function UpgradeCTA({ currentPlan, onUpgrade, className }: UpgradeCTAProp
 
   const upgradeTo = currentPlan === 'basic' ? 'pro' : 'ultra';
   const upgradeText = currentPlan === 'basic' 
-    ? 'Upgrade to Pro for QR Verification, Request Portal & more!'
-    : 'Upgrade to Ultra for unlimited features!';
+    ? 'Upgrade to Pro for QR Verification, Request Portal (100 members) & more!'
+    : 'Upgrade to Ultra for unlimited admins, AI Assistant & more!';
 
   return (
     <div
@@ -40,7 +40,7 @@ export function UpgradeCTA({ currentPlan, onUpgrade, className }: UpgradeCTAProp
               {upgradeText}
             </p>
             <p className="text-xs sm:text-sm text-blue-100 hidden sm:block">
-              Get all premium features starting at $20/month
+              {currentPlan === 'basic' ? 'Pro starts at $49/month' : 'Ultra starts at $199/month'}
             </p>
           </div>
         </div>

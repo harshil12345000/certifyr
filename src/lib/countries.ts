@@ -1,4 +1,19 @@
-export const countries = [
+// Country data with phone codes and flags
+
+export interface Country {
+  code: string;
+  name: string;
+  flag: string;
+}
+
+// Global context option for AI Assistant
+export const GLOBAL_CONTEXT: Country = { 
+  code: 'GLOBAL', 
+  name: 'Global', 
+  flag: '🌐' 
+};
+
+export const countries: Country[] = [
   { code: "+1", name: "United States", flag: "🇺🇸" },
   { code: "+1", name: "Canada", flag: "🇨🇦" },
   { code: "+7", name: "Russia", flag: "🇷🇺" },
@@ -204,3 +219,13 @@ export const countries = [
   { code: "+996", name: "Kyrgyzstan", flag: "🇰🇬" },
   { code: "+998", name: "Uzbekistan", flag: "🇺🇿" },
 ];
+
+// Helper functions
+export const getCountryByName = (name: string): Country | undefined => 
+  countries.find(c => c.name === name);
+
+export const getCountryByCode = (code: string): Country | undefined =>
+  countries.find(c => c.code === code);
+
+export const sortedCountries: Country[] = [...countries].sort((a, b) => 
+  a.name.localeCompare(b.name));

@@ -18,6 +18,7 @@ import Admin from "@/pages/Admin";
 import Settings from "@/pages/Settings";
 import History from "@/pages/History";
 import RequestPortal from "@/pages/RequestPortal";
+import AIAssistant from "@/pages/AIAssistant";
 import Branding from "@/pages/admin/branding";
 import TempBonafideComparison from "@/pages/TempBonafideComparison";
 import AdminDocuments from "@/pages/admin/documents";
@@ -139,6 +140,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <RequestPortal />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ai-assistant"
+                  element={
+                    <ProtectedRoute>
+                      <AIAssistant />
                     </ProtectedRoute>
                   }
                 />
