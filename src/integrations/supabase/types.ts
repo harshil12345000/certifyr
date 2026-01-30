@@ -400,6 +400,7 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          ai_context_country: string | null
           created_at: string | null
           email: string | null
           id: string
@@ -409,6 +410,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_context_country?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -418,6 +420,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_context_country?: string | null
           created_at?: string | null
           email?: string | null
           id?: string

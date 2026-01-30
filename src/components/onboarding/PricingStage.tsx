@@ -30,17 +30,17 @@ const basicFeatures = [
 const proFeatures = [
   "Everything in Basic",
   "QR Verification",
-  "Request Portal",
-  "Invite Up to 5 Admins (Coming Soon)",
+  "Request Portal (Up to 100 Members)",
+  "Up to 5 Admins",
   "Priority Email Support"
 ];
 
 const ultraFeatures = [
   "Everything in Pro",
-  "Unlimited Admin Invites",
-  "Custom Integrations",
-  "Dedicated Support",
-  "SLA Guarantee"
+  "Unlimited Admins",
+  "Request Portal (Unlimited Members)",
+  "Agentic AI Assistant",
+  "Custom Document Requests"
 ];
 
 export function PricingStage({ data, updateData, onPrev, loading }: PricingStageProps) {
@@ -60,16 +60,16 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
 
   const pricing = {
     basic: {
-      monthly: 10,
-      yearly: 100
+      monthly: 19,
+      yearly: 190
     },
     pro: {
-      monthly: 20,
-      yearly: 200
+      monthly: 49,
+      yearly: 490
     },
     ultra: {
-      monthly: 50,
-      yearly: 500
+      monthly: 199,
+      yearly: 1990
     }
   };
 

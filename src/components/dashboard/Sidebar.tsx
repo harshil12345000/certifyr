@@ -12,22 +12,26 @@ import {
   ChevronsRight,
   DoorOpen,
   Bookmark,
-  Send,
-  HelpCircle,
   Clock,
+  Bot,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarLogo } from "./SidebarLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
 import React from "react";
 
 type NavItem = {
   name: string;
   path: string;
   icon: React.ReactNode;
+  requiredFeature?: 'requestPortal' | 'aiAssistant';
+  planBadge?: string;
 };
 
 const navItems: NavItem[] = [
@@ -42,12 +46,20 @@ const navItems: NavItem[] = [
     path: "/history",
     icon: <Clock className="h-5 w-5" />,
   },
-  // Request Portal tab hidden for now
-  // {
-  //   name: "Request Portal",
-  //   path: "/request-portal",
-  //   icon: <DoorOpen className="h-5 w-5" />,
-  // },
+  {
+    name: "Request Portal",
+    path: "/request-portal",
+    icon: <DoorOpen className="h-5 w-5" />,
+    requiredFeature: 'requestPortal',
+    planBadge: 'Pro',
+  },
+  {
+    name: "AI Assistant",
+    path: "/ai-assistant",
+    icon: <Bot className="h-5 w-5" />,
+    requiredFeature: 'aiAssistant',
+    planBadge: 'Ultra',
+  },
   { name: "Admin", path: "/admin", icon: <Users className="h-5 w-5" /> },
   {
     name: "Settings",
@@ -140,6 +152,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   const location = useLocation();
   const { user } = useAuth();
   const { logoUrl, organizationDetails } = useBranding();
+  const { hasFeature } = usePlanFeatures();
 
   // Get name and avatar from user metadata if available
   const name =
@@ -170,14 +183,17 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   // TODO: Replace with real admin check
   const isAdmin = true;
 
-  // Filter navItems for Pro-only features
-  // const isProUser = user?.app_metadata?.plan === "pro" || false;
-  // const filteredNavItems = navItems.filter(item => {
-  //   if ((item.name === "Request Portal" || item.name === "Admin") && !isProUser) {
-  //     return false;
-  //   }
-  //   return true;
-  // });
+  // Check if nav item should be shown based on plan features
+  const shouldShowNavItem = (item: NavItem): boolean => {
+    if (!item.requiredFeature) return true;
+    return hasFeature(item.requiredFeature);
+  };
+
+  // Check if nav item is locked (visible but needs upgrade)
+  const isNavItemLocked = (item: NavItem): boolean => {
+    if (!item.requiredFeature) return false;
+    return !hasFeature(item.requiredFeature);
+  };
 
   return (
     <>
@@ -237,42 +253,55 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
 
         <div className={cn("flex-1 overflow-y-auto", isCollapsed ? "py-3" : "py-6")}>
           <nav className="px-2 space-y-1">
-            {navItems.map((item, idx) => (
-              <>
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all",
-                    location.pathname === item.path
-                      ? "bg-primary-500/10 text-primary-600"
-                      : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500",
-                    isCollapsed ? "justify-center" : "justify-start",
-                  )}
-                >
-                  <span className="flex-shrink-0">{item.icon}</span>
-                  {!isCollapsed && <span className="ml-3">{item.name}</span>}
-                </Link>
-                {/* Insert Bookmarks tab right after Documents */}
-                {isAdmin && item.name === "Documents" && (
+            {navItems.map((item) => {
+              const isLocked = isNavItemLocked(item);
+              
+              return (
+                <React.Fragment key={item.path}>
                   <Link
-                    to="/bookmarks"
+                    to={item.path}
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all",
-                      location.pathname === "/bookmarks"
+                      location.pathname === item.path
                         ? "bg-primary-500/10 text-primary-600"
                         : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500",
                       isCollapsed ? "justify-center" : "justify-start",
+                      isLocked && "opacity-60"
                     )}
                   >
-                    <span className="flex-shrink-0">
-                      <Bookmark className="h-5 w-5" />
-                    </span>
-                    {!isCollapsed && <span className="ml-3">Bookmarks</span>}
+                    <span className="flex-shrink-0">{item.icon}</span>
+                    {!isCollapsed && (
+                      <>
+                        <span className="ml-3 flex-1">{item.name}</span>
+                        {isLocked && item.planBadge && (
+                          <Badge variant="outline" className="ml-2 text-xs py-0 px-1.5">
+                            {item.planBadge}
+                          </Badge>
+                        )}
+                      </>
+                    )}
                   </Link>
-                )}
-              </>
-            ))}
+                  {/* Insert Bookmarks tab right after Documents */}
+                  {isAdmin && item.name === "Documents" && (
+                    <Link
+                      to="/bookmarks"
+                      className={cn(
+                        "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all",
+                        location.pathname === "/bookmarks"
+                          ? "bg-primary-500/10 text-primary-600"
+                          : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500",
+                        isCollapsed ? "justify-center" : "justify-start",
+                      )}
+                    >
+                      <span className="flex-shrink-0">
+                        <Bookmark className="h-5 w-5" />
+                      </span>
+                      {!isCollapsed && <span className="ml-3">Bookmarks</span>}
+                    </Link>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </nav>
         </div>
 
