@@ -1,366 +1,433 @@
 
 
-# Complete Pricing Plans Implementation with AI Agent Feature
+# Certifyr Implementation To-Do List - Comprehensive Plan
 
-## Overview
+## Executive Summary
 
-This plan implements a complete pricing-based feature gating system for Certifyr with three tiers: **Basic ($19/mo)**, **Pro ($49/mo)**, and **Ultra ($199/mo)**. The implementation enforces plan-based restrictions on features, updates pricing across all components, adds new Ultra-exclusive features including the AI Agent with Country Context Selector.
-
----
-
-## Pricing Tiers Summary
-
-### Basic Plan - $19/month
-**Tagline:** "Perfect for small teams and startups"
-
-| Feature | Included |
-|---------|----------|
-| Unlimited Document Generations | Yes |
-| All Templates Available | Yes |
-| Organization Branding | Yes |
-| Basic Support | Yes |
-| Admin Access | 1 (self only) |
-| Request Portal | No |
-| QR Verification | No |
-
-### Pro Plan - $49/month (Most Popular)
-**Tagline:** "Ideal for medium teams and educational institutions"
-
-| Feature | Included |
-|---------|----------|
-| Everything in Basic | Yes |
-| QR Verification | Yes |
-| Admin Access | Up to 5 |
-| Request Portal | Up to 100 Members |
-| Priority Email Support | Yes |
-
-### Ultra Plan - $199/month
-**Tagline:** "Suited for large organizations and corporates"
-
-| Feature | Included |
-|---------|----------|
-| Everything in Pro | Yes |
-| Admin Access | Unlimited |
-| Request Portal | Unlimited Members |
-| Agentic AI Assistant | Yes |
-| Custom Document Requests | Yes |
+This plan addresses 8 key implementation tasks for the Certifyr application, covering onboarding optimization, payment integration, access control, user management, template fixes, document approval logic, and admin features. The tasks are organized by priority and dependency.
 
 ---
 
-## Implementation Phases
+## Current State Analysis
 
-### Phase 1: Update Pricing Configuration
+### Key Findings from Codebase Exploration
 
-#### 1.1 Update PricingStage Component
-**File:** `src/components/onboarding/PricingStage.tsx`
+**Onboarding Flow (4 stages)**
+- PersonalInfoStage → OrganizationInfoStage → PasswordStage → PricingStage
+- Total 4 screens before account creation - can be optimized
 
-Changes:
-- Update pricing object: Basic $19, Pro $49, Ultra $199
-- Update feature lists to match specifications above
-- Add taglines for each plan
-- Update yearly savings calculations
+**Payment Infrastructure**
+- Polar.sh webhook exists at `supabase/functions/polar-webhook/index.ts`
+- Handles `subscription.created`, `subscription.updated`, `subscription.active`, `subscription.canceled`, `subscription.revoked`
+- Current issue: `mapProductToPlan()` function only maps to `basic` or `pro`, missing `ultra`
+- Product IDs are placeholders (`POLAR_BASIC_MONTHLY_PRODUCT_ID`, etc.)
 
-#### 1.2 Update Checkout Page
-**File:** `src/pages/Checkout.tsx`
+**Request Portal Access Control**
+- Sidebar shows Request Portal with "Pro" badge but doesn't fully block access
+- `FeatureGate` component exists but not used at page level for RequestPortal
+- Basic users can still navigate to `/request-portal` directly
 
-Changes:
-- Update pricing object to match new values
-- Update feature lists and taglines
-- Update Polar product ID placeholders
+**QR Code & Signature Logic**
+- `shouldBlur` variable already exists in all 24 template preview components
+- Logic: `const shouldBlur = isEmployeePreview && requestStatus !== "approved"`
+- QR codes are generated even when status is pending (only blurred, not hidden)
 
----
+**Template Spacing**
+- `DynamicForm` has `space-y-3` and `gap-4` for form fields
+- No excessive spacing visible in code - may need visual inspection
 
-### Phase 2: Create Plan Feature Gating System
+**Member Counter**
+- `RequestPortalMembers` displays member list but no counter showing limits
+- Plan limits defined in `planFeatures.ts`: Pro = 100, Ultra = unlimited
 
-#### 2.1 Create Plan Configuration File
-**New File:** `src/config/planFeatures.ts`
+**Admin Features**
+- Current roles: Only `admin` role exists in `organization_members` table
+- No `owner` or `member` roles implemented
+- `UserPermissionsPanel` is fully blurred/locked with a 🔒 overlay
 
-```text
-Contents:
-- PLAN_FEATURES object defining what each plan includes
-- PLAN_LIMITS object with admin count and portal member limits
-- canAccessFeature(plan, feature) helper function
-- getPlanLimits(plan) helper function
-- Plan hierarchy for upgrade checks
-```
-
-#### 2.2 Create usePlanFeatures Hook
-**New File:** `src/hooks/usePlanFeatures.ts`
-
-```text
-Hook that combines useSubscription with planFeatures config:
-- activePlan: current user's plan
-- hasFeature(featureName): boolean check
-- limits: { maxAdmins, maxPortalMembers }
-- canUpgrade: boolean
-```
-
-#### 2.3 Create FeatureGate Component
-**New File:** `src/components/auth/FeatureGate.tsx`
-
-```text
-Reusable wrapper component:
-<FeatureGate feature="qrVerification" fallback={<UpgradePrompt />}>
-  <ProtectedContent />
-</FeatureGate>
-```
-
-#### 2.4 Create UpgradePrompt Component
-**New File:** `src/components/shared/UpgradePrompt.tsx`
-
-```text
-Displays when user tries to access gated feature:
-- Lock icon
-- Feature name
-- Required plan
-- "Upgrade Now" button linking to checkout
-```
 
 ---
 
-### Phase 3: Implement Feature Gates
+### Task 2: Setup Payments - Polar.sh (Priority: 5)
 
-#### 3.1 Sidebar Navigation Updates
-**File:** `src/components/dashboard/Sidebar.tsx`
+**Current State**: 
+- Webhook function exists but incomplete
+- `mapProductToPlan()` missing `ultra` mapping
+- Product IDs are placeholders
 
-Changes:
-- Add Request Portal nav item (Pro/Ultra only)
-- Add AI Assistant nav item (Ultra only)
-- Add lock icons or plan badges for unavailable features
-- Use usePlanFeatures hook for visibility checks
+**Changes Required**:
 
-#### 3.2 Request Portal Access Control
-**File:** `src/pages/RequestPortal.tsx`
+| File | Action |
+|------|--------|
+| `supabase/functions/polar-webhook/index.ts` | Fix `mapProductToPlan()` to include `ultra` |
+| `src/pages/Checkout.tsx` | Replace placeholder product IDs with real Polar IDs |
+| `supabase/functions/polar-webhook/index.ts` | Add `checkout.completed` event handling |
 
-Changes:
-- Basic plan: Show UpgradePrompt, block access
-- Pro plan: Enforce 100 member limit with counter
-- Ultra plan: Unlimited access
+**Webhook Events to Handle**:
 
-#### 3.3 QR Verification Feature Gate
-**Files:** Template preview components
+```text
+checkout.completed → Create subscription record with selected_plan
+subscription.created/active → Set active_plan, subscription_status = 'active'
+subscription.updated → Update plan tier if changed
+subscription.canceled → Set subscription_status = 'canceled', clear active_plan
+```
 
-Changes:
-- Basic plan: Hide QR or show placeholder with upgrade prompt
-- Pro/Ultra: Show full QR verification functionality
+**mapProductToPlan Fix**:
+```text
+Current:
+- pro → "pro"
+- basic → "basic"
+- default → "basic"
 
-#### 3.4 Admin Collaborator Limits
-**File:** `src/components/admin/UserPermissionsPanel.tsx`
+Fixed:
+- ultra → "ultra"  (ADD THIS)
+- pro → "pro"
+- basic → "basic"
+- default → "basic"
+```
 
-Changes:
-- Basic: 1 admin only, disable invite button
-- Pro: Up to 5 admins, show count (e.g., "3/5 admins")
-- Ultra: Unlimited, no restrictions
-- Show upgrade prompt when limit reached
+**Failed Payment Handling**:
+- On `subscription.canceled` or `subscription.revoked`:
+  - Set `subscription_status = 'canceled'`
+  - Set `active_plan = null`
+  - User will be redirected to checkout on next dashboard visit
+
+**Acceptance Criteria**:
+- Plan changes reflect immediately via webhook
+- Failed payments downgrade access gracefully
 
 ---
 
-### Phase 4: AI Agent Feature (Ultra-Only)
+### Task 3: Request Portal Access Control (Priority: 2)
 
-#### 4.1 Database Schema Update
-**Migration Required**
+**Current State**:
+- Sidebar shows Request Portal with "Pro" badge
+- Page loads for all users (no server-side protection)
+- `FeatureGate` component exists but not applied at page level
 
+**Changes Required**:
+
+| File | Action |
+|------|--------|
+| `src/pages/RequestPortal.tsx` | Wrap entire page content with `FeatureGate` |
+| `src/components/dashboard/Sidebar.tsx` | Hide Request Portal completely for basic users |
+| `src/App.tsx` | Keep route but let FeatureGate handle access |
+
+**Implementation**:
+
+RequestPortal.tsx:
 ```text
-ALTER TABLE organizations 
-ADD COLUMN ai_context_country TEXT DEFAULT 'global';
+1. Import FeatureGate and UpgradePrompt
+2. Wrap page content with <FeatureGate feature="requestPortal">
+3. Show UpgradePrompt for basic users
 ```
 
-Stores the country context for AI-generated documents.
-
-#### 4.2 Create Country Context Selector
-**New File:** `src/components/ai-assistant/CountryContextSelector.tsx`
-
-Component features:
-- Popover trigger showing current selection (flag + country name)
-- Search input for filtering countries
-- ScrollArea with all 205 countries from `src/lib/countries.ts`
-- "Global" option at top with Globe icon
-- Check icon for selected item
-- Auto-saves on selection
-
-Visual layout:
+Sidebar.tsx:
 ```text
-+---------------------------------------+
-| [Globe] Global                    [v] |  <- Trigger Button
-+---------------------------------------+
-         |
-         v
-+---------------------------------------+
-| [Search icon] Search country...       |
-+---------------------------------------+
-| [Globe] Global                   [x]  |  <- First option
-+---------------------------------------+
-| [Flag] Afghanistan                    |
-| [Flag] Albania                        |
-| [Flag] Algeria                        |
-| ...                                   |
-| [Flag] United States             [x]  |  <- Selected
-| ...                                   |
-+---------------------------------------+
+Change from: Show with "Pro" badge and locked state
+Change to: Completely hide for basic users (filter out from navItems)
 ```
 
-#### 4.3 Create AI Context Hook
-**New File:** `src/hooks/useAIContext.ts`
-
-```text
-interface UseAIContextReturn {
-  contextCountry: string;
-  loading: boolean;
-  error: string | null;
-  updateContextCountry: (country: string) => Promise<void>;
-}
-```
-
-Fetches and updates `organizations.ai_context_country` via Supabase.
-
-#### 4.4 Create AI Assistant Page
-**New File:** `src/pages/AIAssistant.tsx`
-
-Page sections:
-1. **Header**: Title "AI Assistant" with subtitle
-2. **Country Context Card**: CountryContextSelector with explanation
-3. **Chat Area**: Placeholder for future AI chat implementation
-4. **Feature Highlights**: List of upcoming AI capabilities
-
-#### 4.5 Extend Countries Data
-**File:** `src/lib/countries.ts`
-
-Add helpers:
-```text
-export const GLOBAL_CONTEXT = { code: 'GLOBAL', name: 'Global', flag: '🌐' };
-export const getCountryByName = (name: string) => countries.find(c => c.name === name);
-export const sortedCountries = [...countries].sort((a, b) => a.name.localeCompare(b.name));
-```
+**Acceptance Criteria**:
+- Basic users cannot see Request Portal in sidebar
+- Direct URL access shows UpgradePrompt, not page content
 
 ---
 
-### Phase 5: Custom Document Requests (Ultra-Only)
+### Task 4: Make harshilsav1@gmail.com an Ultra User (Priority: 5)
 
-#### 5.1 Create Custom Request Form
-**New File:** `src/components/request-portal/CustomRequestForm.tsx`
+**Current State**: 
+- User email not found in `user_profiles` table (user may not exist yet)
+- Subscriptions table has `selected_plan` but no `active_plan` set
 
-Features:
-- Free-text document type input
-- Description/requirements field
-- Urgency selector
-- Submit to admin for review
+**Actions Required**:
 
-#### 5.2 Update Request Portal
-**File:** `src/pages/RequestPortal.tsx`
+**If user exists**:
+1. Find user_id from user_profiles table
+2. Insert/update subscription with:
+   - `active_plan = 'ultra'`
+   - `subscription_status = 'active'`
+   - `current_period_end = NULL` (never expires)
 
-Add "Custom Requests" tab for Ultra users to manage custom document requests.
+**If user doesn't exist**:
+1. Wait for user to sign up
+2. Use SQL migration to automatically grant ultra access after signup
+
+**SQL to Execute**:
+```sql
+-- Grant ultra access to harshilsav1@gmail.com
+INSERT INTO subscriptions (
+  user_id,
+  active_plan,
+  selected_plan,
+  subscription_status,
+  current_period_end
+)
+SELECT 
+  user_id,
+  'ultra',
+  'ultra',
+  'active',
+  '2099-12-31T23:59:59Z'  -- Far future date
+FROM user_profiles
+WHERE email = 'harshilsav1@gmail.com'
+ON CONFLICT (user_id) DO UPDATE SET
+  active_plan = 'ultra',
+  selected_plan = 'ultra',
+  subscription_status = 'active',
+  current_period_end = '2099-12-31T23:59:59Z';
+```
+
+**Acceptance Criteria**:
+- Full Ultra access without payment
+- Access persists across sessions
 
 ---
 
-### Phase 6: Settings Page - Subscription Display
+### Task 5: Fix Request Portal Templates (Priority: 4)
 
-#### 6.1 Add Subscription Card
-**File:** `src/pages/Settings.tsx`
+**Current State**:
+- `DynamicForm` uses `space-y-3` and `gap-4`
+- Excessive spacing reported
+- REDO THE WHOLE REQUEST PORTAL SIDE 'DOCUMENTS' UI, when clicking a document specific
 
-New card showing:
-- Current plan name and status badge
-- Renewal/expiration date
-- Feature summary for current plan
-- "Manage Subscription" button (billing portal)
-- "Upgrade Plan" button (for Basic/Pro users)
+**Changes Required**:
 
----
+| File | Action |
+|------|--------|
+| `src/components/templates/DynamicForm.tsx` | Reduce spacing between sections |
+| Template preview components | Normalize vertical spacing |
 
-### Phase 7: Add Routes
-
-**File:** `src/App.tsx`
-
-Add new protected routes:
+**Spacing Fixes**:
 ```text
-/ai-assistant -> AIAssistant (Ultra-only, handled in component)
+DynamicForm.tsx:
+- Change `space-y-3` to `space-y-2` for form
+- Change `space-y-2` to `space-y-1` for sections
+- Keep `gap-4` for grid items (needed for touch targets)
+```
+
+**Section Grouping**:
+- Add visual dividers between logical sections
+- Use consistent padding/margins across all templates
+
+**Acceptance Criteria**:
+- Templates render compact, readable, and production-ready
+- No excessive vertical gaps between fields
+
+---
+
+### Task 6: QR Code & Signature Approval Logic (Priority: 3)
+
+**Current State**:
+- `shouldBlur` logic exists in all 24 template components
+- QR codes are GENERATED even for pending status (only blurred)
+- Signature shows with blur overlay
+
+**Problem**:
+- QR verification entry is created in `verified_documents` table before approval
+- QR code can be scanned (link works) even when blurred
+
+**Changes Required**:
+
+| File | Action |
+|------|--------|
+| All template preview layouts | Gate QR generation, not just display |
+| `src/lib/qr-utils.ts` | Return null/empty for non-approved documents |
+
+**Fix Pattern for Each Layout**:
+
+```text
+Before:
+useEffect(() => {
+  const generateQR = async () => {
+    const url = await generateDocumentQRCode(...);
+    setQrCodeUrl(url);
+  };
+  generateQR();
+}, []);
+
+After:
+useEffect(() => {
+  // Only generate QR for approved documents
+  if (isEmployeePreview && requestStatus !== "approved") {
+    setQrCodeUrl(null);
+    return;
+  }
+  const generateQR = async () => {
+    const url = await generateDocumentQRCode(...);
+    setQrCodeUrl(url);
+  };
+  generateQR();
+}, [isEmployeePreview, requestStatus]);
+```
+
+**Affected Files** (all 24):
+- `CertificateLayout.tsx`
+- `LetterLayout.tsx`
+- `AgreementLayout.tsx`
+- `TranscriptLayout.tsx`
+- All individual preview components
+
+**Signature Fix**:
+```text
+Before: Render signature with blur if not approved
+After: Don't render signature at all if not approved (show placeholder)
+```
+
+**Acceptance Criteria**:
+- No QR code generated for pending/rejected requests
+- No signature rendered for pending/rejected requests
+- No `verified_documents` entry created until approval
+
+---
+
+### Task 7: Admin Portal Member Counter (Priority: 6)
+
+**Current State**:
+- `RequestPortalMembers` shows list but no limit indicator
+- Limits defined in `planFeatures.ts`: Pro = 100, Ultra = unlimited
+- Add a rounded rectangle on top right of the Request Portal page (admin Side) with counter like (X / 100) for pro or (X / ∞) for ultra.
+
+**Changes Required**:
+
+| File | Action |
+|------|--------|
+| `src/pages/RequestPortal.tsx` | Add member counter header |
+| `src/components/request-portal/RequestPortalMembers.tsx` | Display limit info |
+
+**Counter Display**:
+```text
+Pro users: "Portal Members (45 / 100)"
+Ultra users: "Portal Members (45 / Unlimited)"
+Basic users: Should not see this page (blocked by FeatureGate)
+```
+
+**Implementation**:
+1. Use `usePlanFeatures()` to get current plan limits
+2. Pass `maxMembers` limit to `RequestPortalMembers` component
+3. Display counter in card header
+4. Add warning when approaching limit (90%)
+5. Block adding new members when at limit (Pro only)
+
+**Acceptance Criteria**:
+- Counter updates in real time when members added/removed
+- Hard cap of 100 enforced for Pro users
+- Clear visual indication of limit status
+
+---
+
+### Task 8: Admins Feature - Role System (Priority: 6)
+
+**Current State**:
+- Only `admin` role exists in `organization_members.role`
+- `UserPermissionsPanel` is completely locked with blur overlay
+- No differentiation between owner and invited admins
+
+**Proposed Role Hierarchy**:
+
+| Role | Permissions |
+|------|-------------|
+| `owner` | Full access, can remove admins, delete org, billing |
+| `admin` | View portal members, approve/reject requests, manage templates |
+| `member` | View only (future implementation) |
+
+**Database Changes Required**:
+
+```sql
+-- Add owner role support
+-- No schema change needed - role column already TEXT
+
+-- Migration: Set first admin of each org as owner
+UPDATE organization_members om
+SET role = 'owner'
+WHERE om.role = 'admin'
+AND om.created_at = (
+  SELECT MIN(created_at) 
+  FROM organization_members 
+  WHERE organization_id = om.organization_id 
+  AND role = 'admin'
+);
+```
+
+**Code Changes**:
+
+| File | Action |
+|------|--------|
+| `src/components/admin/UserPermissionsPanel.tsx` | Remove blur overlay, implement role-based UI |
+| `src/hooks/useOrganizationSecurity.ts` | Add `isOwner` check |
+| `src/config/planFeatures.ts` | Add admin limit enforcement |
+| `supabase/functions/invite-collaborator/index.ts` | Check admin limit before invite |
+
+**UserPermissionsPanel Changes**:
+1. Remove the blur overlay (lines 259-418)
+2. Show admin count: "Admins (3 / 5)" for Pro
+3. Disable invite button when at limit
+4. Only owner can remove other admins
+
+**Acceptance Criteria**:
+- Role-based access enforced frontend and backend
+- Owner can add or remove admins
+- Admin limits enforced per plan (Basic: 1, Pro: 5, Ultra: unlimited)
+
+---
+
+## Suggested Execution Order
+
+Based on dependencies and impact:
+
+| Order | Task | Reason |
+|-------|------|--------|
+| 1 | Task 3: Gate request portal access | Security - blocks unauthorized access |
+| 2 | Task 6: Fix QR/signature approval logic | Security - prevents premature verification |
+| 3 | Task 5: Fix request templates | User experience improvement |
+| 4 | Task 2: Integrate Polar payments | Monetization - enables subscriptions |
+| 5 | Task 4: Grant Ultra access | Testing - enables full feature testing |
+| 6 | Task 8: Add admin features and counters | Feature completeness |
+| 7 | Task 7: Add member counter | Feature completeness |
+
+---
+
+## Technical Dependencies
+
+```text
+Task 2 (Payments) 
+  └── Task 4 (Ultra access) - Can be done via SQL without payments
+
+Task 3 (Request Portal gate)
+  └── Task 8 (Admin features) - Both need plan limits
+
+Task 6 (QR approval logic)
+  └── Independent - Can be done first
+
+Task 7 (Member counter)
+  └── Task 8 (Roles) - Needs plan feature hook
 ```
 
 ---
 
 ## Files Summary
 
-### New Files to Create
-| File | Purpose |
-|------|---------|
-| `src/config/planFeatures.ts` | Plan configuration and limits |
-| `src/hooks/usePlanFeatures.ts` | Feature access hook |
-| `src/hooks/useAIContext.ts` | AI context management hook |
-| `src/components/auth/FeatureGate.tsx` | Reusable feature gate component |
-| `src/components/shared/UpgradePrompt.tsx` | Upgrade CTA component |
-| `src/components/ai-assistant/CountryContextSelector.tsx` | Country dropdown with search |
-| `src/pages/AIAssistant.tsx` | AI Assistant page (Ultra-only) |
-| `src/components/request-portal/CustomRequestForm.tsx` | Custom document request form |
+### Files to Create
+- `src/components/onboarding/AccountInfoStage.tsx` (combined personal + org)
 
 ### Files to Modify
-| File | Changes |
-|------|---------|
-| `src/components/onboarding/PricingStage.tsx` | Update pricing to $19/$49/$199 |
-| `src/pages/Checkout.tsx` | Update pricing and features |
-| `src/components/dashboard/Sidebar.tsx` | Add plan-based nav visibility |
-| `src/pages/RequestPortal.tsx` | Add access control and member limits |
-| `src/components/admin/UserPermissionsPanel.tsx` | Add admin limit enforcement |
-| `src/pages/Settings.tsx` | Add subscription display card |
-| `src/App.tsx` | Add /ai-assistant route |
-| `src/lib/countries.ts` | Add helper functions |
-| `src/components/onboarding/UpgradeCTA.tsx` | Update messaging for tiers |
 
-### Database Migration
-```text
-ALTER TABLE organizations 
-ADD COLUMN ai_context_country TEXT DEFAULT 'global';
-```
+| File | Tasks |
+|------|-------|
+| `supabase/functions/polar-webhook/index.ts` | 2 |
+| `src/pages/Checkout.tsx` | 2 |
+| `src/pages/RequestPortal.tsx` | 3, 7 |
+| `src/components/dashboard/Sidebar.tsx` | 3 |
+| `src/components/templates/layouts/CertificateLayout.tsx` | 6 |
+| `src/components/templates/layouts/LetterLayout.tsx` | 6 |
+| `src/components/templates/layouts/AgreementLayout.tsx` | 6 |
+| `src/components/templates/layouts/TranscriptLayout.tsx` | 6 |
+| `src/components/templates/DynamicForm.tsx` | 5 |
+| `src/components/request-portal/RequestPortalMembers.tsx` | 7 |
+| `src/components/admin/UserPermissionsPanel.tsx` | 8 |
+| `src/pages/Onboarding.tsx` | 1 |
+| `src/components/onboarding/OnboardingProgress.tsx` | 1 |
 
----
-
-## Technical Flow Diagrams
-
-### Feature Access Check Flow
-```text
-User Action
-    |
-    v
-usePlanFeatures hook
-    |
-    v
-Check activePlan from useSubscription
-    |
-    v
-Compare against planFeatures config
-    |
-    +---> Feature allowed -> Render content
-    |
-    +---> Feature blocked -> Render UpgradePrompt
-```
-
-### AI Context Update Flow
-```text
-User opens AI Assistant
-    |
-    v
-useAIContext fetches organizations.ai_context_country
-    |
-    v
-Display in CountryContextSelector
-    |
-    v
-User selects new country
-    |
-    v
-updateContextCountry() -> Supabase UPDATE
-    |
-    v
-Future AI prompts include country context
-```
-
----
-
-## Implementation Order
-
-1. **Phase 1**: Update pricing values (quick win, visible change)
-2. **Phase 2**: Create feature gating infrastructure
-3. **Phase 3**: Apply feature gates to existing features
-4. **Phase 4**: Build AI Agent feature with country selector
-5. **Phase 5**: Add custom document requests
-6. **Phase 6**: Update Settings with subscription display
-7. **Phase 7**: Add new routes and navigation
-
+### Database Migrations
+1. Grant ultra access to harshilsav1@gmail.com
+2. Set first admin as owner for existing orgs
