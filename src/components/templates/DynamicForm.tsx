@@ -195,11 +195,11 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
         {config.sections.map((section: any) => (
-          <div key={section.id} className="space-y-2">
-            <h3 className="text-lg font-medium">{section.title}</h3>
-            <div className={`grid grid-cols-1 ${section.columns === 2 ? 'md:grid-cols-2' : ''} gap-4`}>
+          <div key={section.id} className="space-y-1.5">
+            <h3 className="text-base font-medium">{section.title}</h3>
+            <div className={`grid grid-cols-1 ${section.columns === 2 ? 'md:grid-cols-2' : ''} gap-3`}>
               {section.fields.map((field: any) => (
                 <div key={field.name} className={field.gridColumn ? `col-span-1` : ''}>
                   {renderField(field, form.control)}

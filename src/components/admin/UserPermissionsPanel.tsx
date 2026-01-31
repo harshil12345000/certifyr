@@ -20,8 +20,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Mail, Users, UserPlus } from "lucide-react";
+import { Trash2, Mail, Users, UserPlus, AlertTriangle } from "lucide-react";
 import dayjs from "dayjs";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 
 interface OrganizationMember {
   id: string;
@@ -48,6 +49,7 @@ export function UserPermissionsPanel({
   organizationId: string | null;
 }) {
   const { user } = useAuth();
+  const { limits, activePlan } = usePlanFeatures();
   const [isAdmin, setIsAdmin] = useState(false);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [invites, setInvites] = useState<OrganizationInvite[]>([]);
@@ -57,6 +59,11 @@ export function UserPermissionsPanel({
     role: "admin",
   });
   const [isInviting, setIsInviting] = useState(false);
+  
+  // Admin limit checking
+  const adminCount = members.filter(m => m.role === "admin" && m.status === "active").length;
+  const maxAdmins = limits.maxAdmins;
+  const isAtAdminLimit = maxAdmins !== null && adminCount >= maxAdmins;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -255,20 +262,43 @@ export function UserPermissionsPanel({
   }
 
   return (
-    <div className="relative">
-      <div className="space-y-6 blur-md pointer-events-none">
-        {/* Invite Users Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+    <div className="space-y-6">
+      {/* Admin Limit Warning */}
+      {isAtAdminLimit && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
+          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-amber-800">Admin limit reached</p>
+            <p className="text-sm text-amber-700">
+              You've reached your plan's limit of {maxAdmins} admin{maxAdmins !== 1 ? 's' : ''}. 
+              Upgrade to add more admins.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {/* Invite Users Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Invite New Admin
-            </CardTitle>
-            <CardDescription>
-              Send an invitation to add a new admin to your organization.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+              <CardTitle>Invite New Admin</CardTitle>
+            </div>
+            {maxAdmins !== null && (
+              <Badge variant={isAtAdminLimit ? "destructive" : "secondary"}>
+                {adminCount} / {maxAdmins} admins
+              </Badge>
+            )}
+            {maxAdmins === null && activePlan === 'ultra' && (
+              <Badge variant="secondary">Unlimited admins</Badge>
+            )}
+          </div>
+          <CardDescription>
+            Send an invitation to add a new admin to your organization.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
@@ -303,10 +333,10 @@ export function UserPermissionsPanel({
               </div>
               <Button
                 type="submit"
-                disabled={!organizationId || isInviting}
+                disabled={!organizationId || isInviting || isAtAdminLimit}
                 className="w-full md:w-auto"
               >
-                {isInviting ? "Sending..." : "Send Invitation"}
+                {isInviting ? "Sending..." : isAtAdminLimit ? "Admin Limit Reached" : "Send Invitation"}
               </Button>
             </form>
             {!organizationId && (
@@ -409,12 +439,6 @@ export function UserPermissionsPanel({
             )}
           </CardContent>
         </Card>
-      </div>
-      
-      {/* Lock Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-6xl">🔒</span>
-      </div>
     </div>
   );
 }
