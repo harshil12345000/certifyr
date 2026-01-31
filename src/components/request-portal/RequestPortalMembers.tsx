@@ -27,9 +27,11 @@ interface PortalEmployee {
 
 export function RequestPortalMembers({
   organizationId,
+  maxMembers,
   onMemberProcessed,
 }: {
   organizationId: string;
+  maxMembers?: number | null;
   onMemberProcessed?: () => void;
 }) {
   const { user } = useAuth();
@@ -159,13 +161,26 @@ export function RequestPortalMembers({
     );
   }
 
+  // Check if at member limit (for Pro plan)
+  const isAtLimit = maxMembers !== null && maxMembers !== undefined && employees.length >= maxMembers;
+  const approvedCount = employees.filter(e => e.status === "approved").length;
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Portal Members</CardTitle>
-        <CardDescription>
-          Manage employees who have access to the request portal
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Portal Members</CardTitle>
+            <CardDescription>
+              Manage employees who have access to the request portal
+            </CardDescription>
+          </div>
+          {maxMembers !== null && maxMembers !== undefined && (
+            <div className={`text-sm font-medium px-3 py-1.5 rounded-md ${isAtLimit ? 'bg-destructive/10 text-destructive' : 'bg-muted'}`}>
+              {approvedCount} / {maxMembers} approved
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {employees.length === 0 ? (

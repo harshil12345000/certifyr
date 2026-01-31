@@ -84,6 +84,7 @@ async function verifyPolarSignature(
 // Map Polar product/price to plan name
 function mapProductToPlan(productName: string): string {
   const lowerName = productName.toLowerCase();
+  if (lowerName.includes("ultra")) return "ultra";
   if (lowerName.includes("pro")) return "pro";
   if (lowerName.includes("basic")) return "basic";
   // Default based on naming convention
@@ -129,6 +130,38 @@ serve(async (req) => {
 
     // Handle different webhook event types
     switch (payload.type) {
+      case "checkout.completed": {
+        // Handle checkout completion - create initial subscription record
+        const data = payload.data;
+        const customerEmail = data.customer?.email || data.user?.email;
+        const customerId = data.customer?.id || data.user?.id;
+        const productName = data.product?.name || "";
+        const metadataUserId = data.metadata?.user_id;
+
+        console.log(`Checkout completed for ${customerEmail}, product: ${productName}`);
+
+        if (metadataUserId) {
+          const selectedPlan = mapProductToPlan(productName);
+          
+          // Create subscription record with selected_plan (active_plan will be set by subscription.active)
+          const { error: insertError } = await supabase
+            .from("subscriptions")
+            .upsert({
+              user_id: metadataUserId,
+              selected_plan: selectedPlan,
+              polar_customer_id: customerId,
+              subscription_status: "pending",
+            }, { onConflict: "user_id" });
+
+          if (insertError) {
+            console.error("Error creating subscription from checkout:", insertError);
+          } else {
+            console.log(`Created subscription record for user ${metadataUserId} with plan ${selectedPlan}`);
+          }
+        }
+        break;
+      }
+
       case "subscription.created":
       case "subscription.updated":
       case "subscription.active": {

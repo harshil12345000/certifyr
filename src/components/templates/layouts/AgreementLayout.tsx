@@ -26,6 +26,12 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
 
   useEffect(() => {
+    // Only generate QR for approved documents (not pending/rejected employee previews)
+    if (isEmployeePreview && requestStatus !== "approved") {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     const generateQR = async () => {
       const url = await generateDocumentQRCode(
         `${config.id}-1`,
@@ -36,7 +42,7 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
       setQrCodeUrl(url);
     };
     generateQR();
-  }, [data, organizationId, user?.id, config.id]);
+  }, [data, organizationId, user?.id, config.id, isEmployeePreview, requestStatus]);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "[Date]";
@@ -394,21 +400,22 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
         <div className="grid grid-cols-2 gap-8">
           <div>
             <p className="font-bold mb-4">SIGNATURE</p>
-            {data.includeDigitalSignature && signatureUrl ? (
-              <div className="h-16 mb-4 relative">
+            {data.includeDigitalSignature && signatureUrl && !shouldBlur ? (
+              <div className="h-16 mb-4">
                 <img
                   src={signatureUrl}
                   alt="Digital Signature"
-                  className={`h-12 object-contain ${shouldBlur ? "blur-sm" : ""}`}
+                  className="h-12 object-contain"
                   onError={(e) => handleImageError(e, "signature")}
                 />
-                {shouldBlur && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
-                    <span className="text-xs text-gray-500">
-                      Signature pending approval
-                    </span>
-                  </div>
-                )}
+              </div>
+            ) : shouldBlur && data.includeDigitalSignature ? (
+              <div className="h-16 mb-4 flex items-center">
+                <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 px-6 h-12">
+                  <span className="text-xs text-gray-500">
+                    Signature pending approval
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="h-16 border-b-2 border-gray-300 mb-4"></div>
@@ -423,9 +430,18 @@ export const AgreementLayout: React.FC<AgreementLayoutProps> = ({
             <p>Place: {parseLocation(organizationDetails?.address) || data.place || "[Place]"}</p>
           </div>
 
-          {qrCodeUrl && (
+          {qrCodeUrl && !shouldBlur && (
             <div className="flex justify-end items-start">
               <QRCode value={qrCodeUrl} size={80} />
+            </div>
+          )}
+          {shouldBlur && (
+            <div className="flex justify-end items-start">
+              <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 w-[80px] h-[80px]">
+                <span className="text-xs text-gray-500 text-center">
+                  QR pending
+                </span>
+              </div>
             </div>
           )}
         </div>

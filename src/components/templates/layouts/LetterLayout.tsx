@@ -26,6 +26,12 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
 
   useEffect(() => {
+    // Only generate QR for approved documents (not pending/rejected employee previews)
+    if (isEmployeePreview && requestStatus !== "approved") {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     const generateQR = async () => {
       const url = await generateDocumentQRCode(
         `${config.id}-1`,
@@ -36,7 +42,7 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
       setQrCodeUrl(url);
     };
     generateQR();
-  }, [data, organizationId, user?.id, config.id]);
+  }, [data, organizationId, user?.id, config.id, isEmployeePreview, requestStatus]);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "[Date]";
@@ -341,23 +347,24 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
       </div>
 
       <div className="mt-8 text-right">
-        {data.includeDigitalSignature && signatureUrl ? (
-          <div className="h-16 mb-4 flex justify-end relative">
+        {data.includeDigitalSignature && signatureUrl && !shouldBlur ? (
+          <div className="h-16 mb-4 flex justify-end">
             <div className="border-b border-gray-800 px-6">
               <img
                 src={signatureUrl}
                 alt="Digital Signature"
-                className={`h-12 object-contain ${shouldBlur ? "blur-sm" : ""}`}
+                className="h-12 object-contain"
                 onError={(e) => handleImageError(e, "signature")}
               />
             </div>
-            {shouldBlur && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
-                <span className="text-xs text-gray-500">
-                  Signature pending approval
-                </span>
-              </div>
-            )}
+          </div>
+        ) : shouldBlur && data.includeDigitalSignature ? (
+          <div className="h-16 mb-4 flex justify-end">
+            <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 px-6 h-12">
+              <span className="text-xs text-gray-500">
+                Signature pending approval
+              </span>
+            </div>
           </div>
         ) : (
           <div className="h-16 mb-4"></div>
@@ -374,9 +381,18 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
             "[Institution Name]"}
         </p>
 
-        {qrCodeUrl && (
+        {qrCodeUrl && !shouldBlur && (
           <div className="flex justify-end">
             <QRCode value={qrCodeUrl} size={75} />
+          </div>
+        )}
+        {shouldBlur && (
+          <div className="flex justify-end">
+            <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 w-[75px] h-[75px]">
+              <span className="text-xs text-gray-500 text-center">
+                QR pending
+              </span>
+            </div>
           </div>
         )}
       </div>
