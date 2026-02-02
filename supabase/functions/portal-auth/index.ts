@@ -1,11 +1,98 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Use Web Crypto API for password hashing (works in Deno Deploy)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  const hashArray = new Uint8Array(derivedBits);
+  // Combine salt + hash and encode as base64
+  const combined = new Uint8Array(salt.length + hashArray.length);
+  combined.set(salt);
+  combined.set(hashArray, salt.length);
+  return `pbkdf2:${btoa(String.fromCharCode(...combined))}`;
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  // Handle legacy base64-encoded passwords
+  if (!storedHash.startsWith("pbkdf2:") && !storedHash.startsWith("$2")) {
+    try {
+      const decodedPassword = atob(storedHash);
+      return decodedPassword === password;
+    } catch {
+      return false;
+    }
+  }
+
+  // Handle bcrypt hashes (can't verify, need re-save)
+  if (storedHash.startsWith("$2")) {
+    // For bcrypt hashes, we can't verify in this runtime
+    // User should re-save the password
+    return false;
+  }
+
+  // Handle PBKDF2 hashes
+  if (storedHash.startsWith("pbkdf2:")) {
+    try {
+      const encoder = new TextEncoder();
+      const combined = Uint8Array.from(atob(storedHash.slice(7)), c => c.charCodeAt(0));
+      const salt = combined.slice(0, 16);
+      const storedHashBytes = combined.slice(16);
+
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(password),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+      );
+      const derivedBits = await crypto.subtle.deriveBits(
+        {
+          name: "PBKDF2",
+          salt: salt,
+          iterations: 100000,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        256
+      );
+      const hashArray = new Uint8Array(derivedBits);
+      
+      // Compare hashes
+      if (hashArray.length !== storedHashBytes.length) return false;
+      for (let i = 0; i < hashArray.length; i++) {
+        if (hashArray[i] !== storedHashBytes[i]) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -49,29 +136,16 @@ serve(async (req) => {
           );
         }
 
-        // Check if it's bcrypt hash or legacy base64
-        let isValid = false;
-        if (settings.password_hash.startsWith("$2")) {
-          // bcrypt hash
-          isValid = await bcrypt.compare(password, settings.password_hash);
-        } else {
-          // Legacy base64 - migrate on successful login
-          try {
-            const decodedPassword = atob(settings.password_hash);
-            isValid = decodedPassword === password;
-            
-            if (isValid) {
-              // Migrate to bcrypt
-              const newHash = await bcrypt.hash(password);
-              await supabase
-                .from("request_portal_settings")
-                .update({ password_hash: newHash })
-                .eq("organization_id", organization_id);
-              console.log("Migrated legacy password to bcrypt for org:", organization_id);
-            }
-          } catch {
-            isValid = false;
-          }
+        const isValid = await verifyPassword(password, settings.password_hash);
+
+        // If valid with legacy format, migrate to PBKDF2
+        if (isValid && !settings.password_hash.startsWith("pbkdf2:")) {
+          const newHash = await hashPassword(password);
+          await supabase
+            .from("request_portal_settings")
+            .update({ password_hash: newHash })
+            .eq("organization_id", organization_id);
+          console.log("Migrated legacy password to PBKDF2 for org:", organization_id);
         }
 
         return new Response(
@@ -107,28 +181,16 @@ serve(async (req) => {
           );
         }
 
-        // Check password
-        let isValid = false;
-        if (employee.password_hash.startsWith("$2")) {
-          isValid = await bcrypt.compare(password, employee.password_hash);
-        } else {
-          // Legacy base64
-          try {
-            const decodedPassword = atob(employee.password_hash);
-            isValid = decodedPassword === password;
-            
-            if (isValid) {
-              // Migrate to bcrypt
-              const newHash = await bcrypt.hash(password);
-              await supabase
-                .from("request_portal_employees")
-                .update({ password_hash: newHash })
-                .eq("id", employee.id);
-              console.log("Migrated legacy employee password to bcrypt:", employee.id);
-            }
-          } catch {
-            isValid = false;
-          }
+        const isValid = await verifyPassword(password, employee.password_hash);
+        
+        // Migrate legacy passwords
+        if (isValid && !employee.password_hash.startsWith("pbkdf2:")) {
+          const newHash = await hashPassword(password);
+          await supabase
+            .from("request_portal_employees")
+            .update({ password_hash: newHash })
+            .eq("id", employee.id);
+          console.log("Migrated legacy employee password to PBKDF2:", employee.id);
         }
 
         if (!isValid) {
@@ -147,7 +209,7 @@ serve(async (req) => {
       }
 
       case "employee_register": {
-        // Employee registration with bcrypt password
+        // Employee registration with PBKDF2 password
         const { organization_id, full_name, email, employee_id, phone_number, manager_name, password } = payload;
         
         if (!organization_id || !full_name || !email || !password) {
@@ -179,8 +241,8 @@ serve(async (req) => {
           );
         }
 
-        // Hash password with bcrypt
-        const passwordHash = await bcrypt.hash(password);
+        // Hash password with PBKDF2
+        const passwordHash = await hashPassword(password);
 
         const { data: employee, error } = await supabase
           .from("request_portal_employees")
@@ -222,7 +284,7 @@ serve(async (req) => {
       }
 
       case "save_portal_password": {
-        // Save portal password with bcrypt (requires auth)
+        // Save portal password with PBKDF2 (requires auth)
         const authHeader = req.headers.get("Authorization");
         if (!authHeader) {
           return new Response(
@@ -240,8 +302,8 @@ serve(async (req) => {
           );
         }
 
-        // Hash password with bcrypt
-        const passwordHash = await bcrypt.hash(password);
+        // Hash password with PBKDF2
+        const passwordHash = await hashPassword(password);
 
         const { error } = await supabase
           .from("request_portal_settings")
