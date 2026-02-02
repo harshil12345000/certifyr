@@ -252,7 +252,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
         <div className={cn("flex-1 overflow-y-auto", isCollapsed ? "py-3" : "py-6")}>
           <nav className="px-2 space-y-1">
             {filteredNavItems.map((item) => (
-              <React.Fragment key={item.path}>
+              <div key={item.path} className="contents">
                 <Link
                   to={item.path}
                   className={cn(
@@ -286,7 +286,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
                     {!isCollapsed && <span className="ml-3">Bookmarks</span>}
                   </Link>
                 )}
-              </React.Fragment>
+              </div>
             ))}
           </nav>
         </div>
