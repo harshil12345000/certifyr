@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AuthConfirm() {
@@ -10,117 +10,137 @@ export default function AuthConfirm() {
   const navigate = useNavigate();
   const [isVerifying, setIsVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        console.log('AuthConfirm: Starting token verification');
-        console.log('URL search params:', window.location.search);
-        console.log('URL hash:', window.location.hash);
+        console.log('[AuthConfirm] Starting token verification');
+        console.log('[AuthConfirm] Search:', window.location.search);
+        console.log('[AuthConfirm] Hash:', window.location.hash);
 
-        // Try to get parameters from query string first (PKCE flow)
-        let tokenHash = searchParams.get('token_hash');
-        let type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | 'magiclink' | null;
+        // Get parameters from query string (PKCE flow)
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | 'magiclink' | null;
+        const code = searchParams.get('code');
         const next = searchParams.get('next') || '/dashboard';
+        const errorParam = searchParams.get('error');
+        const errorDescription = searchParams.get('error_description');
 
-        // If not in query params, try hash fragment (implicit flow)
-        if (!tokenHash && window.location.hash) {
+        // Handle errors in URL
+        if (errorParam) {
+          console.error('[AuthConfirm] Error in URL:', errorParam, errorDescription);
+          setError(errorDescription || 'Verification failed');
+          setIsVerifying(false);
+          return;
+        }
+
+        // Handle hash fragment (implicit flow)
+        if (window.location.hash) {
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
           const accessToken = hashParams.get('access_token');
           const refreshToken = hashParams.get('refresh_token');
           const hashType = hashParams.get('type');
+          const hashError = hashParams.get('error');
+          const hashErrorDesc = hashParams.get('error_description');
 
-          console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, hashType });
-
-          if (accessToken && hashType === 'recovery') {
-            // For recovery via hash (implicit flow), set the session directly
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken || ''
-            });
-
-            if (sessionError) {
-              console.error('Failed to set recovery session:', sessionError);
-              setError('Invalid or expired recovery link');
-              setIsVerifying(false);
-              return;
-            }
-
-            console.log('Recovery session established from hash, redirecting to reset-password');
-            navigate('/reset-password', { replace: true });
+          if (hashError) {
+            console.error('[AuthConfirm] Hash error:', hashError, hashErrorDesc);
+            setError(hashErrorDesc || 'Verification failed');
+            setIsVerifying(false);
             return;
           }
 
-          // For other hash-based auth (signup confirmation, etc.)
           if (accessToken) {
+            console.log('[AuthConfirm] Setting session from hash, type:', hashType);
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || ''
             });
 
             if (sessionError) {
-              console.error('Failed to set session from hash:', sessionError);
+              console.error('[AuthConfirm] Failed to set session:', sessionError);
               setError('Invalid or expired link');
               setIsVerifying(false);
               return;
             }
 
-            console.log('Session established from hash, redirecting to:', next);
-            navigate(next, { replace: true });
+            // Redirect based on type
+            if (hashType === 'recovery') {
+              navigate('/reset-password', { replace: true });
+            } else {
+              setSuccess(true);
+              setTimeout(() => navigate(next, { replace: true }), 1500);
+            }
             return;
           }
         }
 
-        // Handle PKCE flow with token_hash
-        if (tokenHash && type) {
-          console.log('Verifying OTP with token_hash, type:', type);
+        // Handle PKCE code exchange
+        if (code) {
+          console.log('[AuthConfirm] Exchanging PKCE code');
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error('[AuthConfirm] Code exchange failed:', exchangeError);
+            setError('Invalid or expired link');
+            setIsVerifying(false);
+            return;
+          }
 
+          if (data.session) {
+            if (type === 'recovery') {
+              navigate('/reset-password', { replace: true });
+            } else {
+              setSuccess(true);
+              setTimeout(() => navigate(next, { replace: true }), 1500);
+            }
+            return;
+          }
+        }
+
+        // Handle token_hash verification
+        if (tokenHash && type) {
+          console.log('[AuthConfirm] Verifying token_hash, type:', type);
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: type,
           });
 
           if (verifyError) {
-            console.error('Token verification error:', verifyError);
-            setError(verifyError.message || 'Failed to verify token');
+            console.error('[AuthConfirm] Token verification failed:', verifyError);
+            setError(verifyError.message || 'Verification failed');
             setIsVerifying(false);
             return;
           }
 
-          if (!data.session) {
-            setError('Verification succeeded but no session was created');
-            setIsVerifying(false);
+          if (data.session) {
+            if (type === 'recovery') {
+              navigate('/reset-password', { replace: true });
+            } else {
+              setSuccess(true);
+              setTimeout(() => navigate(next, { replace: true }), 1500);
+            }
             return;
           }
-
-          console.log('OTP verified successfully, type:', type);
-
-          // Redirect based on type
-          if (type === 'recovery') {
-            navigate('/reset-password', { replace: true });
-          } else {
-            navigate(next, { replace: true });
-          }
-          return;
         }
 
-        // Check if we already have a valid session (might have been set by Supabase client automatically)
+        // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          console.log('Existing session found, checking for recovery flow');
-          // Check if this is a password recovery session
-          // The session user might have aal1 which indicates recovery
-          navigate('/reset-password', { replace: true });
+          console.log('[AuthConfirm] Found existing session');
+          setSuccess(true);
+          setTimeout(() => navigate(next, { replace: true }), 1500);
           return;
         }
 
-        // No valid token found in any format
-        console.error('No valid token found in URL');
-        setError('Invalid confirmation link - missing required parameters');
+        // No valid token found
+        console.error('[AuthConfirm] No valid token found');
+        setError('Invalid confirmation link');
         setIsVerifying(false);
 
       } catch (err) {
-        console.error('Unexpected error during verification:', err);
+        console.error('[AuthConfirm] Unexpected error:', err);
         setError('An unexpected error occurred');
         setIsVerifying(false);
       }
@@ -131,8 +151,8 @@ export default function AuthConfirm() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-        <Card className="w-full max-w-md shadow-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-4">
             <div className="flex justify-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -140,8 +160,30 @@ export default function AuthConfirm() {
             <CardTitle className="text-2xl">Verifying...</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Please wait while we verify your link.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Verified!</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              Redirecting you now...
             </p>
           </CardContent>
         </Card>
@@ -151,20 +193,20 @@ export default function AuthConfirm() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-        <Card className="w-full max-w-md shadow-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-4">
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-destructive" />
               </div>
             </div>
             <CardTitle className="text-2xl">Verification Failed</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center space-y-2">
-              <p className="text-gray-700">{error}</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-foreground">{error}</p>
+              <p className="text-sm text-muted-foreground">
                 The link may have expired or already been used.
               </p>
             </div>
@@ -175,13 +217,6 @@ export default function AuthConfirm() {
                 className="w-full"
               >
                 Back to Login
-              </Button>
-              <Button
-                onClick={() => window.location.reload()}
-                variant="outline"
-                className="w-full"
-              >
-                Try Again
               </Button>
             </div>
           </CardContent>

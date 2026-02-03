@@ -20,6 +20,7 @@ export default function ResetPassword() {
   const [isValidating, setIsValidating] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const getPasswordStrength = (password: string) => {
     if (!password) return { score: 0, text: "", color: "" };
@@ -49,63 +50,125 @@ export default function ResetPassword() {
   useEffect(() => {
     const validateToken = async () => {
       setIsValidating(true);
+      setErrorMessage(null);
       
       try {
-        // Check for existing valid session first
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        console.log('[ResetPassword] Starting token validation');
+        console.log('[ResetPassword] Hash:', window.location.hash);
+        console.log('[ResetPassword] Search:', window.location.search);
+
+        // Method 1: Check for existing valid session first (user might already be authenticated via recovery)
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          console.log('[ResetPassword] Found existing session');
           setIsValidToken(true);
           setIsValidating(false);
           return;
         }
 
-        // Try hash format (implicit flow: #access_token=...&type=recovery)
+        // Method 2: Handle hash fragment format (#access_token=...&type=recovery)
+        // This is Supabase's implicit flow format
         const hash = window.location.hash;
-        if (hash) {
+        if (hash && hash.includes('access_token')) {
+          console.log('[ResetPassword] Processing hash fragment');
           const hashParams = new URLSearchParams(hash.substring(1));
           const accessToken = hashParams.get('access_token');
           const refreshToken = hashParams.get('refresh_token');
           const hashType = hashParams.get('type');
+          const errorParam = hashParams.get('error');
+          const errorDescription = hashParams.get('error_description');
+
+          if (errorParam) {
+            console.error('[ResetPassword] Hash contains error:', errorParam, errorDescription);
+            setErrorMessage(errorDescription || 'The reset link is invalid or has expired.');
+            setIsValidToken(false);
+            setIsValidating(false);
+            return;
+          }
 
           if (accessToken && hashType === 'recovery') {
-            const { error } = await supabase.auth.setSession({
+            console.log('[ResetPassword] Setting session from hash tokens');
+            const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || ''
             });
 
-            if (!error) {
+            if (!sessionError) {
+              console.log('[ResetPassword] Session established from hash');
               setIsValidToken(true);
               setIsValidating(false);
-              // Clear hash from URL
+              // Clear the hash from URL for cleaner look
               window.history.replaceState(null, '', window.location.pathname);
               return;
+            } else {
+              console.error('[ResetPassword] Failed to set session:', sessionError);
+              setErrorMessage('The reset link has expired. Please request a new one.');
             }
           }
         }
 
-        // Try query parameter format (PKCE flow: ?token_hash=...&type=recovery)
+        // Method 3: Handle query parameter format (?token_hash=...&type=recovery)
+        // This is Supabase's PKCE flow format
         const queryParams = new URLSearchParams(window.location.search);
         const tokenHash = queryParams.get('token_hash');
-        const queryType = queryParams.get('type') as 'recovery' | null;
+        const queryType = queryParams.get('type');
+        const code = queryParams.get('code');
+        const errorParam = queryParams.get('error');
+        const errorDescription = queryParams.get('error_description');
 
-        if (tokenHash && queryType === 'recovery') {
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: queryType,
-          });
+        if (errorParam) {
+          console.error('[ResetPassword] Query contains error:', errorParam, errorDescription);
+          setErrorMessage(errorDescription || 'The reset link is invalid or has expired.');
+          setIsValidToken(false);
+          setIsValidating(false);
+          return;
+        }
 
+        // Handle PKCE code exchange
+        if (code) {
+          console.log('[ResetPassword] Exchanging PKCE code');
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (!error && data.session) {
+            console.log('[ResetPassword] PKCE code exchanged successfully');
             setIsValidToken(true);
             setIsValidating(false);
-            // Clear query params from URL
             window.history.replaceState(null, '', window.location.pathname);
             return;
+          } else {
+            console.error('[ResetPassword] PKCE exchange failed:', error);
+            setErrorMessage('The reset link has expired. Please request a new one.');
+          }
+        }
+
+        // Handle token_hash verification
+        if (tokenHash && queryType === 'recovery') {
+          console.log('[ResetPassword] Verifying token_hash');
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery',
+          });
+
+          if (!verifyError && data.session) {
+            console.log('[ResetPassword] Token verified successfully');
+            setIsValidToken(true);
+            setIsValidating(false);
+            window.history.replaceState(null, '', window.location.pathname);
+            return;
+          } else {
+            console.error('[ResetPassword] Token verification failed:', verifyError);
+            setErrorMessage('The reset link has expired. Please request a new one.');
           }
         }
 
         // No valid token found
+        console.log('[ResetPassword] No valid token found');
         setIsValidToken(false);
+        if (!errorMessage) {
+          setErrorMessage('Invalid or missing reset token. Please request a new password reset link.');
+        }
       } catch (error) {
+        console.error('[ResetPassword] Unexpected error:', error);
+        setErrorMessage('An unexpected error occurred. Please try again.');
         setIsValidToken(false);
       } finally {
         setIsValidating(false);
@@ -144,6 +207,7 @@ export default function ResetPassword() {
       });
 
       if (updateError) {
+        console.error('[ResetPassword] Update failed:', updateError);
         toast({
           title: "Update Failed",
           description: updateError.message || "Failed to update password. Please request a new reset link.",
@@ -156,6 +220,7 @@ export default function ResetPassword() {
         return;
       }
 
+      console.log('[ResetPassword] Password updated successfully');
       setIsComplete(true);
       
       toast({
@@ -163,10 +228,12 @@ export default function ResetPassword() {
         description: "Your password has been successfully updated.",
       });
 
+      // Sign out and redirect to login
       await supabase.auth.signOut();
       setTimeout(() => navigate('/auth'), 2000);
 
     } catch (error) {
+      console.error('[ResetPassword] Unexpected error during update:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -177,6 +244,7 @@ export default function ResetPassword() {
     }
   };
 
+  // Loading state
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -192,6 +260,7 @@ export default function ResetPassword() {
     );
   }
 
+  // Invalid token state
   if (!isValidToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -206,21 +275,20 @@ export default function ResetPassword() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">
-              This password reset link is invalid or has expired.
+              {errorMessage || 'This password reset link is invalid or has expired.'}
             </p>
             <div className="bg-muted p-4 rounded-lg space-y-2">
-              <p className="text-sm font-medium">Troubleshooting:</p>
+              <p className="text-sm font-medium">What you can do:</p>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                <li>Make sure you clicked the link from your email</li>
-                <li>Check that you're using the most recent reset email</li>
-                <li>The link expires after 1 hour for security</li>
-                <li>Try requesting a new reset link</li>
+                <li>Request a new password reset link</li>
+                <li>Make sure you're using the most recent email</li>
+                <li>Reset links expire after 1 hour</li>
+                <li>Each link can only be used once</li>
               </ul>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-2">
             <Button 
-              variant="outline"
               onClick={() => navigate('/auth')} 
               className="w-full"
             >
@@ -233,6 +301,7 @@ export default function ResetPassword() {
     );
   }
 
+  // Success state
   if (isComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -260,6 +329,7 @@ export default function ResetPassword() {
     );
   }
 
+  // Password reset form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">

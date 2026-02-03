@@ -26,7 +26,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [lastRequestTime, setLastRequestTime] = useState<number | null>(null);
 
-  const RATE_LIMIT_MINUTES = 5;
+  const RATE_LIMIT_MINUTES = 1; // Reduced for better UX during testing
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,13 +43,15 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     if (!lastRequestTime) return 0;
     const timeDiff = Date.now() - lastRequestTime;
     const remaining = RATE_LIMIT_MINUTES * 60 * 1000 - timeDiff;
-    return Math.max(0, Math.ceil(remaining / 1000 / 60));
+    return Math.max(0, Math.ceil(remaining / 1000));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateEmail(email)) {
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!validateEmail(trimmedEmail)) {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
@@ -59,10 +61,10 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     }
 
     if (isRateLimited()) {
-      const remainingMinutes = getRemainingTime();
+      const remainingSeconds = getRemainingTime();
       toast({
         title: "Too Many Requests",
-        description: `Please wait ${remainingMinutes} minute(s) before requesting another reset link.`,
+        description: `Please wait ${remainingSeconds} second(s) before requesting another reset link.`,
         variant: "destructive",
       });
       return;
@@ -71,38 +73,35 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
     setIsLoading(true);
     
     try {
+      // Use the current origin for redirect - Supabase will append the recovery tokens
       const redirectUrl = `${window.location.origin}/reset-password`;
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      console.log('[ForgotPassword] Sending reset email to:', trimmedEmail);
+      console.log('[ForgotPassword] Redirect URL:', redirectUrl);
+
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: redirectUrl,
       });
 
       if (error) {
-        console.error("Password reset error:", error);
+        console.error('[ForgotPassword] Error:', error);
         
-        // Handle specific error cases
-        if (error.message.includes('rate_limit')) {
+        // Handle rate limit from Supabase
+        if (error.message.includes('rate') || error.message.includes('limit')) {
           toast({
             title: "Too Many Requests",
-            description: "Please wait before requesting another reset link.",
+            description: "Please wait a moment before requesting another reset link.",
             variant: "destructive",
           });
           return;
         }
         
-        if (error.message.includes('invalid_email')) {
-          toast({
-            title: "Invalid Email",
-            description: "Please enter a valid email address.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // For other errors, still show success to prevent email enumeration
+        // For security, don't reveal if email exists or not
+        // Still show success message
       }
 
-      // Always show success message for security
+      // Always show success for security (prevent email enumeration)
+      console.log('[ForgotPassword] Reset email request completed');
       setIsEmailSent(true);
       setLastRequestTime(Date.now());
       
@@ -112,7 +111,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
       });
 
     } catch (error) {
-      console.error("Unexpected error in password reset:", error);
+      console.error('[ForgotPassword] Unexpected error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -215,7 +214,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
 
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                Didn't receive the email? Check your spam folder or try again in {RATE_LIMIT_MINUTES} minutes.
+                Didn't receive the email? Check your spam folder or try again in a minute.
               </p>
             </div>
 
