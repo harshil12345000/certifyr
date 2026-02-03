@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -8,8 +8,8 @@ import {
   Settings,
   Menu,
   X,
-  ChevronsLeft,
-  ChevronsRight,
+  PanelLeft,
+  PanelRight,
   DoorOpen,
   Bookmark,
   Clock,
@@ -152,7 +152,25 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   const location = useLocation();
   const { user } = useAuth();
   const { logoUrl, organizationDetails } = useBranding();
-  const { hasFeature } = usePlanFeatures();
+  const { features, loading: planLoading } = usePlanFeatures();
+
+  // Avoid sidebar "flicker" when plan data briefly reloads (e.g., initial load or refetches).
+  // We keep the last known visibility for feature-gated items and only update it when
+  // the plan query has settled.
+  const computedFeatureVisibility = useMemo(
+    () => ({
+      requestPortal: features?.requestPortal ?? false,
+      aiAssistant: features?.aiAssistant ?? false,
+    }),
+    [features?.requestPortal, features?.aiAssistant],
+  );
+
+  const [featureVisibility, setFeatureVisibility] = useState(computedFeatureVisibility);
+
+  useEffect(() => {
+    if (planLoading) return;
+    setFeatureVisibility(computedFeatureVisibility);
+  }, [planLoading, computedFeatureVisibility]);
 
   // Get name and avatar from user metadata if available
   const name =
@@ -187,7 +205,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   // For basic users, completely hide gated features (no locked badge)
   const shouldShowNavItem = (item: NavItem): boolean => {
     if (!item.requiredFeature) return true;
-    return hasFeature(item.requiredFeature);
+    return featureVisibility[item.requiredFeature];
   };
 
   // Filter navItems to only show accessible items
@@ -227,7 +245,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
               className="hidden md:flex h-8 w-8"
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
-              <ChevronsRight className="h-4 w-4" />
+                <PanelRight className="h-4 w-4" />
             </Button>
           </div>
         )}
@@ -244,7 +262,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
               className="hidden md:flex h-8 w-8"
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <PanelLeft className="h-4 w-4" />
             </Button>
           )}
         </div>
