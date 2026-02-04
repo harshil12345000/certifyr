@@ -148,48 +148,43 @@ function EmployeeDocumentDetailContent({
 
   return (
     <EmployeePortalLayout activeTab="documents">
-      <div className="container mx-auto py-6 px-4">
-        {/* Header */}
-        <div className="mb-6 flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate(`/portal/${slug}`)}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+      <div className="p-4">
+        {/* Compact Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/portal/${slug}`)}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{documentConfig.name}</h1>
-            <p className="text-sm text-muted-foreground">{documentConfig.description}</p>
+            <h1 className="text-lg font-semibold">{documentConfig.name}</h1>
+            <p className="text-xs text-muted-foreground">{documentConfig.description}</p>
           </div>
         </div>
 
-        {/* Status Banner */}
-        {isViewingExistingRequest && requestStatus === "approved" && (
-          <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-md p-3">
-            <p className="text-emerald-700 dark:text-emerald-400 font-medium">✓ This document has been approved</p>
+        {/* Status Banner - compact */}
+        {isViewingExistingRequest && (
+          <div className={`mb-3 rounded-md px-3 py-2 text-sm font-medium ${
+            requestStatus === "approved" 
+              ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+              : requestStatus === "rejected"
+              ? "bg-destructive/10 border border-destructive/30 text-destructive"
+              : "bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400"
+          }`}>
+            {requestStatus === "approved" && "✓ Approved"}
+            {requestStatus === "rejected" && "✗ Rejected"}
+            {requestStatus === "pending" && "⏳ Pending approval"}
           </div>
         )}
 
-        {isViewingExistingRequest && requestStatus === "rejected" && (
-          <div className="mb-4 bg-destructive/10 border border-destructive/30 rounded-md p-3">
-            <p className="text-destructive font-medium">✗ This document request was rejected</p>
-          </div>
-        )}
-
-        {isViewingExistingRequest && requestStatus === "pending" && (
-          <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3">
-            <p className="text-amber-700 dark:text-amber-400 font-medium">⏳ This document request is pending approval</p>
-          </div>
-        )}
-
-        {/* Form and Preview Tabs */}
+        {/* Tabs */}
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-3">
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="form">
+          <TabsContent value="form" className="mt-0">
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="p-4">
                 <DynamicForm
                   config={documentConfig}
                   initialData={formData}
@@ -202,24 +197,17 @@ function EmployeeDocumentDetailContent({
             </Card>
           </TabsContent>
 
-          <TabsContent value="preview">
+          <TabsContent value="preview" className="mt-0">
             <Card>
-              <CardContent className="pt-6">
-                {/* Action Buttons - only show Request Approval for new requests */}
+              <CardContent className="p-4">
                 {!isViewingExistingRequest && (
-                  <div className="flex gap-2 mb-6 pb-4 border-b">
-                    <Button
-                      onClick={handleRequestApproval}
-                      disabled={isSubmitting}
-                      variant="default"
-                    >
+                  <div className="flex gap-2 mb-4 pb-3 border-b">
+                    <Button onClick={handleRequestApproval} disabled={isSubmitting} size="sm">
                       <Send className="mr-2 h-4 w-4" />
                       {isSubmitting ? "Submitting..." : "Request Approval"}
                     </Button>
                   </div>
                 )}
-
-                {/* Preview Content */}
                 <BrandingProvider organizationId={organizationId}>
                   <div ref={previewRef} className="w-full">
                     <DynamicPreview
