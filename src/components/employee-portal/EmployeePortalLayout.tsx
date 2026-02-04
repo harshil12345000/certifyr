@@ -12,7 +12,7 @@ import { useNavigate, Link } from "react-router-dom";
 
 interface EmployeePortalLayoutProps {
   children: ReactNode;
-  activeTab?: "templates" | "settings" | "pending";
+  activeTab?: "templates" | "documents" | "settings" | "pending";
 }
 
 export function EmployeePortalLayout({
@@ -48,7 +48,7 @@ export function EmployeePortalLayout({
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
           <Link
             to={`/portal/${portalSlug}`}
-            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "templates" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
+            className={`flex items-center w-full px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedTab === "templates" || selectedTab === "documents" ? "bg-primary-500/10 text-primary-600" : "text-muted-foreground hover:bg-primary-500/5 hover:text-primary-500"}`}
             onClick={() => setSelectedTab("templates")}
           >
             <FileText className="h-5 w-5 mr-2" /> Documents

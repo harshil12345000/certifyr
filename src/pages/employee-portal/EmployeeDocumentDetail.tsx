@@ -1,165 +1,57 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import * as Forms from "@/components/templates/forms";
-import * as Previews from "@/components/templates";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, Send } from "lucide-react";
+import { DynamicForm } from "@/components/templates/DynamicForm";
+import { DynamicPreview } from "@/components/templates/DynamicPreview";
+import { getDocumentConfig } from "@/config/documentConfigs";
 import { getInitialData } from "@/lib/document-initial-data";
 import { EmployeePortalLayout } from "@/components/employee-portal/EmployeePortalLayout";
-import { FormData } from "@/types/templates";
 import { useEmployeePortal, EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { BrandingProvider } from "@/contexts/BrandingContext";
-
-const TEMPLATE_NAMES: Record<string, string> = {
-  "academic-transcript-1": "Academic Transcript",
-  "embassy-attestation-letter-1": "Embassy Attestation Letter",
-  "employment-agreement-1": "Employment Agreement",
-  "nda-1": "Non-Disclosure Agreement",
-  "founders-agreement-1": "Founders Agreement",
-  "stock-purchase-agreement-1": "Stock Purchase Agreement",
-  "articles-incorporation-1": "Articles of Incorporation",
-  "corporate-bylaws-1": "Corporate Bylaws",
-  "bonafide-1": "Bonafide Certificate",
-  "character-1": "Character Certificate",
-  "experience-1": "Experience Certificate",
-  "embassy-attestation-1": "Embassy Attestation",
-  "completion-certificate-1": "Completion Certificate",
-  "transfer-certificate-1": "Transfer Certificate",
-  "noc-visa-1": "NOC for Visa",
-  "income-certificate-1": "Income Certificate",
-  "maternity-leave-1": "Maternity Leave Certificate",
-  "bank-verification-1": "Bank Verification Letter",
-  "offer-letter-1": "Offer Letter",
-  "address-proof-1": "Address Proof",
-};
-
-const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
-  "academic-transcript-1": "Official record of a student's academic performance.",
-  "embassy-attestation-letter-1": "Letter for embassy attestation and verification.",
-  "employment-agreement-1": "Contract outlining terms of employment.",
-  "nda-1": "Agreement to protect confidential information.",
-  "founders-agreement-1": "Agreement between company founders.",
-  "stock-purchase-agreement-1": "Agreement for the purchase of company stock.",
-  "articles-incorporation-1": "Legal document to form a corporation.",
-  "corporate-bylaws-1": "Rules governing the management of a corporation.",
-  "bonafide-1": "Certificate confirming a person's association with an institution.",
-  "character-1": "Certificate attesting to a person's character.",
-  "experience-1": "Certificate of work experience.",
-  "embassy-attestation-1": "Document for embassy attestation purposes.",
-  "completion-certificate-1": "Certificate for successful course or program completion.",
-  "transfer-certificate-1": "Certificate for transfer between institutions.",
-  "noc-visa-1": "No Objection Certificate for visa applications.",
-  "income-certificate-1": "Certificate stating income details.",
-  "maternity-leave-1": "Certificate for maternity leave approval.",
-  "bank-verification-1": "Letter for bank account verification.",
-  "offer-letter-1": "Official job offer letter.",
-  "address-proof-1": "Document to verify address.",
-};
-
-const TEMPLATE_FORM_MAP: Record<string, keyof typeof Forms> = {
-  "bonafide-1": "BonafideForm",
-  "character-1": "CharacterForm",
-  "experience-1": "ExperienceForm",
-  "embassy-attestation-1": "EmbassyAttestationForm",
-  "completion-certificate-1": "CompletionCertificateForm",
-  "transfer-certificate-1": "TransferCertificateForm",
-  "noc-visa-1": "NocVisaForm",
-  "income-certificate-1": "IncomeCertificateForm",
-  "maternity-leave-1": "MaternityLeaveForm",
-  "bank-verification-1": "BankVerificationForm",
-  "offer-letter-1": "OfferLetterForm",
-  "address-proof-1": "AddressProofForm",
-  "articles-incorporation-1": "ArticlesOfIncorporationForm",
-  "corporate-bylaws-1": "CorporateBylawsForm",
-  "founders-agreement-1": "FoundersAgreementForm",
-  "stock-purchase-agreement-1": "StockPurchaseAgreementForm",
-  "employment-agreement-1": "EmploymentAgreementForm",
-  "nda-1": "NDAForm",
-  "academic-transcript-1": "AcademicTranscriptForm",
-  "embassy-attestation-letter-1": "EmbassyAttestationLetterForm",
-};
-
-const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
-  "bonafide-1": "BonafidePreview",
-  "character-1": "CharacterPreview",
-  "experience-1": "ExperiencePreview",
-  "embassy-attestation-1": "EmbassyAttestationPreview",
-  "completion-certificate-1": "CompletionCertificatePreview",
-  "transfer-certificate-1": "TransferCertificatePreview",
-  "noc-visa-1": "NocVisaPreview",
-  "income-certificate-1": "IncomeCertificatePreview",
-  "maternity-leave-1": "MaternityLeavePreview",
-  "bank-verification-1": "BankVerificationPreview",
-  "offer-letter-1": "OfferLetterPreview",
-  "address-proof-1": "AddressProofPreview",
-  "articles-incorporation-1": "ArticlesOfIncorporationPreview",
-  "corporate-bylaws-1": "CorporateBylawsPreview",
-  "founders-agreement-1": "FoundersAgreementPreview",
-  "stock-purchase-agreement-1": "StockPurchaseAgreementPreview",
-  "employment-agreement-1": "EmploymentAgreementPreview",
-  "nda-1": "NDAPreview",
-  "academic-transcript-1": "AcademicTranscriptPreview",
-  "embassy-attestation-letter-1": "EmbassyAttestationLetterPreview",
-};
-
-const getTemplateName = (templateId: string) => {
-  return TEMPLATE_NAMES[templateId] || templateId;
-};
-
-const getTemplateDescription = (templateId: string) => {
-  return TEMPLATE_DESCRIPTIONS[templateId] || "";
-};
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Inner component that uses the EmployeePortal context
-function EmployeeDocumentDetailContent({ 
-  id, 
-  slug, 
-  organizationId 
-}: { 
-  id: string; 
-  slug: string; 
+function EmployeeDocumentDetailContent({
+  id,
+  slug,
+  organizationId,
+}: {
+  id: string;
+  slug: string;
   organizationId: string;
 }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { employee } = useEmployeePortal();
+  const previewRef = useRef<HTMLDivElement>(null);
+
   const [tab, setTab] = useState("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestStatus, setRequestStatus] = useState<"pending" | "approved" | "rejected">("pending");
-  const { employee } = useEmployeePortal();
-  const { toast } = useToast();
+  const [isViewingExistingRequest, setIsViewingExistingRequest] = useState(false);
 
-  // Scroll to top when component mounts or template changes
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [id]);
+  // Find the document config by ID (strip the -1 suffix for config lookup)
+  const configKey = id.replace(/-1$/, "");
+  const documentConfig = getDocumentConfig(configKey) || getDocumentConfig(id);
 
-  const [formData, setFormData] = useState<FormData>(() => {
-    if (id) {
-      const initialData = getInitialData(id);
-      return initialData as FormData;
-    }
-    return {
-      fullName: "",
-      gender: "male" as const,
-      parentName: "",
-      type: "student" as const,
-      institutionName: "",
-      startDate: "",
-      courseOrDesignation: "",
-      department: "",
-      purpose: "",
-      date: "",
-      place: "",
-      signatoryName: "",
-      signatoryDesignation: "",
-      includeDigitalSignature: false,
-    };
+  // Initialize form data state
+  const [formData, setFormData] = useState<any>(() => {
+    return getInitialData(id) || getInitialData(configKey) || {};
   });
 
   const requestId = searchParams.get("requestId");
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [id]);
+
+  // Fetch existing request data if requestId is provided
   useEffect(() => {
     if (requestId && employee && organizationId) {
       const fetchRequestData = async () => {
@@ -174,63 +66,53 @@ function EmployeeDocumentDetailContent({
           if (error) throw error;
 
           if (request) {
-            setFormData(request.template_data as unknown as FormData);
+            setFormData(request.template_data as any);
             setRequestStatus(request.status as "pending" | "approved" | "rejected");
+            setIsViewingExistingRequest(true);
             if (request.status === "approved") {
               setTab("preview");
             }
           }
         } catch (error) {
           console.error("Error fetching request data:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load request data",
-            variant: "destructive",
-          });
+          toast.error("Failed to load request data");
         }
       };
 
       fetchRequestData();
     }
-  }, [requestId, employee, organizationId, toast]);
+  }, [requestId, employee, organizationId]);
 
-  if (!id || !(id in TEMPLATE_FORM_MAP)) {
+  if (!documentConfig) {
     return (
-      <EmployeePortalLayout activeTab="templates">
+      <EmployeePortalLayout activeTab="documents">
         <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
-          <p className="text-muted-foreground">
-            No template found for ID: <span className="font-mono">{id}</span>
-          </p>
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" onClick={() => navigate(`/portal/${slug}`)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Document Not Found</h1>
+            <p className="text-muted-foreground">
+              No document template found for ID: <span className="font-mono">{id}</span>
+            </p>
+          </div>
         </div>
       </EmployeePortalLayout>
     );
   }
 
-  const FormComponent = Forms[TEMPLATE_FORM_MAP[id]];
-  const PreviewComponent = Previews[TEMPLATE_PREVIEW_MAP[id]];
-
-  const handleFormSubmit = (data: FormData) => {
-    setFormData(data);
-    setTab("preview");
-  };
-
-  const handleFormDataChange = (data: FormData) => {
-    setFormData(data);
-  };
-
   const handleRequestApproval = async () => {
     if (!employee || !organizationId) {
-      toast({
-        title: "Error",
-        description: "Employee or organization information not found.",
-        variant: "destructive",
-      });
+      toast.error("Employee or organization information not found.");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Insert document request
       const { error } = await supabase.from("document_requests").insert({
         employee_id: employee.id,
         organization_id: organizationId,
@@ -241,11 +123,12 @@ function EmployeeDocumentDetailContent({
 
       if (error) throw error;
 
+      // Create notification for admin
       await supabase.from("notifications").insert({
         org_id: organizationId,
         type: "document_approval",
         subject: `${employee.full_name} Requested Document Approval`,
-        body: `${employee.full_name} requested approval for: ${getTemplateName(id)}.\n\nCheck Request Portal → Requests.`,
+        body: `${employee.full_name} requested approval for: ${documentConfig.name}.\n\nCheck Request Portal → Requests.`,
         data: {
           document_id: id,
           employee_id: employee.id,
@@ -253,87 +136,102 @@ function EmployeeDocumentDetailContent({
         },
       });
 
-      toast({
-        title: "Request Submitted",
-        description: "Your document request has been submitted for approval",
-      });
-
+      toast.success("Your document request has been submitted for approval");
       navigate(`/portal/${slug}?tab=pending`);
     } catch (error) {
       console.error("Error submitting request:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit request. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to submit request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <EmployeePortalLayout activeTab="templates">
-      <div className="p-6">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">{getTemplateName(id)}</h1>
-          {getTemplateDescription(id) && (
-            <p className="text-muted-foreground text-sm mt-1">
-              {getTemplateDescription(id)}
-            </p>
-          )}
+    <EmployeePortalLayout activeTab="documents">
+      <div className="container mx-auto py-6 px-4">
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate(`/portal/${slug}`)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{documentConfig.name}</h1>
+            <p className="text-sm text-muted-foreground">{documentConfig.description}</p>
+          </div>
         </div>
 
-        {requestStatus === "approved" && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-3">
-            <p className="text-green-800 font-medium">✓ This document has been approved</p>
+        {/* Status Banner */}
+        {isViewingExistingRequest && requestStatus === "approved" && (
+          <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-md p-3">
+            <p className="text-emerald-700 dark:text-emerald-400 font-medium">✓ This document has been approved</p>
           </div>
         )}
 
-        {requestStatus === "rejected" && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-red-800 font-medium">✗ This document request was rejected</p>
+        {isViewingExistingRequest && requestStatus === "rejected" && (
+          <div className="mb-4 bg-destructive/10 border border-destructive/30 rounded-md p-3">
+            <p className="text-destructive font-medium">✗ This document request was rejected</p>
           </div>
         )}
 
+        {isViewingExistingRequest && requestStatus === "pending" && (
+          <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3">
+            <p className="text-amber-700 dark:text-amber-400 font-medium">⏳ This document request is pending approval</p>
+          </div>
+        )}
+
+        {/* Form and Preview Tabs */}
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="form" className="mt-0">
-            <div className="bg-card p-6 rounded-lg border">
-              <FormComponent
-                onSubmit={handleFormSubmit as any}
-                onDataChange={handleFormDataChange as any}
-                initialData={formData as any}
-              />
-            </div>
+          <TabsContent value="form">
+            <Card>
+              <CardContent className="pt-6">
+                <DynamicForm
+                  config={documentConfig}
+                  initialData={formData}
+                  onSubmit={(data) => {
+                    setFormData(data);
+                    setTab("preview");
+                  }}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="preview" className="mt-0">
-            <div className="bg-card rounded-lg border">
-              {!requestId && (
-                <div className="p-4 border-b flex justify-end">
-                  <Button onClick={handleRequestApproval} disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting..." : "Request Approval"}
-                  </Button>
-                </div>
-              )}
-              <div className="p-6">
-                {organizationId && (
-                  <BrandingProvider organizationId={organizationId}>
-                    {PreviewComponent && (
-                      <PreviewComponent
-                        data={formData as any}
-                        isEmployeePreview={false}
-                        requestStatus={requestStatus}
-                      />
-                    )}
-                  </BrandingProvider>
+          <TabsContent value="preview">
+            <Card>
+              <CardContent className="pt-6">
+                {/* Action Buttons - only show Request Approval for new requests */}
+                {!isViewingExistingRequest && (
+                  <div className="flex gap-2 mb-6 pb-4 border-b">
+                    <Button
+                      onClick={handleRequestApproval}
+                      disabled={isSubmitting}
+                      variant="default"
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      {isSubmitting ? "Submitting..." : "Request Approval"}
+                    </Button>
+                  </div>
                 )}
-              </div>
-            </div>
+
+                {/* Preview Content */}
+                <BrandingProvider organizationId={organizationId}>
+                  <div ref={previewRef} className="w-full">
+                    <DynamicPreview
+                      config={documentConfig}
+                      data={formData}
+                      isEmployeePreview={true}
+                      requestStatus={requestStatus}
+                    />
+                  </div>
+                </BrandingProvider>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -379,32 +277,38 @@ export default function EmployeeDocumentDetail() {
     resolveSlug();
   }, [slug]);
 
-  if (loading || !organizationId || !slug || !id) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen p-6">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-20" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-96 w-full" />
+        </div>
       </div>
     );
   }
 
-  if (!(id in TEMPLATE_FORM_MAP)) {
+  if (!organizationId || !slug || !id) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
-        <p className="text-muted-foreground">
-          No template found for ID: <span className="font-mono">{id}</span>
-        </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Portal Not Found</h1>
+          <p className="text-muted-foreground">Unable to load the requested portal.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <EmployeePortalProvider organizationId={organizationId} portalSlug={slug}>
-      <EmployeeDocumentDetailContent 
-        id={id} 
-        slug={slug} 
-        organizationId={organizationId} 
-      />
+      <EmployeeDocumentDetailContent id={id} slug={slug} organizationId={organizationId} />
     </EmployeePortalProvider>
   );
 }
