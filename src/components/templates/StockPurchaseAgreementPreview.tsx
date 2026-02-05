@@ -37,9 +37,15 @@ export const StockPurchaseAgreementPreview: React.FC<
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
-  const shouldBlur = isEmployeePreview && requestStatus !== "approved";
+  const shouldHideVerification = isEmployeePreview && requestStatus !== "approved";
 
   useEffect(() => {
+    // Don't generate QR for unapproved employee previews
+    if (shouldHideVerification) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     const generateQR = async () => {
       if (companyName && seller && buyer) {
         const url = await generateDocumentQRCode(
@@ -52,7 +58,7 @@ export const StockPurchaseAgreementPreview: React.FC<
       }
     };
     generateQR();
-  }, [data, organizationId, user?.id, companyName, seller, buyer]);
+  }, [data, organizationId, user?.id, companyName, seller, buyer, shouldHideVerification]);
 
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement>,
@@ -163,23 +169,25 @@ export const StockPurchaseAgreementPreview: React.FC<
           </div>
 
           <div className="text-right">
-            {includeDigitalSignature && signatureUrl ? (
-              <div className="h-16 mb-4 flex justify-end relative">
+            {/* Only show signature if approved OR not employee preview */}
+            {includeDigitalSignature && signatureUrl && !shouldHideVerification ? (
+              <div className="h-16 mb-4 flex justify-end">
                 <div className="border-b border-gray-800 px-6">
                   <img
                     src={signatureUrl}
                     alt="Digital Signature"
-                    className={`h-12 object-contain ${shouldBlur ? "blur-sm" : ""}`}
+                    className="h-12 object-contain"
                     onError={(e) => handleImageError(e, "signature")}
                   />
                 </div>
-                {shouldBlur && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
-                    <span className="text-xs text-gray-500">
-                      Signature pending approval
-                    </span>
-                  </div>
-                )}
+              </div>
+            ) : shouldHideVerification && includeDigitalSignature ? (
+              <div className="h-16 mb-4 flex justify-end">
+                <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 px-6 h-12">
+                  <span className="text-xs text-gray-500">
+                    Signature pending approval
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="h-16 mb-4"></div>
@@ -190,10 +198,19 @@ export const StockPurchaseAgreementPreview: React.FC<
             <p className="text-sm">{signatoryDesignation || "[Title]"}</p>
             <p className="text-sm mb-4">{data.place || "[Institution Name]"}</p>
 
-            {/* QR Code positioned below institution name */}
-            {qrCodeUrl && (
+            {/* QR Code - only render if approved or not employee preview */}
+            {qrCodeUrl && !shouldHideVerification && (
               <div className="flex justify-end">
                 <QRCode value={qrCodeUrl} size={60} />
+              </div>
+            )}
+            {shouldHideVerification && (
+              <div className="flex justify-end">
+                <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 w-[60px] h-[60px]">
+                  <span className="text-xs text-gray-500 text-center">
+                    QR pending
+                  </span>
+                </div>
               </div>
             )}
           </div>

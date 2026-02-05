@@ -36,7 +36,16 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
+  // Determine if QR/signature should be hidden for employee preview
+  const shouldHideVerification = isEmployeePreview && requestStatus !== "approved";
+
   useEffect(() => {
+    // Don't generate QR for unapproved employee previews
+    if (shouldHideVerification) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     if (fullName && type && institutionName) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
@@ -46,9 +55,6 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
           user?.id,
         );
         setQrCodeUrl(url);
-        if (!url) {
-          console.error("QR code URL generation failed for Bonafide Preview.");
-        }
       };
       generateQR();
     }
@@ -59,6 +65,7 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
     fullName,
     type,
     institutionName,
+    shouldHideVerification,
   ]);
 
   const handleImageError = (
@@ -76,6 +83,8 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
         year: "numeric",
       })
     : "[Issue Date]";
+  // Use shouldHideVerification instead of shouldBlur
+  
   const formattedStartDate = startDate
     ? new Date(startDate).toLocaleDateString("en-GB", {
         day: "numeric",
@@ -155,23 +164,25 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
         </div>
 
         <div className="text-right">
-          {includeDigitalSignature && signatureUrl ? (
-            <div className="h-16 mb-4 flex justify-end relative">
+          {/* Only show signature if approved OR not employee preview */}
+          {includeDigitalSignature && signatureUrl && !shouldHideVerification ? (
+            <div className="h-16 mb-4 flex justify-end">
               <div className="border-b border-gray-800 px-6">
                 <img
                   src={signatureUrl}
                   alt="Digital Signature"
-                  className={`h-12 object-contain ${shouldBlur ? "blur-sm" : ""}`}
+                  className="h-12 object-contain"
                   onError={(e) => handleImageError(e, "signature")}
                 />
               </div>
-              {shouldBlur && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400">
-                  <span className="text-xs text-gray-500">
-                    Signature pending approval
-                  </span>
-                </div>
-              )}
+            </div>
+          ) : shouldHideVerification && includeDigitalSignature ? (
+            <div className="h-16 mb-4 flex justify-end">
+              <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 px-6 h-12">
+                <span className="text-xs text-gray-500">
+                  Signature pending approval
+                </span>
+              </div>
             </div>
           ) : (
             <div className="h-16 mb-4">{/* Space for manual signature */}</div>
@@ -186,19 +197,19 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
               "[Institution Name]"}
           </p>
 
-          {/* QR Code positioned below institution name */}
-          {qrCodeUrl && (
-            <div className="flex justify-end relative">
-              <div className={shouldBlur ? "blur-sm" : ""}>
-                <QRCode value={qrCodeUrl} size={75} />
+          {/* QR Code - only render if approved or not employee preview */}
+          {qrCodeUrl && !shouldHideVerification && (
+            <div className="flex justify-end">
+              <QRCode value={qrCodeUrl} size={75} />
+            </div>
+          )}
+          {shouldHideVerification && (
+            <div className="flex justify-end">
+              <div className="flex items-center justify-center bg-gray-100 border border-dashed border-gray-400 w-[75px] h-[75px]">
+                <span className="text-xs text-gray-500 text-center">
+                  QR pending
+                </span>
               </div>
-              {shouldBlur && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 border border-dashed border-gray-400 w-[75px] h-[75px]">
-                  <span className="text-xs text-gray-500 text-center">
-                    QR pending approval
-                  </span>
-                </div>
-              )}
             </div>
           )}
         </div>
