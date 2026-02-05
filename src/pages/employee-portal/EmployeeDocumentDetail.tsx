@@ -86,7 +86,7 @@ function EmployeeDocumentDetailContent({
   if (!documentConfig) {
     return (
       <EmployeePortalLayout activeTab="documents">
-        <div className="p-6">
+        <div className="mx-auto w-full max-w-6xl px-4 py-4">
           <div className="flex items-center gap-4 mb-6">
             <Button variant="ghost" onClick={() => navigate(`/portal/${slug}`)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -148,7 +148,7 @@ function EmployeeDocumentDetailContent({
 
   return (
     <EmployeePortalLayout activeTab="documents">
-      <div className="p-4">
+      <div className="mx-auto w-full max-w-6xl px-4 py-4">
         {/* Compact Header */}
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/portal/${slug}`)}>
