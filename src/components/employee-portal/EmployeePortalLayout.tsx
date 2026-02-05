@@ -35,8 +35,21 @@ export function EmployeePortalLayout({
     <div className="min-h-screen bg-background flex">
       <aside className="sticky top-0 left-0 h-screen w-64 z-40 flex flex-col glass-card border-r border-border/50">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
-          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-            <Building2 className="h-5 w-5 text-primary" />
+          <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-muted">
+            {organization?.id ? (
+              <img
+                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/branding-assets/${organization.id}/logo`}
+                alt={organization?.name || "Organization"}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                  target.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></div>`;
+                }}
+              />
+            ) : (
+              <Building2 className="h-5 w-5 text-primary" />
+            )}
           </div>
           <div>
             <h1 className="text-lg font-semibold leading-tight">
