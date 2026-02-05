@@ -32,7 +32,7 @@ export function EmployeePortalLayout({
   }, [employee, organization, navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       <aside className="sticky top-0 left-0 h-screen w-64 z-40 flex flex-col glass-card border-r border-border/50">
         <div className="flex items-center gap-3 p-4 h-16 border-b border-border/30">
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -80,9 +80,8 @@ export function EmployeePortalLayout({
           </div>
         </div>
       </aside>
-      <div className="ml-64 w-full">
-        {children}
-      </div>
+
+      <main className="flex-1 min-w-0">{children}</main>
     </div>
   );
 }
