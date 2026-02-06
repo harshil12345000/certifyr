@@ -10,7 +10,8 @@ import { DynamicPreview } from '@/components/templates/DynamicPreview';
 import { getDocumentConfig } from '@/config/documentConfigs';
 import { getInitialData } from '@/lib/document-initial-data';
 import { toast } from 'sonner';
-import { downloadPDFInContainer, printDocumentInContainer } from '@/lib/document-utils';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -37,13 +38,13 @@ export default function DocumentDetail() {
   const { userProfile, organizationDetails, isLoading: brandingLoading } = useBranding();
   const { trackPreviewGeneration } = usePreviewTracking();
   const previewRef = useRef<HTMLDivElement>(null);
-
+  
   // Find the document config by ID
   const documentConfig = getDocumentConfig(id || '');
-
+  
   // Check if we have saved history data from navigation state
   const historyData = location.state?.historyData;
-
+  
   // Initialize form data state - use history data if available, otherwise use defaults
   const [formData, setFormData] = useState<any>(() => {
     if (historyData?.form_data) {
@@ -76,7 +77,7 @@ export default function DocumentDetail() {
 
     // Parse location from organization details
     const parsedPlace = parseLocation(organizationDetails?.address);
-
+    
     // Get signatory details from user profile
     const parsedSignatoryName = userProfile?.firstName && userProfile?.lastName 
       ? `${userProfile.firstName} ${userProfile.lastName}`.trim()
@@ -118,13 +119,29 @@ export default function DocumentDetail() {
 
   const handleDownloadPDF = async () => {
     if (!previewRef.current) return;
-
+    
     setIsProcessing(true);
     try {
-      await downloadPDFInContainer(
-        previewRef.current,
-        `${documentConfig?.name || 'document'}.pdf`,
-      );
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${documentConfig?.name || 'document'}.pdf`);
+      
       toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('PDF download error:', error);
@@ -134,15 +151,68 @@ export default function DocumentDetail() {
     }
   };
 
-  const handlePrint = async () => {
+  const handlePrint = () => {
     if (!previewRef.current) return;
-
-    try {
-      await printDocumentInContainer(previewRef.current);
-    } catch (error) {
-      console.error('Print error:', error);
-      toast.error('Failed to print document');
-    }
+    
+    const printWindow = window.open('', '', 'height=842,width=595');
+    if (!printWindow) return;
+    
+    // Get all stylesheets from the current document
+    const styleSheets = Array.from(document.styleSheets);
+    let allStyles = '';
+    
+    styleSheets.forEach(sheet => {
+      try {
+        const rules = Array.from(sheet.cssRules || sheet.rules || []);
+        rules.forEach(rule => {
+          allStyles += rule.cssText + '\n';
+        });
+      } catch (e) {
+        // Handle CORS errors for external stylesheets
+        console.warn('Could not access stylesheet:', e);
+      }
+    });
+    
+    // Build the print document with all styles
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Document</title>
+          <style>
+            @page { 
+              size: A4; 
+              margin: 0; 
+            }
+            html, body { 
+              margin: 0; 
+              padding: 0;
+              background: #ffffff !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            * {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            ${allStyles}
+          </style>
+        </head>
+        <body>
+          ${previewRef.current.innerHTML}
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
+    // Wait for content and styles to load before printing
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }, 500);
   };
 
   const handleSaveDocument = async () => {
@@ -150,7 +220,7 @@ export default function DocumentDetail() {
       toast.error('You must be logged in to save documents');
       return;
     }
-
+    
     setIsProcessing(true);
     try {
       // Use the hook's saveDocument function which handles organization lookup,
@@ -160,7 +230,7 @@ export default function DocumentDetail() {
         formData,
         documentConfig?.id || id || ''
       );
-
+      
       if (result && organizationId) {
         // Increment documents_created stat
         await supabase.rpc('increment_user_stat', {
@@ -169,7 +239,7 @@ export default function DocumentDetail() {
           p_stat_field: 'documents_created'
         });
       }
-
+      
     } catch (error) {
       console.error('Save document error:', error);
       toast.error('Failed to save document');
@@ -199,7 +269,7 @@ export default function DocumentDetail() {
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
-
+          
           <TabsContent value="form">
             <Card>
               <CardContent className="pt-6">
@@ -216,14 +286,14 @@ export default function DocumentDetail() {
               </CardContent>
             </Card>
           </TabsContent>
-
+          
           <TabsContent value="preview">
             <Card>
               <CardContent className="pt-6">
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-6 pb-4 border-b">
-                  <Button
-                    onClick={handleDownloadPDF}
+                  <Button 
+                    onClick={handleDownloadPDF} 
                     onMouseDown={(e) => e.preventDefault()}
                     disabled={isProcessing}
                     variant="default"
@@ -231,7 +301,7 @@ export default function DocumentDetail() {
                     <Download className="mr-2 h-4 w-4" />
                     Download PDF
                   </Button>
-                  <Button
+                  <Button 
                     onClick={handlePrint}
                     onMouseDown={(e) => e.preventDefault()}
                     variant="outline"
@@ -239,8 +309,8 @@ export default function DocumentDetail() {
                     <Printer className="mr-2 h-4 w-4" />
                     Print
                   </Button>
-                  <Button
-                    onClick={handleSaveDocument}
+                  <Button 
+                    onClick={handleSaveDocument} 
                     onMouseDown={(e) => e.preventDefault()}
                     disabled={isProcessing}
                     variant="outline"
@@ -262,4 +332,3 @@ export default function DocumentDetail() {
     </DashboardLayout>
   );
 }
-

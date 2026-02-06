@@ -3,29 +3,19 @@ import jsPDF from "jspdf";
 
 const A4_WIDTH_PX = 794; // A4 width in pixels at 96 DPI
 const A4_HEIGHT_PX = 1123; // A4 height in pixels at 96 DPI
-const A4_CAPTURE_SCALE = 3;
 
-const getA4DocumentElement = (root: ParentNode = document): HTMLElement => {
-  const previewElement = root.querySelector(".a4-document") as HTMLElement | null;
+const getPreviewElement = () => {
+  const previewElement = document.querySelector(".a4-document") as HTMLElement;
   if (!previewElement) {
     throw new Error("Preview element not found");
   }
   return previewElement;
 };
 
-const waitForFonts = async (doc: Document = document) => {
-  const maybeDoc = doc as unknown as { fonts?: FontFaceSet };
-  if (!maybeDoc.fonts?.ready) return;
-
-  try {
-    await maybeDoc.fonts.ready;
-  } catch {
-    // Ignore font readiness errors; exports should still proceed.
-  }
-};
-
 const waitForImagesToLoad = async (element: HTMLElement) => {
-  const images = Array.from(element.querySelectorAll("img")) as HTMLImageElement[];
+  const images = Array.from(
+    element.querySelectorAll("img"),
+  ) as HTMLImageElement[];
   await Promise.all(
     images.map((img) => {
       if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
@@ -48,21 +38,21 @@ const toDataUrl = async (url: string): Promise<string> => {
 };
 
 const replaceImagesWithDataUrls = async (element: HTMLElement) => {
-  const images = Array.from(element.querySelectorAll("img")) as HTMLImageElement[];
+  const images = Array.from(
+    element.querySelectorAll("img"),
+  ) as HTMLImageElement[];
   const originalSrcs: string[] = [];
-
   for (const img of images) {
     originalSrcs.push(img.src);
     if (img.src.startsWith("http")) {
       try {
         img.crossOrigin = "anonymous";
         img.src = await toDataUrl(img.src);
-      } catch {
-        // If fetch fails, keep original src.
+      } catch (e) {
+        // If fetch fails, keep original src
       }
     }
   }
-
   return () => {
     images.forEach((img, i) => {
       img.src = originalSrcs[i];
@@ -70,100 +60,126 @@ const replaceImagesWithDataUrls = async (element: HTMLElement) => {
   };
 };
 
-/**
- * Aggressive export stabilization:
- * - clones the A4 node into an offscreen container (avoids parent transforms / responsive scaling)
- * - forces a fixed A4 pixel box (stable letter spacing)
- * - waits for fonts + images
- */
-const createOffscreenA4Clone = (sourceA4: HTMLElement) => {
-  const wrapper = document.createElement("div");
-  wrapper.style.position = "fixed";
-  wrapper.style.left = "-10000px";
-  wrapper.style.top = "0";
-  wrapper.style.width = `${A4_WIDTH_PX}px`;
-  wrapper.style.height = `${A4_HEIGHT_PX}px`;
-  wrapper.style.background = "#ffffff";
-  wrapper.style.padding = "0";
-  wrapper.style.margin = "0";
-  wrapper.style.overflow = "hidden";
-  wrapper.style.transform = "none";
-  // isolate rendering so inherited layout/transform from the app can't affect this clone
-  wrapper.style.contain = "layout style paint";
-
-  const clone = sourceA4.cloneNode(true) as HTMLElement;
-  clone.style.width = `${A4_WIDTH_PX}px`;
-  clone.style.height = `${A4_HEIGHT_PX}px`;
-  clone.style.maxWidth = "none";
-  clone.style.minHeight = "0";
-  clone.style.transform = "none";
-  clone.style.transformOrigin = "top left";
-
-  wrapper.appendChild(clone);
-  document.body.appendChild(wrapper);
-
-  return {
-    captureElement: clone,
-    dispose: () => {
-      wrapper.remove();
-    },
-  };
+const generateCanvas = async (element: HTMLElement) => {
+  await waitForImagesToLoad(element);
+  const restoreImages = await replaceImagesWithDataUrls(element);
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: "#ffffff",
+    width: A4_WIDTH_PX,
+    height: A4_HEIGHT_PX,
+  });
+  restoreImages();
+  return canvas;
 };
 
-const generateCanvasForA4Element = async (a4Element: HTMLElement) => {
-  await waitForFonts();
-
-  const { captureElement, dispose } = createOffscreenA4Clone(a4Element);
+export const downloadPDF = async (filename: string = "document.pdf") => {
   try {
-    await waitForFonts();
-    await waitForImagesToLoad(captureElement);
+    const previewElement = getPreviewElement();
+    // Save original styles
+    const originalWidth = previewElement.style.width;
+    const originalHeight = previewElement.style.height;
+    const originalMaxWidth = previewElement.style.maxWidth;
+    const originalMinHeight = previewElement.style.minHeight;
 
-    const restoreImages = await replaceImagesWithDataUrls(captureElement);
-    try {
-      return await html2canvas(captureElement, {
-        scale: A4_CAPTURE_SCALE,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        width: A4_WIDTH_PX,
-        height: A4_HEIGHT_PX,
-      });
-    } finally {
-      restoreImages();
+    // Force A4 size in px
+    previewElement.style.width = A4_WIDTH_PX + "px";
+    previewElement.style.height = A4_HEIGHT_PX + "px";
+    previewElement.style.maxWidth = "none";
+    previewElement.style.minHeight = "0";
+
+    const canvas = await generateCanvas(previewElement);
+
+    // Restore original styles
+    previewElement.style.width = originalWidth;
+    previewElement.style.height = originalHeight;
+    previewElement.style.maxWidth = originalMaxWidth;
+    previewElement.style.minHeight = originalMinHeight;
+
+    // PDF export: use mm units and fit image to A4
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const pageWidth = 210; // mm
+    const pageHeight = 297; // mm
+
+    // Get image data and scale
+    const imgData = canvas.toDataURL("image/png", 1.0);
+    const imgProps = {
+      width: canvas.width,
+      height: canvas.height,
+    };
+    // Calculate dimensions in mm
+    const pxPerMm = imgProps.width / pageWidth;
+    const imgHeightMm = imgProps.height / pxPerMm;
+    let x = 0,
+      y = 0,
+      w = pageWidth,
+      h = imgHeightMm;
+    console.log("PDF Export:", {
+      imgProps,
+      pxPerMm,
+      imgHeightMm,
+      pageWidth,
+      pageHeight,
+    });
+    if (
+      !isFinite(pxPerMm) ||
+      !isFinite(imgHeightMm) ||
+      imgProps.width === 0 ||
+      imgProps.height === 0
+    ) {
+      // Fallback: fit to page
+      w = pageWidth;
+      h = pageHeight;
+      x = 0;
+      y = 0;
+      console.warn("Falling back to full page size for PDF export.");
+    } else if (imgHeightMm > pageHeight) {
+      // Scale down to fit page height
+      h = pageHeight;
+      w = (imgProps.width / imgProps.height) * h;
+      x = (pageWidth - w) / 2;
+      y = 0;
+    } else {
+      // Center vertically
+      y = (pageHeight - h) / 2;
     }
-  } finally {
-    dispose();
+    pdf.addImage(imgData, "PNG", x, y, w, h);
+    pdf.save(filename);
+  } catch (err) {
+    console.error("Failed to generate PDF:", err);
+    alert("Failed to generate PDF. See console for details.");
   }
 };
 
-export const downloadPDFInContainer = async (
-  container: ParentNode,
-  filename: string = "document.pdf",
-) => {
-  const a4Element = getA4DocumentElement(container);
-  const canvas = await generateCanvasForA4Element(a4Element);
+export const downloadJPG = async (filename: string = "document.jpg") => {
+  const previewElement = getPreviewElement();
+  // Save original styles
+  const originalWidth = previewElement.style.width;
+  const originalHeight = previewElement.style.height;
+  const originalMaxWidth = previewElement.style.maxWidth;
+  const originalMinHeight = previewElement.style.minHeight;
 
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
+  // Force A4 size in px
+  previewElement.style.width = A4_WIDTH_PX + "px";
+  previewElement.style.height = A4_HEIGHT_PX + "px";
+  previewElement.style.maxWidth = "none";
+  previewElement.style.minHeight = "0";
 
-  const imgData = canvas.toDataURL("image/png", 1.0);
-  const imgWidthMm = 210;
-  const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
+  const canvas = await generateCanvas(previewElement);
 
-  pdf.addImage(imgData, "PNG", 0, 0, imgWidthMm, imgHeightMm);
-  pdf.save(filename);
-};
+  // Restore original styles
+  previewElement.style.width = originalWidth;
+  previewElement.style.height = originalHeight;
+  previewElement.style.maxWidth = originalMaxWidth;
+  previewElement.style.minHeight = originalMinHeight;
 
-export const downloadJPGInContainer = async (
-  container: ParentNode,
-  filename: string = "document.jpg",
-) => {
-  const a4Element = getA4DocumentElement(container);
-  const canvas = await generateCanvasForA4Element(a4Element);
-
+  // Create a temporary link element
   const link = document.createElement("a");
   link.download = filename;
   link.href = canvas.toDataURL("image/jpeg", 1.0);
@@ -172,37 +188,36 @@ export const downloadJPGInContainer = async (
   document.body.removeChild(link);
 };
 
-export const printDocumentInContainer = async (container: ParentNode) => {
-  const a4Element = getA4DocumentElement(container);
+export const printDocument = async () => {
+  const previewElement = getPreviewElement();
 
+  // Create a new window for printing
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    throw new Error("Failed to open print window. Please allow popups for this site.");
+    throw new Error(
+      "Failed to open print window. Please allow popups for this site.",
+    );
   }
 
-  // Copy all <link rel="stylesheet"> and <style> tags (more reliable than cssRules; avoids CORS access issues)
+  // Copy all <link rel="stylesheet"> and <style> tags
   let headContent = "";
   document.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => {
     headContent += el.outerHTML;
   });
 
-  const baseHref = window.location.origin + "/";
-
+  // Compose the print HTML
   printWindow.document.write(`
     <html>
       <head>
-        <base href="${baseHref}" />
         <title>Print Document</title>
         ${headContent}
         <style>
+          @media print { html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; } }
           @page { size: A4; margin: 0; }
-          html, body { margin: 0; padding: 0; background: #ffffff !important; }
-          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
-          .a4-document { width: 210mm !important; min-height: 297mm !important; box-shadow: none !important; }
         </style>
       </head>
       <body style="margin:0;padding:0;">
-        ${a4Element.outerHTML}
+        ${previewElement.outerHTML}
         <script>
           function allImagesLoaded(doc) {
             const imgs = doc.images;
@@ -212,17 +227,8 @@ export const printDocumentInContainer = async (container: ParentNode) => {
               return new Promise(res => { img.onload = img.onerror = res; });
             }));
           }
-
-          function fontsReady(doc) {
-            try {
-              return (doc.fonts && doc.fonts.ready) ? doc.fonts.ready : Promise.resolve();
-            } catch (e) {
-              return Promise.resolve();
-            }
-          }
-
           window.onload = function() {
-            Promise.all([allImagesLoaded(document), fontsReady(document)]).then(function() {
+            allImagesLoaded(document).then(function() {
               setTimeout(function() {
                 window.print();
                 window.onafterprint = function() { window.close(); };
@@ -233,24 +239,5 @@ export const printDocumentInContainer = async (container: ParentNode) => {
       </body>
     </html>
   `);
-
   printWindow.document.close();
-};
-
-// Backwards-compatible wrappers
-export const downloadPDF = async (filename: string = "document.pdf") => {
-  try {
-    await downloadPDFInContainer(document, filename);
-  } catch (err) {
-    console.error("Failed to generate PDF:", err);
-    alert("Failed to generate PDF. See console for details.");
-  }
-};
-
-export const downloadJPG = async (filename: string = "document.jpg") => {
-  await downloadJPGInContainer(document, filename);
-};
-
-export const printDocument = async () => {
-  await printDocumentInContainer(document);
 };

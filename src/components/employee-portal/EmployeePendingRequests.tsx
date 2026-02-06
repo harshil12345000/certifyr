@@ -22,11 +22,8 @@ import * as Previews from "@/components/templates";
 import { Clock, Eye, FileText, Printer, Download } from "lucide-react";
 import { FormData } from "@/types/templates";
 import { DocumentRequest } from "@/types/document";
-import {
-  downloadJPGInContainer,
-  downloadPDFInContainer,
-  printDocumentInContainer,
-} from "@/lib/document-utils";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
@@ -121,24 +118,92 @@ export function EmployeePendingRequests() {
     return nameMap[templateId] || templateId;
   };
 
-  const handlePrint = async (elementId: string) => {
+  const handlePrint = (elementId: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
-
-    try {
-      await printDocumentInContainer(element);
-      trackDocumentCreation();
-    } catch (error) {
-      console.error("Error printing document:", error);
-    }
+    
+    const printWindow = window.open('', '', 'height=842,width=595');
+    if (!printWindow) return;
+    
+    // Get all stylesheets from the current document
+    const styleSheets = Array.from(document.styleSheets);
+    let allStyles = '';
+    
+    styleSheets.forEach(sheet => {
+      try {
+        const rules = Array.from(sheet.cssRules || sheet.rules || []);
+        rules.forEach(rule => {
+          allStyles += rule.cssText + '\n';
+        });
+      } catch (e) {
+        // Handle CORS errors for external stylesheets
+        console.warn('Could not access stylesheet:', e);
+      }
+    });
+    
+    // Build the print document with all styles
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Document</title>
+          <style>
+            @page { 
+              size: A4; 
+              margin: 0; 
+            }
+            html, body { 
+              margin: 0; 
+              padding: 0;
+              background: #ffffff !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            * {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            ${allStyles}
+          </style>
+        </head>
+        <body>
+          ${element.innerHTML}
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
+    // Wait for content and styles to load before printing
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+    
+    // Track document creation on print
+    trackDocumentCreation();
   };
 
   const handleDownloadJPG = async (elementId: string, filename: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
-
+    
     try {
-      await downloadJPGInContainer(element, `${filename}.jpg`);
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const link = document.createElement("a");
+      link.download = `${filename}.jpg`;
+      link.href = canvas.toDataURL("image/jpeg", 1.0);
+      link.click();
+      
+      // Track document creation on download
       trackDocumentCreation();
     } catch (error) {
       console.error("Error generating JPG:", error);
@@ -148,9 +213,29 @@ export function EmployeePendingRequests() {
   const handleDownloadPDF = async (elementId: string, filename: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
-
+    
     try {
-      await downloadPDFInContainer(element, `${filename}.pdf`);
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${filename}.pdf`);
+      
+      // Track document creation on download
       trackDocumentCreation();
     } catch (error) {
       console.error("Error generating PDF:", error);
