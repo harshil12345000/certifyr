@@ -118,129 +118,210 @@ export function EmployeePendingRequests() {
     return nameMap[templateId] || templateId;
   };
 
-  const handlePrint = (elementId: string) => {
+  // High-fidelity offscreen clone approach for pixel-perfect exports
+  const A4_WIDTH_PX = 794;
+  const A4_HEIGHT_PX = 1123;
+
+  const createOffscreenA4Clone = (element: HTMLElement): HTMLDivElement => {
+    const container = document.createElement("div");
+    container.style.cssText = `
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: ${A4_WIDTH_PX}px;
+      height: ${A4_HEIGHT_PX}px;
+      background: #ffffff;
+      overflow: hidden;
+      z-index: -9999;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      letter-spacing: normal;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    `;
+    
+    const clone = element.cloneNode(true) as HTMLElement;
+    clone.style.cssText = `
+      width: ${A4_WIDTH_PX}px !important;
+      height: ${A4_HEIGHT_PX}px !important;
+      max-width: none !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 32px !important;
+      box-sizing: border-box !important;
+      transform: none !important;
+      aspect-ratio: unset !important;
+      background: #ffffff !important;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 14px !important;
+      line-height: 1.5 !important;
+      letter-spacing: normal !important;
+    `;
+    
+    // Force all text elements to have proper typography
+    clone.querySelectorAll("*").forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.letterSpacing = "normal";
+      htmlEl.style.fontFamily = "inherit";
+    });
+    
+    container.appendChild(clone);
+    document.body.appendChild(container);
+    return container;
+  };
+
+  const waitForImagesToLoad = async (element: HTMLElement) => {
+    const images = Array.from(element.querySelectorAll("img")) as HTMLImageElement[];
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = img.onerror = resolve;
+        });
+      })
+    );
+  };
+
+  const handlePrint = async (elementId: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
     
-    const printWindow = window.open('', '', 'height=842,width=595');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    
-    // Get all stylesheets from the current document
-    const styleSheets = Array.from(document.styleSheets);
-    let allStyles = '';
-    
-    styleSheets.forEach(sheet => {
-      try {
-        const rules = Array.from(sheet.cssRules || sheet.rules || []);
-        rules.forEach(rule => {
-          allStyles += rule.cssText + '\n';
-        });
-      } catch (e) {
-        // Handle CORS errors for external stylesheets
-        console.warn('Could not access stylesheet:', e);
-      }
+
+    // Copy all stylesheets
+    let headContent = "";
+    document.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => {
+      headContent += el.outerHTML;
     });
-    
-    // Build the print document with all styles
+
     printWindow.document.write(`
       <html>
         <head>
           <title>Print Document</title>
+          ${headContent}
           <style>
-            @page { 
-              size: A4; 
-              margin: 0; 
+            @media print { 
+              html, body { 
+                width: 210mm; 
+                height: 297mm; 
+                margin: 0; 
+                padding: 0; 
+              } 
             }
-            html, body { 
-              margin: 0; 
-              padding: 0;
-              background: #ffffff !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              color-adjust: exact;
-            }
+            @page { size: A4; margin: 0; }
             * {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              color-adjust: exact;
+              letter-spacing: normal !important;
+              -webkit-font-smoothing: antialiased;
+              -moz-osx-font-smoothing: grayscale;
             }
-            ${allStyles}
+            .a4-document {
+              width: ${A4_WIDTH_PX}px !important;
+              height: ${A4_HEIGHT_PX}px !important;
+              max-width: none !important;
+              min-height: 0 !important;
+              transform: none !important;
+              aspect-ratio: unset !important;
+            }
           </style>
         </head>
-        <body>
-          ${element.innerHTML}
+        <body style="margin:0;padding:0;background:#ffffff;">
+          ${element.outerHTML}
+          <script>
+            function allImagesLoaded(doc) {
+              const imgs = doc.images;
+              if (!imgs || imgs.length === 0) return Promise.resolve();
+              return Promise.all(Array.from(imgs).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(res => { img.onload = img.onerror = res; });
+              }));
+            }
+            window.onload = function() {
+              allImagesLoaded(document).then(function() {
+                setTimeout(function() {
+                  window.print();
+                  window.onafterprint = function() { window.close(); };
+                }, 100);
+              });
+            };
+          </script>
         </body>
       </html>
     `);
-    
     printWindow.document.close();
-    
-    // Wait for content and styles to load before printing
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }, 500);
-    
-    // Track document creation on print
     trackDocumentCreation();
   };
 
   const handleDownloadJPG = async (elementId: string, filename: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
+
+    const container = createOffscreenA4Clone(element);
+
     try {
-      const canvas = await html2canvas(element, {
+      await waitForImagesToLoad(container);
+      
+      const canvas = await html2canvas(container.firstChild as HTMLElement, {
         scale: 3,
         useCORS: true,
+        allowTaint: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
+        width: A4_WIDTH_PX,
+        height: A4_HEIGHT_PX,
       });
-      
+
       const link = document.createElement("a");
       link.download = `${filename}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 1.0);
       link.click();
-      
-      // Track document creation on download
+
       trackDocumentCreation();
     } catch (error) {
       console.error("Error generating JPG:", error);
+    } finally {
+      document.body.removeChild(container);
     }
   };
 
   const handleDownloadPDF = async (elementId: string, filename: string) => {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
+
+    const container = createOffscreenA4Clone(element);
+
     try {
-      const canvas = await html2canvas(element, {
+      await waitForImagesToLoad(container);
+      
+      const canvas = await html2canvas(container.firstChild as HTMLElement, {
         scale: 3,
         useCORS: true,
+        allowTaint: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
+        width: A4_WIDTH_PX,
+        height: A4_HEIGHT_PX,
       });
-      
-      const imgData = canvas.toDataURL('image/png');
+
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
-      
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
       pdf.save(`${filename}.pdf`);
-      
-      // Track document creation on download
+
       trackDocumentCreation();
     } catch (error) {
       console.error("Error generating PDF:", error);
+    } finally {
+      document.body.removeChild(container);
     }
   };
+
 
   if (loading) {
     return (
