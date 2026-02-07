@@ -22,8 +22,7 @@ import * as Previews from "@/components/templates";
 import { Clock, Eye, FileText, Printer, Download } from "lucide-react";
 import { FormData } from "@/types/templates";
 import { DocumentRequest } from "@/types/document";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { exportElementToJpgA4, exportElementToPdfA4, printElementA4 } from "@/lib/document-utils";
 import { useDocumentTracking } from "@/hooks/useDocumentTracking";
 
 const TEMPLATE_PREVIEW_MAP: Record<string, keyof typeof Previews> = {
@@ -118,207 +117,45 @@ export function EmployeePendingRequests() {
     return nameMap[templateId] || templateId;
   };
 
-  // High-fidelity offscreen clone approach for pixel-perfect exports
-  const A4_WIDTH_PX = 794;
-  const A4_HEIGHT_PX = 1123;
-
-  const createOffscreenA4Clone = (element: HTMLElement): HTMLDivElement => {
-    const container = document.createElement("div");
-    container.style.cssText = `
-      position: fixed;
-      left: -9999px;
-      top: 0;
-      width: ${A4_WIDTH_PX}px;
-      height: ${A4_HEIGHT_PX}px;
-      background: #ffffff;
-      overflow: hidden;
-      z-index: -9999;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      line-height: 1.5;
-      letter-spacing: normal;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    `;
-    
-    const clone = element.cloneNode(true) as HTMLElement;
-    clone.style.cssText = `
-      width: ${A4_WIDTH_PX}px !important;
-      height: ${A4_HEIGHT_PX}px !important;
-      max-width: none !important;
-      min-height: 0 !important;
-      margin: 0 !important;
-      padding: 32px !important;
-      box-sizing: border-box !important;
-      transform: none !important;
-      aspect-ratio: unset !important;
-      background: #ffffff !important;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      font-size: 14px !important;
-      line-height: 1.5 !important;
-      letter-spacing: normal !important;
-    `;
-    
-    // Force all text elements to have proper typography
-    clone.querySelectorAll("*").forEach((el) => {
-      const htmlEl = el as HTMLElement;
-      htmlEl.style.letterSpacing = "normal";
-      htmlEl.style.fontFamily = "inherit";
-    });
-    
-    container.appendChild(clone);
-    document.body.appendChild(container);
-    return container;
-  };
-
-  const waitForImagesToLoad = async (element: HTMLElement) => {
-    const images = Array.from(element.querySelectorAll("img")) as HTMLImageElement[];
-    await Promise.all(
-      images.map((img) => {
-        if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = img.onerror = resolve;
-        });
-      })
-    );
+  const resolveExportElement = (elementId: string): HTMLElement | null => {
+    const wrapper = document.getElementById(elementId);
+    if (!wrapper) return null;
+    return (wrapper.querySelector(".a4-document") as HTMLElement) || wrapper;
   };
 
   const handlePrint = async (elementId: string) => {
-    const element = document.getElementById(elementId);
+    const element = resolveExportElement(elementId);
     if (!element) return;
-    
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    // Copy all stylesheets
-    let headContent = "";
-    document.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => {
-      headContent += el.outerHTML;
-    });
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Print Document</title>
-          ${headContent}
-          <style>
-            @media print { 
-              html, body { 
-                width: 210mm; 
-                height: 297mm; 
-                margin: 0; 
-                padding: 0; 
-              } 
-            }
-            @page { size: A4; margin: 0; }
-            * {
-              letter-spacing: normal !important;
-              -webkit-font-smoothing: antialiased;
-              -moz-osx-font-smoothing: grayscale;
-            }
-            .a4-document {
-              width: ${A4_WIDTH_PX}px !important;
-              height: ${A4_HEIGHT_PX}px !important;
-              max-width: none !important;
-              min-height: 0 !important;
-              transform: none !important;
-              aspect-ratio: unset !important;
-            }
-          </style>
-        </head>
-        <body style="margin:0;padding:0;background:#ffffff;">
-          ${element.outerHTML}
-          <script>
-            function allImagesLoaded(doc) {
-              const imgs = doc.images;
-              if (!imgs || imgs.length === 0) return Promise.resolve();
-              return Promise.all(Array.from(imgs).map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(res => { img.onload = img.onerror = res; });
-              }));
-            }
-            window.onload = function() {
-              allImagesLoaded(document).then(function() {
-                setTimeout(function() {
-                  window.print();
-                  window.onafterprint = function() { window.close(); };
-                }, 100);
-              });
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    trackDocumentCreation();
-  };
-
-  const handleDownloadJPG = async (elementId: string, filename: string) => {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-
-    const container = createOffscreenA4Clone(element);
 
     try {
-      await waitForImagesToLoad(container);
-      
-      const canvas = await html2canvas(container.firstChild as HTMLElement, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        width: A4_WIDTH_PX,
-        height: A4_HEIGHT_PX,
-      });
-
-      const link = document.createElement("a");
-      link.download = `${filename}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 1.0);
-      link.click();
-
+      await printElementA4(element, "Print Document");
       trackDocumentCreation();
     } catch (error) {
-      console.error("Error generating JPG:", error);
-    } finally {
-      document.body.removeChild(container);
+      console.error("Error printing document:", error);
     }
   };
 
-  const handleDownloadPDF = async (elementId: string, filename: string) => {
-    const element = document.getElementById(elementId);
+  const handleDownloadJPG = async (elementId: string, filenameBase: string) => {
+    const element = resolveExportElement(elementId);
     if (!element) return;
 
-    const container = createOffscreenA4Clone(element);
+    try {
+      await exportElementToJpgA4(element, `${filenameBase}.jpg`);
+      trackDocumentCreation();
+    } catch (error) {
+      console.error("Error generating JPG:", error);
+    }
+  };
+
+  const handleDownloadPDF = async (elementId: string, filenameBase: string) => {
+    const element = resolveExportElement(elementId);
+    if (!element) return;
 
     try {
-      await waitForImagesToLoad(container);
-      
-      const canvas = await html2canvas(container.firstChild as HTMLElement, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        width: A4_WIDTH_PX,
-        height: A4_HEIGHT_PX,
-      });
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
-      pdf.save(`${filename}.pdf`);
-
+      await exportElementToPdfA4(element, `${filenameBase}.pdf`);
       trackDocumentCreation();
     } catch (error) {
       console.error("Error generating PDF:", error);
-    } finally {
-      document.body.removeChild(container);
     }
   };
 

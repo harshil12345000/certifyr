@@ -10,8 +10,7 @@ import { DynamicPreview } from '@/components/templates/DynamicPreview';
 import { getDocumentConfig } from '@/config/documentConfigs';
 import { getInitialData } from '@/lib/document-initial-data';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { exportElementToPdfA4, printElementA4 } from '@/lib/document-utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -117,31 +116,22 @@ export default function DocumentDetail() {
     );
   }
 
+  const resolveExportElement = (): HTMLElement | null => {
+    const container = previewRef.current;
+    if (!container) return null;
+    return (container.querySelector(".a4-document") as HTMLElement) || container;
+  };
+
   const handleDownloadPDF = async () => {
-    if (!previewRef.current) return;
-    
+    const element = resolveExportElement();
+    if (!element) return;
+
     setIsProcessing(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 3,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`${documentConfig?.name || 'document'}.pdf`);
-      
+      await exportElementToPdfA4(
+        element,
+        `${documentConfig?.name || "document"}.pdf`,
+      );
       toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('PDF download error:', error);
@@ -151,68 +141,16 @@ export default function DocumentDetail() {
     }
   };
 
-  const handlePrint = () => {
-    if (!previewRef.current) return;
-    
-    const printWindow = window.open('', '', 'height=842,width=595');
-    if (!printWindow) return;
-    
-    // Get all stylesheets from the current document
-    const styleSheets = Array.from(document.styleSheets);
-    let allStyles = '';
-    
-    styleSheets.forEach(sheet => {
-      try {
-        const rules = Array.from(sheet.cssRules || sheet.rules || []);
-        rules.forEach(rule => {
-          allStyles += rule.cssText + '\n';
-        });
-      } catch (e) {
-        // Handle CORS errors for external stylesheets
-        console.warn('Could not access stylesheet:', e);
-      }
-    });
-    
-    // Build the print document with all styles
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Print Document</title>
-          <style>
-            @page { 
-              size: A4; 
-              margin: 0; 
-            }
-            html, body { 
-              margin: 0; 
-              padding: 0;
-              background: #ffffff !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              color-adjust: exact;
-            }
-            * {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              color-adjust: exact;
-            }
-            ${allStyles}
-          </style>
-        </head>
-        <body>
-          ${previewRef.current.innerHTML}
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    
-    // Wait for content and styles to load before printing
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+  const handlePrint = async () => {
+    const element = resolveExportElement();
+    if (!element) return;
+
+    try {
+      await printElementA4(element, documentConfig?.name || 'Print Document');
+    } catch (error) {
+      console.error('Print error:', error);
+      toast.error('Failed to print document');
+    }
   };
 
   const handleSaveDocument = async () => {
