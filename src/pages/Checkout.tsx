@@ -10,27 +10,20 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Polar.sh configuration - REPLACE WITH YOUR ACTUAL PRODUCT IDS
-const POLAR_CONFIG = {
-  // Replace these with your actual Polar.sh product/price IDs
-  products: {
-    basic: {
-      monthly: 'POLAR_BASIC_MONTHLY_PRODUCT_ID',
-      yearly: 'POLAR_BASIC_YEARLY_PRODUCT_ID',
-    },
-    pro: {
-      monthly: 'POLAR_PRO_MONTHLY_PRODUCT_ID',
-      yearly: 'POLAR_PRO_YEARLY_PRODUCT_ID',
-    },
-    ultra: {
-      monthly: 'POLAR_ULTRA_MONTHLY_PRODUCT_ID',
-      yearly: 'POLAR_ULTRA_YEARLY_PRODUCT_ID',
-    },
+// Dodo Payments product IDs — replace with your actual Dodo product IDs
+const DODO_PRODUCTS = {
+  basic: {
+    monthly: 'DODO_BASIC_MONTHLY_PRODUCT_ID',
+    yearly: 'DODO_BASIC_YEARLY_PRODUCT_ID',
   },
-  // Replace with your Polar checkout base URL
-  checkoutBaseUrl: 'https://polar.sh/checkout',
-  // Your Polar organization slug
-  organizationSlug: 'YOUR_POLAR_ORG_SLUG',
+  pro: {
+    monthly: 'DODO_PRO_MONTHLY_PRODUCT_ID',
+    yearly: 'DODO_PRO_YEARLY_PRODUCT_ID',
+  },
+  ultra: {
+    monthly: 'DODO_ULTRA_MONTHLY_PRODUCT_ID',
+    yearly: 'DODO_ULTRA_YEARLY_PRODUCT_ID',
+  },
 };
 
 const pricing = {
@@ -74,26 +67,21 @@ export default function Checkout() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Parse plan from sessionStorage (format: basic, pro, ultra)
   const parsePlanFromStorage = (): { plan: 'basic' | 'pro' | 'ultra'; billing: 'monthly' | 'yearly' } | null => {
     const storedPlan = sessionStorage.getItem('selectedPlanIntent');
     if (!storedPlan) return null;
-    
-    // Simple plan format: basic, pro, ultra (default to yearly)
     if (storedPlan === 'basic' || storedPlan === 'pro' || storedPlan === 'ultra') {
       return { plan: storedPlan, billing: 'yearly' };
     }
     return null;
   };
 
-  // If user already has active subscription, redirect to dashboard
   useEffect(() => {
     if (!subLoading && hasActiveSubscription) {
       navigate('/dashboard', { replace: true });
     }
   }, [subLoading, hasActiveSubscription, navigate]);
 
-  // Initialize from sessionStorage or subscription
   useEffect(() => {
     const storedPlanData = parsePlanFromStorage();
     if (storedPlanData) {
@@ -107,7 +95,6 @@ export default function Checkout() {
     }
   }, [subscription]);
 
-  // Redirect to auth if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth', { replace: true });
@@ -127,30 +114,36 @@ export default function Checkout() {
     setIsRedirecting(true);
 
     try {
-      // Save selected plan to database
-      await updateSelectedPlan(selectedPlan);
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session');
+      }
 
-      // Build Polar checkout URL
-      const productId = POLAR_CONFIG.products[selectedPlan][billingPeriod];
-      
-      // Construct checkout URL with required parameters
-      // Note: Replace this with your actual Polar checkout URL format
-      const checkoutParams = new URLSearchParams({
-        product_id: productId,
-        customer_email: user.email,
-        success_url: `${window.location.origin}/checkout/success`,
-        cancel_url: `${window.location.origin}/checkout`,
-        metadata: JSON.stringify({
-          user_id: user.id,
+      const productId = DODO_PRODUCTS[selectedPlan][billingPeriod];
+
+      // Call our edge function to create a Dodo checkout session
+      const response = await supabase.functions.invoke('create-dodo-checkout', {
+        body: {
+          productId,
           plan: selectedPlan,
-          billing_period: billingPeriod,
-        }),
+          billingPeriod,
+          successUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        },
       });
 
-      const checkoutUrl = `${POLAR_CONFIG.checkoutBaseUrl}/${POLAR_CONFIG.organizationSlug}?${checkoutParams.toString()}`;
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to create checkout');
+      }
 
-      // Redirect to Polar checkout
-      window.location.href = checkoutUrl;
+      const { checkout_url } = response.data;
+      if (!checkout_url) {
+        throw new Error('No checkout URL returned');
+      }
+
+      // Redirect to Dodo Payments checkout
+      window.location.href = checkout_url;
     } catch (err: any) {
       console.error('Checkout error:', err);
       toast({
@@ -373,7 +366,7 @@ export default function Checkout() {
             </Button>
 
             <p className="text-center text-sm text-gray-500 mt-4">
-              Secure payment powered by Polar.sh
+              Secure payment powered by Dodo Payments
             </p>
           </CardContent>
         </Card>

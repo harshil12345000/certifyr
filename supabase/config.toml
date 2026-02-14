@@ -315,7 +315,11 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
-[functions.polar-webhook]
+[functions.dodo-webhook]
+enabled = true
+verify_jwt = false
+
+[functions.create-dodo-checkout]
 enabled = true
 verify_jwt = false
 
