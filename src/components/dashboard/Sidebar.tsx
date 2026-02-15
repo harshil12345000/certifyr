@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   Home,
   FileText,
-  Users,
+  Building2,
   Settings,
   Menu,
   X,
@@ -60,9 +60,9 @@ const navItems: NavItem[] = [
     requiredFeature: 'aiAssistant',
     planBadge: 'Ultra',
   },
-  { name: "Organization", path: "/admin", icon: <Users className="h-5 w-5" /> },
+  { name: "Organization", path: "/admin", icon: <Building2 className="h-5 w-5" /> },
   {
-    name: "Settings",
+    name: "Account Settings",
     path: "/settings",
     icon: <Settings className="h-5 w-5" />,
   },
