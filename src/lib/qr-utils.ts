@@ -13,7 +13,6 @@ export interface DocumentVerificationData {
   organizationId?: string;
   userId?: string;
   documentData: any;
-  expiresAt?: Date;
 }
 
 export const generateVerificationHash = (): string => {
@@ -48,8 +47,6 @@ export const saveVerifiedDocument = async (
 ): Promise<string | null> => {
   try {
     const verificationHash = generateVerificationHash();
-    const expiresAt =
-      data.expiresAt || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year default
     // document_id is a uuid, generate if not present
     let document_id: string | undefined = undefined;
     try {
@@ -75,7 +72,7 @@ export const saveVerifiedDocument = async (
       user_id: data.userId || null,
       document_data: data.documentData,
       verification_hash: verificationHash,
-      expires_at: expiresAt.toISOString(),
+      expires_at: null,
     };
     Object.keys(payload).forEach(
       (key) => payload[key] === undefined && delete payload[key],
