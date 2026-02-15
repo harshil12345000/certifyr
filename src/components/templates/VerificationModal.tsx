@@ -173,12 +173,6 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                     <strong>Generated:</strong>{" "}
                     {new Date(document.generated_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
                   </p>
-                  {document.expires_at && (
-                    <p>
-                      <strong>Expires:</strong>{" "}
-                      {new Date(document.expires_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>

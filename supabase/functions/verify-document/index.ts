@@ -69,17 +69,13 @@ serve(async (req) => {
       );
     }
 
-    const isExpired = doc.expires_at && new Date(doc.expires_at) < new Date();
     const isActive = doc.is_active;
 
-    let status: "verified" | "expired" | "inactive" | "not_found";
+    let status: "verified" | "inactive" | "not_found";
     let valid = false;
     let message = "";
 
-    if (isExpired) {
-      status = "expired";
-      message = "This document has expired";
-    } else if (!isActive) {
+    if (!isActive) {
       status = "inactive";
       message = "This document is no longer active";
     } else {

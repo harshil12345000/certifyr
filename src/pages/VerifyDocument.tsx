@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VerificationResponse {
   valid: boolean;
-  status: "verified" | "expired" | "inactive" | "not_found" | "error";
+  status: "verified" | "inactive" | "not_found" | "error";
   message: string;
   document?: {
     id: string;
@@ -77,8 +77,7 @@ const VerifyDocument = () => {
           
           const result = {
             isValid: response.valid,
-            status: response.status === "verified" ? "verified" as const : 
-                   response.status === "expired" ? "expired" as const : "not_found" as const,
+            status: response.status === "verified" ? "verified" as const : "not_found" as const,
             document: response.document,
             message: response.message,
           };
@@ -143,7 +142,6 @@ const VerifyDocument = () => {
               <div><strong>Document:</strong> ${getDocumentDisplayName()}</div>
               <div><strong>Generated:</strong> ${new Date(doc.generated_at).toLocaleDateString()}</div>
               <div><strong>Status:</strong> ${verificationData.valid ? "Valid" : "Invalid"}</div>
-              ${doc.expires_at ? `<div><strong>Expires:</strong> ${new Date(doc.expires_at).toLocaleDateString()}</div>` : ""}
             </div>
             <div class="mt-8">
               <p><strong>Verification Hash:</strong> ${hash}</p>
@@ -167,7 +165,6 @@ const VerifyDocument = () => {
     }
   };
 
-  const isExpired = verificationData?.status === "expired";
   const isActive = verificationData?.document?.is_active ?? false;
   const isValid = verificationData?.valid ?? false;
 
@@ -187,7 +184,7 @@ const VerifyDocument = () => {
             <div className="flex justify-center mb-4">
               {!verificationData || verificationData.status === "not_found" || verificationData.status === "error" ? (
                 <XCircle className="h-16 w-16 text-red-500" />
-              ) : isExpired || !isActive ? (
+              ) : !isActive ? (
                 <AlertTriangle className="h-16 w-16 text-yellow-500" />
               ) : (
                 <Check className="h-16 w-16 text-green-500" />
@@ -198,11 +195,9 @@ const VerifyDocument = () => {
                 ? "Document Not Found"
                 : verificationData.status === "error"
                   ? "Verification Failed"
-                  : isExpired
-                    ? "Document Expired"
-                    : !isActive
-                      ? "Document Inactive"
-                      : "Document Verified"}
+                  : !isActive
+                    ? "Document Inactive"
+                    : "Document Verified"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -253,30 +248,10 @@ const VerifyDocument = () => {
                       <Badge
                         variant={isValid ? "default" : "destructive"}
                       >
-                        {isValid
-                          ? "Valid"
-                          : isExpired
-                            ? "Expired"
-                            : "Inactive"}
+                        {isValid ? "Valid" : "Inactive"}
                       </Badge>
                     </div>
                   </div>
-                  {verificationData.document.expires_at && (
-                    <div>
-                      <label className="font-semibold">Expires:</label>
-                      <p>
-                        {new Date(verificationData.document.expires_at).toLocaleString(undefined, { 
-                          year: 'numeric', 
-                          month: '2-digit', 
-                          day: '2-digit', 
-                          hour: '2-digit', 
-                          minute: '2-digit', 
-                          second: '2-digit', 
-                          timeZoneName: 'short' 
-                        })}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex justify-center pt-4">
