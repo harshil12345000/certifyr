@@ -81,9 +81,9 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatureSet> = {
 
 // Plan pricing
 export const PLAN_PRICING = {
-  basic: { monthly: 19, yearly: 190 },
-  pro: { monthly: 49, yearly: 490 },
-  ultra: { monthly: 199, yearly: 1990 },
+  basic: { monthly: 19, yearly: 99 },
+  pro: { monthly: 49, yearly: 299 },
+  ultra: { monthly: 99, yearly: 599 },
 };
 
 // Plan metadata
