@@ -67,6 +67,42 @@ const replaceImagesWithDataUrls = async (element: HTMLElement) => {
   };
 };
 
+// Properties to skip when inlining – dimension props would lock child
+// elements to the (possibly narrower) on-screen width and cause blank
+// space in the exported PDF/JPG.
+const SKIP_INLINE_PROPS = new Set([
+  "width",
+  "min-width",
+  "max-width",
+  "height",
+  "min-height",
+  "max-height",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "position",
+  "display",
+  "flex",
+  "flex-basis",
+  "flex-grow",
+  "flex-shrink",
+  "grid-template-columns",
+  "grid-template-rows",
+  "transform",
+  "aspect-ratio",
+]);
+
 const inlineAllComputedStyles = (sourceRoot: HTMLElement, cloneRoot: HTMLElement) => {
   const sourceElements = [
     sourceRoot,
@@ -86,7 +122,7 @@ const inlineAllComputedStyles = (sourceRoot: HTMLElement, cloneRoot: HTMLElement
     const computed = window.getComputedStyle(sourceEl);
     for (let j = 0; j < computed.length; j++) {
       const prop = computed.item(j);
-      if (!prop) continue;
+      if (!prop || SKIP_INLINE_PROPS.has(prop)) continue;
       cloneEl.style.setProperty(
         prop,
         computed.getPropertyValue(prop),
