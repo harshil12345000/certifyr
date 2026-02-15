@@ -93,8 +93,14 @@ serve(async (req) => {
       body: JSON.stringify(checkoutPayload),
     });
 
-    const dodoData = await dodoResponse.json();
-
+    const dodoText = await dodoResponse.text();
+    let dodoData;
+    try {
+      dodoData = dodoText ? JSON.parse(dodoText) : {};
+    } catch {
+      console.error("Dodo returned non-JSON response:", dodoText);
+      dodoData = { error: dodoText };
+    }
     if (!dodoResponse.ok) {
       console.error("Dodo checkout creation failed:", JSON.stringify(dodoData));
       return new Response(
