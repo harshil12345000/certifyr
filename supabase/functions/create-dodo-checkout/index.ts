@@ -11,7 +11,7 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const dodoApiKey = Deno.env.get("DODO_PAYMENTS_API_KEY")!;
 
 // Dodo Payments API base URL (live mode)
-const DODO_API_BASE = "https://api.dodopayments.com";
+const DODO_API_BASE = "https://live.dodopayments.com";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
