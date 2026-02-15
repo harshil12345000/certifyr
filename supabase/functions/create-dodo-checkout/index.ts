@@ -8,11 +8,10 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-// Use test key while merchant isn't live; switch to DODO_PAYMENTS_API_KEY for live mode
-const dodoApiKey = Deno.env.get("DODO_PAYMENTS_TEST_API_KEY")!;
+const dodoApiKey = Deno.env.get("DODO_PAYMENTS_API_KEY")!;
 
-// Dodo Payments API base URL (test mode until merchant goes live)
-const DODO_API_BASE = "https://test.dodopayments.com";
+// Dodo Payments API base URL (live mode)
+const DODO_API_BASE = "https://live.dodopayments.com";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
