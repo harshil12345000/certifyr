@@ -67,40 +67,47 @@ const replaceImagesWithDataUrls = async (element: HTMLElement) => {
   };
 };
 
-// Properties to skip when inlining – dimension props would lock child
-// elements to the (possibly narrower) on-screen width and cause blank
-// space in the exported PDF/JPG.
-const SKIP_INLINE_PROPS = new Set([
-  "width",
-  "min-width",
-  "max-width",
-  "height",
-  "min-height",
-  "max-height",
-  "top",
-  "right",
-  "bottom",
-  "left",
-  "margin",
-  "margin-top",
-  "margin-right",
-  "margin-bottom",
-  "margin-left",
-  "padding",
-  "padding-top",
-  "padding-right",
-  "padding-bottom",
-  "padding-left",
-  "position",
-  "display",
-  "flex",
-  "flex-basis",
-  "flex-grow",
-  "flex-shrink",
-  "grid-template-columns",
-  "grid-template-rows",
-  "transform",
-  "aspect-ratio",
+// Only inline text/visual properties that matter for typography fidelity.
+// Layout properties are intentionally excluded so the clone reflows
+// naturally at the full 794px A4 width inside the offscreen container.
+const INLINE_PROPS = new Set([
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "font-variant",
+  "font-stretch",
+  "letter-spacing",
+  "word-spacing",
+  "line-height",
+  "text-align",
+  "text-decoration",
+  "text-transform",
+  "text-indent",
+  "text-shadow",
+  "white-space",
+  "word-break",
+  "word-wrap",
+  "overflow-wrap",
+  "color",
+  "background-color",
+  "background-image",
+  "background",
+  "border",
+  "border-top",
+  "border-right",
+  "border-bottom",
+  "border-left",
+  "border-width",
+  "border-style",
+  "border-color",
+  "border-radius",
+  "box-shadow",
+  "opacity",
+  "visibility",
+  "vertical-align",
+  "list-style",
+  "list-style-type",
 ]);
 
 const inlineAllComputedStyles = (sourceRoot: HTMLElement, cloneRoot: HTMLElement) => {
@@ -122,7 +129,7 @@ const inlineAllComputedStyles = (sourceRoot: HTMLElement, cloneRoot: HTMLElement
     const computed = window.getComputedStyle(sourceEl);
     for (let j = 0; j < computed.length; j++) {
       const prop = computed.item(j);
-      if (!prop || SKIP_INLINE_PROPS.has(prop)) continue;
+      if (!prop || !INLINE_PROPS.has(prop)) continue;
       cloneEl.style.setProperty(
         prop,
         computed.getPropertyValue(prop),
