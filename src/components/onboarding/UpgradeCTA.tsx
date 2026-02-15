@@ -40,7 +40,7 @@ export function UpgradeCTA({ currentPlan, onUpgrade, className }: UpgradeCTAProp
               {upgradeText}
             </p>
             <p className="text-xs sm:text-sm text-blue-100 hidden sm:block">
-              {currentPlan === 'basic' ? 'Pro starts at $49/month' : 'Ultra starts at $199/month'}
+              {currentPlan === 'basic' ? 'Pro starts at $49/month' : 'Ultra starts at $99/month'}
             </p>
           </div>
         </div>

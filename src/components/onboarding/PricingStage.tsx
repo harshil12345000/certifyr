@@ -61,20 +61,24 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
   const pricing = {
     basic: {
       monthly: 19,
-      yearly: 190
+      yearly: 99
     },
     pro: {
       monthly: 49,
-      yearly: 490
+      yearly: 299
     },
     ultra: {
-      monthly: 199,
-      yearly: 1990
+      monthly: 99,
+      yearly: 599
     }
   };
 
   const isYearly = data.billingPeriod === 'yearly';
-  const yearlyDiscount = 37.5;
+  const savingsPercent: Record<string, number> = {
+    basic: 57,
+    pro: 49,
+    ultra: 50,
+  };
 
   const handlePlanSelect = (plan: 'basic' | 'pro' | 'ultra') => {
     updateData({ selectedPlan: plan });
@@ -211,7 +215,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             Billed Yearly
           </span>
           <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-            Save {yearlyDiscount}%
+            Save up to 57%
           </Badge>
         </div>
       </div>
@@ -236,7 +240,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               </div>
               {isYearly && (
                 <div className="text-sm text-green-600 font-medium">
-                  Save ${(pricing.basic.monthly * 12) - pricing.basic.yearly} yearly
+                  Save {savingsPercent.basic}%
                 </div>
               )}
             </div>
@@ -292,7 +296,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               </div>
               {isYearly && (
                 <div className="text-sm text-green-600 font-medium">
-                  Save ${(pricing.pro.monthly * 12) - pricing.pro.yearly} yearly
+                  Save {savingsPercent.pro}%
                 </div>
               )}
             </div>
@@ -347,7 +351,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               </div>
               {isYearly && (
                 <div className="text-sm text-green-600 font-medium">
-                  Save ${(pricing.ultra.monthly * 12) - pricing.ultra.yearly} yearly
+                  Save {savingsPercent.ultra}%
                 </div>
               )}
             </div>
