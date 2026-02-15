@@ -10,8 +10,8 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const dodoApiKey = Deno.env.get("DODO_PAYMENTS_API_KEY")!;
 
-// Dodo Payments API base URL (live mode)
-const DODO_API_BASE = "https://live.dodopayments.com";
+// Dodo Payments API base URL (test mode until merchant goes live)
+const DODO_API_BASE = "https://test.dodopayments.com";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -39,17 +39,16 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub;
-    const userEmail = claimsData.claims.email;
+    const userId = user.id;
+    const userEmail = user.email;
 
     // Parse request body
     const { productId, plan, billingPeriod, successUrl, cancelUrl } = await req.json();
