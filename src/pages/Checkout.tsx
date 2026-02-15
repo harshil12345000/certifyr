@@ -13,16 +13,16 @@ import { useToast } from '@/hooks/use-toast';
 // Dodo Payments product IDs — replace with your actual Dodo product IDs
 const DODO_PRODUCTS = {
   basic: {
-    monthly: 'DODO_BASIC_MONTHLY_PRODUCT_ID',
-    yearly: 'DODO_BASIC_YEARLY_PRODUCT_ID',
+    monthly: 'pdt_0NYXDFIglnn4wukqC1Qa2',
+    yearly: 'pdt_0NYXIK26wpbK6kngEpdrT',
   },
   pro: {
-    monthly: 'DODO_PRO_MONTHLY_PRODUCT_ID',
-    yearly: 'DODO_PRO_YEARLY_PRODUCT_ID',
+    monthly: 'pdt_0NYXEA30vMCJgSxp0pcRw',
+    yearly: 'pdt_0NYXIQ6Nqc7tDx0YXn8OY',
   },
   ultra: {
-    monthly: 'DODO_ULTRA_MONTHLY_PRODUCT_ID',
-    yearly: 'DODO_ULTRA_YEARLY_PRODUCT_ID',
+    monthly: 'pdt_0NYXI4SnmvbXxxUZAkDH0',
+    yearly: 'pdt_0NYXIWHTsKjeI7gEcRLdR',
   },
 };
 
