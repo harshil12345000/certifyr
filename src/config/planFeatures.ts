@@ -79,12 +79,47 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatureSet> = {
   },
 };
 
-// Plan pricing
+// Plan pricing (International - USD)
 export const PLAN_PRICING = {
-  basic: { monthly: 19, yearly: 190 },
-  pro: { monthly: 49, yearly: 490 },
-  ultra: { monthly: 199, yearly: 1990 },
+  basic: { monthly: 19, yearly: 99 },
+  pro: { monthly: 49, yearly: 299 },
+  ultra: { monthly: 99, yearly: 599 },
 };
+
+// Plan pricing (India - INR)
+export const PLAN_PRICING_INR = {
+  basic: { monthly: 999, yearly: 4999 },
+  pro: { monthly: 1999, yearly: 12499 },
+  ultra: { monthly: 4999, yearly: 29999 },
+};
+
+// Savings percentages
+export const PLAN_SAVINGS = {
+  basic: 57,
+  pro: 49,
+  ultra: 50,
+};
+
+// Helper to detect Indian locale
+export function isIndianUser(): boolean {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz?.startsWith('Asia/Kolkata') || tz?.startsWith('Asia/Calcutta')) return true;
+    const lang = navigator.language || '';
+    if (lang.includes('IN') || lang.startsWith('hi') || lang.startsWith('bn') || lang.startsWith('ta') || lang.startsWith('te')) return true;
+  } catch {}
+  return false;
+}
+
+// Get localized pricing
+export function getLocalizedPricing() {
+  const isIndia = isIndianUser();
+  return {
+    pricing: isIndia ? PLAN_PRICING_INR : PLAN_PRICING,
+    currency: isIndia ? '₹' : '$',
+    isIndia,
+  };
+}
 
 // Plan metadata
 export const PLAN_METADATA: Record<PlanType, { name: string; tagline: string; badge?: string }> = {
