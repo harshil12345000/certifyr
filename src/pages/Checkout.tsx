@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -9,7 +9,6 @@ import { Check, Loader2, ArrowLeft, CreditCard, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { getLocalizedPricing, PLAN_SAVINGS } from '@/config/planFeatures';
 
 // Dodo Payments product IDs — replace with your actual Dodo product IDs
 const DODO_PRODUCTS = {
@@ -27,7 +26,11 @@ const DODO_PRODUCTS = {
   },
 };
 
-// Pricing is now sourced from planFeatures
+const pricing = {
+  basic: { monthly: 19, yearly: 190 },
+  pro: { monthly: 49, yearly: 490 },
+  ultra: { monthly: 199, yearly: 1990 },
+};
 
 const basicFeatures = [
   'Unlimited Document Generations',
@@ -59,7 +62,6 @@ export default function Checkout() {
   const { subscription, loading: subLoading, hasActiveSubscription, updateSelectedPlan } = useSubscription();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const { pricing, currency } = useMemo(() => getLocalizedPricing(), []);
   
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra'>('pro');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
@@ -205,7 +207,7 @@ export default function Checkout() {
           >
             Yearly
             <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-              Save up to 57%
+              Save 17%
             </Badge>
           </button>
         </div>
@@ -225,15 +227,12 @@ export default function Checkout() {
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl font-semibold">Basic</CardTitle>
               <div className="py-4">
-              <div className="text-4xl font-bold text-gray-800">
-                  {currency}{pricing.basic[billingPeriod].toLocaleString()}
+                <div className="text-4xl font-bold text-gray-800">
+                  ${pricing.basic[billingPeriod]}
                 </div>
                 <div className="text-gray-500">
                   {isYearly ? 'per year' : 'per month'}
                 </div>
-                {isYearly && (
-                  <div className="text-sm text-green-600 font-medium">Save {PLAN_SAVINGS.basic}%</div>
-                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -267,15 +266,12 @@ export default function Checkout() {
             <CardHeader className="text-center pb-4 pt-8">
               <CardTitle className="text-xl font-semibold">Pro</CardTitle>
               <div className="py-4">
-              <div className="text-4xl font-bold text-gray-800">
-                  {currency}{pricing.pro[billingPeriod].toLocaleString()}
+                <div className="text-4xl font-bold text-gray-800">
+                  ${pricing.pro[billingPeriod]}
                 </div>
                 <div className="text-gray-500">
                   {isYearly ? 'per year' : 'per month'}
                 </div>
-                {isYearly && (
-                  <div className="text-sm text-green-600 font-medium">Save {PLAN_SAVINGS.pro}%</div>
-                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -308,15 +304,12 @@ export default function Checkout() {
             <CardHeader className="text-center pb-4 pt-8">
               <CardTitle className="text-xl font-semibold">Ultra</CardTitle>
               <div className="py-4">
-              <div className="text-4xl font-bold text-gray-800">
-                  {currency}{pricing.ultra[billingPeriod].toLocaleString()}
+                <div className="text-4xl font-bold text-gray-800">
+                  ${pricing.ultra[billingPeriod]}
                 </div>
                 <div className="text-gray-500">
                   {isYearly ? 'per year' : 'per month'}
                 </div>
-                {isYearly && (
-                  <div className="text-sm text-green-600 font-medium">Save {PLAN_SAVINGS.ultra}%</div>
-                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -346,7 +339,7 @@ export default function Checkout() {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-gray-800">
-                  {currency}{selectedPrice.toLocaleString()}
+                  ${selectedPrice}
                 </div>
                 <div className="text-sm text-gray-500">
                   {isYearly ? '/year' : '/month'}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getLocalizedPricing, PLAN_SAVINGS } from "@/config/planFeatures";
 
 interface PricingStageProps {
   data: OnboardingData;
@@ -58,9 +57,24 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
   }, []);
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { pricing, currency } = useMemo(() => getLocalizedPricing(), []);
+
+  const pricing = {
+    basic: {
+      monthly: 19,
+      yearly: 190
+    },
+    pro: {
+      monthly: 49,
+      yearly: 490
+    },
+    ultra: {
+      monthly: 199,
+      yearly: 1990
+    }
+  };
 
   const isYearly = data.billingPeriod === 'yearly';
+  const yearlyDiscount = 37.5;
 
   const handlePlanSelect = (plan: 'basic' | 'pro' | 'ultra') => {
     updateData({ selectedPlan: plan });
@@ -197,7 +211,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             Billed Yearly
           </span>
           <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-            Save up to 57%
+            Save {yearlyDiscount}%
           </Badge>
         </div>
       </div>
@@ -215,14 +229,14 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             <CardTitle className="text-xl font-semibold">Basic</CardTitle>
             <div className="py-4">
               <div className="text-4xl font-bold text-gray-800">
-                {currency}{pricing.basic[data.billingPeriod].toLocaleString()}
+                ${pricing.basic[data.billingPeriod]}
               </div>
               <div className="text-gray-500">
                 {isYearly ? "per year" : "per month"}
               </div>
               {isYearly && (
                 <div className="text-sm text-green-600 font-medium">
-                  Save {PLAN_SAVINGS.basic}%
+                  Save ${(pricing.basic.monthly * 12) - pricing.basic.yearly} yearly
                 </div>
               )}
             </div>
@@ -271,14 +285,14 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             <CardTitle className="text-xl font-semibold">Pro</CardTitle>
             <div className="py-4">
               <div className="text-4xl font-bold text-gray-800">
-                {currency}{pricing.pro[data.billingPeriod].toLocaleString()}
+                ${pricing.pro[data.billingPeriod]}
               </div>
               <div className="text-gray-500">
                 {isYearly ? "per year" : "per month"}
               </div>
               {isYearly && (
                 <div className="text-sm text-green-600 font-medium">
-                  Save {PLAN_SAVINGS.pro}%
+                  Save ${(pricing.pro.monthly * 12) - pricing.pro.yearly} yearly
                 </div>
               )}
             </div>
@@ -326,14 +340,14 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             <CardTitle className="text-xl font-semibold">Ultra</CardTitle>
             <div className="py-4">
               <div className="text-4xl font-bold text-gray-800">
-                {currency}{pricing.ultra[data.billingPeriod].toLocaleString()}
+                ${pricing.ultra[data.billingPeriod]}
               </div>
               <div className="text-gray-500">
                 {isYearly ? "per year" : "per month"}
               </div>
               {isYearly && (
                 <div className="text-sm text-green-600 font-medium">
-                  Save {PLAN_SAVINGS.ultra}%
+                  Save ${(pricing.ultra.monthly * 12) - pricing.ultra.yearly} yearly
                 </div>
               )}
             </div>
@@ -426,7 +440,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               Creating Account...
             </>
           ) : (
-            `Get ${data.selectedPlan === 'pro' ? 'Pro' : data.selectedPlan === 'ultra' ? 'Ultra' : 'Basic'} – ${currency}${selectedPrice.toLocaleString()}${isYearly ? '/year' : '/month'}`
+            `Get ${data.selectedPlan === 'pro' ? 'Pro' : 'Basic'} – $${selectedPrice}${isYearly ? '/year' : '/month'}`
           )}
         </Button>
       </div>
