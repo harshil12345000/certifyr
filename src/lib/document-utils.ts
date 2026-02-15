@@ -110,7 +110,11 @@ const INLINE_PROPS = new Set([
   "list-style-type",
 ]);
 
-const inlineAllComputedStyles = (sourceRoot: HTMLElement, cloneRoot: HTMLElement) => {
+const inlineComputedStyles = (
+  sourceRoot: HTMLElement,
+  cloneRoot: HTMLElement,
+  filterProps?: Set<string>,
+) => {
   const sourceElements = [
     sourceRoot,
     ...(Array.from(sourceRoot.querySelectorAll("*")) as HTMLElement[]),
@@ -129,7 +133,8 @@ const inlineAllComputedStyles = (sourceRoot: HTMLElement, cloneRoot: HTMLElement
     const computed = window.getComputedStyle(sourceEl);
     for (let j = 0; j < computed.length; j++) {
       const prop = computed.item(j);
-      if (!prop || !INLINE_PROPS.has(prop)) continue;
+      if (!prop) continue;
+      if (filterProps && !filterProps.has(prop)) continue;
       cloneEl.style.setProperty(
         prop,
         computed.getPropertyValue(prop),
@@ -159,7 +164,7 @@ const createOffscreenA4Clone = (element: HTMLElement) => {
 
   // Aggressive: inline computed styles to avoid font/letter-spacing drift
   // from transforms, responsive scaling, or missing stylesheet rules inside exports.
-  inlineAllComputedStyles(element, cloneRoot);
+  inlineComputedStyles(element, cloneRoot, INLINE_PROPS);
 
   // Enforce true A4 surface and prevent transform-based scaling from corrupting text.
   cloneRoot.style.width = `${A4_WIDTH_PX}px`;
@@ -240,6 +245,10 @@ export const printElementA4 = async (element: HTMLElement, title: string = "Prin
   await waitForFontsToLoad(document);
 
   const { cloneRoot, cleanup } = createOffscreenA4Clone(element);
+  // For print, inline ALL computed styles (no filter) since the print
+  // window has no stylesheets – layout props like padding, flexbox, etc.
+  // must be preserved for full visual fidelity.
+  inlineComputedStyles(element, cloneRoot);
   try {
     await waitForFontsToLoad(document);
     await waitForImagesToLoad(cloneRoot);
