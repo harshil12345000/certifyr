@@ -70,6 +70,8 @@ const replaceImagesWithDataUrls = async (element: HTMLElement) => {
 // Only inline text/visual properties that matter for typography fidelity.
 // Layout properties are intentionally excluded so the clone reflows
 // naturally at the full 794px A4 width inside the offscreen container.
+// Properties to inline for PDF export (typography/visual only – layout excluded
+// so the clone reflows naturally at full 794px A4 width).
 const INLINE_PROPS = new Set([
   "font-family",
   "font-size",
@@ -110,10 +112,36 @@ const INLINE_PROPS = new Set([
   "list-style-type",
 ]);
 
+// Properties to EXCLUDE for print export. We inline everything except
+// dimension/sizing/transform props that would conflict with A4 reflow.
+const PRINT_EXCLUDE_PROPS = new Set([
+  "width",
+  "min-width",
+  "max-width",
+  "height",
+  "min-height",
+  "max-height",
+  "transform",
+  "transform-origin",
+  "zoom",
+  "scale",
+  "aspect-ratio",
+  "position",
+  "top",
+  "left",
+  "right",
+  "bottom",
+  "inset",
+  "contain",
+  "overflow",
+  "overflow-x",
+  "overflow-y",
+]);
+
 const inlineComputedStyles = (
   sourceRoot: HTMLElement,
   cloneRoot: HTMLElement,
-  filterProps?: Set<string>,
+  opts?: { allowlist?: Set<string>; blocklist?: Set<string> },
 ) => {
   const sourceElements = [
     sourceRoot,
@@ -134,7 +162,8 @@ const inlineComputedStyles = (
     for (let j = 0; j < computed.length; j++) {
       const prop = computed.item(j);
       if (!prop) continue;
-      if (filterProps && !filterProps.has(prop)) continue;
+      if (opts?.allowlist && !opts.allowlist.has(prop)) continue;
+      if (opts?.blocklist && opts.blocklist.has(prop)) continue;
       cloneEl.style.setProperty(
         prop,
         computed.getPropertyValue(prop),
@@ -164,7 +193,7 @@ const createOffscreenA4Clone = (element: HTMLElement) => {
 
   // Aggressive: inline computed styles to avoid font/letter-spacing drift
   // from transforms, responsive scaling, or missing stylesheet rules inside exports.
-  inlineComputedStyles(element, cloneRoot, INLINE_PROPS);
+  inlineComputedStyles(element, cloneRoot, { allowlist: INLINE_PROPS });
 
   // Enforce true A4 surface and prevent transform-based scaling from corrupting text.
   cloneRoot.style.width = `${A4_WIDTH_PX}px`;
@@ -245,10 +274,10 @@ export const printElementA4 = async (element: HTMLElement, title: string = "Prin
   await waitForFontsToLoad(document);
 
   const { cloneRoot, cleanup } = createOffscreenA4Clone(element);
-  // For print, inline ALL computed styles (no filter) since the print
-  // window has no stylesheets – layout props like padding, flexbox, etc.
-  // must be preserved for full visual fidelity.
-  inlineComputedStyles(element, cloneRoot);
+  // For print, inline all styles EXCEPT dimension/transform props that
+  // would conflict with A4 sizing. This preserves layout (flexbox, padding, etc.)
+  // while allowing the clone to reflow at the correct A4 width.
+  inlineComputedStyles(element, cloneRoot, { blocklist: PRINT_EXCLUDE_PROPS });
   try {
     await waitForFontsToLoad(document);
     await waitForImagesToLoad(cloneRoot);
