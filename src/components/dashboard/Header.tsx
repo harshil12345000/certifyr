@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Search, Settings, User, LogOut, CircleHelp, CircleX, Check, FileText, Send, HelpCircle, CircleUserRound, Users } from "lucide-react";
+import { Bell, Search, Settings, Building2, LogOut, CircleHelp, CircleX, Check, FileText, Send, HelpCircle, CircleUserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -489,13 +489,13 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>Account Settings</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/admin" className="flex items-center cursor-pointer">
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Admin</span>
+                  <Building2 className="mr-2 h-4 w-4" />
+                  <span>Organization</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
