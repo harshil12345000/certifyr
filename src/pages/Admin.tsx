@@ -679,9 +679,11 @@ const AdminPage = () => {
       <div className="container mx-auto py-8">
         <Tabs defaultValue="organization" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="organization">Organization</TabsTrigger>
+            <TabsTrigger value="organization">Overview</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="branding">Branding</TabsTrigger>
+            <Separator orientation="vertical" className="h-6" />
+            <TabsTrigger value="admin">Admin</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
           </TabsList>
@@ -910,6 +912,10 @@ const AdminPage = () => {
                 </CardFooter>
               </Card>
             </form>
+          </TabsContent>
+
+          <TabsContent value="admin" className="space-y-6">
+            <UserPermissionsPanel organizationId={organizationId} />
           </TabsContent>
 
           <TabsContent value="announcements" className="space-y-6">
