@@ -77,7 +77,7 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
             control={formControl}
             name={field.name}
             render={({ field: formField }) => {
-              const dateValue = formField.value ? parse(formField.value, "dd/MM/yyyy", new Date()) : new Date();
+              const dateValue = formField.value ? parse(formField.value, "dd/MM/yyyy", new Date()) : undefined;
               
               return (
                 <FormItem className="flex flex-col">
@@ -91,7 +91,7 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
                             "w-full pl-3 text-left font-normal"
                           )}
                         >
-                          {formField.value ? formField.value : format(new Date(), "dd/MM/yyyy")}
+                          {formField.value ? formField.value : "DD/MM/YYYY"}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
