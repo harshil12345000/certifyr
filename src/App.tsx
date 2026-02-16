@@ -39,6 +39,7 @@ import CheckEmail from "@/pages/auth/check-email";
 import ResetPassword from "@/pages/ResetPassword";
 import Checkout from "@/pages/Checkout";
 import CheckoutSuccess from "@/pages/CheckoutSuccess";
+import OwnerDashboard from "@/pages/OwnerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -240,6 +241,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/owner" element={<OwnerDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />

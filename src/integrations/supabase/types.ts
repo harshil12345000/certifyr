@@ -430,6 +430,30 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_credentials: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password_hash: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password_hash: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preview_generations: {
         Row: {
           action_type: string
@@ -948,6 +972,7 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: boolean
       }
+      hash_owner_password: { Args: { p_password: string }; Returns: string }
       increment_user_stat: {
         Args: {
           p_organization_id: string
@@ -991,6 +1016,10 @@ export type Database = {
       }
       validate_portal_password: {
         Args: { p_organization_id: string; p_password: string }
+        Returns: boolean
+      }
+      verify_owner_password: {
+        Args: { p_email: string; p_password: string }
         Returns: boolean
       }
     }
