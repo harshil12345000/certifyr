@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -154,23 +154,21 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   const { logoUrl, organizationDetails } = useBranding();
   const { features, loading: planLoading } = usePlanFeatures();
 
-  // Avoid sidebar "flicker" when plan data briefly reloads.
-  // Default to showing gated items (true) until the plan query has
-  // settled at least once, then latch to the resolved values.
-  const hasLoadedOnce = React.useRef(false);
-  const [featureVisibility, setFeatureVisibility] = useState({
-    requestPortal: true,
-    aiAssistant: true,
-  });
+  // Stable feature visibility: default hidden, only show after plan resolves.
+  // Once resolved, latch values so re-renders during navigation don't flicker.
+  const resolvedRef = React.useRef<{ requestPortal: boolean; aiAssistant: boolean } | null>(null);
 
-  useEffect(() => {
-    if (planLoading) return;
-    hasLoadedOnce.current = true;
-    setFeatureVisibility({
-      requestPortal: features?.requestPortal ?? false,
-      aiAssistant: features?.aiAssistant ?? false,
-    });
-  }, [planLoading, features?.requestPortal, features?.aiAssistant]);
+  if (!planLoading && features) {
+    resolvedRef.current = {
+      requestPortal: features.requestPortal ?? false,
+      aiAssistant: features.aiAssistant ?? false,
+    };
+  }
+
+  const featureVisibility = resolvedRef.current ?? {
+    requestPortal: false,
+    aiAssistant: false,
+  };
 
   // Get name and avatar from user metadata if available
   const name =
