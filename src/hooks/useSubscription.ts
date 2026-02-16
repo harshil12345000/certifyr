@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -20,6 +20,8 @@ export function useSubscription() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const hasFetchedOnce = useRef(false);
+
   const fetchSubscription = useCallback(async () => {
     if (!user?.id) {
       setSubscription(null);
@@ -28,7 +30,10 @@ export function useSubscription() {
     }
 
     try {
-      setLoading(true);
+      // Only show loading on initial fetch, not refetches
+      if (!hasFetchedOnce.current) {
+        setLoading(true);
+      }
       const { data, error: fetchError } = await supabase
         .from('subscriptions')
         .select('*')
@@ -45,6 +50,7 @@ export function useSubscription() {
       console.error('Error in fetchSubscription:', err);
       setError(err.message);
     } finally {
+      hasFetchedOnce.current = true;
       setLoading(false);
     }
   }, [user?.id]);
