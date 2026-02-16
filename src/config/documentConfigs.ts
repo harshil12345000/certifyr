@@ -33,6 +33,8 @@ export interface DocumentConfig {
   description?: string;
   category: string;
   layoutType: 'certificate' | 'letter' | 'agreement' | 'transcript';
+  /** If defined, only these org types can access this document. Undefined = all orgs. */
+  allowedOrgTypes?: string[];
   sections: SectionConfig[];
 }
 
@@ -310,6 +312,7 @@ export const transferConfig: DocumentConfig = {
   description: "Certificate for students moving between institutions",
   category: "academic",
   layoutType: "certificate",
+  allowedOrgTypes: ["Educational Institute", "Other"],
   
   sections: [
     {
@@ -371,6 +374,7 @@ export const academicTranscriptConfig: DocumentConfig = {
   description: "Official academic record and transcript",
   category: "academic",
   layoutType: "transcript",
+  allowedOrgTypes: ["Educational Institute", "Other"],
   
   sections: [
     {
@@ -431,6 +435,7 @@ export const completionConfig: DocumentConfig = {
   description: "Certificate for courses, training programs, internships",
   category: "academic",
   layoutType: "certificate",
+  allowedOrgTypes: ["Educational Institute", "Other"],
   
   sections: [
     {
@@ -1037,6 +1042,7 @@ export const articlesOfIncorporationConfig: DocumentConfig = {
   description: "Certificate of Incorporation for new corporations",
   category: "corporate",
   layoutType: "agreement",
+  allowedOrgTypes: ["Corporate", "Startup", "Law Agency", "Other"],
   
   sections: [
     {
@@ -1109,9 +1115,10 @@ export const articlesOfIncorporationConfig: DocumentConfig = {
 export const corporateBylawsConfig: DocumentConfig = {
   id: "corporate-bylaws",
   name: "Corporate Bylaws",
-  description: "Corporate governance and operating procedures",
+  description: "Governance rules and procedures for a corporation",
   category: "corporate",
   layoutType: "agreement",
+  allowedOrgTypes: ["Corporate", "Startup", "Law Agency", "Other"],
   
   sections: [
     {
@@ -1174,9 +1181,10 @@ export const corporateBylawsConfig: DocumentConfig = {
 export const foundersAgreementConfig: DocumentConfig = {
   id: "founders-agreement",
   name: "Founders' Agreement",
-  description: "Agreement between company founders",
+  description: "Agreement between co-founders of a startup",
   category: "corporate",
   layoutType: "agreement",
+  allowedOrgTypes: ["Corporate", "Startup", "Law Agency", "Other"],
   
   sections: [
     {
@@ -1249,9 +1257,10 @@ export const foundersAgreementConfig: DocumentConfig = {
 export const stockPurchaseAgreementConfig: DocumentConfig = {
   id: "stock-purchase-agreement",
   name: "Stock Purchase Agreement",
-  description: "Agreement for purchasing company shares",
+  description: "Agreement for purchase of company shares",
   category: "corporate",
   layoutType: "agreement",
+  allowedOrgTypes: ["Corporate", "Startup", "Law Agency", "Other"],
   
   sections: [
     {
