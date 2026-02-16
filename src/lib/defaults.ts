@@ -16,3 +16,20 @@ export const defaultElementStyle: ElementStyle = {
   alignment: "left",
   opacity: 1,
 };
+
+export const organizationTypes = [
+  "Corporate",
+  "Startup",
+  "Law Agency",
+  "Educational Institute",
+  "Other",
+];
+
+export const organizationSizes = [
+  "1-10",
+  "10-50",
+  "50-100",
+  "100-1000",
+  "1000-10000",
+  "10000+",
+];

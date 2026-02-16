@@ -18,22 +18,7 @@ interface OrganizationInfoStageProps {
   onPrev: () => void;
 }
 
-const organizationTypes = [
-  "Corporate",
-  "Startup", 
-  "Law Agency",
-  "Educational Institute",
-  "Other"
-];
-
-const organizationSizes = [
-  "1-10",
-  "10-50", 
-  "50-100",
-  "100-1000",
-  "1000-10000",
-  "10000+"
-];
+import { organizationTypes, organizationSizes } from "@/lib/defaults";
 
 
 export function OrganizationInfoStage({ data, updateData, onNext, onPrev }: OrganizationInfoStageProps) {

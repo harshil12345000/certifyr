@@ -26,9 +26,10 @@ interface DynamicFormProps {
   config: any;
   initialData: any;
   onSubmit: (data: any) => void;
+  organizationType?: string;
 }
 
-export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps) {
+export function DynamicForm({ config, initialData, onSubmit, organizationType }: DynamicFormProps) {
   const formSchema = generateZodSchema(config);
   
   const form = useForm({
@@ -117,7 +118,18 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
           />
         );
 
-      case "select":
+      case "select": {
+        // Filter "Person Type" options based on org type
+        let options = field.options;
+        if (
+          field.name === "type" &&
+          organizationType &&
+          organizationType !== "Educational Institute" &&
+          organizationType !== "Other"
+        ) {
+          options = options.filter((o: any) => o.value !== "student");
+        }
+
         return (
           <FormField
             control={formControl}
@@ -132,7 +144,7 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {field.options.map((option: any) => (
+                    {options.map((option: any) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -144,6 +156,7 @@ export function DynamicForm({ config, initialData, onSubmit }: DynamicFormProps)
             )}
           />
         );
+      }
 
       case "textarea":
         return (

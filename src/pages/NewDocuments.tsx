@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useAuth } from "@/contexts/AuthContext";
 import { TemplatesSkeleton } from "@/components/dashboard/TemplatesSkeleton";
 import { documentConfigs } from "@/config/documentConfigs";
+import { supabase } from "@/integrations/supabase/client";
 
 // Document metadata for UI display
 const documentMetadata = [{
@@ -121,20 +122,35 @@ const NewDocuments = () => {
     user
   } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [orgType, setOrgType] = useState<string>("");
+
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const fetchOrgType = async () => {
+      if (!user?.id) { setLoading(false); return; }
+      const { data } = await supabase
+        .from("user_profiles")
+        .select("organization_type")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setOrgType(data?.organization_type || "");
       setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    };
+    fetchOrgType();
+  }, [user]);
 
   // Get unique categories
   const categories = Array.from(new Set(documentMetadata.map(doc => doc.category)));
 
-  // Filter documents
+  // Filter documents by org type and search
   const filteredDocuments = documentMetadata.filter(docMeta => {
     const config = documentConfigs[docMeta.configKey];
     if (!config) return false;
+
+    // Filter by allowed org types
+    if (config.allowedOrgTypes && orgType) {
+      if (!config.allowedOrgTypes.includes(orgType)) return false;
+    }
+
     const matchesSearch = config.name.toLowerCase().includes(searchQuery.toLowerCase()) || config.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(docMeta.category);
     return matchesSearch && matchesCategory;

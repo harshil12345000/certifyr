@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -33,6 +40,7 @@ import {
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
 import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
+import { organizationTypes, organizationSizes } from "@/lib/defaults";
 
 interface UserProfileFormState {
   organizationName: string;
@@ -796,25 +804,45 @@ const AdminPage = () => {
                       <Label htmlFor="organizationType">
                         Organization Type
                       </Label>
-                      <Input
-                        id="organizationType"
-                        name="organizationType"
+                      <Select
                         value={formState.organizationType}
-                        onChange={handleInputChange}
-                        placeholder="e.g., Educational Institution, Government"
-                      />
+                        onValueChange={(value) =>
+                          setFormState((prev) => ({ ...prev, organizationType: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select organization type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizationTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label htmlFor="organizationSize">
                         Organization Size
                       </Label>
-                      <Input
-                        id="organizationSize"
-                        name="organizationSize"
+                      <Select
                         value={formState.organizationSize}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 1-50 employees"
-                      />
+                        onValueChange={(value) =>
+                          setFormState((prev) => ({ ...prev, organizationSize: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select organization size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizationSizes.map((size) => (
+                            <SelectItem key={size} value={size}>
+                              {size} employees
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div>

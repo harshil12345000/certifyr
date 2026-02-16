@@ -214,6 +214,7 @@ export default function DocumentDetail() {
                 <DynamicForm
                   config={documentConfig}
                   initialData={formData}
+                  organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
                     setFormData(data);
                     setActiveTab('preview');
