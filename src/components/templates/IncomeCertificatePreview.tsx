@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
 import { QRCode } from "./QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
+import { pronouns } from "@/lib/pronouns";
 
 interface ExtendedIncomeCertificatePreviewProps
   extends IncomeCertificatePreviewProps {
@@ -85,6 +86,7 @@ export const IncomeCertificatePreview: React.FC<
 
   // Determine if content should be blurred for employee preview
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
+  const p = pronouns(data.gender);
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
@@ -105,7 +107,7 @@ export const IncomeCertificatePreview: React.FC<
         <p>
           This is to certify that{" "}
           <strong>{fullName || "[Employee Name]"}</strong>
-          {fatherName && `, son/daughter of ${fatherName},`}
+          {fatherName && `, ${p.sonDaughter} of ${fatherName},`}
           is a bonafide employee of this organization working as{" "}
           <strong>{designation || "[Designation]"}</strong>
           in the <strong>{department || "[Department]"}</strong> department.

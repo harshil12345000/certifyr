@@ -1,6 +1,7 @@
 
 export interface IncomeCertificateData {
   fullName: string;
+  gender?: string;
   fatherName: string;
   designation: string;
   department: string;
@@ -77,6 +78,7 @@ export interface TransferCertificateData {
 
 export interface CharacterData {
   fullName: string;
+  gender?: string;
   parentName: string;
   address: string;
   duration: string;
@@ -113,6 +115,7 @@ export interface BonafideData {
 
 export interface ExperienceData {
   fullName: string;
+  gender?: string;
   designation: string;
   department: string;
   employeeId: string;
@@ -135,6 +138,7 @@ export interface ExperienceData {
 
 export interface AddressProofData {
   fullName: string;
+  gender?: string;
   fatherName: string;
   relationshipWithApplicant: string;
   currentAddress: string;
@@ -206,6 +210,7 @@ export interface MaternityLeaveData {
 export interface CompletionCertificateData {
   participantName: string;
   fullName: string;
+  gender?: string;
   fatherName: string;
   registrationNumber: string;
   courseTitle: string;
@@ -299,6 +304,7 @@ export interface StockPurchaseAgreementPreviewProps {
 // Missing Data Interfaces
 export interface NocVisaData {
   fullName: string;
+  gender?: string;
   passportNumber: string;
   designation: string;
   department: string;

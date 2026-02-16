@@ -272,6 +272,7 @@ export const getInitialData = (
     case "character-1":
       return {
         fullName: "",
+        gender: "male" as const,
         parentName: "",
         address: "",
         duration: "",
@@ -282,6 +283,7 @@ export const getInitialData = (
     case "experience-1":
       return {
         fullName: "",
+        gender: "male" as const,
         employeeId: "",
         designation: "",
         department: "",
@@ -317,6 +319,7 @@ export const getInitialData = (
     case "completion-certificate-1":
       return {
         fullName: "",
+        gender: "male" as const,
         fatherName: "",
         registrationNumber: "",
         courseTitle: "",
@@ -349,6 +352,7 @@ export const getInitialData = (
     case "noc-visa-1":
       return {
         fullName: "",
+        gender: "male" as const,
         designation: "",
         employeeId: "",
         department: "",
@@ -365,6 +369,7 @@ export const getInitialData = (
     case "income-certificate-1":
       return {
         fullName: "",
+        gender: "male" as const,
         fatherName: "",
         designation: "",
         employeeId: "",
@@ -444,6 +449,7 @@ export const getInitialData = (
     case "address-proof-1":
       return {
         fullName: "",
+        gender: "male" as const,
         fatherName: "",
         relationshipWithApplicant: "",
         currentAddress: "",

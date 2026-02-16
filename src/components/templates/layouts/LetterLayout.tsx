@@ -5,6 +5,7 @@ import { Letterhead } from "../Letterhead";
 import { QRCode } from "../QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
 import { parse } from "date-fns";
+import { pronouns } from "@/lib/pronouns";
 
 interface LetterLayoutProps {
   config: any;
@@ -75,6 +76,7 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
 
   const renderContent = () => {
     const docId = config.id;
+    const p = pronouns(data.gender);
 
     switch (docId) {
       case "maternity-leave":
@@ -218,7 +220,7 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
             </div>
 
             <p className="text-justify">
-              We have no objection to {data.fullName ? "his/her" : "[his/her]"} applying for the visa and traveling to{" "}
+              We have no objection to {data.fullName ? `${p.hisHer.toLowerCase()}` : "[his/her]"} applying for the visa and traveling to{" "}
               <strong>{data.destinationCountry || "[Country]"}</strong> for the stated purpose.
             </p>
 
@@ -227,8 +229,8 @@ export const LetterLayout: React.FC<LetterLayoutProps> = ({
             )}
 
             <p>
-              {data.fullName ? "He/She" : "[He/She]"} will resume duties upon return. This certificate is issued at{" "}
-              {data.fullName ? "his/her" : "[his/her]"} request for visa application purposes.
+              {data.fullName ? p.heShe : "[He/She]"} will resume duties upon return. This certificate is issued at{" "}
+              {data.fullName ? `${p.hisHer.toLowerCase()}` : "[his/her]"} request for visa application purposes.
             </p>
 
             <p>Thank you for your consideration.</p>
