@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
 import { QRCode } from "./QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
+import { pronouns } from "@/lib/pronouns";
 
 interface ExtendedCharacterPreviewProps extends CharacterPreviewProps {
   isEmployeePreview?: boolean;
@@ -85,6 +86,7 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
 
   // Determine if content should be blurred for employee preview
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
+  const p = pronouns(data.gender);
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
@@ -105,22 +107,22 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
         <p>
           This is to certify that{" "}
           <strong>{fullName || "[Student Name]"}</strong>,
-          {parentName && ` son/daughter of ${parentName},`}
+          {parentName && ` ${p.sonDaughter} of ${parentName},`}
           {address && ` residing at ${address},`} has been known to me for{" "}
           <strong>{duration || "[Duration]"}</strong>.
         </p>
 
         <p>
-          During this period, I have found {fullName ? "their" : "[their]"}{" "}
+          During this period, I have found {fullName ? p.their : "[their]"}{" "}
           character and conduct to be{" "}
           <strong>{conduct || "[Character/Conduct]"}</strong>.
-          {fullName ? "They have" : "[They have]"} always been honest,
+          {fullName ? p.theyHave : "[They have]"} always been honest,
           disciplined, and of good moral character.
         </p>
 
         <p>
           I have no hesitation in recommending {fullName || "[Student Name]"}{" "}
-          for any position or opportunity they may seek.
+          for any position or opportunity {p.they.toLowerCase()} may seek.
         </p>
       </div>
 

@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
 import { QRCode } from "./QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
+import { pronouns } from "@/lib/pronouns";
 
 interface ExtendedBonafidePreviewProps extends BonafidePreviewProps {
   isEmployeePreview?: boolean;
@@ -95,6 +96,7 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
 
   // Determine if content should be blurred for employee preview
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
+  const p = pronouns(data.gender);
 
   return (
     <div className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed relative">
@@ -115,7 +117,7 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
         <p>
           This is to certify that{" "}
           <strong>{fullName || "[Student Name]"}</strong>
-          {parentName && `, son/daughter of ${parentName},`} is a bonafide{" "}
+          {parentName && `, ${p.sonDaughter} of ${parentName},`} is a bonafide{" "}
           <strong>{type === "student" ? "student" : "employee"}</strong> of{" "}
           <strong>
             {organizationDetails?.name ||
@@ -127,14 +129,14 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
 
         {type === "student" ? (
           <p>
-            {fullName ? "He/She" : "[He/She]"} is studying{" "}
+            {fullName ? p.heShe : "[He/She]"} is studying{" "}
             <strong>{courseOrDesignation || "[Course]"}</strong> in the{" "}
             <strong>{department || "[Department]"}</strong> department and has
             been with us since <strong>{formattedStartDate}</strong>.
           </p>
         ) : (
           <p>
-            {fullName ? "He/She" : "[He/She]"} is working as{" "}
+            {fullName ? p.heShe : "[He/She]"} is working as{" "}
             <strong>{courseOrDesignation || "[Designation]"}</strong> in the{" "}
             <strong>{department || "[Department]"}</strong> department and has
             been with us since <strong>{formattedStartDate}</strong>.
@@ -147,7 +149,7 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
         </p>
 
         <p>
-          We wish {fullName ? "him/her" : "[him/her]"} all the best for future
+          We wish {fullName ? p.himHer : "[him/her]"} all the best for future
           endeavors.
         </p>
       </div>

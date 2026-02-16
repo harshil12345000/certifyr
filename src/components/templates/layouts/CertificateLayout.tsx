@@ -5,6 +5,7 @@ import { Letterhead } from "../Letterhead";
 import { QRCode } from "../QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
 import { parse } from "date-fns";
+import { pronouns } from "@/lib/pronouns";
 
 interface CertificateLayoutProps {
   config: any;
@@ -78,6 +79,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
   // Render specific certificate content based on document ID
   const renderContent = () => {
     const docId = config.id;
+    const p = pronouns(data.gender);
 
     switch (docId) {
       case "bonafide":
@@ -86,7 +88,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             <p>
               This is to certify that{" "}
               <strong>{data.fullName || "[Student Name]"}</strong>
-              {data.parentName && `, son/daughter of ${data.parentName},`} is a bonafide{" "}
+              {data.parentName && `, ${p.sonDaughter} of ${data.parentName},`} is a bonafide{" "}
               <strong>{data.type === "student" ? "student" : "employee"}</strong> of{" "}
               <strong>
                 {organizationDetails?.name ||
@@ -98,14 +100,14 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
 
             {data.type === "student" ? (
               <p>
-                {data.fullName ? "He/She" : "[He/She]"} is studying{" "}
+                {data.fullName ? p.heShe : "[He/She]"} is studying{" "}
                 <strong>{data.courseOrDesignation || "[Course]"}</strong> in the{" "}
                 <strong>{data.department || "[Department]"}</strong> department and has
                 been with us since <strong>{formatDate(data.startDate)}</strong>.
               </p>
             ) : (
               <p>
-                {data.fullName ? "He/She" : "[He/She]"} is working as{" "}
+                {data.fullName ? p.heShe : "[He/She]"} is working as{" "}
                 <strong>{data.courseOrDesignation || "[Designation]"}</strong> in the{" "}
                 <strong>{data.department || "[Department]"}</strong> department and has
                 been with us since <strong>{formatDate(data.startDate)}</strong>.
@@ -118,7 +120,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             </p>
 
             <p>
-              We wish {data.fullName ? "him/her" : "[him/her]"} all the best for future
+              We wish {data.fullName ? p.himHer : "[him/her]"} all the best for future
               endeavors.
             </p>
           </div>
@@ -130,22 +132,22 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             <p>
               This is to certify that{" "}
               <strong>{data.fullName || "[Student Name]"}</strong>,
-              {data.parentName && ` son/daughter of ${data.parentName},`}
+              {data.parentName && ` ${p.sonDaughter} of ${data.parentName},`}
               {data.address && ` residing at ${data.address},`} has been known to me for{" "}
               <strong>{data.duration || "[Duration]"}</strong>.
             </p>
 
             <p>
-              During this period, I have found {data.fullName ? "their" : "[their]"}{" "}
+              During this period, I have found {data.fullName ? p.their : "[their]"}{" "}
               character and conduct to be{" "}
               <strong>{data.conduct || "[Character/Conduct]"}</strong>.
-              {data.fullName ? "They have" : "[They have]"} always been honest,
+              {data.fullName ? ` ${p.theyHave}` : " [They have]"} always been honest,
               disciplined, and of good moral character.
             </p>
 
             <p>
               I have no hesitation in recommending {data.fullName || "[Student Name]"}{" "}
-              for any position or opportunity they may seek.
+              for any position or opportunity {p.they.toLowerCase()} may seek.
             </p>
           </div>
         );
@@ -163,7 +165,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
               </p>
               {data.fatherName && (
                 <p className="text-lg">
-                  Son/Daughter of <strong>{data.fatherName}</strong>
+                  {p.SonDaughter} of <strong>{data.fatherName}</strong>
                 </p>
               )}
               {data.registrationNumber && (
@@ -205,8 +207,8 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             </div>
 
             <p className="text-center text-lg mt-8">
-              We wish {data.fullName || data.studentName ? "them" : "[them]"} all success in{" "}
-              {data.fullName || data.studentName ? "their" : "[their]"} future endeavors.
+              We wish {data.fullName || data.studentName ? p.them : "[them]"} all success in{" "}
+              {data.fullName || data.studentName ? p.their : "[their]"} future endeavors.
             </p>
           </div>
         );
@@ -224,7 +226,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             </p>
 
             <p className="text-justify">
-              {data.fullName ? "His/Her" : "[His/Her]"} period of employment was
+              {data.fullName ? p.hisHer : "[His/Her]"} period of employment was
               from{" "}
               <strong>
                 {data.joiningDate
@@ -241,16 +243,16 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
             </p>
 
             <p className="text-justify">
-              During the tenure, {data.fullName ? "he/she" : "[he/she]"} was
+              During the tenure, {data.fullName ? p.heShe.toLowerCase() : "[he/she]"} was
               responsible for{" "}
               <strong>{data.workDescription || "[Work Description]"}</strong>.{" "}
               {data.conduct && (
-                <>We found {data.fullName ? "him/her" : "[him/her]"} to be {data.conduct}.</>
+                <>We found {data.fullName ? p.himHer : "[him/her]"} to be {data.conduct}.</>
               )}
             </p>
 
             <p className="text-justify">
-              We wish {data.fullName ? "him/her" : "[him/her]"} all the best for future
+              We wish {data.fullName ? p.himHer : "[him/her]"} all the best for future
               endeavors.
             </p>
           </div>
@@ -311,7 +313,7 @@ export const CertificateLayout: React.FC<CertificateLayoutProps> = ({
           <div className="space-y-6">
             <p className="text-justify">
               This is to certify that <strong>{data.fullName || "[Full Name]"}</strong>,
-              son/daughter of <strong>{data.fatherName || "[Father's Name]"}</strong>, is a bonafide
+              {p.sonDaughter} of <strong>{data.fatherName || "[Father's Name]"}</strong>, is a bonafide
               resident at the address mentioned below.
             </p>
 

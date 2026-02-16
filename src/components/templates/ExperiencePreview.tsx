@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Letterhead } from "./Letterhead";
 import { QRCode } from "./QRCode";
 import { generateDocumentQRCode } from "@/lib/qr-utils";
+import { pronouns } from "@/lib/pronouns";
 
 interface ExtendedExperiencePreviewProps extends ExperiencePreviewProps {
   isEmployeePreview?: boolean;
@@ -56,6 +57,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
 
   // Determine if content should be blurred for employee preview
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
+  const p = pronouns(data.gender);
 
   return (
     <div className="bg-white shadow rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0 a4-document">
@@ -82,7 +84,7 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
           </p>
 
           <p className="text-justify">
-            {data.fullName ? "His/Her" : "[His/Her]"} period of employment was
+            {data.fullName ? p.hisHer : "[His/Her]"} period of employment was
             from{" "}
             <strong>
               {data.joinDate
@@ -99,17 +101,17 @@ export const ExperiencePreview: React.FC<ExtendedExperiencePreviewProps> = ({
           </p>
 
           <p className="text-justify">
-            During the tenure, {data.fullName ? "he/she" : "[he/she]"} was
+            During the tenure, {data.fullName ? p.heShe.toLowerCase() : "[he/she]"} was
             responsible for{" "}
             <strong>{data.workDescription || "[Work Description]"}</strong>.{" "}
-            {data.fullName ? "His/Her" : "[His/Her]"} last drawn salary was{" "}
+            {data.fullName ? p.hisHer : "[His/Her]"} last drawn salary was{" "}
             <strong>{data.salary || "[Salary]"}</strong> per month.
           </p>
 
           <p className="text-justify">
-            We found {data.fullName ? "him/her" : "[him/her]"} to be
+            We found {data.fullName ? p.himHer : "[him/her]"} to be
             hardworking, sincere, and dedicated to duties. We wish{" "}
-            {data.fullName ? "him/her" : "[him/her]"} all the best for future
+            {data.fullName ? p.himHer : "[him/her]"} all the best for future
             endeavors.
           </p>
         </div>

@@ -201,6 +201,7 @@ export const characterConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "fullName", label: "Full Name", type: "text", required: true, validation: { minLength: 2, message: "Name must be at least 2 characters" } },
+        { name: "gender", label: "Gender", type: "select", required: true, options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }] },
         { name: "parentName", label: "Parent's Name", type: "text", required: true, validation: { minLength: 2, message: "Parent name required" } },
         { name: "address", label: "Address", type: "textarea", required: true, placeholder: "Complete residential address", validation: { minLength: 5, message: "Address is required" } },
         { name: "duration", label: "Duration Known", type: "text", required: true, placeholder: "e.g., 5 years, Since 2020", validation: { minLength: 1, message: "Duration is required" } }
@@ -254,6 +255,7 @@ export const experienceConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "fullName", label: "Full Name", type: "text", required: true, validation: { minLength: 2, message: "Full name is required" } },
+        { name: "gender", label: "Gender", type: "select", required: true, options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }] },
         { name: "designation", label: "Designation", type: "text", required: true, validation: { minLength: 2, message: "Designation is required" } },
         { name: "employeeId", label: "Employee ID", type: "text", required: true, validation: { minLength: 1, message: "Employee ID is required" } },
         { name: "department", label: "Department", type: "text", required: true, validation: { minLength: 2, message: "Department is required" } }
@@ -437,6 +439,7 @@ export const completionConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "studentName", label: "Student Name", type: "text", required: true },
+        { name: "gender", label: "Gender", type: "select", required: true, options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }] },
         { name: "fatherName", label: "Father's Name", type: "text", required: true },
         { name: "motherName", label: "Mother's Name", type: "text", required: true },
         { name: "dateOfBirth", label: "Date of Birth", type: "date", required: true }
@@ -494,6 +497,7 @@ export const incomeConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "fullName", label: "Full Name", type: "text", required: true },
+        { name: "gender", label: "Gender", type: "select", required: true, options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }] },
         { name: "employeeId", label: "Employee ID", type: "text", required: true },
         { name: "designation", label: "Designation", type: "text", required: true },
         { name: "department", label: "Department", type: "text", required: true }
@@ -703,6 +707,7 @@ export const nocVisaConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "fullName", label: "Full Name", type: "text", required: true },
+        { name: "gender", label: "Gender", type: "select", required: true, options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }] },
         { name: "designation", label: "Designation", type: "text", required: true },
         { name: "employeeId", label: "Employee ID", type: "text", required: true },
         { name: "department", label: "Department", type: "text", required: true }
@@ -831,6 +836,7 @@ export const addressProofConfig: DocumentConfig = {
       columns: 2,
       fields: [
         { name: "fullName", label: "Full Name", type: "text", required: true },
+        { name: "gender", label: "Gender", type: "select", required: true, options: [{ value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }] },
         { name: "fatherName", label: "Father's Name", type: "text", required: true },
         { 
           name: "relationshipWithApplicant", 
