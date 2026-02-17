@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // Auth is handled directly in PricingStage via Supabase client
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
-import { UpgradeCTA } from "@/components/onboarding/UpgradeCTA";
+
 
 import { PersonalInfoStage } from "@/components/onboarding/PersonalInfoStage";
 import { OrganizationInfoStage } from "@/components/onboarding/OrganizationInfoStage";
@@ -162,16 +162,9 @@ export default function Onboarding() {
 
   return (
     <>
-      {/* Persistent Upgrade CTA - visible on all onboarding stages */}
-      <UpgradeCTA 
-        currentPlan={formData.selectedPlan} 
-        onUpgrade={handlePlanUpgrade}
-      />
-      
       <OnboardingProgress stages={stages} currentStage={currentStage} />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        {/* Add padding-top to account for the upgrade CTA banner */}
-        <div className={`container mx-auto px-4 pb-8 ${formData.selectedPlan === 'basic' ? 'pt-52' : 'pt-40'}`}>
+        <div className="container mx-auto px-4 pb-8 pt-44">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStage}
