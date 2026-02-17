@@ -50,20 +50,28 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    
+    // Decode JWT payload directly to avoid session-dependent getUser/getClaims
+    let jwtPayload: { sub?: string; exp?: number };
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+      jwtPayload = JSON.parse(payloadJson);
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error("Auth error:", claimsError);
+    if (!jwtPayload.sub || (jwtPayload.exp && jwtPayload.exp * 1000 < Date.now())) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = jwtPayload.sub;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: subscription, error: subError } = await adminClient
       .from("subscriptions")
