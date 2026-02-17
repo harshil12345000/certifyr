@@ -13,7 +13,6 @@ const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const dodoApiKey = Deno.env.get("DODO_PAYMENTS_API_KEY")!;
 const DODO_API_BASE = "https://live.dodopayments.com";
 
-// Product IDs for plan changes
 const PLAN_PRODUCTS: Record<string, { monthly: string; yearly: string }> = {
   basic: {
     monthly: "pdt_0NYXDFIglnn4wukqC1Qa2",
@@ -42,7 +41,6 @@ serve(async (req) => {
   }
 
   try {
-    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -68,8 +66,6 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-
-    // Fetch user's subscription from DB
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: subscription, error: subError } = await adminClient
       .from("subscriptions")
@@ -92,7 +88,6 @@ serve(async (req) => {
 
     switch (action) {
       case "get-details": {
-        // If no Dodo subscription ID, return local data only
         if (!subscription?.polar_subscription_id) {
           return new Response(
             JSON.stringify({ subscription, dodo: null }),
@@ -103,23 +98,14 @@ serve(async (req) => {
           );
         }
 
-        // Fetch live details from Dodo
         const dodoRes = await fetch(
           `${DODO_API_BASE}/subscriptions/${subscription.polar_subscription_id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${dodoApiKey}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${dodoApiKey}` } }
         );
 
         const dodoData = dodoRes.ok ? await dodoRes.json() : null;
         if (!dodoRes.ok) {
-          console.error(
-            "Dodo get-details failed:",
-            dodoRes.status,
-            await dodoRes.text().catch(() => "")
-          );
+          console.error("Dodo get-details failed:", dodoRes.status);
         }
 
         return new Response(
@@ -143,16 +129,6 @@ serve(async (req) => {
           );
         }
 
-        if (!subscription?.polar_subscription_id) {
-          return new Response(
-            JSON.stringify({ error: "No active subscription found" }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        }
-
         const productConfig = PLAN_PRODUCTS[plan];
         if (!productConfig) {
           return new Response(
@@ -164,6 +140,44 @@ serve(async (req) => {
           );
         }
 
+        // No Dodo subscription — update plan directly in DB
+        if (!subscription?.polar_subscription_id) {
+          const { error: updateError } = await adminClient
+            .from("subscriptions")
+            .update({
+              active_plan: plan,
+              selected_plan: plan,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", userId);
+
+          if (updateError) {
+            console.error("DB plan change error:", updateError);
+            return new Response(
+              JSON.stringify({ error: "Failed to update plan" }),
+              {
+                status: 500,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+
+          await adminClient
+            .from("user_profiles")
+            .update({ plan, updated_at: new Date().toISOString() })
+            .eq("user_id", userId);
+
+          console.log(`Plan changed directly for user ${userId}: ${plan} (${billingPeriod})`);
+          return new Response(
+            JSON.stringify({ success: true, data: { plan, method: "direct" } }),
+            {
+              status: 200,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // Has Dodo subscription — call Dodo API
         const productId =
           billingPeriod === "yearly"
             ? productConfig.yearly
@@ -194,16 +208,9 @@ serve(async (req) => {
         }
 
         if (!changePlanRes.ok) {
-          console.error(
-            "Dodo change-plan failed:",
-            changePlanRes.status,
-            changePlanText
-          );
+          console.error("Dodo change-plan failed:", changePlanRes.status, changePlanText);
           return new Response(
-            JSON.stringify({
-              error: "Failed to change plan",
-              details: changePlanData,
-            }),
+            JSON.stringify({ error: "Failed to change plan", details: changePlanData }),
             {
               status: changePlanRes.status,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -211,27 +218,56 @@ serve(async (req) => {
           );
         }
 
-        console.log(
-          `Plan change initiated for user ${userId}: ${plan} (${billingPeriod})`
+        console.log(`Plan change initiated for user ${userId}: ${plan} (${billingPeriod})`);
+        return new Response(
+          JSON.stringify({ success: true, data: changePlanData }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
         );
-
-        return new Response(JSON.stringify({ success: true, data: changePlanData }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
       }
 
       case "cancel": {
+        // No Dodo subscription — cancel directly in DB
         if (!subscription?.polar_subscription_id) {
+          const { error: cancelError } = await adminClient
+            .from("subscriptions")
+            .update({
+              subscription_status: "canceled",
+              canceled_at: new Date().toISOString(),
+              active_plan: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", userId);
+
+          if (cancelError) {
+            console.error("DB cancel error:", cancelError);
+            return new Response(
+              JSON.stringify({ error: "Failed to cancel subscription" }),
+              {
+                status: 500,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+
+          await adminClient
+            .from("user_profiles")
+            .update({ plan: "basic", updated_at: new Date().toISOString() })
+            .eq("user_id", userId);
+
+          console.log(`Subscription canceled directly for user ${userId}`);
           return new Response(
-            JSON.stringify({ error: "No active subscription found" }),
+            JSON.stringify({ success: true, data: { method: "direct" } }),
             {
-              status: 400,
+              status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             }
           );
         }
 
+        // Has Dodo subscription — call Dodo API
         const cancelRes = await fetch(
           `${DODO_API_BASE}/subscriptions/${subscription.polar_subscription_id}`,
           {
@@ -240,9 +276,7 @@ serve(async (req) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${dodoApiKey}`,
             },
-            body: JSON.stringify({
-              cancel_at_next_billing_date: true,
-            }),
+            body: JSON.stringify({ cancel_at_next_billing_date: true }),
           }
         );
 
@@ -255,16 +289,9 @@ serve(async (req) => {
         }
 
         if (!cancelRes.ok) {
-          console.error(
-            "Dodo cancel failed:",
-            cancelRes.status,
-            cancelText
-          );
+          console.error("Dodo cancel failed:", cancelRes.status, cancelText);
           return new Response(
-            JSON.stringify({
-              error: "Failed to cancel subscription",
-              details: cancelData,
-            }),
+            JSON.stringify({ error: "Failed to cancel subscription", details: cancelData }),
             {
               status: cancelRes.status,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -272,16 +299,12 @@ serve(async (req) => {
           );
         }
 
-        // Update local DB to reflect pending cancellation
         await adminClient
           .from("subscriptions")
-          .update({
-            canceled_at: new Date().toISOString(),
-          })
+          .update({ canceled_at: new Date().toISOString() })
           .eq("user_id", userId);
 
         console.log(`Subscription cancellation scheduled for user ${userId}`);
-
         return new Response(
           JSON.stringify({ success: true, data: cancelData }),
           {
