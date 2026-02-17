@@ -351,7 +351,17 @@ export const SubscriptionManagementPanel: React.FC<
       </Card>
 
       {/* Upgrade Section */}
-      {upgradeablePlans.length > 0 && status === "active" && !isCanceled && (
+      {status === "active" && !isCanceled && upgradeablePlans.length === 0 && (
+        <Card>
+          <CardContent className="flex items-center gap-3 py-6">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            <p className="text-sm text-muted-foreground">
+              You're on the <strong>{planConfig?.label}</strong> plan — the highest tier available. You have access to all features.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      {upgradeablePlans.length > 0 && status === "active" && !isCanceled && subscription?.polar_subscription_id && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -418,7 +428,7 @@ export const SubscriptionManagementPanel: React.FC<
       )}
 
       {/* Cancel Section */}
-      {status === "active" && !isCanceled && (
+      {status === "active" && !isCanceled && subscription?.polar_subscription_id && (
         <Card className="border-destructive/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
