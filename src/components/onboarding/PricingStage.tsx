@@ -94,70 +94,81 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
     setError("");
 
     try {
-      // Validate all required data
-      if (!data.email.trim()) {
-        throw new Error("Email is required");
-      }
-      if (!data.password) {
-        throw new Error("Password is required");
-      }
-      if (!data.organizationName.trim()) {
-        throw new Error("Organization name is required");
-      }
+      if (!data.email.trim()) throw new Error("Email is required");
+      if (!data.password) throw new Error("Password is required");
+      if (!data.organizationName.trim()) throw new Error("Organization name is required");
 
       const email = data.email.trim().toLowerCase();
-      const redirectUrl = `${window.location.origin}/`;
+      const metadata = {
+        full_name: data.fullName.trim(),
+        phone_number: `${data.countryCode}-${data.phoneNumber.trim()}`,
+        organization_name: data.organizationName.trim(),
+        organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
+        organization_size: data.organizationSize,
+        organization_website: data.organizationWebsite?.trim() || null,
+        organization_location: data.organizationLocation?.trim() || null,
+        selectedPlan: data.selectedPlan,
+      };
 
-      // Step 1: Create the user account with password
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password: data.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: data.fullName.trim(),
-            phone_number: `${data.countryCode}-${data.phoneNumber.trim()}`,
-            organization_name: data.organizationName.trim(),
-            organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
-            organization_size: data.organizationSize,
-            organization_website: data.organizationWebsite?.trim() || null,
-            organization_location: data.organizationLocation?.trim() || null,
-            selectedPlan: data.selectedPlan,
+      // User already exists from OTP email verification — set password and update metadata
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (sessionData.session?.user) {
+        // User authenticated via OTP — update password and metadata
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: data.password,
+          data: metadata,
+        });
+        if (updateError) throw updateError;
+
+        // Complete onboarding via RPC
+        const { data: onboardingResult, error: onboardingError } = await supabase.rpc(
+          'complete_user_onboarding',
+          {
+            p_user_id: sessionData.session.user.id,
+            p_organization_name: data.organizationName.trim(),
+            p_organization_address: data.organizationLocation?.trim() || null,
+            p_organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
+            p_organization_size: data.organizationSize,
+            p_organization_website: data.organizationWebsite?.trim() || null,
+            p_organization_location: data.organizationLocation?.trim() || null,
+            p_plan: data.selectedPlan,
           }
-        }
-      });
+        );
 
-      if (signUpError) {
-        throw signUpError;
-      }
+        if (onboardingError) throw onboardingError;
+        const result = onboardingResult as { success: boolean; error?: string };
+        if (!result.success) throw new Error(result.error || "Failed to complete onboarding");
+      } else {
+        // Fallback: no session (shouldn't happen with OTP flow)
+        const redirectUrl = `${window.location.origin}/`;
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password: data.password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: metadata,
+          }
+        });
+        if (signUpError) throw signUpError;
+        if (!signUpData.user) throw new Error("Failed to create user account");
 
-      if (!signUpData.user) {
-        throw new Error("Failed to create user account");
-      }
-
-      // Step 2: Create organization using security definer function
-      const { data: onboardingResult, error: onboardingError } = await supabase.rpc(
-        'complete_user_onboarding',
-        {
-          p_user_id: signUpData.user.id,
-          p_organization_name: data.organizationName.trim(),
-          p_organization_address: data.organizationLocation?.trim() || null,
-          p_organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
-          p_organization_size: data.organizationSize,
-          p_organization_website: data.organizationWebsite?.trim() || null,
-          p_organization_location: data.organizationLocation?.trim() || null,
-          p_plan: data.selectedPlan,
-        }
-      );
-
-      if (onboardingError) {
-        console.error("Onboarding error:", onboardingError);
-        throw onboardingError;
-      }
-
-      const result = onboardingResult as { success: boolean; error?: string; message?: string };
-      if (!result.success) {
-        throw new Error(result.error || "Failed to complete onboarding");
+        const { data: onboardingResult, error: onboardingError } = await supabase.rpc(
+          'complete_user_onboarding',
+          {
+            p_user_id: signUpData.user.id,
+            p_organization_name: data.organizationName.trim(),
+            p_organization_address: data.organizationLocation?.trim() || null,
+            p_organization_type: data.organizationType === 'Other' ? data.organizationTypeOther : data.organizationType,
+            p_organization_size: data.organizationSize,
+            p_organization_website: data.organizationWebsite?.trim() || null,
+            p_organization_location: data.organizationLocation?.trim() || null,
+            p_plan: data.selectedPlan,
+          }
+        );
+        if (onboardingError) throw onboardingError;
+        const result = onboardingResult as { success: boolean; error?: string };
+        if (!result.success) throw new Error(result.error || "Failed to complete onboarding");
       }
 
       toast({
@@ -165,10 +176,8 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         description: "Redirecting to payment...",
       });
 
-      // Store plan info as fallback
       sessionStorage.setItem('selectedPlanIntent', data.selectedPlan);
 
-      // Directly create Dodo checkout session and redirect
       const DODO_PRODUCTS: Record<string, Record<string, string>> = {
         basic: { monthly: 'pdt_0NYXDFIglnn4wukqC1Qa2', yearly: 'pdt_0NYXIK26wpbK6kngEpdrT' },
         pro: { monthly: 'pdt_0NYXEA30vMCJgSxp0pcRw', yearly: 'pdt_0NYXIQ6Nqc7tDx0YXn8OY' },
@@ -176,7 +185,6 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
       };
 
       const productId = DODO_PRODUCTS[data.selectedPlan][data.billingPeriod];
-
       const response = await supabase.functions.invoke('create-dodo-checkout', {
         body: {
           productId,
@@ -187,16 +195,11 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to create checkout');
-      }
+      if (response.error) throw new Error(response.error.message || 'Failed to create checkout');
 
       const { checkout_url } = response.data;
-      if (!checkout_url) {
-        throw new Error('No checkout URL returned');
-      }
+      if (!checkout_url) throw new Error('No checkout URL returned');
 
-      // Redirect directly to Dodo Payments
       window.location.href = checkout_url;
     } catch (err: any) {
       console.error("Signup error:", err);

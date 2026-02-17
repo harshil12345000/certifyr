@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
+// Auth is handled directly in PricingStage via Supabase client
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
 import { UpgradeCTA } from "@/components/onboarding/UpgradeCTA";
@@ -45,7 +45,6 @@ const stages = [
 export default function Onboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signUp } = useAuth();
   const { toast } = useToast();
   const [currentStage, setCurrentStage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -115,45 +114,7 @@ export default function Onboarding() {
     }
   };
 
-  const handleSignUp = async () => {
-    setLoading(true);
-    try {
-      const { error } = await signUp(formData.email, formData.password, {
-        fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber,
-        organizationName: formData.organizationName,
-        organizationType: formData.organizationType,
-        organizationTypeOther: formData.organizationTypeOther,
-        organizationSize: formData.organizationSize,
-        organizationWebsite: formData.organizationWebsite,
-        organizationLocation: formData.organizationLocation,
-      });
-
-      if (error) {
-        toast({
-          title: "Sign Up Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        // Clear the email verification flag from localStorage
-        localStorage.removeItem('emailVerified');
-        
-        toast({
-          title: "Account Created!",
-          description: "Welcome to Certifyr! Continue onboarding to finish setup.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Signup is now handled entirely within PricingStage
 
   const renderStage = () => {
     switch (currentStage) {
@@ -189,7 +150,7 @@ export default function Onboarding() {
           <PricingStage
             data={formData}
             updateData={updateFormData}
-            onNext={handleSignUp}
+            onNext={() => {}} // Signup handled internally by PricingStage
             onPrev={prevStage}
             loading={loading}
           />

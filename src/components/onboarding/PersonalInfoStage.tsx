@@ -8,10 +8,11 @@ import { OnboardingData } from "@/pages/Onboarding";
 import { countries } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Search } from "lucide-react";
+import { Check, Search, Loader2, ShieldCheck } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface PersonalInfoStageProps {
   data: OnboardingData;
@@ -31,48 +32,156 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [showExistingEmailDialog, setShowExistingEmailDialog] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  // OTP verification states
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
+
+  const handleSendOtp = async () => {
+    if (!data.email.trim()) {
+      setErrors(prev => ({ ...prev, email: "Email is required" }));
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(data.email)) {
+      setErrors(prev => ({ ...prev, email: "Invalid email format" }));
+      return;
+    }
+
+    setSendingOtp(true);
+    try {
+      const email = data.email.trim().toLowerCase();
+
+      // Check if email already exists
+      const { data: checkResult } = await supabase.functions.invoke("check-email-exists", {
+        body: { email }
+      });
+
+      if (checkResult?.exists) {
+        setShowExistingEmailDialog(true);
+        setSendingOtp(false);
+        return;
+      }
+
+      // Show the OTP dialog first
+      setShowOtpDialog(true);
+
+      // Send OTP via Supabase Auth
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: true,
+        }
+      });
+
+      if (error) throw error;
+
+      setOtpSent(true);
+      toast({
+        title: "OTP Sent",
+        description: "Please check your email for the 6-digit verification code.",
+      });
+    } catch (error: any) {
+      console.error("Error sending OTP:", error);
+      setShowOtpDialog(false);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification code",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setSendingOtp(true);
+    try {
+      const email = data.email.trim().toLowerCase();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true }
+      });
+      if (error) throw error;
+      setOtp("");
+      toast({
+        title: "OTP Resent",
+        description: "A new verification code has been sent to your email.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend OTP",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) return;
+
+    setVerifyingOtp(true);
+    try {
+      const email = data.email.trim().toLowerCase();
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'email',
+      });
+
+      if (error) throw error;
+
+      setEmailVerified(true);
+      setShowOtpDialog(false);
+      updateData({ email });
+      toast({
+        title: "Email Verified!",
+        description: "Your email has been successfully verified.",
+      });
+    } catch (error: any) {
+      console.error("OTP verification error:", error);
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Invalid OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    
+
     if (!data.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!data.email.trim()) newErrors.email = "Email is required";
-    if (!/\S+@\S+\.\S+/.test(data.email)) newErrors.email = "Invalid email format";
+    else if (!/\S+@\S+\.\S+/.test(data.email)) newErrors.email = "Invalid email format";
+    else if (!emailVerified) newErrors.email = "Please verify your email first";
     if (!data.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // Check if email already exists
-    setCheckingEmail(true);
-    try {
-      const email = data.email.trim().toLowerCase();
-      const { data: checkResult, error: checkError } = await supabase.functions.invoke("check-email-exists", {
-        body: { email }
-      });
+    updateData({ email: data.email.trim().toLowerCase() });
+    onNext();
+  };
 
-      if (checkError) {
-        console.error("Error checking email:", checkError);
-        // Continue anyway - we'll catch it at signup
-      } else if (checkResult?.exists) {
-        setShowExistingEmailDialog(true);
-        setCheckingEmail(false);
-        return;
-      }
-
-      // Normalize and store email
-      updateData({ email: email });
-      onNext();
-    } catch (error) {
-      console.error("Error checking email:", error);
-      // Continue anyway
-      onNext();
-    } finally {
-      setCheckingEmail(false);
+  // Reset verification if email changes after being verified
+  const handleEmailChange = (value: string) => {
+    updateData({ email: value });
+    setErrors(prev => ({ ...prev, email: "" }));
+    if (emailVerified) {
+      setEmailVerified(false);
+      setOtpSent(false);
+      setOtp("");
     }
   };
 
@@ -185,33 +294,117 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
               </div>
             </div>
 
+            {/* Email with Verify Button */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                value={data.email}
-                onChange={e => {
-                  updateData({ email: e.target.value });
-                  setErrors(prev => ({ ...prev, email: "" }));
-                }}
-                className={errors.email ? "border-destructive" : ""}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={data.email}
+                  onChange={e => handleEmailChange(e.target.value)}
+                  className={`flex-1 ${errors.email ? "border-destructive" : ""}`}
+                  disabled={emailVerified}
+                />
+                <Button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp || emailVerified || !data.email.trim()}
+                  variant={emailVerified ? "default" : "outline"}
+                  className={
+                    emailVerified
+                      ? "bg-green-600 hover:bg-green-700 text-white min-w-[140px]"
+                      : "border-[#1b80ff] text-[#1b80ff] hover:bg-[#1b80ff] hover:text-white min-w-[140px]"
+                  }
+                >
+                  {sendingOtp ? (
+                    <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Sending...</>
+                  ) : emailVerified ? (
+                    <><ShieldCheck className="w-4 h-4 mr-1" /> Verified</>
+                  ) : (
+                    "Verify Email"
+                  )}
+                </Button>
+              </div>
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
+
+            {/* OTP Input Field - shown after OTP sent and email not yet verified */}
+            {otpSent && !emailVerified && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-3 p-4 rounded-lg border border-blue-200 bg-blue-50/50"
+              >
+                <Label className="text-sm font-medium">Enter 6-digit OTP sent to your email</Label>
+                <div className="flex items-center gap-3">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={setOtp}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={otp.length !== 6 || verifyingOtp}
+                    className="bg-[#1b80ff] hover:bg-blue-700 text-white"
+                  >
+                    {verifyingOtp ? (
+                      <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Verifying...</>
+                    ) : (
+                      "Verify"
+                    )}
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={sendingOtp}
+                  className="text-sm text-[#1b80ff] hover:underline cursor-pointer"
+                >
+                  {sendingOtp ? "Resending..." : "Didn't receive the code? Resend OTP"}
+                </button>
+              </motion.div>
+            )}
 
             <div className="flex justify-between pt-4">
               <Button type="button" variant="outline" onClick={onPrev}>
                 Back
               </Button>
-              <Button type="submit" disabled={checkingEmail}>
-                {checkingEmail ? "Checking..." : "Next"}
+              <Button type="submit" disabled={!emailVerified}>
+                Next
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      {/* OTP Notification Dialog */}
+      <Dialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Verification Required</DialogTitle>
+            <DialogDescription>
+              You have to authenticate your email via OTP. A 6-digit verification code has been sent to <strong>{data.email}</strong>. Please check your inbox and enter the code below.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowOtpDialog(false)}>
+              OK, I'll enter the code
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Existing Email Dialog */}
       <Dialog open={showExistingEmailDialog} onOpenChange={setShowExistingEmailDialog}>
@@ -228,7 +421,7 @@ export const PersonalInfoStage: React.FC<PersonalInfoStageProps> = ({
             </Button>
             <Button onClick={() => {
               setShowExistingEmailDialog(false);
-              onPrev(); // This goes back to /auth
+              onPrev();
             }}>
               Go to Login
             </Button>
