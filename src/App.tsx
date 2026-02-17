@@ -165,16 +165,16 @@ function App() {
                   element={<EmployeeDocumentDetail />}
                 />
                 <Route
-                  path="/admin"
+                  path="/organization"
                   element={
                     <ProtectedRoute>
                       <Admin />
                     </ProtectedRoute>
                   }
                 />
-                  {/* New admin routes */}
+                  {/* Organization sub-routes */}
                   <Route
-                    path="/admin/documents"
+                    path="/organization/documents"
                     element={
                       <ProtectedRoute>
                         <AdminDocuments />
@@ -182,7 +182,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/admin/documents/:id"
+                    path="/organization/documents/:id"
                     element={
                       <ProtectedRoute>
                         <AdminDocumentBuilder />
@@ -190,9 +190,9 @@ function App() {
                     }
                   />
                   
-                  {/* Legacy admin routes for backward compatibility */}
+                  {/* Legacy routes for backward compatibility */}
                   <Route
-                    path="/admin/templates"
+                    path="/organization/templates"
                     element={
                       <ProtectedRoute>
                         <AdminDocuments />
@@ -200,13 +200,19 @@ function App() {
                     }
                   />
                   <Route
-                    path="/admin/templates/:id"
+                    path="/organization/templates/:id"
                     element={
                       <ProtectedRoute>
                         <AdminDocumentBuilder />
                       </ProtectedRoute>
                     }
                   />
+                  {/* Old /admin redirects */}
+                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                  <Route path="/admin/documents" element={<ProtectedRoute><AdminDocuments /></ProtectedRoute>} />
+                  <Route path="/admin/documents/:id" element={<ProtectedRoute><AdminDocumentBuilder /></ProtectedRoute>} />
+                  <Route path="/admin/templates" element={<ProtectedRoute><AdminDocuments /></ProtectedRoute>} />
+                  <Route path="/admin/templates/:id" element={<ProtectedRoute><AdminDocumentBuilder /></ProtectedRoute>} />
                 <Route
                   path="/settings"
                   element={
