@@ -11,7 +11,7 @@ interface SubscriptionGateProps {
 /**
  * SubscriptionGate wraps protected routes and ensures:
  * 1. User is authenticated
- * 2. User has an active_plan (set by Polar webhook)
+ * 2. User has an active_plan (set by Dodo Payments webhook)
  * 
  * Uses a session flag to only redirect to checkout once (prevents loops).
  */

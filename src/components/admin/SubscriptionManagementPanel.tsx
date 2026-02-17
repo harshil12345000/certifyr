@@ -133,12 +133,9 @@ export const SubscriptionManagementPanel: React.FC<
 
   const savings = calculateSavings();
 
-  // Get upgradeable plans (only plans with higher order)
-  const upgradeablePlans = Object.entries(PLAN_PRICING)
-    .filter(([key, config]) => {
-      if (!planConfig) return true; // no plan = show all
-      return config.order > planConfig.order;
-    })
+  // Get all other plans (allow both upgrades and downgrades)
+  const availablePlans = Object.entries(PLAN_PRICING)
+    .filter(([key]) => key !== activePlan)
     .map(([key, config]) => ({ key, ...config }));
 
   const handleChangePlan = async (
@@ -350,78 +347,73 @@ export const SubscriptionManagementPanel: React.FC<
         </CardContent>
       </Card>
 
-      {/* Upgrade Section */}
-      {status === "active" && !isCanceled && upgradeablePlans.length === 0 && (
-        <Card>
-          <CardContent className="flex items-center gap-3 py-6">
-            <CheckCircle2 className="h-5 w-5 text-primary" />
-            <p className="text-sm text-muted-foreground">
-              You're on the <strong>{planConfig?.label}</strong> plan — the highest tier available. You have access to all features.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-      {upgradeablePlans.length > 0 && status === "active" && !isCanceled && subscription?.polar_subscription_id && (
+      {/* Change Plan Section */}
+      {availablePlans.length > 0 && status === "active" && !isCanceled && subscription?.polar_subscription_id && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Upgrade Your Plan
+              Change Plan
             </CardTitle>
             <CardDescription>
-              Unlock more features by upgrading to a higher plan. Changes apply
-              based on Dodo Payments' billing policy.
+              Switch to a different plan. Changes apply at the next billing cycle.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {upgradeablePlans.map((plan) => (
-                <div
-                  key={plan.key}
-                  className="rounded-lg border p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-lg">{plan.label}</h4>
-                    <Badge variant="outline">
-                      <ArrowUpRight className="h-3 w-3 mr-1" />
-                      Upgrade
-                    </Badge>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-sm text-muted-foreground">
-                      ${plan.monthly}/mo or ${plan.yearly}/year
+              {availablePlans.map((plan) => {
+                const isUpgrade = planConfig ? plan.order > planConfig.order : false;
+                return (
+                  <div
+                    key={plan.key}
+                    className="rounded-lg border p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-lg">{plan.label}</h4>
+                      <Badge variant="outline">
+                        {isUpgrade ? (
+                          <><ArrowUpRight className="h-3 w-3 mr-1" />Upgrade</>
+                        ) : (
+                          <>Downgrade</>
+                        )}
+                      </Badge>
                     </div>
-                    {plan.yearly < plan.monthly * 12 && (
-                      <div className="text-xs text-green-600">
-                        Save ${plan.monthly * 12 - plan.yearly}/year with yearly
+                    <div className="space-y-1">
+                      <div className="text-sm text-muted-foreground">
+                        ${plan.monthly}/mo or ${plan.yearly}/year
                       </div>
-                    )}
+                      {plan.yearly < plan.monthly * 12 && (
+                        <div className="text-xs text-green-600">
+                          Save ${plan.monthly * 12 - plan.yearly}/year with yearly
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isChangingPlan}
+                        onClick={() => handleChangePlan(plan.key, "monthly")}
+                      >
+                        {isChangingPlan ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : null}
+                        Monthly
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={isChangingPlan}
+                        onClick={() => handleChangePlan(plan.key, "yearly")}
+                      >
+                        {isChangingPlan ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : null}
+                        Yearly
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={isChangingPlan}
-                      onClick={() => handleChangePlan(plan.key, "monthly")}
-                    >
-                      {isChangingPlan ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                      ) : null}
-                      Monthly
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={isChangingPlan}
-                      onClick={() => handleChangePlan(plan.key, "yearly")}
-                    >
-                      {isChangingPlan ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                      ) : null}
-                      Yearly
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
