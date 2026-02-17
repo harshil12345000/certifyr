@@ -16,7 +16,7 @@ interface OnboardingProgressProps {
 
 export function OnboardingProgress({ stages, currentStage }: OnboardingProgressProps) {
   return (
-    <div className="absolute top-0 left-0 w-full pt-4 pb-4" style={{ background: 'transparent', zIndex: 50 }}>
+    <div className="relative w-full pt-4 pb-4" style={{ background: 'transparent' }}>
       <div className="flex flex-col items-center w-full">
         <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Black Logotype" className="h-20 pt-3 mb-0 object-contain" />
         <div className="w-full pt-0">
