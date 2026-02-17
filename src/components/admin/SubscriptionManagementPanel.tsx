@@ -348,7 +348,7 @@ export const SubscriptionManagementPanel: React.FC<
       </Card>
 
       {/* Change Plan Section */}
-      {availablePlans.length > 0 && status === "active" && !isCanceled && subscription?.polar_subscription_id && (
+      {availablePlans.length > 0 && status === "active" && !isCanceled && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -420,7 +420,7 @@ export const SubscriptionManagementPanel: React.FC<
       )}
 
       {/* Cancel Section */}
-      {status === "active" && !isCanceled && subscription?.polar_subscription_id && (
+      {status === "active" && !isCanceled && (
         <Card className="border-destructive/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
