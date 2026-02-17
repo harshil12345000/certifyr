@@ -91,12 +91,30 @@ async function verifyWebhookSignature(
   return false;
 }
 
-// Map Dodo product name to internal plan
-function mapProductToPlan(productName: string): string {
-  const lower = productName.toLowerCase();
-  if (lower.includes("ultra")) return "ultra";
-  if (lower.includes("pro")) return "pro";
-  if (lower.includes("basic")) return "basic";
+// Map Dodo product ID to internal plan
+const PRODUCT_TO_PLAN: Record<string, string> = {
+  "pdt_0NYXDFIglnn4wukqC1Qa2": "basic",  // basic monthly
+  "pdt_0NYXIK26wpbK6kngEpdrT": "basic",  // basic yearly
+  "pdt_0NYXEA30vMCJgSxp0pcRw": "pro",    // pro monthly
+  "pdt_0NYXIQ6Nqc7tDx0YXn8OY": "pro",    // pro yearly
+  "pdt_0NYXI4SnmvbXxxUZAkDH0": "ultra",  // ultra monthly
+  "pdt_0NYXIWHTsKjeI7gEcRLdR": "ultra",  // ultra yearly
+};
+
+function resolvePlan(data: any): string {
+  // 1. Trust metadata.plan set during checkout creation
+  if (data.metadata?.plan) {
+    const p = data.metadata.plan.toLowerCase();
+    if (p === "basic" || p === "pro" || p === "ultra") return p;
+  }
+  // 2. Map product_id directly
+  if (data.product_id && PRODUCT_TO_PLAN[data.product_id]) {
+    return PRODUCT_TO_PLAN[data.product_id];
+  }
+  // 3. Fallback: try product name
+  const name = (data.product?.name || "").toLowerCase();
+  if (name.includes("ultra")) return "ultra";
+  if (name.includes("pro")) return "pro";
   return "basic";
 }
 
@@ -159,7 +177,7 @@ serve(async (req) => {
           break;
         }
 
-        const plan = mapProductToPlan(productName);
+        const plan = resolvePlan(data);
 
         const { error: upsertErr } = await supabase.rpc("update_subscription_from_webhook", {
           p_user_id: userId,
@@ -208,7 +226,7 @@ serve(async (req) => {
           break;
         }
 
-        const plan = mapProductToPlan(productName);
+        const plan = resolvePlan(data);
         const mappedStatus = status === "on_hold" ? "on_hold" : status === "active" ? "active" : status;
 
         const { error } = await supabase.rpc("update_subscription_from_webhook", {
