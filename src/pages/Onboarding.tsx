@@ -161,10 +161,9 @@ export default function Onboarding() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <OnboardingProgress stages={stages} currentStage={currentStage} />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="container mx-auto px-4 pb-8 pt-44">
+      <div className="container mx-auto px-4 pb-8 pt-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStage}
@@ -177,8 +176,7 @@ export default function Onboarding() {
               {renderStage()}
             </motion.div>
           </AnimatePresence>
-        </div>
       </div>
-    </>
+    </div>
   );
 }
