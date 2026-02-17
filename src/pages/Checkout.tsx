@@ -5,7 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, ArrowLeft, CreditCard, Star } from 'lucide-react';
+import { Check, Loader2, CreditCard, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -371,16 +371,7 @@ export default function Checkout() {
           </CardContent>
         </Card>
 
-        {/* Back link */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => navigate('/auth')}
-            className="text-gray-600 hover:text-gray-800 flex items-center gap-2 mx-auto"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to login
-          </button>
-        </div>
+        {/* No back link — subscription is required */}
       </div>
     </div>
   );

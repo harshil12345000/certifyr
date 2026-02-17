@@ -43,6 +43,13 @@ import OwnerDashboard from "@/pages/OwnerDashboard";
 
 const queryClient = new QueryClient();
 
+/** Helper: wraps a page in ProtectedRoute + SubscriptionGate */
+const Gated = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <SubscriptionGate>{children}</SubscriptionGate>
+  </ProtectedRoute>
+);
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -51,84 +58,39 @@ function App() {
           <BrandingProvider>
             <BookmarksProvider>
               <Routes>
-                {/* Root route - handles redirect logic based on localStorage */}
+                {/* Root route */}
                 <Route path="/" element={<RootRedirect />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <SubscriptionGate>
-                        <Index />
-                      </SubscriptionGate>
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Checkout routes - protected but no subscription required */}
-                <Route
-                  path="/checkout"
-                  element={
-                    <ProtectedRoute>
-                      <Checkout />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/checkout/success"
-                  element={
-                    <ProtectedRoute>
-                      <CheckoutSuccess />
-                    </ProtectedRoute>
-                  }
-                />
-                  {/* New routes */}
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <NewDocuments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/old-documents"
-            element={
-              <ProtectedRoute>
-                <OldDocuments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents/:id"
-            element={
-              <ProtectedRoute>
-                <DocumentDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/document-builder/:id"
-            element={
-              <ProtectedRoute>
-                <DocumentBuilder />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-                    path="/templates/:id"
-                    element={
-                      <ProtectedRoute>
-                        <DocumentDetail />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/templates/:id/edit"
-                    element={
-                      <ProtectedRoute>
-                        <DocumentBuilder />
-                      </ProtectedRoute>
-                    }
-                  />
+
+                {/* All gated routes — require auth + active subscription */}
+                <Route path="/dashboard" element={<Gated><Index /></Gated>} />
+                <Route path="/documents" element={<Gated><NewDocuments /></Gated>} />
+                <Route path="/old-documents" element={<Gated><OldDocuments /></Gated>} />
+                <Route path="/documents/:id" element={<Gated><DocumentDetail /></Gated>} />
+                <Route path="/document-builder/:id" element={<Gated><DocumentBuilder /></Gated>} />
+                <Route path="/templates/:id" element={<Gated><DocumentDetail /></Gated>} />
+                <Route path="/templates/:id/edit" element={<Gated><DocumentBuilder /></Gated>} />
+                <Route path="/request-portal" element={<Gated><RequestPortal /></Gated>} />
+                <Route path="/ai-assistant" element={<Gated><AIAssistant /></Gated>} />
+                <Route path="/organization" element={<Gated><Admin /></Gated>} />
+                <Route path="/organization/documents" element={<Gated><AdminDocuments /></Gated>} />
+                <Route path="/organization/documents/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+                <Route path="/organization/templates" element={<Gated><AdminDocuments /></Gated>} />
+                <Route path="/organization/templates/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+                <Route path="/admin" element={<Gated><Admin /></Gated>} />
+                <Route path="/admin/documents" element={<Gated><AdminDocuments /></Gated>} />
+                <Route path="/admin/documents/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+                <Route path="/admin/templates" element={<Gated><AdminDocuments /></Gated>} />
+                <Route path="/admin/templates/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+                <Route path="/settings" element={<Gated><Settings /></Gated>} />
+                <Route path="/history" element={<Gated><History /></Gated>} />
+                <Route path="/temp-doc/bonafide" element={<Gated><TempBonafideComparison /></Gated>} />
+                <Route path="/bookmarks" element={<Gated><BookmarksPage /></Gated>} />
+
+                {/* Checkout routes — protected but NO subscription gate */}
+                <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+
+                {/* Auth routes — public */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/auth/confirm" element={<AuthConfirm />} />
                 <Route path="/auth/signup" element={<Onboarding />} />
@@ -136,117 +98,13 @@ function App() {
                 <Route path="/auth/email-verified" element={<EmailVerified />} />
                 <Route path="/auth/check-email" element={<CheckEmail />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route
-                  path="/request-portal"
-                  element={
-                    <ProtectedRoute>
-                      <RequestPortal />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/ai-assistant"
-                  element={
-                    <ProtectedRoute>
-                      <AIAssistant />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/portal/:slug"
-                  element={<EmployeePortal />}
-                />
-                <Route
-                  path="/portal/:slug/documents/:id"
-                  element={<EmployeeDocumentDetail />}
-                />
-                <Route
-                  path="/portal/:slug/templates/:id"
-                  element={<EmployeeDocumentDetail />}
-                />
-                <Route
-                  path="/organization"
-                  element={
-                    <ProtectedRoute>
-                      <Admin />
-                    </ProtectedRoute>
-                  }
-                />
-                  {/* Organization sub-routes */}
-                  <Route
-                    path="/organization/documents"
-                    element={
-                      <ProtectedRoute>
-                        <AdminDocuments />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/organization/documents/:id"
-                    element={
-                      <ProtectedRoute>
-                        <AdminDocumentBuilder />
-                      </ProtectedRoute>
-                    }
-                  />
-                  
-                  {/* Legacy routes for backward compatibility */}
-                  <Route
-                    path="/organization/templates"
-                    element={
-                      <ProtectedRoute>
-                        <AdminDocuments />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/organization/templates/:id"
-                    element={
-                      <ProtectedRoute>
-                        <AdminDocumentBuilder />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* Old /admin redirects */}
-                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                  <Route path="/admin/documents" element={<ProtectedRoute><AdminDocuments /></ProtectedRoute>} />
-                  <Route path="/admin/documents/:id" element={<ProtectedRoute><AdminDocumentBuilder /></ProtectedRoute>} />
-                  <Route path="/admin/templates" element={<ProtectedRoute><AdminDocuments /></ProtectedRoute>} />
-                  <Route path="/admin/templates/:id" element={<ProtectedRoute><AdminDocumentBuilder /></ProtectedRoute>} />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/history"
-                  element={
-                    <ProtectedRoute>
-                      <History />
-                    </ProtectedRoute>
-                  }
-                />
+
+                {/* Public routes */}
+                <Route path="/portal/:slug" element={<EmployeePortal />} />
+                <Route path="/portal/:slug/documents/:id" element={<EmployeeDocumentDetail />} />
+                <Route path="/portal/:slug/templates/:id" element={<EmployeeDocumentDetail />} />
                 <Route path="/verify/:hash" element={<VerifyDocument />} />
                 <Route path="/no-access" element={<NoAccess />} />
-                <Route
-                  path="/temp-doc/bonafide"
-                  element={
-                    <ProtectedRoute>
-                      <TempBonafideComparison />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bookmarks"
-                  element={
-                    <ProtectedRoute>
-                      <BookmarksPage />
-                    </ProtectedRoute>
-                  }
-                />
                 <Route path="/owner" element={<OwnerDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
