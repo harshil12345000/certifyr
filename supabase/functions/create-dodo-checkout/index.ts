@@ -50,6 +50,17 @@ serve(async (req) => {
     const userId = user.id;
     const userEmail = user.email;
 
+    // Fetch user profile for full name and phone
+    const adminClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: profile } = await adminClient
+      .from("user_profiles")
+      .select("first_name, last_name, phone_number")
+      .eq("user_id", userId)
+      .single();
+
+    const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || userEmail;
+    const phoneNumber = profile?.phone_number || undefined;
+
     // Parse request body
     const { productId, plan, billingPeriod, successUrl, cancelUrl } = await req.json();
 
@@ -61,6 +72,14 @@ serve(async (req) => {
     }
 
     // Create Dodo Payments checkout session via REST API
+    const customerData: Record<string, string> = {
+      email: userEmail!,
+      name: fullName,
+    };
+    if (phoneNumber) {
+      customerData.phone_number = phoneNumber;
+    }
+
     const checkoutPayload = {
       product_cart: [
         {
@@ -68,10 +87,7 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      customer: {
-        email: userEmail,
-        name: userEmail, // Dodo requires a name
-      },
+      customer: customerData,
       payment_link: true,
       return_url: successUrl || `${req.headers.get("origin") || "https://certifyr.lovable.app"}/checkout/success`,
       metadata: {
@@ -114,7 +130,6 @@ serve(async (req) => {
     console.log("Dodo checkout session created:", dodoData.session_id);
 
     // Save selected plan to subscriptions table
-    const adminClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     await adminClient.from("subscriptions").upsert(
       {
         user_id: userId,
