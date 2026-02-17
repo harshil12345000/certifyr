@@ -12,6 +12,7 @@ export interface Subscription {
   subscription_status: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
+  canceled_at: string | null;
 }
 
 export function useSubscription() {

@@ -40,6 +40,7 @@ import {
 import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPanel";
 import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
 import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
+import { SubscriptionManagementPanel } from "@/components/admin/SubscriptionManagementPanel";
 import { organizationTypes, organizationSizes } from "@/lib/defaults";
 
 interface UserProfileFormState {
@@ -694,6 +695,8 @@ const AdminPage = () => {
             <TabsTrigger value="admin">Admin</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
+            <Separator orientation="vertical" className="h-6" />
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
           </TabsList>
 
           <TabsContent value="organization" className="space-y-6">
@@ -948,6 +951,10 @@ const AdminPage = () => {
 
           <TabsContent value="announcements" className="space-y-6">
             <AnnouncementAdminPanel />
+          </TabsContent>
+
+          <TabsContent value="subscription" className="space-y-6">
+            <SubscriptionManagementPanel organizationId={organizationId} />
           </TabsContent>
         </Tabs>
       </div>

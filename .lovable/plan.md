@@ -1,90 +1,53 @@
 
 
-# Organization-Aware Document Filtering and Dropdown Improvements
+# Plan: Strict Subscription Paywall
 
-## Part 1: Dropdown Inputs for Organization Overview
+## Problem
+Currently, users can bypass the paywall in multiple ways:
+1. Only `/dashboard` is wrapped with `SubscriptionGate` -- all other routes (`/documents`, `/settings`, `/history`, `/organization`, etc.) only use `ProtectedRoute` which checks auth but NOT subscription status.
+2. `SubscriptionGate` uses a `sessionStorage` flag (`subscriptionCheckedOnce`) that, after one check, permanently lets the user through for the rest of the session -- even without a subscription.
+3. The Checkout page has a "Back to login" button, giving users an escape route.
 
-Replace the plain text `<Input>` fields for "Organization Type" and "Organization Size" on the Organization Overview page (`src/pages/Admin.tsx`) with `<Select>` dropdowns, using the exact same options from onboarding:
+## Solution
 
-**Organization Types:** Corporate, Startup, Law Agency, Educational Institute, Other
+### 1. Wrap ALL protected routes with `SubscriptionGate` (in `App.tsx`)
+Every route that currently uses `<ProtectedRoute>` (except `/checkout` and `/checkout/success`) will also be wrapped with `<SubscriptionGate>`. This ensures no route is accessible without an active plan.
 
-**Organization Sizes:** 1-10, 10-50, 50-100, 100-1000, 1000-10000, 10000+
+### 2. Rewrite `SubscriptionGate` to be strict and unbypassable
+- Remove the `sessionStorage` flag hack entirely. Instead, the gate will **always** check subscription status on every render.
+- If user has no active subscription, **do not render children at all**. Instead, render a full-screen, unskippable modal overlay with:
+  - A message: "Subscription Required" / "Complete your subscription to access Certifyr"
+  - A single "Subscribe Now" button that navigates to `/checkout`
+  - No close button, no backdrop click dismiss, no escape key
+- This modal approach means even if navigation somehow reaches a protected page, the content is never shown.
 
----
+### 3. Remove "Back to login" from Checkout page
+Remove the back-to-login link at the bottom of `src/pages/Checkout.tsx` so users cannot escape the checkout flow.
 
-## Part 2: Document Availability by Organization Type
+### 4. Harden the Auth page login flow
+In `src/pages/Auth.tsx`, after successful login, check if the user has an active subscription. If not, redirect to `/checkout` instead of `/dashboard`. This prevents the gap between login and payment.
 
-Here is the proposed document restriction matrix. The key insight: **Educational Institutes** deal with both students AND employees, so they get everything. **Corporates, Startups, and Law Agencies** only have employees -- no student-specific documents.
+## Technical Details
 
-### All Organization Types (Universal Documents)
-| # | Document | Reason |
-|---|----------|--------|
-| 1 | Bonafide Certificate | Universal (but "Person Type" options vary -- see Part 3) |
-| 2 | Character Certificate | Applicable to any individual |
-| 3 | Experience Certificate | All orgs have employees |
-| 4 | Income Certificate | All orgs have employees |
-| 5 | Maternity Leave Application | All orgs have employees |
-| 6 | Offer Letter | All orgs hire people |
-| 7 | NOC for Visa | All orgs may sponsor travel |
-| 8 | Bank Account Verification | All orgs verify employee bank details |
-| 9 | Address Proof Certificate | Universal legal document |
-| 10 | NDA | All orgs handle confidential info |
-| 11 | Employment Agreement | All orgs hire people |
-| 12 | Embassy Attestation | Universal travel document |
-| 13 | Embassy Attestation Letter | Universal travel document |
+### Files to Edit
 
-### Educational Institute ONLY
-| # | Document | Reason |
-|---|----------|--------|
-| 14 | Transfer Certificate | Student-only (class, roll number, admission number) |
-| 15 | Academic Transcript | Student-only (CGPA, semester, grades) |
-| 16 | Completion Certificate | Student/course-only (course title, grade, father/mother name) |
+**`src/components/auth/SubscriptionGate.tsx`** -- Complete rewrite:
+- Remove `sessionStorage` flag logic
+- Remove `useRef` workaround
+- On every render: if `!hasActiveSubscription` and not loading, show a blocking full-screen overlay (not a dismissable dialog) with a "Subscribe Now" button
+- The overlay uses a fixed full-screen div with high z-index, no close mechanism
+- Children are never rendered if subscription is inactive
 
-### Corporate, Startup, Law Agency ONLY (NOT Educational Institute)
-| # | Document | Reason |
-|---|----------|--------|
-| 17 | Articles of Incorporation | Corporate formation, not relevant to schools |
-| 18 | Corporate Bylaws | Corporate governance, not relevant to schools |
-| 19 | Founders' Agreement | Startup/corporate founders, not relevant to schools |
-| 20 | Stock Purchase Agreement | Share transactions, not relevant to schools |
+**`src/App.tsx`** -- Wrap all protected routes:
+- Add `<SubscriptionGate>` inside every `<ProtectedRoute>` for routes: `/documents`, `/old-documents`, `/documents/:id`, `/document-builder/:id`, `/templates/:id`, `/templates/:id/edit`, `/request-portal`, `/ai-assistant`, `/organization`, `/organization/*`, `/admin/*`, `/settings`, `/history`, `/temp-doc/bonafide`, `/bookmarks`
+- Leave `/checkout` and `/checkout/success` without `SubscriptionGate`
 
-### "Other" Organization Type
-Gets access to ALL 20 documents (no restrictions).
+**`src/pages/Checkout.tsx`** -- Remove the "Back to login" button/link at the bottom of the page (lines ~280-288).
 
----
+### No Database Changes Required
+The subscription check already uses the existing `subscriptions` table and `useSubscription` hook which queries `active_plan` and `subscription_status`.
 
-## Part 3: Dynamic "Person Type" Field Filtering
-
-For documents with a "Person Type" selector (currently Bonafide Certificate):
-- **Educational Institute / Other**: Show both "Student" and "Employee" options
-- **Corporate / Startup / Law Agency**: Show only "Employee" (remove "Student" option)
-
----
-
-## Technical Implementation
-
-### Files to modify:
-
-1. **`src/config/documentConfigs.ts`**
-   - Add an `allowedOrgTypes` property to the `DocumentConfig` interface
-   - Tag each config with which org types can access it
-   - For universal docs, leave `allowedOrgTypes` undefined (means all)
-   - Transfer Certificate, Academic Transcript, Completion Certificate: `["Educational Institute", "Other"]`
-   - Articles of Incorporation, Corporate Bylaws, Founders' Agreement, Stock Purchase Agreement: `["Corporate", "Startup", "Law Agency", "Other"]`
-
-2. **`src/pages/Admin.tsx`**
-   - Replace Organization Type `<Input>` with `<Select>` dropdown using the same `organizationTypes` array from onboarding
-   - Replace Organization Size `<Input>` with `<Select>` dropdown using the same `organizationSizes` array from onboarding
-   - Update `handleInputChange` to support select value changes for these fields
-
-3. **`src/pages/NewDocuments.tsx`** (or wherever document list is rendered)
-   - Filter `documentConfigs` based on the user's `organizationType` from their profile
-   - If `allowedOrgTypes` is defined, only show the document if the user's org type is in the list
-
-4. **`src/components/templates/DynamicForm.tsx`** (or equivalent)
-   - For the Bonafide "Person Type" field: dynamically filter options based on org type
-   - If org type is not "Educational Institute" or "Other", remove the "Student" option
-
-5. **Shared constants file** (extract to `src/lib/defaults.ts` or similar)
-   - Export `organizationTypes` and `organizationSizes` arrays so both onboarding and admin pages import from one source
-
+### Security Notes
+- The paywall is client-side UI enforcement. Backend data is already protected by RLS policies on all tables.
+- The `SubscriptionGate` ensures no app content is ever rendered without a valid subscription, even on refresh or direct URL navigation.
+- `sessionStorage` bypass is fully eliminated.
