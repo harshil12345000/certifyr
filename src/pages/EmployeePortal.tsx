@@ -14,9 +14,10 @@ export default function EmployeePortal() {
   const [loading, setLoading] = useState(true);
   const [employee, setEmployee] = useState<any>(null);
 
-  // Resolve slug to organization ID
+  // Resolve slug to organization ID and portal settings in one call
+  // Uses SECURITY DEFINER function so anonymous users can access it
   useEffect(() => {
-    const resolveSlug = async () => {
+    const resolvePortal = async () => {
       if (!slug) {
         setSlugError("Invalid portal URL");
         setLoading(false);
@@ -24,62 +25,40 @@ export default function EmployeePortal() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from("organizations")
-          .select("id")
-          .eq("portal_slug", slug)
-          .maybeSingle();
+        const { data, error } = await supabase.rpc("get_portal_info", {
+          p_slug: slug,
+        });
 
         if (error) {
-          console.error("Error resolving slug:", error);
+          console.error("Error resolving portal:", error);
           setSlugError("Error loading portal");
           setLoading(false);
           return;
         }
 
-        if (!data) {
-          setSlugError("Portal not found");
+        if (!data || data.length === 0) {
+          setSlugError("Portal not found or not enabled");
           setLoading(false);
           return;
         }
 
-        setOrganizationId(data.id);
+        const portalInfo = data[0];
+        setOrganizationId(portalInfo.organization_id);
+        setPortalSettings({
+          enabled: portalInfo.enabled,
+          portal_url: portalInfo.portal_url,
+          organization_id: portalInfo.organization_id,
+        });
       } catch (error) {
-        console.error("Error resolving organization slug:", error);
+        console.error("Error resolving portal:", error);
         setSlugError("Error loading portal");
-        setLoading(false);
-      }
-    };
-
-    resolveSlug();
-  }, [slug]);
-
-  useEffect(() => {
-    const fetchPortalSettings = async () => {
-      if (!organizationId) return;
-      try {
-        const { data, error } = await supabase
-          .from("request_portal_settings")
-          .select("*")
-          .eq("organization_id", organizationId)
-          .maybeSingle();
-
-        if (error) {
-          setPortalSettings(null);
-        } else if (data && data.enabled) {
-          setPortalSettings(data);
-        } else {
-          setPortalSettings(null);
-        }
-      } catch (error) {
-        setPortalSettings(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPortalSettings();
-  }, [organizationId]);
+    resolvePortal();
+  }, [slug]);
 
   // Check for existing employee session
   useEffect(() => {
