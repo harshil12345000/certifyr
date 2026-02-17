@@ -154,21 +154,38 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
   const { logoUrl, organizationDetails } = useBranding();
   const { features, loading: planLoading } = usePlanFeatures();
 
-  // Stable feature visibility: default hidden, only show after plan resolves.
-  // Once resolved, latch values so re-renders during navigation don't flicker.
-  const resolvedRef = React.useRef<{ requestPortal: boolean; aiAssistant: boolean } | null>(null);
+  // Aggressive stability: persist feature visibility in sessionStorage so
+  // remounts (route changes) never start from a blank/hidden state.
+  const FEATURE_CACHE_KEY = 'sidebar-feature-visibility';
 
-  if (!planLoading && features) {
-    resolvedRef.current = {
-      requestPortal: features.requestPortal ?? false,
-      aiAssistant: features.aiAssistant ?? false,
-    };
-  }
+  const [featureVisibility, setFeatureVisibility] = useState<{
+    requestPortal: boolean;
+    aiAssistant: boolean;
+  }>(() => {
+    try {
+      const cached = sessionStorage.getItem(FEATURE_CACHE_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch { /* ignore */ }
+    return { requestPortal: false, aiAssistant: false };
+  });
 
-  const featureVisibility = resolvedRef.current ?? {
-    requestPortal: false,
-    aiAssistant: false,
-  };
+  // Only update when plan data actually resolves with real values
+  React.useEffect(() => {
+    if (!planLoading && features) {
+      const next = {
+        requestPortal: features.requestPortal ?? false,
+        aiAssistant: features.aiAssistant ?? false,
+      };
+      // Only update if values actually changed to avoid unnecessary re-renders
+      setFeatureVisibility(prev => {
+        if (prev.requestPortal === next.requestPortal && prev.aiAssistant === next.aiAssistant) {
+          return prev;
+        }
+        sessionStorage.setItem(FEATURE_CACHE_KEY, JSON.stringify(next));
+        return next;
+      });
+    }
+  }, [planLoading, features]);
 
   // Get name and avatar from user metadata if available
   const name =
