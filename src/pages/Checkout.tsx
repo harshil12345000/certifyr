@@ -331,9 +331,6 @@ export default function Checkout() {
               </>
             )}
           </Button>
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Secure payment powered by Dodo Payments
-          </p>
         </div>
       </div>
     </div>
