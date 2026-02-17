@@ -60,7 +60,7 @@ const navItems: NavItem[] = [
     requiredFeature: 'aiAssistant',
     planBadge: 'Ultra',
   },
-  { name: "Organization", path: "/organization", icon: <Building2 className="h-5 w-5" /> },
+  { name: "Organization", path: "/admin", icon: <Building2 className="h-5 w-5" /> },
   {
     name: "Account Settings",
     path: "/settings",

@@ -59,9 +59,7 @@ serve(async (req) => {
       .single();
 
     const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || userEmail;
-    // Dodo requires E.164 phone format (e.g. +1234567890). Skip if invalid.
-    const rawPhone = profile?.phone_number || "";
-    const phoneNumber = /^\+\d{7,15}$/.test(rawPhone) ? rawPhone : undefined;
+    const phoneNumber = profile?.phone_number || undefined;
 
     // Parse request body
     const { productId, plan, billingPeriod, successUrl, cancelUrl } = await req.json();

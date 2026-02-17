@@ -15,9 +15,7 @@ serve(async (req) => {
     const { action, email, password, ownerToken, targetUserId, newPlan } = await req.json();
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // LOGIN
     if (action === "login") {
@@ -177,38 +175,23 @@ serve(async (req) => {
       }
 
       // Upsert subscription
-      const isNone = newPlan === "none";
       const { error: subErr } = await supabase
         .from("subscriptions")
         .upsert({
           user_id: targetUserId,
-          active_plan: isNone ? null : newPlan,
-          selected_plan: isNone ? null : newPlan,
-          subscription_status: isNone ? "inactive" : "active",
-          canceled_at: isNone ? new Date().toISOString() : null,
+          active_plan: newPlan === "none" ? null : newPlan,
+          subscription_status: newPlan === "none" ? "inactive" : "active",
           current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000 * 75).toISOString(),
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
 
       if (subErr) {
-        console.error("Subscription upsert error:", subErr);
         return new Response(JSON.stringify({ error: subErr.message }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Also sync user_profiles.plan
-      const { error: profileErr } = await supabase
-        .from("user_profiles")
-        .update({ plan: isNone ? "basic" : newPlan, updated_at: new Date().toISOString() })
-        .eq("user_id", targetUserId);
-
-      if (profileErr) {
-        console.error("Profile update error:", profileErr);
-      }
-
-      console.log(`Owner changed plan for ${targetUserId} to ${newPlan}`);
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

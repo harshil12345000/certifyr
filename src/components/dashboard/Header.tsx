@@ -493,7 +493,7 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/organization" className="flex items-center cursor-pointer">
+                <Link to="/admin" className="flex items-center cursor-pointer">
                   <Building2 className="mr-2 h-4 w-4" />
                   <span>Organization</span>
                 </Link>

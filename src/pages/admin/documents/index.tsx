@@ -54,11 +54,11 @@ export default function TemplatesDashboard() {
   };
 
   const handleCreate = () => {
-    navigate("/organization/templates/builder");
+    navigate("/admin/templates/builder");
   };
 
   const handleEdit = (tpl: Template) => {
-    navigate(`/organization/templates/builder?id=${tpl.id}`);
+    navigate(`/admin/templates/builder?id=${tpl.id}`);
   };
 
   const handleDelete = async (tpl: Template) => {

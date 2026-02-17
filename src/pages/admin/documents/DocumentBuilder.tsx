@@ -301,7 +301,7 @@ const TemplateBuilder = () => {
         setTemplateId(data.id); // Store ID if it's a new template
       }
       if (status === "published") {
-        navigate("/organization/templates");
+        navigate("/admin/templates"); // Or to the template list page
       }
     }
     if (status === "draft") setIsSaving(false);
@@ -317,7 +317,7 @@ const TemplateBuilder = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigate("/organization/templates")}
+              onClick={() => navigate("/admin/templates")}
               className="h-9 w-9"
             >
               <ChevronLeft className="h-5 w-5" />

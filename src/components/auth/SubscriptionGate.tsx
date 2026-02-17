@@ -1,73 +1,77 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface SubscriptionGateProps {
   children: ReactNode;
 }
 
 /**
- * Strict SubscriptionGate — blocks ALL access unless user has an active subscription.
- * No sessionStorage bypass, no close button, no escape.
- * Checks on every render. Children are never rendered without active plan.
+ * SubscriptionGate wraps protected routes and ensures:
+ * 1. User is authenticated
+ * 2. User has an active_plan (set by Polar webhook)
+ * 
+ * Uses a session flag to only redirect to checkout once (prevents loops).
  */
 export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
+  const hasCheckedSubscription = useRef(false);
 
   const isLoading = authLoading || subLoading;
 
-  // Loading state
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Not authenticated -> redirect to auth
+    if (!user) {
+      navigate('/auth', { replace: true });
+      return;
+    }
+
+    // Check subscription only once per session to prevent redirect loops
+    // If already checked in this component mount, don't redirect again
+    if (hasCheckedSubscription.current) return;
+    
+    // Mark as checked
+    hasCheckedSubscription.current = true;
+
+    // Check sessionStorage flag to prevent loops across page loads
+    const subscriptionChecked = sessionStorage.getItem('subscriptionCheckedOnce');
+    
+    // Authenticated but no active subscription -> redirect to checkout (only once)
+    if (!hasActiveSubscription && subscriptionChecked !== 'true') {
+      sessionStorage.setItem('subscriptionCheckedOnce', 'true');
+      navigate('/checkout', { replace: true });
+      return;
+    }
+  }, [isLoading, user, hasActiveSubscription, navigate]);
+
+  // Clear the subscription check flag when subscription becomes active
+  useEffect(() => {
+    if (hasActiveSubscription) {
+      sessionStorage.removeItem('subscriptionCheckedOnce');
+    }
+  }, [hasActiveSubscription]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifying subscription...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Not authenticated — redirect handled by ProtectedRoute, but guard anyway
+  // Allow access if user is authenticated (subscription check already done)
   if (!user) {
     return null;
   }
 
-  // No active subscription — show unskippable paywall
-  if (!hasActiveSubscription) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 backdrop-blur-sm">
-        <div className="w-full max-w-md mx-4 rounded-xl border bg-card p-8 shadow-2xl text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-            <ShieldAlert className="h-7 w-7 text-destructive" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">
-            Subscription Required
-          </h2>
-          <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-            You need an active subscription to access Certifyr. 
-            Choose a plan to unlock all features and start creating documents.
-          </p>
-          <Button
-            onClick={() => navigate('/checkout', { replace: true })}
-            className="w-full h-11 font-semibold"
-            size="lg"
-          >
-            Choose a Plan
-          </Button>
-          <p className="text-xs text-muted-foreground mt-4">
-            Plans start at $19/month. Cancel anytime.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Active subscription — render protected content
   return <>{children}</>;
 }
