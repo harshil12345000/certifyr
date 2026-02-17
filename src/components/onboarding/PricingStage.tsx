@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PricingStageProps {
@@ -45,7 +44,7 @@ const ultraFeatures = [
 
 export function PricingStage({ data, updateData, onPrev, loading }: PricingStageProps) {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  
   const [showFAQ, setShowFAQ] = useState(false);
   
   // Set defaults on mount - keep user's selection if valid
@@ -163,15 +162,42 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
 
       toast({
         title: "Account Created!",
-        description: "Please complete your subscription to access Certifyr.",
+        description: "Redirecting to payment...",
       });
 
-      // Store plan info for checkout page
-      const billingPrefix = data.billingPeriod === 'monthly' ? 'm' : 'y';
-      sessionStorage.setItem('selectedPlanIntent', `${billingPrefix}${data.selectedPlan}`);
+      // Store plan info as fallback
+      sessionStorage.setItem('selectedPlanIntent', data.selectedPlan);
 
-      // Redirect to checkout page for payment
-      navigate("/checkout");
+      // Directly create Dodo checkout session and redirect
+      const DODO_PRODUCTS: Record<string, Record<string, string>> = {
+        basic: { monthly: 'pdt_0NYXDFIglnn4wukqC1Qa2', yearly: 'pdt_0NYXIK26wpbK6kngEpdrT' },
+        pro: { monthly: 'pdt_0NYXEA30vMCJgSxp0pcRw', yearly: 'pdt_0NYXIQ6Nqc7tDx0YXn8OY' },
+        ultra: { monthly: 'pdt_0NYXI4SnmvbXxxUZAkDH0', yearly: 'pdt_0NYXIWHTsKjeI7gEcRLdR' },
+      };
+
+      const productId = DODO_PRODUCTS[data.selectedPlan][data.billingPeriod];
+
+      const response = await supabase.functions.invoke('create-dodo-checkout', {
+        body: {
+          productId,
+          plan: data.selectedPlan,
+          billingPeriod: data.billingPeriod,
+          successUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to create checkout');
+      }
+
+      const { checkout_url } = response.data;
+      if (!checkout_url) {
+        throw new Error('No checkout URL returned');
+      }
+
+      // Redirect directly to Dodo Payments
+      window.location.href = checkout_url;
     } catch (err: any) {
       console.error("Signup error:", err);
       setError(err.message || "An unexpected error occurred");
