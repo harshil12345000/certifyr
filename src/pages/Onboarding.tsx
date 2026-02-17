@@ -59,10 +59,10 @@ export default function Onboarding() {
     
     // Parse the plan parameter (e.g., basic, pro, ultra)
     if (planParam === 'basic' || planParam === 'pro' || planParam === 'ultra') {
-      return { plan: planParam, billing: 'yearly' }; // Default to yearly billing
+      return { plan: planParam, billing: 'monthly' };
     }
     
-    return { plan: 'pro', billing: 'yearly' }; // Default to yearly pro
+    return { plan: 'pro', billing: 'monthly' };
   };
   
   const initialPlanData = getInitialPlanAndBilling();
