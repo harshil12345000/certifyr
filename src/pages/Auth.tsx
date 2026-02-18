@@ -28,6 +28,7 @@ const Auth = () => {
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Capture plan intent from URL (e.g., /auth?plan=basic, pro, ultra)
   useEffect(() => {
@@ -60,11 +61,8 @@ const Auth = () => {
     clearStaleSession();
   }, []);
 
-  // Don't redirect if this is a password recovery flow
-  const isRecoveryFlow = window.location.pathname.includes('reset-password') || 
-                         window.location.pathname.includes('auth/confirm');
-  
-  if (user && !isRecoveryFlow) {
+  // Don't redirect if the user is in the middle of a password reset flow
+  if (user && !isResettingPassword) {
     return <Navigate to="/dashboard" replace />;
   }
   if (loading) {
@@ -201,7 +199,11 @@ const Auth = () => {
         
         <ForgotPasswordModal 
           isOpen={showForgotPassword}
-          onClose={() => setShowForgotPassword(false)}
+          onClose={() => {
+            setShowForgotPassword(false);
+            setIsResettingPassword(false);
+          }}
+          onResetFlowActive={() => setIsResettingPassword(true)}
         />
       </div>
     </div>
