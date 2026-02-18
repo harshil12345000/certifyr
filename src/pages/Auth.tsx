@@ -3,7 +3,13 @@ import { Navigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -25,12 +31,12 @@ const Auth = () => {
 
   // Capture plan intent from URL (e.g., /auth?plan=basic, pro, ultra)
   useEffect(() => {
-    const planParam = searchParams.get("plan");
+    const planParam = searchParams.get('plan');
     if (planParam) {
-      const validPlans = ["basic", "pro", "ultra"];
+      const validPlans = ['basic', 'pro', 'ultra'];
       if (validPlans.includes(planParam)) {
         // Store plan intent in sessionStorage for use during signup/onboarding
-        sessionStorage.setItem("selectedPlanIntent", planParam);
+        sessionStorage.setItem('selectedPlanIntent', planParam);
       }
     }
   }, [searchParams]);
@@ -39,10 +45,7 @@ const Auth = () => {
   useEffect(() => {
     const clearStaleSession = async () => {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         // If there's an error or no valid session but localStorage has tokens, clear them
         if (error || !session) {
           localStorage.removeItem("authToken");
@@ -58,9 +61,9 @@ const Auth = () => {
   }, []);
 
   // Don't redirect if this is a password recovery flow
-  const isRecoveryFlow =
-    window.location.pathname.includes("reset-password") || window.location.pathname.includes("auth/confirm");
-
+  const isRecoveryFlow = window.location.pathname.includes('reset-password') || 
+                         window.location.pathname.includes('auth/confirm');
+  
   if (user && !isRecoveryFlow) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -76,9 +79,11 @@ const Auth = () => {
       if (error) {
         let errorMessage = "An error occurred during sign in";
         if (error.message?.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+          errorMessage =
+            "Invalid email or password. Please check your credentials and try again.";
         } else if (error.message?.includes("Email not confirmed")) {
-          errorMessage = "Please check your email and click the confirmation link before signing in.";
+          errorMessage =
+            "Please check your email and click the confirmation link before signing in.";
         } else if (error.message) {
           errorMessage = error.message;
         }
@@ -108,13 +113,17 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-4">
-          <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Logo" className="mx-auto h-17" />
-          <p className="text-gray-600 mt-0">Simplifying Official Documentation</p>
+          <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Logo" className="mx-auto h-20" />
+          <p className="text-gray-600 mt-0">
+            Simplifying Official Documentation
+          </p>
         </div>
         <Card>
           <CardHeader>
             <CardTitle>Welcome!</CardTitle>
-            <CardDescription>Sign in to your account or create a new one to get started.</CardDescription>
+            <CardDescription>
+              Sign in to your account or create a new one to get started.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignIn} className="space-y-4">
@@ -146,7 +155,9 @@ const Auth = () => {
                 <Checkbox
                   id="remember-me"
                   checked={rememberMe}
-                  onCheckedChange={(checkedState) => setRememberMe(checkedState === true)}
+                  onCheckedChange={(checkedState) =>
+                    setRememberMe(checkedState === true)
+                  }
                   disabled={isLoading}
                 />
                 <Label htmlFor="remember-me" className="text-sm">
@@ -176,9 +187,9 @@ const Auth = () => {
                 </button>
               </div>
               <div className="text-center text-sm text-gray-500">
-                New to Certifyr?{" "}
-                <Link
-                  to={`/auth/signup${searchParams.get("plan") ? `?plan=${searchParams.get("plan")}` : ""}`}
+                New to Certifyr?{' '}
+                <Link 
+                  to={`/auth/signup${searchParams.get('plan') ? `?plan=${searchParams.get('plan')}` : ''}`} 
                   className="text-blue-600 hover:underline font-medium"
                 >
                   Create an Account
@@ -187,8 +198,11 @@ const Auth = () => {
             </div>
           </CardContent>
         </Card>
-
-        <ForgotPasswordModal isOpen={showForgotPassword} onClose={() => setShowForgotPassword(false)} />
+        
+        <ForgotPasswordModal 
+          isOpen={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+        />
       </div>
     </div>
   );
