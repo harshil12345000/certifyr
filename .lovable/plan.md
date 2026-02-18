@@ -1,53 +1,99 @@
 
 
-# Plan: Strict Subscription Paywall
+# Fix: Forgot/Reset Password "Invalid Token" Issue
 
-## Problem
-Currently, users can bypass the paywall in multiple ways:
-1. Only `/dashboard` is wrapped with `SubscriptionGate` -- all other routes (`/documents`, `/settings`, `/history`, `/organization`, etc.) only use `ProtectedRoute` which checks auth but NOT subscription status.
-2. `SubscriptionGate` uses a `sessionStorage` flag (`subscriptionCheckedOnce`) that, after one check, permanently lets the user through for the rest of the session -- even without a subscription.
-3. The Checkout page has a "Back to login" button, giving users an escape route.
+## Root Cause
+
+The problem is a **race condition** between the Supabase JS SDK and the `ResetPassword` component's token validation logic.
+
+Here is what happens step-by-step:
+
+1. User clicks "Reset Password" in the email -- Supabase redirects to `/reset-password` with tokens (either `#access_token=...&type=recovery` or `?code=...`)
+2. The Supabase JS SDK (initialized in `client.ts`) **automatically** detects these URL tokens and begins processing them internally via `onAuthStateChange`
+3. **Simultaneously**, `ResetPassword.tsx`'s `useEffect` fires and tries to manually parse the same tokens
+4. The SDK consumes/clears the tokens from the URL before the component can process them, OR `getSession()` returns null because the SDK hasn't finished processing yet
+5. Result: the component finds no valid tokens and no session, so it shows "Invalid or Expired Link"
+
+Additionally, the `AuthContext` already handles `PASSWORD_RECOVERY` events (line 134) and sets the session/user state. The ResetPassword page should leverage this instead of competing with the SDK.
 
 ## Solution
 
-### 1. Wrap ALL protected routes with `SubscriptionGate` (in `App.tsx`)
-Every route that currently uses `<ProtectedRoute>` (except `/checkout` and `/checkout/success`) will also be wrapped with `<SubscriptionGate>`. This ensures no route is accessible without an active plan.
+Rewrite `ResetPassword.tsx` to **stop manually parsing tokens** and instead rely on Supabase's built-in `onAuthStateChange` listener. The component will:
 
-### 2. Rewrite `SubscriptionGate` to be strict and unbypassable
-- Remove the `sessionStorage` flag hack entirely. Instead, the gate will **always** check subscription status on every render.
-- If user has no active subscription, **do not render children at all**. Instead, render a full-screen, unskippable modal overlay with:
-  - A message: "Subscription Required" / "Complete your subscription to access Certifyr"
-  - A single "Subscribe Now" button that navigates to `/checkout`
-  - No close button, no backdrop click dismiss, no escape key
-- This modal approach means even if navigation somehow reaches a protected page, the content is never shown.
+1. Subscribe to `onAuthStateChange` for the `PASSWORD_RECOVERY` or `SIGNED_IN` event
+2. Wait up to ~5 seconds for the SDK to process the recovery tokens automatically
+3. Fall back to `getSession()` check (for cases where the event already fired before the component mounted)
+4. Show the password form once a valid session is detected
 
-### 3. Remove "Back to login" from Checkout page
-Remove the back-to-login link at the bottom of `src/pages/Checkout.tsx` so users cannot escape the checkout flow.
+## Technical Changes
 
-### 4. Harden the Auth page login flow
-In `src/pages/Auth.tsx`, after successful login, check if the user has an active subscription. If not, redirect to `/checkout` instead of `/dashboard`. This prevents the gap between login and payment.
+### File: `src/pages/ResetPassword.tsx`
 
-## Technical Details
+Replace the `useEffect` token validation block (lines 50-179) with a simpler approach:
 
-### Files to Edit
+```text
+useEffect(() => {
+  let timeoutId: NodeJS.Timeout;
 
-**`src/components/auth/SubscriptionGate.tsx`** -- Complete rewrite:
-- Remove `sessionStorage` flag logic
-- Remove `useRef` workaround
-- On every render: if `!hasActiveSubscription` and not loading, show a blocking full-screen overlay (not a dismissable dialog) with a "Subscribe Now" button
-- The overlay uses a fixed full-screen div with high z-index, no close mechanism
-- Children are never rendered if subscription is inactive
+  // 1. Check if session already exists (event fired before mount)
+  const checkExisting = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setIsValidToken(true);
+      setIsValidating(false);
+      return true;
+    }
+    return false;
+  };
 
-**`src/App.tsx`** -- Wrap all protected routes:
-- Add `<SubscriptionGate>` inside every `<ProtectedRoute>` for routes: `/documents`, `/old-documents`, `/documents/:id`, `/document-builder/:id`, `/templates/:id`, `/templates/:id/edit`, `/request-portal`, `/ai-assistant`, `/organization`, `/organization/*`, `/admin/*`, `/settings`, `/history`, `/temp-doc/bonafide`, `/bookmarks`
-- Leave `/checkout` and `/checkout/success` without `SubscriptionGate`
+  // 2. Listen for PASSWORD_RECOVERY or SIGNED_IN events from the SDK
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+        if (session) {
+          clearTimeout(timeoutId);
+          setIsValidToken(true);
+          setIsValidating(false);
+        }
+      }
+    }
+  );
 
-**`src/pages/Checkout.tsx`** -- Remove the "Back to login" button/link at the bottom of the page (lines ~280-288).
+  // 3. Check existing session first, then set a timeout fallback
+  checkExisting().then((found) => {
+    if (!found) {
+      timeoutId = setTimeout(() => {
+        // If no event fired within 5 seconds, token is invalid
+        setIsValidToken(false);
+        setIsValidating(false);
+        setErrorMessage(
+          'Invalid or missing reset token. Please request a new password reset link.'
+        );
+      }, 5000);
+    }
+  });
 
-### No Database Changes Required
-The subscription check already uses the existing `subscriptions` table and `useSubscription` hook which queries `active_plan` and `subscription_status`.
+  return () => {
+    clearTimeout(timeoutId);
+    subscription.unsubscribe();
+  };
+}, []);
+```
 
-### Security Notes
-- The paywall is client-side UI enforcement. Backend data is already protected by RLS policies on all tables.
-- The `SubscriptionGate` ensures no app content is ever rendered without a valid subscription, even on refresh or direct URL navigation.
-- `sessionStorage` bypass is fully eliminated.
+This eliminates all manual hash/query parsing, PKCE code exchange, and `verifyOtp` calls -- the SDK handles all of that automatically. The component just waits for the result.
+
+### File: `src/contexts/AuthContext.tsx` (minor adjustment)
+
+Ensure the `PASSWORD_RECOVERY` handler does NOT trigger `ensureUserHasOrganization` or any redirect. The current code already does this (line 134-137 returns early), so no change needed here.
+
+### No database or edge function changes required.
+
+## Summary
+
+| What | Detail |
+|------|--------|
+| Files modified | `src/pages/ResetPassword.tsx` |
+| Approach | Let Supabase SDK handle token exchange; component listens for auth events |
+| Risk | None -- password update logic (`updateUser`) remains unchanged |
+| Backward safe | Yes -- no DB, RLS, or API changes |
+
