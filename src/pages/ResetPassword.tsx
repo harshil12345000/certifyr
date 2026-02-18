@@ -48,134 +48,49 @@ export default function ResetPassword() {
   const isPasswordValid = passwordStrength.score >= 3;
 
   useEffect(() => {
-    const validateToken = async () => {
-      setIsValidating(true);
-      setErrorMessage(null);
-      
-      try {
-        console.log('[ResetPassword] Starting token validation');
-        console.log('[ResetPassword] Hash:', window.location.hash);
-        console.log('[ResetPassword] Search:', window.location.search);
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let resolved = false;
 
-        // Method 1: Check for existing valid session first (user might already be authenticated via recovery)
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
-        if (existingSession) {
-          console.log('[ResetPassword] Found existing session');
-          setIsValidToken(true);
-          setIsValidating(false);
-          return;
-        }
-
-        // Method 2: Handle hash fragment format (#access_token=...&type=recovery)
-        // This is Supabase's implicit flow format
-        const hash = window.location.hash;
-        if (hash && hash.includes('access_token')) {
-          console.log('[ResetPassword] Processing hash fragment');
-          const hashParams = new URLSearchParams(hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          const hashType = hashParams.get('type');
-          const errorParam = hashParams.get('error');
-          const errorDescription = hashParams.get('error_description');
-
-          if (errorParam) {
-            console.error('[ResetPassword] Hash contains error:', errorParam, errorDescription);
-            setErrorMessage(errorDescription || 'The reset link is invalid or has expired.');
-            setIsValidToken(false);
-            setIsValidating(false);
-            return;
-          }
-
-          if (accessToken && hashType === 'recovery') {
-            console.log('[ResetPassword] Setting session from hash tokens');
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken || ''
-            });
-
-            if (!sessionError) {
-              console.log('[ResetPassword] Session established from hash');
-              setIsValidToken(true);
-              setIsValidating(false);
-              // Clear the hash from URL for cleaner look
-              window.history.replaceState(null, '', window.location.pathname);
-              return;
-            } else {
-              console.error('[ResetPassword] Failed to set session:', sessionError);
-              setErrorMessage('The reset link has expired. Please request a new one.');
-            }
-          }
-        }
-
-        // Method 3: Handle query parameter format (?token_hash=...&type=recovery)
-        // This is Supabase's PKCE flow format
-        const queryParams = new URLSearchParams(window.location.search);
-        const tokenHash = queryParams.get('token_hash');
-        const queryType = queryParams.get('type');
-        const code = queryParams.get('code');
-        const errorParam = queryParams.get('error');
-        const errorDescription = queryParams.get('error_description');
-
-        if (errorParam) {
-          console.error('[ResetPassword] Query contains error:', errorParam, errorDescription);
-          setErrorMessage(errorDescription || 'The reset link is invalid or has expired.');
-          setIsValidToken(false);
-          setIsValidating(false);
-          return;
-        }
-
-        // Handle PKCE code exchange
-        if (code) {
-          console.log('[ResetPassword] Exchanging PKCE code');
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (!error && data.session) {
-            console.log('[ResetPassword] PKCE code exchanged successfully');
-            setIsValidToken(true);
-            setIsValidating(false);
-            window.history.replaceState(null, '', window.location.pathname);
-            return;
-          } else {
-            console.error('[ResetPassword] PKCE exchange failed:', error);
-            setErrorMessage('The reset link has expired. Please request a new one.');
-          }
-        }
-
-        // Handle token_hash verification
-        if (tokenHash && queryType === 'recovery') {
-          console.log('[ResetPassword] Verifying token_hash');
-          const { data, error: verifyError } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: 'recovery',
-          });
-
-          if (!verifyError && data.session) {
-            console.log('[ResetPassword] Token verified successfully');
-            setIsValidToken(true);
-            setIsValidating(false);
-            window.history.replaceState(null, '', window.location.pathname);
-            return;
-          } else {
-            console.error('[ResetPassword] Token verification failed:', verifyError);
-            setErrorMessage('The reset link has expired. Please request a new one.');
-          }
-        }
-
-        // No valid token found
-        console.log('[ResetPassword] No valid token found');
-        setIsValidToken(false);
-        if (!errorMessage) {
-          setErrorMessage('Invalid or missing reset token. Please request a new password reset link.');
-        }
-      } catch (error) {
-        console.error('[ResetPassword] Unexpected error:', error);
-        setErrorMessage('An unexpected error occurred. Please try again.');
-        setIsValidToken(false);
-      } finally {
-        setIsValidating(false);
-      }
+    const resolve = (valid: boolean, error?: string) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+      setIsValidToken(valid);
+      setIsValidating(false);
+      if (error) setErrorMessage(error);
     };
 
-    validateToken();
+    // Listen for PASSWORD_RECOVERY or SIGNED_IN events from the SDK
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('[ResetPassword] Auth event:', event);
+        if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
+          resolve(true);
+        }
+      }
+    );
+
+    // Check if session already exists (event fired before mount)
+    const checkExisting = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log('[ResetPassword] Found existing session');
+        resolve(true);
+        return;
+      }
+      // Fallback timeout – if no auth event fires within 5s, token is invalid
+      timeoutId = setTimeout(() => {
+        console.log('[ResetPassword] Timeout – no valid token detected');
+        resolve(false, 'Invalid or missing reset token. Please request a new password reset link.');
+      }, 5000);
+    };
+
+    checkExisting();
+
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
