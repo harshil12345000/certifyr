@@ -70,22 +70,62 @@ export default function ResetPassword() {
       }
     );
 
-    // Check if session already exists (event fired before mount)
-    const checkExisting = async () => {
+    const initialize = async () => {
+      // 1. Check for PKCE code in URL (Supabase redirects with ?code=...)
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      if (code) {
+        console.log('[ResetPassword] Found PKCE code, exchanging for session');
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          console.error('[ResetPassword] Code exchange failed:', exchangeError);
+          resolve(false, 'Invalid or expired reset link. Please request a new one.');
+          return;
+        }
+        if (data.session) {
+          console.log('[ResetPassword] Session established via PKCE');
+          resolve(true);
+          return;
+        }
+      }
+
+      // 2. Check for hash fragment tokens (implicit flow: #access_token=...&type=recovery)
+      if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        if (accessToken) {
+          console.log('[ResetPassword] Found hash tokens, setting session');
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+          if (sessionError) {
+            console.error('[ResetPassword] Failed to set session from hash:', sessionError);
+            resolve(false, 'Invalid or expired reset link. Please request a new one.');
+            return;
+          }
+          resolve(true);
+          return;
+        }
+      }
+
+      // 3. Check if session already exists (event fired before mount)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         console.log('[ResetPassword] Found existing session');
         resolve(true);
         return;
       }
-      // Fallback timeout – if no auth event fires within 5s, token is invalid
+
+      // 4. Fallback timeout – if no auth event fires within 5s, token is invalid
       timeoutId = setTimeout(() => {
         console.log('[ResetPassword] Timeout – no valid token detected');
         resolve(false, 'Invalid or missing reset token. Please request a new password reset link.');
       }, 5000);
     };
 
-    checkExisting();
+    initialize();
 
     return () => {
       clearTimeout(timeoutId);
