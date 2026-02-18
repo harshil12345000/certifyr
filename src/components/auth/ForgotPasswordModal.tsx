@@ -22,11 +22,12 @@ import {
 interface ForgotPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onResetFlowActive?: () => void;
 }
 
 type Step = "email" | "otp" | "new-password" | "success";
 
-export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
+export const ForgotPasswordModal = ({ isOpen, onClose, onResetFlowActive }: ForgotPasswordModalProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -138,7 +139,8 @@ export const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProp
         return;
       }
 
-      // OTP verified — session is now active, move to password step
+      // OTP verified — session is now active, notify parent to prevent redirect
+      onResetFlowActive?.();
       setStep("new-password");
       toast({ title: "Verified", description: "Enter your new password." });
     } catch {
