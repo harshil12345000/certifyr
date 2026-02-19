@@ -158,8 +158,9 @@ serve(async (req) => {
         const subscriptionId = data.subscription_id;
         const productName = data.product?.name || data.product_id || "";
         const metadataUserId = data.metadata?.user_id;
+        const status = data.status || "active";
 
-        console.log(`Subscription active for ${customerEmail}, product: ${productName}`);
+        console.log(`Subscription ${status} for ${customerEmail}, product: ${productName}`);
 
         // Resolve user ID from metadata or email lookup
         let userId = metadataUserId;
@@ -179,18 +180,23 @@ serve(async (req) => {
 
         const plan = resolvePlan(data);
 
+        // Mirror Dodo's status: could be 'trialing' or 'active'
+        const mappedStatus = status === "trialing" ? "trialing" : "active";
+
         const { error: upsertErr } = await supabase.rpc("update_subscription_from_webhook", {
           p_user_id: userId,
           p_active_plan: plan,
           p_polar_customer_id: customerId || "",
           p_polar_subscription_id: subscriptionId || "",
-          p_subscription_status: "active",
+          p_subscription_status: mappedStatus,
           p_current_period_start: data.current_period_start || new Date().toISOString(),
-          p_current_period_end: data.current_period_end || null,
+          p_current_period_end: data.current_period_end || data.trial_end || null,
+          p_trial_start: data.trial_start || (mappedStatus === "trialing" ? new Date().toISOString() : null),
+          p_trial_end: data.trial_end || data.current_period_end || null,
         });
 
         if (upsertErr) console.error("Error upserting subscription:", upsertErr);
-        else console.log(`Activated ${plan} for user ${userId}`);
+        else console.log(`${mappedStatus} ${plan} for user ${userId}`);
         break;
       }
 
@@ -227,7 +233,10 @@ serve(async (req) => {
         }
 
         const plan = resolvePlan(data);
-        const mappedStatus = status === "on_hold" ? "on_hold" : status === "active" ? "active" : status;
+        const mappedStatus = status === "on_hold" ? "on_hold" 
+          : status === "trialing" ? "trialing"
+          : status === "active" ? "active" 
+          : status;
 
         const { error } = await supabase.rpc("update_subscription_from_webhook", {
           p_user_id: userId,
@@ -237,6 +246,8 @@ serve(async (req) => {
           p_subscription_status: mappedStatus,
           p_current_period_start: data.current_period_start || new Date().toISOString(),
           p_current_period_end: data.current_period_end || null,
+          p_trial_start: data.trial_start || null,
+          p_trial_end: data.trial_end || null,
         });
 
         if (error) console.error("Error updating subscription:", error);
@@ -262,13 +273,30 @@ serve(async (req) => {
 
         const cancelStatus = eventType === "subscription.on_hold" ? "on_hold" : "canceled";
 
+        // If trialing with time remaining, keep active_plan so access continues until trial_end
+        const currentSub = await supabase
+          .from("subscriptions")
+          .select("subscription_status, current_period_end")
+          .eq("polar_subscription_id", subscriptionId)
+          .maybeSingle();
+
+        const stillInTrial = currentSub?.data?.subscription_status === "trialing" &&
+          currentSub?.data?.current_period_end &&
+          new Date(currentSub.data.current_period_end) > new Date();
+
+        const updateData: Record<string, unknown> = {
+          subscription_status: cancelStatus,
+          canceled_at: data.canceled_at || new Date().toISOString(),
+        };
+
+        // Only null out active_plan if not in an active trial
+        if (!stillInTrial) {
+          updateData.active_plan = null;
+        }
+
         const { error } = await supabase
           .from("subscriptions")
-          .update({
-            subscription_status: cancelStatus,
-            active_plan: null,
-            canceled_at: data.canceled_at || new Date().toISOString(),
-          })
+          .update(updateData)
           .eq("polar_subscription_id", subscriptionId);
 
         if (error) console.error("Error canceling subscription:", error);

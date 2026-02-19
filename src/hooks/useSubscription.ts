@@ -111,8 +111,19 @@ export function useSubscription() {
     return { error: null };
   };
 
-  const hasActiveSubscription = subscription?.active_plan != null && 
-    subscription?.subscription_status === 'active';
+  const isTrialing = subscription?.subscription_status === 'trialing' &&
+    !!subscription?.current_period_end &&
+    new Date(subscription.current_period_end) > new Date();
+
+  const hasActiveSubscription = subscription?.active_plan != null && (
+    subscription?.subscription_status === 'active' || isTrialing
+  );
+
+  const trialDaysRemaining = isTrialing && subscription?.current_period_end
+    ? Math.max(0, Math.ceil(
+        (new Date(subscription.current_period_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      ))
+    : 0;
 
   const activePlan = subscription?.active_plan ?? null;
   const selectedPlan = subscription?.selected_plan ?? null;
@@ -122,6 +133,8 @@ export function useSubscription() {
     loading,
     error,
     hasActiveSubscription,
+    isTrialing,
+    trialDaysRemaining,
     activePlan,
     selectedPlan,
     updateSelectedPlan,

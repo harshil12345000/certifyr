@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { TrialBanner } from "./TrialBanner";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -25,7 +26,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       <div className={cn(isCollapsed ? "md:pl-20" : "md:pl-64", "flex flex-col min-h-screen transition-[padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]")}>
         <Header />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <TrialBanner />
+          {children}
+        </main>
       </div>
     </div>
   );

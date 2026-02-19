@@ -225,7 +225,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
           Choose Your Plan to Continue
         </h2>
         <p className="text-gray-600">
-          Select the plan that best fits your organization's needs
+          Try Pro or Ultra free for 7 days. Cancel anytime.
         </p>
       </div>
 
@@ -286,7 +286,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
                   : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
               )}
             >
-              {data.selectedPlan === 'basic' ? "Selected" : "Select Basic"}
+              {data.selectedPlan === 'basic' ? "Selected" : "Select Basic — No Trial"}
             </Button>
             
             <ul className="space-y-3">
@@ -342,7 +342,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
                   : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
               )}
             >
-              {data.selectedPlan === 'pro' ? "Selected" : "Select Pro"}
+              {data.selectedPlan === 'pro' ? "Selected" : "Start 7-Day Free Trial"}
             </Button>
             
             <ul className="space-y-3">
@@ -397,7 +397,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
                   : "bg-white text-purple-600 border border-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600"
               )}
             >
-              {data.selectedPlan === 'ultra' ? "Selected" : "Select Ultra"}
+              {data.selectedPlan === 'ultra' ? "Selected" : "Start 7-Day Free Trial"}
             </Button>
             
             <ul className="space-y-3">
@@ -472,8 +472,10 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               Creating Account...
             </>
+          ) : data.selectedPlan === 'basic' ? (
+            `Get Basic – $${selectedPrice}${isYearly ? '/year' : '/month'}`
           ) : (
-            `Get ${data.selectedPlan === 'pro' ? 'Pro' : 'Basic'} – $${selectedPrice}${isYearly ? '/year' : '/month'}`
+            `Start 7-Day Free Trial – $${selectedPrice}${isYearly ? '/year' : '/month'} after`
           )}
         </Button>
       </div>

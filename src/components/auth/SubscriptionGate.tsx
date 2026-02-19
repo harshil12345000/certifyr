@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, Subscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ interface SubscriptionGateProps {
 export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { hasActiveSubscription, loading: subLoading } = useSubscription();
+  const { subscription, hasActiveSubscription, isTrialing, loading: subLoading } = useSubscription();
 
   const isLoading = authLoading || subLoading;
 
@@ -50,8 +50,9 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
             Subscription Required
           </h2>
           <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-            You need an active subscription to access Certifyr. 
-            Choose a plan to unlock all features and start creating documents.
+            {subscription?.subscription_status === 'trialing' || subscription?.subscription_status === 'canceled'
+              ? 'Your free trial has ended. Choose a plan to continue using Certifyr.'
+              : 'You need an active subscription to access Certifyr. Choose a plan to unlock all features and start creating documents.'}
           </p>
           <Button
             onClick={() => navigate('/checkout', { replace: true })}
