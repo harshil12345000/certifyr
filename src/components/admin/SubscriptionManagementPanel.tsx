@@ -282,11 +282,16 @@ export const SubscriptionManagementPanel: React.FC<
           <CardDescription>
             Manage your subscription and billing preferences.
           </CardDescription>
-          {status === 'trialing' && periodEnd && planConfig && (
-            <p className="text-sm text-primary mt-2">
-              You're on the {planConfig.label} 7-day free trial. Automatic billing of ${isYearly ? planConfig.yearly : planConfig.monthly}/{isYearly ? 'year' : 'month'} starts on {format(periodEnd, 'MMMM d, yyyy')}.
-            </p>
-          )}
+          {(() => {
+            if (!planConfig || !periodStart || activePlan === 'basic') return null;
+            const trialEndDate = new Date(periodStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+            if (new Date() >= trialEndDate) return null;
+            return (
+              <p className="text-sm text-primary mt-2">
+                You're on the {planConfig.label} 7-day free trial. Automatic billing of ${isYearly ? planConfig.yearly : planConfig.monthly}/{isYearly ? 'year' : 'month'} starts on {format(trialEndDate, 'MMMM d, yyyy')}.
+              </p>
+            );
+          })()}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
