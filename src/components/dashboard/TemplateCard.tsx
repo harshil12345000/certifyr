@@ -33,7 +33,7 @@ export function TemplateCard({
   const bookmarked = forceBookmarked || isBookmarked(id);
   const href = linkPath || `/templates/${id}`;
   return (
-    <div className={cn("glass-card p-5 flex flex-col", className)}>
+    <div className={cn("glass-card p-5 flex flex-col h-full", className)}>
       <div className="mb-4 flex items-start justify-between">
         <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500">
           <FileText className="h-5 w-5" />

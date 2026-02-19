@@ -144,8 +144,10 @@ export function BookmarksPage() {
     const existing = uniqueDocuments.find(t => t.id === id);
     if (existing) return existing;
     const config = getDocumentConfig(id);
-    if (config) return { id, title: config.name, description: config.description || config.name, category: config.category };
-    return null;
+    if (config) {
+      const cat = config.category.charAt(0).toUpperCase() + config.category.slice(1);
+      return { id, title: config.name, description: config.description || config.name, category: cat };
+    }
   }).filter((t): t is { id: string; title: string; description: string; category: string } => t !== null);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<{
