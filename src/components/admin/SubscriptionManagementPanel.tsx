@@ -53,6 +53,7 @@ const PLAN_PRICING: Record<
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  trialing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   canceled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   on_hold: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   pending: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
@@ -267,18 +268,25 @@ export const SubscriptionManagementPanel: React.FC<
               className={STATUS_COLORS[status] || STATUS_COLORS.pending}
               variant="secondary"
             >
-              {isCanceled
+             {isCanceled
                 ? "Cancels at period end"
                 : status === "active"
                   ? "Active"
-                  : status === "on_hold"
-                    ? "On Hold"
-                    : status}
+                  : status === "trialing"
+                    ? "Trial"
+                    : status === "on_hold"
+                      ? "On Hold"
+                      : status}
             </Badge>
           </div>
           <CardDescription>
             Manage your subscription and billing preferences.
           </CardDescription>
+          {status === 'trialing' && periodEnd && planConfig && (
+            <p className="text-sm text-primary mt-2">
+              You're on the {planConfig.label} 7-day free trial. Automatic billing of ${isYearly ? planConfig.yearly : planConfig.monthly}/{isYearly ? 'year' : 'month'} starts on {format(periodEnd, 'MMMM d, yyyy')}.
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -348,7 +356,7 @@ export const SubscriptionManagementPanel: React.FC<
       </Card>
 
       {/* Change Plan Section */}
-      {availablePlans.length > 0 && status === "active" && !isCanceled && (
+      {availablePlans.length > 0 && (status === "active" || status === "trialing") && !isCanceled && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -420,7 +428,7 @@ export const SubscriptionManagementPanel: React.FC<
       )}
 
       {/* Cancel Section */}
-      {status === "active" && !isCanceled && (
+      {(status === "active" || status === "trialing") && !isCanceled && (
         <Card className="border-destructive/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
