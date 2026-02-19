@@ -56,7 +56,7 @@ const ultraFeatures = [
 export default function Checkout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { subscription, loading: subLoading, hasActiveSubscription } = useSubscription();
+  const { subscription, loading: subLoading, hasActiveSubscription, isTrialing } = useSubscription();
   const { toast } = useToast();
 
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra'>('pro');
@@ -64,10 +64,11 @@ export default function Checkout() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!subLoading && hasActiveSubscription) {
+    // Allow trialing users to visit checkout to upgrade
+    if (!subLoading && hasActiveSubscription && !isTrialing) {
       navigate('/dashboard', { replace: true });
     }
-  }, [subLoading, hasActiveSubscription, navigate]);
+  }, [subLoading, hasActiveSubscription, isTrialing, navigate]);
 
   useEffect(() => {
     // Check sessionStorage for plan intent
@@ -145,7 +146,7 @@ export default function Checkout() {
         <div className="text-center mb-8">
           <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Logo" className="mx-auto h-16 mb-4" />
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Plan to Continue</h1>
-          <p className="text-gray-600">Select the plan that best fits your organization's needs</p>
+          <p className="text-gray-600">Try Pro or Ultra free for 7 days. Cancel anytime.</p>
         </div>
 
         {/* Billing Toggle — matches onboarding PricingStage */}
@@ -324,10 +325,15 @@ export default function Checkout() {
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Redirecting to payment...
               </>
+            ) : selectedPlan === 'basic' ? (
+              <>
+                <CreditCard className="w-5 h-5 mr-2" />
+                Proceed to Payment — ${pricing.basic[billingPeriod]}/{isYearly ? 'year' : 'month'}
+              </>
             ) : (
               <>
                 <CreditCard className="w-5 h-5 mr-2" />
-                Proceed to Payment — ${pricing[selectedPlan][billingPeriod]}/{isYearly ? 'year' : 'month'}
+                Start 7-Day Free Trial — ${pricing[selectedPlan][billingPeriod]}/{isYearly ? 'year' : 'month'} after
               </>
             )}
           </Button>

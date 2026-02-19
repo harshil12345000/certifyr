@@ -641,6 +641,8 @@ export type Database = {
           polar_subscription_id: string | null
           selected_plan: string | null
           subscription_status: string | null
+          trial_end: string | null
+          trial_start: string | null
           updated_at: string
           user_id: string
         }
@@ -656,6 +658,8 @@ export type Database = {
           polar_subscription_id?: string | null
           selected_plan?: string | null
           subscription_status?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
           updated_at?: string
           user_id: string
         }
@@ -671,6 +675,8 @@ export type Database = {
           polar_subscription_id?: string | null
           selected_plan?: string | null
           subscription_status?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -994,18 +1000,33 @@ export type Database = {
         Args: { org_id: string; user_id: string }
         Returns: boolean
       }
-      update_subscription_from_webhook: {
-        Args: {
-          p_active_plan: string
-          p_current_period_end: string
-          p_current_period_start: string
-          p_polar_customer_id: string
-          p_polar_subscription_id: string
-          p_subscription_status: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      update_subscription_from_webhook:
+        | {
+            Args: {
+              p_active_plan: string
+              p_current_period_end: string
+              p_current_period_start: string
+              p_polar_customer_id: string
+              p_polar_subscription_id: string
+              p_subscription_status: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_active_plan: string
+              p_current_period_end: string
+              p_current_period_start: string
+              p_polar_customer_id: string
+              p_polar_subscription_id: string
+              p_subscription_status: string
+              p_trial_end?: string
+              p_trial_start?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       user_belongs_to_organization: {
         Args: { org_uuid: string; user_uuid: string }
         Returns: boolean
