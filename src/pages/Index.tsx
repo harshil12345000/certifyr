@@ -13,6 +13,7 @@ import { useUserActivity } from "@/hooks/useUserActivity";
 import { useUserDocuments } from "@/hooks/useUserDocuments";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { uniqueDocuments, uniqueTemplates } from "./Documents";
+import { getDocumentConfig } from "@/config/documentConfigs";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { BookmarkCheck } from "lucide-react";
@@ -138,7 +139,14 @@ export function BookmarksPage() {
     bookmarks,
     removeBookmark
   } = useBookmarks();
-  const bookmarkedDocuments = uniqueDocuments.filter(t => bookmarks.includes(t.id));
+  // Build lookup: first from uniqueDocuments, then fill gaps via documentConfigs
+  const bookmarkedDocuments = bookmarks.map(id => {
+    const existing = uniqueDocuments.find(t => t.id === id);
+    if (existing) return existing;
+    const config = getDocumentConfig(id);
+    if (config) return { id, title: config.name, description: config.description || config.name, category: config.category };
+    return null;
+  }).filter((t): t is { id: string; title: string; description: string; category: string } => t !== null);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<{
     id: string;
