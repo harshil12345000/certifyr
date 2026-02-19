@@ -6,6 +6,7 @@ import React, {
   ChangeEvent,
   FormEvent,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -239,9 +240,16 @@ const FileDropzone = ({
   );
 };
 
+const VALID_TABS = ["organization", "branding", "admin", "announcements", "subscription"];
+
 const AdminPage = () => {
   const { user } = useAuth();
   const { refreshBranding } = useBranding();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = VALID_TABS.includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "organization";
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [hasOrganization, setHasOrganization] = useState<boolean>(true);
   const [formState, setFormState] = useState<UserProfileFormState>({
@@ -686,7 +694,7 @@ const AdminPage = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <Tabs defaultValue="organization" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="organization">Overview</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
