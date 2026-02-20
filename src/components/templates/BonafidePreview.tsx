@@ -33,7 +33,7 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -43,6 +43,12 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
   useEffect(() => {
     // Don't generate QR for unapproved employee previews
     if (shouldHideVerification) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
+    // Skip QR generation if disabled
+    if (enableQr === false) {
       setQrCodeUrl(null);
       return;
     }
@@ -67,6 +73,7 @@ export const BonafidePreview: React.FC<ExtendedBonafidePreviewProps> = ({
     type,
     institutionName,
     shouldHideVerification,
+    enableQr,
   ]);
 
   const handleImageError = (

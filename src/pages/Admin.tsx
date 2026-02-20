@@ -11,6 +11,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
   ImagePlus,
   Cloud,
@@ -244,7 +246,8 @@ const VALID_TABS = ["organization", "branding", "admin", "announcements", "subsc
 
 const AdminPage = () => {
   const { user } = useAuth();
-  const { refreshBranding } = useBranding();
+  const { refreshBranding, enableQr: brandingEnableQr } = useBranding();
+  const { hasFeature } = usePlanFeatures();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = VALID_TABS.includes(searchParams.get("tab") || "") ? searchParams.get("tab")! : "organization";
   const handleTabChange = (value: string) => {
@@ -277,6 +280,7 @@ const AdminPage = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [enableQr, setEnableQr] = useState<boolean>(true);
   const [selectedFiles, setSelectedFiles] = useState<{
     [key in keyof BrandingFileState]: File | null;
   }>({
@@ -322,10 +326,13 @@ const AdminPage = () => {
         if (orgId) {
           const { data: orgDetails } = await supabase
             .from("organizations")
-            .select("name, address, phone, email")
+            .select("name, address, phone, email, enable_qr")
             .eq("id", orgId)
             .maybeSingle();
           orgData = orgDetails;
+          if (orgDetails?.enable_qr !== null && orgDetails?.enable_qr !== undefined) {
+            setEnableQr(orgDetails.enable_qr);
+          }
         }
 
         // Use profileData as primary source, fall back to orgData
@@ -482,6 +489,7 @@ const AdminPage = () => {
               address: fullAddress,
               phone: formState.phoneNumber,
               email: formState.email,
+              enable_qr: enableQr,
             })
             .eq("id", currentOrgId);
 
@@ -867,6 +875,22 @@ const AdminPage = () => {
                       placeholder="https://example.com"
                     />
                   </div>
+
+                  {hasFeature('qrVerification') && (
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="enableQr">Enable QR</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Show verification QR code on generated documents.
+                        </p>
+                      </div>
+                      <Switch
+                        id="enableQr"
+                        checked={enableQr}
+                        onCheckedChange={setEnableQr}
+                      />
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" disabled={isSaving}>

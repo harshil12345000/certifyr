@@ -38,7 +38,7 @@ export const BankVerificationPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { logoUrl, signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { logoUrl, signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -46,6 +46,12 @@ export const BankVerificationPreview: React.FC<
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
 
   useEffect(() => {
+    // Skip QR generation if disabled
+    if (enableQr === false) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     const generateQR = async () => {
       if (fullName && bankName && accountNumber) {
         const url = await generateDocumentQRCode(
@@ -68,6 +74,7 @@ export const BankVerificationPreview: React.FC<
     organizationId,
     user?.id,
     fullName,
+    enableQr,
     bankName,
     accountNumber,
   ]);

@@ -36,13 +36,19 @@ export const NDAPreview: React.FC<ExtendedNDAPreviewProps> = ({
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
 
   useEffect(() => {
+    // Skip QR generation if disabled
+    if (enableQr === false) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     const generateQR = async () => {
       if (disclosingParty && receivingParty && purposeOfDisclosure) {
         const url = await generateDocumentQRCode(
@@ -65,6 +71,7 @@ export const NDAPreview: React.FC<ExtendedNDAPreviewProps> = ({
     disclosingParty,
     receivingParty,
     purposeOfDisclosure,
+    enableQr,
   ]);
 
   const handleImageError = (

@@ -13,6 +13,7 @@ interface OrganizationDetails {
   address: string | null;
   phone: string | null;
   email: string | null;
+  enableQr: boolean | null;
 }
 
 interface UserProfileData {
@@ -29,6 +30,7 @@ interface BrandingContextType {
   organizationDetails: OrganizationDetails | null;
   userProfile: UserProfileData | null;
   organizationId: string | null;
+  enableQr: boolean | null;
   isLoading: boolean;
   refreshBranding: () => Promise<void>;
 }
@@ -39,6 +41,7 @@ const BrandingContext = createContext<BrandingContextType>({
   organizationDetails: null,
   userProfile: null,
   organizationId: null,
+  enableQr: null,
   isLoading: false,
   refreshBranding: async () => {},
 });
@@ -50,6 +53,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
     useState<OrganizationDetails | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
+  const [enableQr, setEnableQr] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
@@ -89,7 +93,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
       // Fetch organization details
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
-        .select("name, address, phone, email")
+        .select("name, address, phone, email, enable_qr")
         .eq("id", orgIdToUse)
         .maybeSingle();
 
@@ -103,12 +107,15 @@ export function BrandingProvider({ children, organizationId }: { children: React
           address: orgData.address ? orgData.address.replace(/\|\|/g, ", ") : null,
           phone: orgData.phone,
           email: orgData.email,
+          enableQr: orgData.enable_qr ?? true,
         };
         console.log("Loaded organization details:", orgDetails);
         setOrganizationDetails(orgDetails);
+        setEnableQr(orgData.enable_qr ?? true);
       } else {
         console.log("No organization details found");
         setOrganizationDetails(null);
+        setEnableQr(true);
       }
 
       // Fetch branding files
@@ -198,6 +205,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
         organizationDetails,
         userProfile,
         organizationId: currentOrgId,
+        enableQr,
         isLoading,
         refreshBranding,
       }}

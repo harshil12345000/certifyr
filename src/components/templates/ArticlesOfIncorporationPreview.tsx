@@ -30,13 +30,19 @@ export const ArticlesOfIncorporationPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   const shouldBlur = isEmployeePreview && requestStatus !== "approved";
 
   useEffect(() => {
+    // Skip QR generation if disabled
+    if (enableQr === false) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     const generateQR = async () => {
       if (companyName && stateOfIncorporation && registeredAgent) {
         const url = await generateDocumentQRCode(
@@ -61,6 +67,7 @@ export const ArticlesOfIncorporationPreview: React.FC<
     companyName,
     stateOfIncorporation,
     registeredAgent,
+    enableQr,
   ]);
 
   const handleImageError = (

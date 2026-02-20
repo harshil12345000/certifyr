@@ -35,11 +35,15 @@ export const IncomeCertificatePreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (enableQr === false) {
+      setQrCodeUrl(null);
+      return;
+    }
     if (fullName && designation && totalIncome) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
@@ -58,6 +62,7 @@ export const IncomeCertificatePreview: React.FC<
     user?.id,
     fullName,
     designation,
+    enableQr,
     totalIncome,
   ]);
 

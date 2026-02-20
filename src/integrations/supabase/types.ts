@@ -403,6 +403,7 @@ export type Database = {
           ai_context_country: string | null
           created_at: string | null
           email: string | null
+          enable_qr: boolean | null
           id: string
           name: string
           phone: string | null
@@ -413,6 +414,7 @@ export type Database = {
           ai_context_country?: string | null
           created_at?: string | null
           email?: string | null
+          enable_qr?: boolean | null
           id?: string
           name: string
           phone?: string | null
@@ -423,6 +425,7 @@ export type Database = {
           ai_context_country?: string | null
           created_at?: string | null
           email?: string | null
+          enable_qr?: boolean | null
           id?: string
           name?: string
           phone?: string | null

@@ -33,7 +33,7 @@ export const StockPurchaseAgreementPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -42,6 +42,12 @@ export const StockPurchaseAgreementPreview: React.FC<
   useEffect(() => {
     // Don't generate QR for unapproved employee previews
     if (shouldHideVerification) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
+    // Skip QR generation if disabled
+    if (enableQr === false) {
       setQrCodeUrl(null);
       return;
     }
@@ -58,7 +64,7 @@ export const StockPurchaseAgreementPreview: React.FC<
       }
     };
     generateQR();
-  }, [data, organizationId, user?.id, companyName, seller, buyer, shouldHideVerification]);
+  }, [data, organizationId, user?.id, companyName, seller, buyer, shouldHideVerification, enableQr]);
 
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement>,

@@ -31,13 +31,19 @@ export const CharacterPreview: React.FC<ExtendedCharacterPreviewProps> = ({
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Only generate QR for approved documents (not pending/rejected employee previews)
     if (isEmployeePreview && requestStatus !== "approved") {
+      setQrCodeUrl(null);
+      return;
+    }
+    
+    // Skip QR generation if disabled
+    if (enableQr === false) {
       setQrCodeUrl(null);
       return;
     }

@@ -28,11 +28,17 @@ export const AddressProofPreview: React.FC<
     includeDigitalSignature,
   } = data;
 
-  const { signatureUrl, organizationDetails, organizationId } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    // Skip QR generation if disabled
+    if (enableQr === false) {
+      setQrCodeUrl(null);
+      return;
+    }
+    
     if (fullName && currentAddress && purpose) {
       const generateQR = async () => {
         const url = await generateDocumentQRCode(
@@ -57,6 +63,7 @@ export const AddressProofPreview: React.FC<
     fullName,
     currentAddress,
     purpose,
+    enableQr,
   ]);
 
   const handleImageError = (

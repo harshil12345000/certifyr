@@ -19,7 +19,7 @@ export const TranscriptLayout: React.FC<TranscriptLayoutProps> = ({
   isEmployeePreview = false,
   requestStatus = "pending",
 }) => {
-  const { signatureUrl, organizationDetails, organizationId, userProfile } = useBranding();
+  const { signatureUrl, organizationDetails, organizationId, userProfile, enableQr } = useBranding();
   const { user } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
@@ -28,6 +28,12 @@ export const TranscriptLayout: React.FC<TranscriptLayoutProps> = ({
   useEffect(() => {
     // Only generate QR for approved documents (not pending/rejected employee previews)
     if (isEmployeePreview && requestStatus !== "approved") {
+      setQrCodeUrl(null);
+      return;
+    }
+    
+    // Skip QR generation if disabled
+    if (enableQr === false) {
       setQrCodeUrl(null);
       return;
     }
@@ -44,7 +50,7 @@ export const TranscriptLayout: React.FC<TranscriptLayoutProps> = ({
     if (data.studentName) {
       generateQR();
     }
-  }, [data, organizationId, user?.id, config.id, isEmployeePreview, requestStatus]);
+  }, [data, organizationId, user?.id, config.id, isEmployeePreview, requestStatus, enableQr]);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "[Date]";
