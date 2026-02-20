@@ -1,19 +1,8 @@
 import React, { useCallback } from "react";
 import { Bold, Italic, Underline, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DocumentEditToolbarProps {
   onSaveEdits: () => void;
@@ -26,9 +15,7 @@ const FONTS = [
   { value: "Georgia, serif", label: "Georgia" },
 ];
 
-const SIZES = [
-  "8", "10", "12", "14", "16", "18", "20", "24", "30", "36",
-];
+const SIZES = ["8", "10", "12", "14", "16", "18", "20", "24", "30", "36"];
 
 const COLORS = [
   { value: "#000000", label: "Black" },
@@ -47,9 +34,7 @@ const execFormat = (command: string, value?: string) => {
   document.execCommand(command, false, value);
 };
 
-export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
-  onSaveEdits,
-}) => {
+export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSaveEdits }) => {
   const handleBold = useCallback(() => execFormat("bold"), []);
   const handleItalic = useCallback(() => execFormat("italic"), []);
   const handleUnderline = useCallback(() => execFormat("underline"), []);
@@ -75,7 +60,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
   }, []);
 
   return (
-    <div className="flex items-center gap-2 flex-wrap p-2 bg-muted/80 backdrop-blur-sm border rounded-lg mb-3 sticky top-0 z-50">
+    <div className="flex items-center gap-2 flex-wrap p-2 bg-muted/80 backdrop-blur-sm border rounded-lg mb-3 sticky top-20 z-50">
       {/* Save Edits */}
       <Button size="sm" variant="default" onClick={onSaveEdits}>
         <Save className="mr-1.5 h-3.5 w-3.5" />
@@ -92,7 +77,10 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
               size="icon"
               variant="ghost"
               className="h-8 w-8"
-              onMouseDown={(e) => { e.preventDefault(); handleBold(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleBold();
+              }}
             >
               <Bold className="h-4 w-4" />
             </Button>
@@ -106,7 +94,10 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
               size="icon"
               variant="ghost"
               className="h-8 w-8"
-              onMouseDown={(e) => { e.preventDefault(); handleItalic(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleItalic();
+              }}
             >
               <Italic className="h-4 w-4" />
             </Button>
@@ -120,7 +111,10 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
               size="icon"
               variant="ghost"
               className="h-8 w-8"
-              onMouseDown={(e) => { e.preventDefault(); handleUnderline(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleUnderline();
+              }}
             >
               <Underline className="h-4 w-4" />
             </Button>
