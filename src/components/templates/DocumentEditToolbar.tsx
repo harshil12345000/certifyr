@@ -19,15 +19,15 @@ const SIZES = ["8", "10", "12", "14", "16", "18", "20", "24", "30", "36"];
 
 const COLORS = [
   { value: "#000000", label: "Black" },
-  { value: "#4B5563", label: "Dark Gray" },
+  { value: "#555555", label: "Dark Grey" },
+  { value: "#999999", label: "Medium Grey" },
+  { value: "#CCCCCC", label: "Light Grey" },
   { value: "#DC2626", label: "Red" },
   { value: "#2563EB", label: "Blue" },
+  { value: "#60A5FA", label: "Light Blue" },
   { value: "#16A34A", label: "Green" },
   { value: "#EA580C", label: "Orange" },
   { value: "#9333EA", label: "Purple" },
-  { value: "#92400E", label: "Brown" },
-  { value: "#EC4899", label: "Pink" },
-  { value: "#1E3A5F", label: "Navy" },
 ];
 
 const execFormat = (command: string, value?: string) => {
