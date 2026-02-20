@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, Printer, Save } from 'lucide-react';
+import { ArrowLeft, Download, Printer, Save, PencilLine } from 'lucide-react';
 import { DynamicForm } from '@/components/templates/DynamicForm';
 import { DynamicPreview } from '@/components/templates/DynamicPreview';
 import { getDocumentConfig } from '@/config/documentConfigs';
@@ -17,6 +17,7 @@ import { useBranding } from '@/contexts/BrandingContext';
 import { useDocumentHistory } from '@/hooks/useDocumentHistory';
 import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
 import { usePreviewTracking } from '@/hooks/usePreviewTracking';
+import { DocumentEditToolbar } from '@/components/templates/DocumentEditToolbar';
 
 // Helper function to parse organization location to show only country
 const parseLocation = (location: string | null | undefined): string => {
@@ -54,6 +55,7 @@ export default function DocumentDetail() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('form');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Auto-populate form data with organization and user profile information
   // Only run if we don't have history data (which already has all the values)
@@ -186,6 +188,29 @@ export default function DocumentDetail() {
     }
   };
 
+  const handleEnterEditMode = () => {
+    setIsEditing(true);
+    // Make the preview container editable after render
+    setTimeout(() => {
+      const container = previewRef.current;
+      if (container) {
+        container.setAttribute('contenteditable', 'true');
+        container.focus();
+      }
+    }, 50);
+  };
+
+  const handleSaveEdits = () => {
+    const container = previewRef.current;
+    if (container) {
+      container.removeAttribute('contenteditable');
+      const editedHtml = container.innerHTML;
+      setFormData((prev: any) => ({ ...prev, customContent: editedHtml }));
+      toast.success('Edits saved to preview');
+    }
+    setIsEditing(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto py-6 px-4">
@@ -216,9 +241,9 @@ export default function DocumentDetail() {
                   initialData={formData}
                   organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
-                    setFormData(data);
+                    // Clear custom content when form is re-submitted so preview regenerates from template
+                    setFormData({ ...data, customContent: undefined });
                     setActiveTab('preview');
-                    // Track preview generation when Update Preview is clicked
                     await trackPreviewGeneration(documentConfig?.id || id || '', 'update');
                   }}
                 />
@@ -230,38 +255,54 @@ export default function DocumentDetail() {
             <Card>
               <CardContent className="pt-6">
                 {/* Action Buttons */}
-                <div className="flex gap-2 mb-6 pb-4 border-b">
-                  <Button 
-                    onClick={handleDownloadPDF} 
-                    onMouseDown={(e) => e.preventDefault()}
-                    disabled={isProcessing}
-                    variant="default"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </Button>
-                  <Button 
-                    onClick={handlePrint}
-                    onMouseDown={(e) => e.preventDefault()}
-                    variant="outline"
-                  >
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print
-                  </Button>
-                  <Button 
-                    onClick={handleSaveDocument} 
-                    onMouseDown={(e) => e.preventDefault()}
-                    disabled={isProcessing}
-                    variant="outline"
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Document
-                  </Button>
-                </div>
+                {!isEditing ? (
+                  <div className="flex gap-2 mb-6 pb-4 border-b">
+                    <Button 
+                      onClick={handleDownloadPDF} 
+                      onMouseDown={(e) => e.preventDefault()}
+                      disabled={isProcessing}
+                      variant="default"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </Button>
+                    <Button 
+                      onClick={handlePrint}
+                      onMouseDown={(e) => e.preventDefault()}
+                      variant="outline"
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print
+                    </Button>
+                    <Button 
+                      onClick={handleSaveDocument} 
+                      onMouseDown={(e) => e.preventDefault()}
+                      disabled={isProcessing}
+                      variant="outline"
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Document
+                    </Button>
+                    <Button
+                      onClick={handleEnterEditMode}
+                      variant="outline"
+                    >
+                      <PencilLine className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </div>
+                ) : (
+                  <DocumentEditToolbar onSaveEdits={handleSaveEdits} />
+                )}
 
                 {/* Preview Content */}
                 <div ref={previewRef} className="w-full">
-                  <DynamicPreview config={documentConfig} data={formData} />
+                  <DynamicPreview
+                    config={documentConfig}
+                    data={formData}
+                    customContent={formData.customContent}
+                    isEditing={isEditing}
+                  />
                 </div>
               </CardContent>
             </Card>
