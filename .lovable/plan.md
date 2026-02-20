@@ -1,197 +1,143 @@
-# 7-Day Free Trial (Model 1 -- Card Required, Auto-Converting)
+# Inline Document Editor -- Custom Text and Styling for All Documents
 
 ## Overview
 
-Dodo manages the entire trial lifecycle. Your app mirrors Dodo's state via webhooks. No manual trial logic in the database. Pro and Ultra get a 7-day trial; Basic has no trial (direct payment).
+Add a lightweight "edit mode" to the document preview that lets organizations add custom text, rephrase existing content, and apply basic styling -- all without touching the underlying template code or layout structure. Think of it like a simple annotation layer on top of the rendered document.
 
-## Prerequisites (Dodo Dashboard -- Manual)
+## How It Works
 
-Before any code deploys, configure trial periods on your Dodo products:
+When viewing a document preview, users see a **Pencil icon** button. Clicking it activates edit mode, which:
 
-- **Pro Monthly** (`pdt_0NYXEA30vMCJgSxp0pcRw`): Set `trial_period_days = 7`
-- **Pro Yearly** (`pdt_0NYXIQ6Nqc7tDx0YXn8OY`): Set `trial_period_days = 7`
-- **Ultra Monthly** (`pdt_0NYXI4SnmvbXxxUZAkDH0`): Set `trial_period_days = 7`
-- **Ultra Yearly** (`pdt_0NYXIWHTsKjeI7gEcRLdR`): Set `trial_period_days = 7`
-- **Basic products**: No trial
+1. Makes the document body `contentEditable`
+2. Shows a compact floating toolbar (pinned above the document) with minimal formatting options
+3. Any changes are saved as a `customContent` field inside the existing `form_data` JSONB -- no database schema changes needed
 
-## Flow
+When edit mode is off, the custom HTML is rendered on top of / merged with the base template output. The base layout components remain completely untouched.
+
+## User Experience
 
 ```text
-Signup (Personal + Org info)
-       |
-  PricingStage: Select Pro/Ultra (with "7-day free trial" CTA)
-       |
-  Redirect to Dodo Checkout (card required)
-       |
-  Dodo creates subscription with status=trialing, 7-day period
-       |
-  Webhook fires --> DB mirrors: active_plan=pro, status=trialing, current_period_end=trial_end
-       |
-  Dashboard (full Pro/Ultra features + trial banner)
-       |
-  Day 7: Dodo auto-charges --> webhook fires subscription.active --> status=active
-       |
-  OR: User cancels --> webhook fires subscription.cancelled
-       --> Access continues until trial_end
-       --> After trial_end: downgrade to Basic (free), lock Pro/Ultra features, show upgrade banner
+Preview Tab (normal)
+ [Download PDF]  [Print]  [Save History] [Pencil icon]
+  +--------------------------------------------+
+  |  Rendered document (read-only view)        |
+  +--------------------------------------------+
+
+Preview Tab (edit mode active)
+  [Save Edits]  B  I  U  |  Font  |  Size  |  Color (10 swatches)
+  +--------------------------------------------+
+  |  Document content is now editable          |
+  |  User can click anywhere to type,          |
+  |  select text and apply formatting,         |
+  |  add new paragraphs at the end, etc.       |
+  +--------------------------------------------+
 ```
 
-## Technical Changes
+### Toolbar Options (Minimal)
 
-### 1. Database Migration
+- **Bold** / **Italic** / **Underline** -- toggle buttons
+- **Font family** -- dropdown with 5 options: Default, Arial, Times New Roman, Georgia
+- **Font size** -- dropdown: 8px, 10px, 12px, 14px, 16px, 18px, 20px, 24px, 30px, 36px
+- **Text color** -- 10 preset color swatches (black, dark gray, red, blue, green, orange, purple, brown, pink, navy)
 
-Update `has_active_subscription` and `get_active_plan` to recognize `trialing` as a valid status (only when `current_period_end > now()`):
+For pencil icon use "pencil_line" lucide icon.
 
-```sql
-CREATE OR REPLACE FUNCTION public.has_active_subscription(check_user_id uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM subscriptions
-    WHERE user_id = check_user_id
-    AND active_plan IS NOT NULL
-    AND (
-      subscription_status = 'active'
-      OR (subscription_status = 'trialing' AND current_period_end > now())
-    )
-  );
-$$;
+### Key Behaviors
 
-CREATE OR REPLACE FUNCTION public.get_active_plan(check_user_id uuid)
- RETURNS text
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $$
-  SELECT active_plan FROM subscriptions
-  WHERE user_id = check_user_id
-  AND active_plan IS NOT NULL
-  AND (
-    subscription_status = 'active'
-    OR (subscription_status = 'trialing' AND current_period_end > now())
-  )
-  LIMIT 1;
-$$;
-```
+- Clicking the Pencil icon toggles edit mode on
+- Clicking "Save Edits" or clicking outside, saves and exits edit mode
+- Formatting only applies to selected text (does not affect other content)
+- Users can type new text inline, add paragraphs, delete text
+- All changes persist via the existing Save Document button into `form_data.customContent`
+- When loading from history, `customContent` is restored
+- PDF/Print export captures the edited content since it uses the rendered DOM
 
-Add `trial_start` and `trial_end` columns for explicit tracking:
+## Technical Details
 
-```sql
-ALTER TABLE subscriptions
-  ADD COLUMN IF NOT EXISTS trial_start timestamptz,
-  ADD COLUMN IF NOT EXISTS trial_end timestamptz;
-```
+### No Database Changes
 
-### 2. `src/hooks/useSubscription.ts`
+The `form_data` JSONB column already stores arbitrary data. We add a `customContent` key:
 
-Update `hasActiveSubscription` to include trialing:
-
-```typescript
-const isTrialing = subscription?.subscription_status === 'trialing' &&
-  !!subscription?.current_period_end &&
-  new Date(subscription.current_period_end) > new Date();
-
-const hasActiveSubscription = subscription?.active_plan != null && (
-  subscription?.subscription_status === 'active' || isTrialing
-);
-
-const trialDaysRemaining = isTrialing && subscription?.current_period_end
-  ? Math.max(0, Math.ceil(
-      (new Date(subscription.current_period_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    ))
-  : 0;
-```
-
-Expose `isTrialing`, `trialDaysRemaining` from the hook.
-
-### 3. `supabase/functions/dodo-webhook/index.ts`
-
-Handle `trialing` status in both `subscription.active` and `subscription.updated` cases. When Dodo sends `status: 'trialing'`, mirror it to the DB instead of hardcoding `'active'`. Also store `trial_start` and `trial_end` if provided by Dodo.
-
-For `subscription.cancelled`:
-
-- If currently trialing, keep `active_plan` intact until `current_period_end` (access continues through trial end)
-- Set `subscription_status = 'canceled'` and `canceled_at`
-- After `current_period_end` passes, the client-side check (`current_period_end > now()`) auto-expires access
-
-### 4. `src/components/onboarding/PricingStage.tsx`
-
-Update CTA copy for Pro/Ultra cards:
-
-- Button text: "Start 7-Day Free Trial" (instead of "Select Pro")
-- After plan selection, the existing Dodo checkout redirect remains the same
-- For Basic: keep "Select Basic" with no trial mention
-- Header subtitle: "Try Pro or Ultra free for 7 days. Cancel anytime."
-
-### 5. `src/pages/Checkout.tsx`
-
-- Update CTA button text: for Pro/Ultra show "Start 7-Day Free Trial -- $X/mo after" instead of "Proceed to Payment"
-- For Basic: keep "Proceed to Payment -- $19/mo"
-- Allow trialing users to access this page (to upgrade/change plan during trial)
-- Update redirect logic:
-
-```typescript
-// Allow trialing users to visit checkout (to upgrade)
-if (!subLoading && hasActiveSubscription && !isTrialing) {
-  navigate('/dashboard', { replace: true });
+```json
+{
+  "fullName": "John Doe",
+  "parentName": "Richard Roe",
+  "customContent": "<div>...edited HTML snapshot of the document body...</div>"
 }
 ```
 
-### 6. `src/components/auth/SubscriptionGate.tsx`
+### Files to Create
 
-Two changes:
 
-1. Trial works automatically via updated `hasActiveSubscription` (no code change needed for active trials)
-2. Update expired-trial copy: "Your free trial has ended. Choose a plan to continue using Certifyr."
-3. After cancellation + trial expiry: the paywall shows since `hasActiveSubscription` returns false
+| File                                               | Purpose                                                                 |
+| -------------------------------------------------- | ----------------------------------------------------------------------- |
+| `src/components/templates/DocumentEditToolbar.tsx` | Floating toolbar with Bold/Italic/Underline, font, size, color controls |
 
-### 7. New: `src/components/dashboard/TrialBanner.tsx`
 
-Persistent banner during active trial:
+### Files to Modify
 
-- "You're on a 7-day Pro trial -- X days remaining" for Pro plans and edit for Ultra plan
-- "Subscribe Now" button linking to `/checkout`
-- Uses `isTrialing` and `trialDaysRemaining` from `useSubscription()`
-- Dismissible per session via `sessionStorage`
 
-### 8. `src/components/dashboard/DashboardLayout.tsx`
+| File                                                     | Change                                                                                                                                                                  |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/DocumentDetail.tsx`                           | Add edit mode state, Pencil button, wrap preview in editable container, capture edited HTML into formData                                                               |
+| `src/components/templates/DynamicPreview.tsx`            | Accept optional `contentEditable` and `customContent` props; when `customContent` exists and not editing, render the saved HTML snapshot instead of the template output |
+| `src/components/templates/layouts/CertificateLayout.tsx` | No changes -- base templates stay untouched                                                                                                                             |
+| `src/components/templates/layouts/LetterLayout.tsx`      | No changes                                                                                                                                                              |
+| `src/components/templates/layouts/AgreementLayout.tsx`   | No changes                                                                                                                                                              |
+| `src/components/templates/layouts/TranscriptLayout.tsx`  | No changes                                                                                                                                                              |
 
-Render `<TrialBanner />` above main content area.
 
-### 9. `update_subscription_from_webhook` RPC
+### Implementation Approach
 
-Update to also accept and store `trial_start`/`trial_end`:
+**1. `DocumentEditToolbar.tsx` (new component)**
 
-```sql
--- Add p_trial_start and p_trial_end parameters
--- Store them in the upsert
+A compact toolbar rendered above the document preview when edit mode is active:
+
+- Uses `document.execCommand()` for formatting (Bold, Italic, Underline, fontSize, foreColor, fontName)
+- 10 color swatches rendered as small circles
+- Font and size as small `<select>` dropdowns
+- Close button (X icon) to exit edit mode
+
+**2. `DocumentDetail.tsx` changes**
+
+- Add `isEditing` state and `editedHtml` state
+- Add Pencil icon button in the action bar
+- When entering edit mode: capture the current rendered HTML from `previewRef`, set `contentEditable="true"` on the preview container
+- When exiting edit mode: read `innerHTML` from the container, store in `formData.customContent`, set `contentEditable="false"`
+- The Save Document button already saves `formData` -- so `customContent` persists automatically
+- When loading from history with `customContent`, the preview renders the saved snapshot
+
+**3. `DynamicPreview.tsx` changes**
+
+- Accept optional `customContent` prop
+- If `customContent` is provided (and not in edit mode), render it via `dangerouslySetInnerHTML` (sanitized with DOMPurify) instead of the template layout
+- If no `customContent`, render normally via layout components
+
+**4. Edit mode flow**
+
+```text
+User clicks Pencil
+  --> isEditing = true
+  --> Preview container gets contentEditable="true"
+  --> Toolbar appears
+  --> User edits text, applies formatting
+  --> User clicks Close or Save
+  --> innerHTML captured --> stored as formData.customContent
+  --> contentEditable removed
+  --> Next render uses customContent snapshot
 ```
 
-## Files Modified
+### Security
 
+- All user-generated HTML is sanitized through DOMPurify before rendering (already used in the codebase)
+- `customContent` is stored in JSONB, never executed server-side
+- No new database tables or columns -- no migration needed
+- No RLS changes needed
 
-| File                                           | Change                                                                                                   |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Migration SQL                                  | `has_active_subscription`, `get_active_plan` recognize `trialing`; add `trial_start`/`trial_end` columns |
-| `src/hooks/useSubscription.ts`                 | Expose `isTrialing`, `trialDaysRemaining`                                                                |
-| `supabase/functions/dodo-webhook/index.ts`     | Mirror `trialing` status from Dodo; handle trial cancellation gracefully                                 |
-| `src/components/onboarding/PricingStage.tsx`   | "Start 7-Day Free Trial" CTA for Pro/Ultra                                                               |
-| `src/pages/Checkout.tsx`                       | Trial-aware CTA text; allow trialing users to visit page                                                 |
-| `src/components/auth/SubscriptionGate.tsx`     | Expired trial copy                                                                                       |
-| `src/components/dashboard/TrialBanner.tsx`     | New -- trial countdown banner                                                                            |
-| `src/components/dashboard/DashboardLayout.tsx` | Render TrialBanner                                                                                       |
+### What Does NOT Change
 
-
-## What You Do NOT Touch
-
-- No manual trial creation in the DB before checkout
-- No client-side trial countdown logic (Dodo is source of truth)
-- No duplicate trial state -- webhook mirrors Dodo exactly
-- No changes to `planFeatures.ts` -- during trial, `activePlan = 'pro'` so all Pro checks pass
-
-## Prerequisite Reminder
-
-You must configure 7-day trial periods on Pro and Ultra products in the Dodo Payments dashboard before this goes live. Without that, Dodo will charge immediately instead of creating a trialing subscription. I have already set this up but I think it is not visible because it is not configured in our code. Dont change other app functionality. Ensure functionality for this trialing feature and code efficiency. 
+- Template layout components (Certificate, Letter, Agreement, Transcript) -- completely untouched
+- Form fields and form data structure -- only a new optional key added
+- PDF/Print export -- works automatically since it captures the rendered DOM
+- Document save/load flow -- uses existing `form_data` JSONB
+- Employee portal preview -- unaffected (edit mode only available on the main DocumentDetail page)
