@@ -75,7 +75,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
   }, []);
 
   return (
-    <div className="flex items-center gap-2 flex-wrap p-2 bg-muted/80 backdrop-blur-sm border rounded-lg mb-3">
+    <div className="flex items-center gap-2 flex-wrap p-2 bg-muted/80 backdrop-blur-sm border rounded-lg mb-3 sticky top-0 z-50">
       {/* Save Edits */}
       <Button size="sm" variant="default" onClick={onSaveEdits}>
         <Save className="mr-1.5 h-3.5 w-3.5" />
