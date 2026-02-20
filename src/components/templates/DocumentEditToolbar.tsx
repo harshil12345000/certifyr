@@ -1,5 +1,5 @@
-import React, { useCallback, useState, useEffect } from "react";
-import { Bold, Italic, Underline, Save, Plus, Minus } from "lucide-react";
+import React, { useCallback } from "react";
+import { Bold, Italic, Underline, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -26,7 +26,9 @@ const FONTS = [
   { value: "Georgia, serif", label: "Georgia" },
 ];
 
-const SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 30, 36];
+const SIZES = [
+  "8", "10", "12", "14", "16", "18", "20", "24", "30", "36",
+];
 
 const COLORS = [
   { value: "#000000", label: "Black" },
@@ -48,54 +50,25 @@ const execFormat = (command: string, value?: string) => {
 export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
   onSaveEdits,
 }) => {
-  const [fontSize, setFontSize] = useState(14);
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-
-  // Poll active formatting state from selection
-  useEffect(() => {
-    const update = () => {
-      setIsBold(document.queryCommandState("bold"));
-      setIsItalic(document.queryCommandState("italic"));
-      setIsUnderline(document.queryCommandState("underline"));
-    };
-    document.addEventListener("selectionchange", update);
-    return () => document.removeEventListener("selectionchange", update);
-  }, []);
-
-  const handleBold = useCallback(() => { execFormat("bold"); setIsBold(document.queryCommandState("bold")); }, []);
-  const handleItalic = useCallback(() => { execFormat("italic"); setIsItalic(document.queryCommandState("italic")); }, []);
-  const handleUnderline = useCallback(() => { execFormat("underline"); setIsUnderline(document.queryCommandState("underline")); }, []);
+  const handleBold = useCallback(() => execFormat("bold"), []);
+  const handleItalic = useCallback(() => execFormat("italic"), []);
+  const handleUnderline = useCallback(() => execFormat("underline"), []);
 
   const handleFont = useCallback((value: string) => {
     execFormat("fontName", value);
   }, []);
 
-  const applyFontSize = useCallback((size: number) => {
-    try {
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-        const range = sel.getRangeAt(0);
-        const span = document.createElement("span");
-        span.style.fontSize = `${size}px`;
-        span.appendChild(range.extractContents());
-        range.insertNode(span);
-        sel.removeAllRanges();
-      }
-    } catch {
-      // Silently handle invalid selections
+  const handleSize = useCallback((value: string) => {
+    // execCommand fontSize only accepts 1-7; use insertHTML with span instead
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const span = document.createElement("span");
+      span.style.fontSize = `${value}px`;
+      range.surroundContents(span);
+      sel.removeAllRanges();
     }
   }, []);
-
-  const stepSize = useCallback((dir: 1 | -1) => {
-    const idx = SIZES.indexOf(fontSize);
-    const next = idx === -1
-      ? (dir === 1 ? 16 : 12)
-      : SIZES[Math.max(0, Math.min(SIZES.length - 1, idx + dir))];
-    applyFontSize(next);
-    setFontSize(next);
-  }, [fontSize, applyFontSize]);
 
   const handleColor = useCallback((color: string) => {
     execFormat("foreColor", color);
@@ -118,7 +91,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
             <Button
               size="icon"
               variant="ghost"
-              className={`h-8 w-8 ${isBold ? "bg-primary/15 text-primary" : ""}`}
+              className="h-8 w-8"
               onMouseDown={(e) => { e.preventDefault(); handleBold(); }}
             >
               <Bold className="h-4 w-4" />
@@ -132,7 +105,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
             <Button
               size="icon"
               variant="ghost"
-              className={`h-8 w-8 ${isItalic ? "bg-primary/15 text-primary" : ""}`}
+              className="h-8 w-8"
               onMouseDown={(e) => { e.preventDefault(); handleItalic(); }}
             >
               <Italic className="h-4 w-4" />
@@ -146,7 +119,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
             <Button
               size="icon"
               variant="ghost"
-              className={`h-8 w-8 ${isUnderline ? "bg-primary/15 text-primary" : ""}`}
+              className="h-8 w-8"
               onMouseDown={(e) => { e.preventDefault(); handleUnderline(); }}
             >
               <Underline className="h-4 w-4" />
@@ -172,28 +145,19 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
         </SelectContent>
       </Select>
 
-      {/* Font Size +/- */}
-      <div className="flex items-center gap-0.5">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-8 w-8"
-          onMouseDown={(e) => { e.preventDefault(); stepSize(-1); }}
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </Button>
-        <span className="w-8 text-center text-xs font-medium select-none border border-border rounded px-1 py-0.5">
-          {fontSize}
-        </span>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-8 w-8"
-          onMouseDown={(e) => { e.preventDefault(); stepSize(1); }}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+      {/* Font Size */}
+      <Select onValueChange={handleSize}>
+        <SelectTrigger className="h-8 w-[72px] text-xs">
+          <SelectValue placeholder="Size" />
+        </SelectTrigger>
+        <SelectContent>
+          {SIZES.map((s) => (
+            <SelectItem key={s} value={s} className="text-xs">
+              {s}px
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       <div className="w-px h-6 bg-border" />
 
