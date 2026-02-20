@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Bold, Italic, Underline, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,9 +35,39 @@ const execFormat = (command: string, value?: string) => {
 };
 
 export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSaveEdits }) => {
-  const handleBold = useCallback(() => execFormat("bold"), []);
-  const handleItalic = useCallback(() => execFormat("italic"), []);
-  const handleUnderline = useCallback(() => execFormat("underline"), []);
+  const [formatStates, setFormatStates] = useState({ bold: false, italic: false, underline: false });
+
+  const updateFormatStates = useCallback(() => {
+    setFormatStates({
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
+    });
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", updateFormatStates);
+    document.addEventListener("mouseup", updateFormatStates);
+    document.addEventListener("keyup", updateFormatStates);
+    return () => {
+      document.removeEventListener("selectionchange", updateFormatStates);
+      document.removeEventListener("mouseup", updateFormatStates);
+      document.removeEventListener("keyup", updateFormatStates);
+    };
+  }, [updateFormatStates]);
+
+  const handleBold = useCallback(() => {
+    execFormat("bold");
+    setTimeout(updateFormatStates, 0);
+  }, [updateFormatStates]);
+  const handleItalic = useCallback(() => {
+    execFormat("italic");
+    setTimeout(updateFormatStates, 0);
+  }, [updateFormatStates]);
+  const handleUnderline = useCallback(() => {
+    execFormat("underline");
+    setTimeout(updateFormatStates, 0);
+  }, [updateFormatStates]);
 
   const handleFont = useCallback((value: string) => {
     execFormat("fontName", value);
@@ -76,7 +106,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSave
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className={`h-8 w-8 ${formatStates.bold ? "bg-blue-500/50 hover:bg-blue-500/50" : ""}`}
               onMouseDown={(e) => {
                 e.preventDefault();
                 handleBold();
@@ -93,7 +123,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSave
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className={`h-8 w-8 ${formatStates.italic ? "bg-blue-500/50 hover:bg-blue-500/50" : ""}`}
               onMouseDown={(e) => {
                 e.preventDefault();
                 handleItalic();
@@ -110,7 +140,7 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSave
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className={`h-8 w-8 ${formatStates.underline ? "bg-blue-500/50 hover:bg-blue-500/50" : ""}`}
               onMouseDown={(e) => {
                 e.preventDefault();
                 handleUnderline();
