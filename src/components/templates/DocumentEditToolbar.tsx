@@ -73,26 +73,29 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({
   }, []);
 
   const applyFontSize = useCallback((size: number) => {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-      const range = sel.getRangeAt(0);
-      const span = document.createElement("span");
-      span.style.fontSize = `${size}px`;
-      range.surroundContents(span);
-      sel.removeAllRanges();
+    try {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        const range = sel.getRangeAt(0);
+        const span = document.createElement("span");
+        span.style.fontSize = `${size}px`;
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        sel.removeAllRanges();
+      }
+    } catch {
+      // Silently handle invalid selections
     }
   }, []);
 
   const stepSize = useCallback((dir: 1 | -1) => {
-    setFontSize((prev) => {
-      const idx = SIZES.indexOf(prev);
-      const next = idx === -1
-        ? (dir === 1 ? 16 : 12)
-        : SIZES[Math.max(0, Math.min(SIZES.length - 1, idx + dir))];
-      applyFontSize(next);
-      return next;
-    });
-  }, [applyFontSize]);
+    const idx = SIZES.indexOf(fontSize);
+    const next = idx === -1
+      ? (dir === 1 ? 16 : 12)
+      : SIZES[Math.max(0, Math.min(SIZES.length - 1, idx + dir))];
+    applyFontSize(next);
+    setFontSize(next);
+  }, [fontSize, applyFontSize]);
 
   const handleColor = useCallback((color: string) => {
     execFormat("foreColor", color);
