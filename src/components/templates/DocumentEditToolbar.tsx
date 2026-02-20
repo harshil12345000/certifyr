@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Bold, Italic, Underline, Save } from "lucide-react";
+import { Bold, Italic, Underline, Save, Plus, Minus, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -36,6 +36,7 @@ const execFormat = (command: string, value?: string) => {
 
 export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSaveEdits }) => {
   const [formatStates, setFormatStates] = useState({ bold: false, italic: false, underline: false });
+  const [fontSize, setFontSize] = useState("");
 
   const updateFormatStates = useCallback(() => {
     setFormatStates({
@@ -70,12 +71,35 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSave
   }, [updateFormatStates]);
 
   const handleFont = useCallback((value: string) => {
+    const sel = window.getSelection();
+    const isCollapsed = !sel || sel.isCollapsed || sel.rangeCount === 0;
+    
+    if (isCollapsed) {
+      const editor = document.querySelector('[contenteditable="true"]');
+      if (editor) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }
     execFormat("fontName", value);
   }, []);
 
   const handleSize = useCallback((value: string) => {
-    // execCommand fontSize only accepts 1-7; use insertHTML with span instead
     const sel = window.getSelection();
+    const isCollapsed = !sel || sel.isCollapsed || sel.rangeCount === 0;
+    
+    if (isCollapsed) {
+      const editor = document.querySelector('[contenteditable="true"]');
+      if (editor) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }
+    
     if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
       const range = sel.getRangeAt(0);
       const span = document.createElement("span");
@@ -85,7 +109,78 @@ export const DocumentEditToolbar: React.FC<DocumentEditToolbarProps> = ({ onSave
     }
   }, []);
 
+  const handleSizeChange = useCallback((value: string) => {
+    setFontSize(value);
+    const sel = window.getSelection();
+    const isCollapsed = !sel || sel.isCollapsed || sel.rangeCount === 0;
+    
+    if (isCollapsed) {
+      const editor = document.querySelector('[contenteditable="true"]');
+      if (editor) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }
+    
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const span = document.createElement("span");
+      span.style.fontSize = `${value}px`;
+      range.surroundContents(span);
+      sel.removeAllRanges();
+    }
+  }, []);
+
+  const incrementSize = useCallback(() => {
+    const current = parseInt(fontSize) || 12;
+    const newSize = Math.min(200, current + 1).toString();
+    setFontSize(newSize);
+    handleSizeChange(newSize);
+  }, [fontSize, handleSizeChange]);
+
+  const decrementSize = useCallback(() => {
+    const current = parseInt(fontSize) || 12;
+    const newSize = Math.max(1, current - 1).toString();
+    setFontSize(newSize);
+    handleSizeChange(newSize);
+  }, [fontSize, handleSizeChange]);
+
+  const onFontSizeInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, "");
+    setFontSize(val);
+  }, []);
+
+  const onFontSizeBlur = useCallback(() => {
+    if (fontSize) {
+      const size = Math.min(200, Math.max(1, parseInt(fontSize) || 12)).toString();
+      setFontSize(size);
+      handleSizeChange(size);
+    } else {
+      setFontSize("12");
+    }
+  }, [fontSize, handleSizeChange]);
+
+  const onFontSizeKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      onFontSizeBlur();
+    }
+  }, [onFontSizeBlur]);
+
   const handleColor = useCallback((color: string) => {
+    const sel = window.getSelection();
+    const isCollapsed = !sel || sel.isCollapsed || sel.rangeCount === 0;
+    
+    if (isCollapsed) {
+      const editor = document.querySelector('[contenteditable="true"]');
+      if (editor) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }
     execFormat("foreColor", color);
   }, []);
 
