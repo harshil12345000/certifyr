@@ -1,4 +1,5 @@
-import XLSX from 'xlsx';
+// @ts-ignore
+import * as XLSX from 'xlsx';
 
 export interface ParsedSpreadsheet {
   headers: string[];
