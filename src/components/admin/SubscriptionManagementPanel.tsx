@@ -46,7 +46,7 @@ const PLAN_PRICING: Record<
   string,
   { monthly: number; yearly: number; label: string; order: number }
 > = {
-  basic: { monthly: 19, yearly: 99, label: "Basic", order: 1 },
+  basic: { monthly: 0, yearly: 0, label: "Basic", order: 1 },
   pro: { monthly: 49, yearly: 299, label: "Pro", order: 2 },
   ultra: { monthly: 99, yearly: 599, label: "Ultra", order: 3 },
 };
@@ -71,6 +71,23 @@ export const SubscriptionManagementPanel: React.FC<
   const [isCanceling, setIsCanceling] = useState(false);
   const [dodoDetails, setDodoDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number } | null>(null);
+
+  // Fetch document usage for Basic users
+  useEffect(() => {
+    const fetchDocumentUsage = async () => {
+      if (!subscription?.user_id) return;
+      try {
+        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id });
+        if (!error && data) {
+          setDocumentUsage({ used: data.used || 0, limit: data.limit || 25 });
+        }
+      } catch (err) {
+        console.error('Error fetching document usage:', err);
+      }
+    };
+    fetchDocumentUsage();
+  }, [subscription?.user_id]);
 
   const fetchDodoDetails = useCallback(async () => {
     if (!subscription?.polar_subscription_id) return;
@@ -104,6 +121,7 @@ export const SubscriptionManagementPanel: React.FC<
   const planConfig = activePlan ? PLAN_PRICING[activePlan] : null;
   const status = subscription?.subscription_status || "none";
   const isCanceled = status === "canceled" || !!subscription?.canceled_at;
+  const isBasicFree = activePlan === 'basic' && status === 'active';
 
   // Determine billing period from dates
   const periodStart = subscription?.current_period_start
@@ -134,9 +152,9 @@ export const SubscriptionManagementPanel: React.FC<
 
   const savings = calculateSavings();
 
-  // Get all other plans (allow both upgrades and downgrades)
+  // Get all other plans (for paid plans: allow both upgrades and downgrades; for Basic: only show upgrades)
   const availablePlans = Object.entries(PLAN_PRICING)
-    .filter(([key]) => key !== activePlan)
+    .filter(([key]) => key !== activePlan && key !== 'basic') // Can't downgrade to Basic, can't upgrade to same plan
     .map(([key, config]) => ({ key, ...config }));
 
   const handleChangePlan = async (
@@ -183,36 +201,24 @@ export const SubscriptionManagementPanel: React.FC<
   const handleCancelSubscription = async () => {
     setIsCanceling(true);
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "manage-subscription",
-        {
-          body: { action: "cancel" },
-        }
+      // For paid plans, instead of canceling via Dodo, we downgrade to Basic (free)
+      const { data, error } = await supabase.rpc(
+        'create_free_subscription',
+        { p_plan: 'basic' }
       );
 
       if (error) throw error;
 
-      if (data?.error) {
-        toast({
-          title: "Cancellation Failed",
-          description: data.error,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Subscription Cancellation Scheduled",
-          description:
-            "Your subscription will remain active until the end of the current billing period.",
-        });
-        await refetch();
-        await fetchDodoDetails();
-      }
+      toast({
+        title: "Downgraded to Basic",
+        description: "You've been switched to the free Basic plan. You can upgrade anytime!",
+      });
+      await refetch();
     } catch (err: any) {
-      console.error("Cancel subscription error:", err);
+      console.error("Downgrade error:", err);
       toast({
         title: "Error",
-        description:
-          err.message || "Failed to cancel subscription. Please try again.",
+        description: err.message || "Failed to downgrade. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -310,7 +316,7 @@ export const SubscriptionManagementPanel: React.FC<
             <div className="rounded-lg border p-4 space-y-1">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
                 Amount
-                {savings && (
+                {savings && !isBasicFree && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
@@ -327,10 +333,12 @@ export const SubscriptionManagementPanel: React.FC<
                 )}
               </div>
               <div className="text-2xl font-bold">
-                ${currentPrice}
-                <span className="text-sm font-normal text-muted-foreground">
-                  /{isYearly ? "year" : "month"}
-                </span>
+                {isBasicFree ? 'Free' : `$${currentPrice}`}
+                {!isBasicFree && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    /{isYearly ? "year" : "month"}
+                  </span>
+                )}
               </div>
               {savings && (
                 <div className="text-xs text-green-600 font-medium">
@@ -343,22 +351,138 @@ export const SubscriptionManagementPanel: React.FC<
             <div className="rounded-lg border p-4 space-y-1">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                Billing Period
+                {isBasicFree ? "Plan Status" : "Billing Period"}
               </div>
-              <div className="text-sm font-medium">
-                {periodStart
-                  ? format(periodStart, "MMM d, yyyy")
-                  : "—"}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {periodEnd
-                  ? `Renews: ${format(periodEnd, "MMM d, yyyy")}`
-                  : "—"}
-              </div>
+              {isBasicFree ? (
+                <div className="text-sm font-medium text-green-600">
+                  Free Plan
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm font-medium">
+                    {periodStart
+                      ? format(periodStart, "MMM d, yyyy")
+                      : "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {periodEnd
+                      ? `Renews: ${format(periodEnd, "MMM d, yyyy")}`
+                      : "—"}
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Document Usage for Basic Users */}
+          {isBasicFree && documentUsage && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-medium text-blue-800">Documents This Month</div>
+                <Badge variant="outline" className="bg-white">
+                  {documentUsage.used} / {documentUsage.limit}
+                </Badge>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all" 
+                  style={{ width: `${Math.min((documentUsage.used / documentUsage.limit) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                {documentUsage.limit - documentUsage.used} documents remaining this month
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Upgrade Section for Basic (Free) Users */}
+      {isBasicFree && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              Upgrade Your Plan
+            </CardTitle>
+            <CardDescription>
+              Unlock more features and remove document limits with Pro or Ultra.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Pro Upgrade */}
+              <div className="rounded-lg border bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-lg">Pro</h4>
+                  <Badge className="bg-[#1b80ff] text-white">
+                    <ArrowUpRight className="h-3 w-3 mr-1" />Upgrade
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">
+                    $49/mo or $299/year
+                  </div>
+                  <div className="text-xs text-green-600">
+                    Save $289/year with yearly
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-[#1b80ff] hover:bg-[#1566d4]"
+                    onClick={() => window.location.href = '/checkout?plan=pro'}
+                  >
+                    Monthly
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-[#1b80ff] hover:bg-[#1566d4]"
+                    onClick={() => window.location.href = '/checkout?plan=pro&yearly=true'}
+                  >
+                    Yearly
+                  </Button>
+                </div>
+              </div>
+
+              {/* Ultra Upgrade */}
+              <div className="rounded-lg border bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-lg">Ultra</h4>
+                  <Badge className="bg-purple-600 text-white">
+                    <ArrowUpRight className="h-3 w-3 mr-1" />Upgrade
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">
+                    $99/mo or $599/year
+                  </div>
+                  <div className="text-xs text-green-600">
+                    Save $589/year with yearly
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                    onClick={() => window.location.href = '/checkout?plan=ultra'}
+                  >
+                    Monthly
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-purple-600 hover:bg-purple-700"
+                    onClick={() => window.location.href = '/checkout?plan=ultra&yearly=true'}
+                  >
+                    Yearly
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Change Plan Section */}
       {availablePlans.length > 0 && (status === "active" || status === "trialing") && !isCanceled && (
@@ -432,37 +556,36 @@ export const SubscriptionManagementPanel: React.FC<
         </Card>
       )}
 
-      {/* Cancel Section */}
-      {(status === "active" || status === "trialing") && !isCanceled && (
-        <Card className="border-destructive/30">
+      {/* Cancel Section - Downgrade to Free Basic for paid plans */}
+      {(status === "active" || status === "trialing") && !isCanceled && !isBasicFree && (
+        <Card className="border-yellow-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
+            <CardTitle className="flex items-center gap-2 text-yellow-700">
               <AlertTriangle className="h-5 w-5" />
-              Cancel Subscription
+              Downgrade to Free
             </CardTitle>
             <CardDescription>
-              Cancellation takes effect at the end of your current billing
-              period. You'll continue to have access until{" "}
+              Downgrade to our free Basic plan. You'll keep access until{" "}
               {periodEnd
                 ? format(periodEnd, "MMMM d, yyyy")
-                : "the end of the period"}
-              .
+                : "the end of your billing period"}
+              , then switch to the free plan with limited features.
             </CardDescription>
           </CardHeader>
           <CardFooter>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isCanceling}>
+                <Button variant="outline" className="border-yellow-500 text-yellow-700 hover:bg-yellow-50" disabled={isCanceling}>
                   {isCanceling ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : null}
-                  Cancel Subscription
+                  Downgrade to Free
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    Are you sure you want to cancel?
+                    Downgrade to Basic (Free)?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="space-y-2">
                     <p>
@@ -472,10 +595,16 @@ export const SubscriptionManagementPanel: React.FC<
                           ? format(periodEnd, "MMMM d, yyyy")
                           : "the end of the billing period"}
                       </strong>
-                      . After that, you'll lose access to premium features.
+                      . After that, you'll be switched to the free Basic plan with:
                     </p>
+                    <ul className="list-disc pl-4 text-sm space-y-1">
+                      <li>25 documents per month limit</li>
+                      <li>No QR Verification</li>
+                      <li>No Request Portal</li>
+                      <li>No Priority Support</li>
+                    </ul>
                     {savings && (
-                      <p className="text-green-600 font-medium">
+                      <p className="text-yellow-600 font-medium">
                         💡 You're currently saving ${savings}/year with your
                         yearly plan. Are you sure you want to give that up?
                       </p>
@@ -486,9 +615,9 @@ export const SubscriptionManagementPanel: React.FC<
                   <AlertDialogCancel>Keep My Plan</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleCancelSubscription}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-yellow-600 text-white hover:bg-yellow-700"
                   >
-                    Yes, Cancel
+                    Yes, Downgrade to Free
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

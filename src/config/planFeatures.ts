@@ -5,6 +5,7 @@ export type PlanType = 'basic' | 'pro' | 'ultra';
 export interface PlanLimits {
   maxAdmins: number | null; // null = unlimited
   maxPortalMembers: number | null; // null = unlimited
+  maxDocumentsPerMonth: number | null; // null = unlimited, 25 for basic
 }
 
 export interface PlanFeatureSet {
@@ -31,14 +32,17 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   basic: {
     maxAdmins: 1,
     maxPortalMembers: 0, // No access
+    maxDocumentsPerMonth: 25,
   },
   pro: {
     maxAdmins: 5,
     maxPortalMembers: 100,
+    maxDocumentsPerMonth: null, // Unlimited
   },
   ultra: {
     maxAdmins: null, // Unlimited
     maxPortalMembers: null, // Unlimited
+    maxDocumentsPerMonth: null, // Unlimited
   },
 };
 
@@ -81,7 +85,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatureSet> = {
 
 // Plan pricing
 export const PLAN_PRICING = {
-  basic: { monthly: 19, yearly: 99 },
+  basic: { monthly: 0, yearly: 0 },
   pro: { monthly: 49, yearly: 299 },
   ultra: { monthly: 99, yearly: 599 },
 };

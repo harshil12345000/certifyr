@@ -19,7 +19,7 @@ interface PricingStageProps {
 }
 
 const basicFeatures = [
-  "Unlimited Document Generations",
+  "25 Documents per Month",
   "All Templates Available", 
   "Single Admin Access",
   "Organization Branding",
@@ -51,7 +51,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
   React.useEffect(() => {
     const validPlans = ['basic', 'pro', 'ultra'];
     if (!validPlans.includes(data.selectedPlan)) {
-      updateData({ selectedPlan: 'pro' });
+      updateData({ selectedPlan: 'basic' });
     }
   }, []);
   const [localLoading, setLocalLoading] = useState(false);
@@ -59,8 +59,8 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
 
   const pricing = {
     basic: {
-      monthly: 19,
-      yearly: 99
+      monthly: 0,
+      yearly: 0
     },
     pro: {
       monthly: 49,
@@ -171,6 +171,33 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         if (!result.success) throw new Error(result.error || "Failed to complete onboarding");
       }
 
+      // If Basic plan, create free subscription directly (no payment)
+      if (data.selectedPlan === 'basic') {
+        const userId = sessionData.session?.user?.id;
+        if (!userId) {
+          // Need to get the user ID from the signup
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (!newUser) throw new Error("Failed to get user");
+        }
+
+        const { data: subData, error: subError } = await supabase.rpc(
+          'create_free_subscription',
+          { p_plan: 'basic' }
+        );
+        
+        if (subError) throw subError;
+
+        toast({
+          title: "Account Created!",
+          description: "Welcome to Certifyr Basic - your free account is ready!",
+        });
+
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      // For Pro/Ultra, proceed with payment
       toast({
         title: "Account Created!",
         description: "Redirecting to payment...",
@@ -262,12 +289,12 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
             <CardTitle className="text-xl font-semibold">Basic</CardTitle>
             <div className="py-4">
               <div className="text-4xl font-bold text-gray-800">
-                ${pricing.basic[data.billingPeriod]}
+                {pricing.basic[data.billingPeriod] === 0 ? 'Free' : `$${pricing.basic[data.billingPeriod]}`}
               </div>
               <div className="text-gray-500">
                 {isYearly ? "per year" : "per month"}
               </div>
-              {isYearly && (
+              {isYearly && pricing.basic[data.billingPeriod] > 0 && (
                 <div className="text-sm text-green-600 font-medium">
                   Save {savingsPercent.basic}%
                 </div>
@@ -282,11 +309,11 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               className={cn(
                 "w-full mb-6 h-12 transition-all duration-200 transition-transform hover:scale-105",
                 data.selectedPlan === 'basic'
-                  ? "bg-[#1b80ff] text-white border border-[#1b80ff]"
-                  : "bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white hover:border-[#1b80ff]"
+                  ? "bg-green-600 text-white border border-green-600"
+                  : "bg-white text-green-600 border border-green-600 hover:bg-green-600 hover:text-white hover:border-green-600"
               )}
             >
-              {data.selectedPlan === 'basic' ? "Selected" : "Select Basic — No Trial"}
+              {data.selectedPlan === 'basic' ? "Selected" : "Get Started Free"}
             </Button>
             
             <ul className="space-y-3">
@@ -473,7 +500,7 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               Creating Account...
             </>
           ) : data.selectedPlan === 'basic' ? (
-            `Get Basic – $${selectedPrice}${isYearly ? '/year' : '/month'}`
+            `Get Started Free`
           ) : (
             `Start 7-Day Free Trial – $${selectedPrice}${isYearly ? '/year' : '/month'} after`
           )}

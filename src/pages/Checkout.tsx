@@ -12,30 +12,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const DODO_PRODUCTS: Record<string, Record<string, string>> = {
-  basic: { monthly: 'pdt_0NYXDFIglnn4wukqC1Qa2', yearly: 'pdt_0NYXIK26wpbK6kngEpdrT' },
   pro: { monthly: 'pdt_0NYXEA30vMCJgSxp0pcRw', yearly: 'pdt_0NYXIQ6Nqc7tDx0YXn8OY' },
   ultra: { monthly: 'pdt_0NYXI4SnmvbXxxUZAkDH0', yearly: 'pdt_0NYXIWHTsKjeI7gEcRLdR' },
 };
 
 const pricing = {
-  basic: { monthly: 19, yearly: 99 },
   pro: { monthly: 49, yearly: 299 },
   ultra: { monthly: 99, yearly: 599 },
 };
 
 const savingsPercent: Record<string, number> = {
-  basic: 57,
   pro: 49,
   ultra: 50,
 };
-
-const basicFeatures = [
-  'Unlimited Document Generations',
-  'All Templates Available',
-  'Single Admin Access',
-  'Organization Branding',
-  'Basic Support',
-];
 
 const proFeatures = [
   'Everything in Basic',
@@ -59,27 +48,24 @@ export default function Checkout() {
   const { subscription, loading: subLoading, hasActiveSubscription, isTrialing } = useSubscription();
   const { toast } = useToast();
 
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'ultra'>('pro');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    // Allow trialing users to visit checkout to upgrade
-    if (!subLoading && hasActiveSubscription && !isTrialing) {
+    // Allow trialing users and Basic (free) users to visit checkout to upgrade
+    if (!subLoading && hasActiveSubscription && !isTrialing && subscription?.active_plan !== 'basic') {
       navigate('/dashboard', { replace: true });
     }
-  }, [subLoading, hasActiveSubscription, isTrialing, navigate]);
+  }, [subLoading, hasActiveSubscription, isTrialing, subscription, navigate]);
 
   useEffect(() => {
-    // Check sessionStorage for plan intent
+    // Check sessionStorage for plan intent (only Pro/Ultra for paid plans)
     const storedPlan = sessionStorage.getItem('selectedPlanIntent');
-    if (storedPlan && ['basic', 'pro', 'ultra'].includes(storedPlan)) {
-      setSelectedPlan(storedPlan as 'basic' | 'pro' | 'ultra');
-    } else if (subscription?.selected_plan) {
-      const plan = subscription.selected_plan as 'basic' | 'pro' | 'ultra';
-      if (['basic', 'pro', 'ultra'].includes(plan)) {
-        setSelectedPlan(plan);
-      }
+    if (storedPlan && ['pro', 'ultra'].includes(storedPlan)) {
+      setSelectedPlan(storedPlan as 'pro' | 'ultra');
+    } else if (subscription?.selected_plan && ['pro', 'ultra'].includes(subscription.selected_plan)) {
+      setSelectedPlan(subscription.selected_plan as 'pro' | 'ultra');
     }
   }, [subscription]);
 
@@ -171,50 +157,6 @@ export default function Checkout() {
 
         {/* Plan Cards — matches onboarding PricingStage layout */}
         <div className="flex flex-row justify-center gap-x-4 mb-8 pt-3">
-          {/* Basic Plan */}
-          <Card
-            className={cn(
-              'relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-xs w-full',
-              selectedPlan === 'basic'
-                ? 'ring-2 ring-blue-600 bg-blue-50/50 backdrop-blur-sm'
-                : 'bg-white/70 backdrop-blur-sm hover:bg-white/80'
-            )}
-            onClick={() => setSelectedPlan('basic')}
-          >
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-xl font-semibold">Basic</CardTitle>
-              <div className="py-4">
-                <div className="text-4xl font-bold text-gray-800">${pricing.basic[billingPeriod]}</div>
-                <div className="text-gray-500">{isYearly ? 'per year' : 'per month'}</div>
-                {isYearly && (
-                  <div className="text-sm text-green-600 font-medium">Save {savingsPercent.basic}%</div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Button
-                onClick={(e) => { e.stopPropagation(); setSelectedPlan('basic'); }}
-                variant={selectedPlan === 'basic' ? 'default' : 'outline'}
-                className={cn(
-                  'w-full mb-6 h-12 transition-all duration-200 hover:scale-105',
-                  selectedPlan === 'basic'
-                    ? 'bg-[#1b80ff] text-white border border-[#1b80ff]'
-                    : 'bg-white text-[#1b80ff] border border-[#1b80ff] hover:bg-[#1b80ff] hover:text-white'
-                )}
-              >
-                {selectedPlan === 'basic' ? 'Selected' : 'Select Basic'}
-              </Button>
-              <ul className="space-y-3">
-                {basicFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-sm text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
           {/* Pro Plan */}
           <Card
             className={cn(
@@ -324,11 +266,6 @@ export default function Checkout() {
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Redirecting to payment...
-              </>
-            ) : selectedPlan === 'basic' ? (
-              <>
-                <CreditCard className="w-5 h-5 mr-2" />
-                Proceed to Payment — ${pricing.basic[billingPeriod]}/{isYearly ? 'year' : 'month'}
               </>
             ) : (
               <>

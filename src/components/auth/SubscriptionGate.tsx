@@ -52,7 +52,9 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
           <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
             {subscription?.subscription_status === 'trialing' || subscription?.subscription_status === 'canceled'
               ? 'Your free trial has ended. Choose a plan to continue using Certifyr.'
-              : 'You need an active subscription to access Certifyr. Choose a plan to unlock all features and start creating documents.'}
+              : !subscription?.active_plan
+                ? 'You need a subscription to access Certifyr. Start with our free Basic plan or choose Pro/Ultra for more features.'
+                : 'You need an active subscription to access Certifyr. Choose a plan to unlock all features and start creating documents.'}
           </p>
           <Button
             onClick={() => navigate('/checkout', { replace: true })}
@@ -62,7 +64,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
             Choose a Plan
           </Button>
           <p className="text-xs text-muted-foreground mt-4">
-            Plans start at $19/month. Cancel anytime.
+            Plans start at $49/month. Cancel anytime.
           </p>
         </div>
       </div>

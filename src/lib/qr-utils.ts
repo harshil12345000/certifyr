@@ -46,6 +46,26 @@ export const saveVerifiedDocument = async (
   data: DocumentVerificationData,
 ): Promise<string | null> => {
   try {
+    // Check document limit for Basic users before allowing save
+    if (data.userId) {
+      const { data: limitData, error: limitError } = await supabase.rpc(
+        'check_document_limit',
+        { p_user_id: data.userId }
+      );
+      
+      if (limitError) {
+        console.error('Error checking document limit:', limitError);
+      } else if (limitData && !limitData.allowed) {
+        console.warn('Document limit reached:', limitData);
+        return 'LIMIT_REACHED';
+      }
+      
+      // If allowed, increment the document count
+      if (limitData && limitData.allowed) {
+        await supabase.rpc('increment_document_count', { p_user_id: data.userId });
+      }
+    }
+
     const verificationHash = generateVerificationHash();
     // document_id is a uuid, generate if not present
     let document_id: string | undefined = undefined;
