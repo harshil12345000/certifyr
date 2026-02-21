@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, FileSpreadsheet, Globe, MoveUp } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 import { ChatMessage } from '@/hooks/useChatSessions';
 
 interface ChatInterfaceProps {
@@ -104,16 +105,7 @@ export function ChatInterface({
         )}
         
         {isGenerating && (
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <Bot className="h-4 w-4 text-blue-600" />
-            </div>
-            <div className="bg-muted px-4 py-2 rounded-lg rounded-tl-none">
-              <span className="text-sm text-muted-foreground">
-                Generating document...
-              </span>
-            </div>
-          </div>
+          <LoadingPlaceholder message="Generating document..." />
         )}
         
         <div ref={messagesEndRef} />

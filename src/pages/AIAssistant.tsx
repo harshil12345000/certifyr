@@ -29,13 +29,15 @@ function AIAssistantContent() {
   const orgInfo = {
     name: organizationDetails?.name || 'Unknown Organization',
     address: organizationDetails?.address || '',
-    place: organizationDetails?.address?.split(',').pop()?.trim() || '',
+    place: organizationDetails?.address?.split(',').pop()?.trim() || userProfile?.organizationLocation || '',
     email: organizationDetails?.email || '',
     phone: organizationDetails?.phone || '',
     signatoryName: userProfile?.firstName && userProfile?.lastName 
       ? `${userProfile.firstName} ${userProfile.lastName}`.trim() 
       : '',
     signatoryDesignation: userProfile?.designation || '',
+    organizationType: userProfile?.organizationType || '',
+    organizationLocation: userProfile?.organizationLocation || '',
   };
   
   const {
@@ -87,10 +89,14 @@ function AIAssistantContent() {
       const response = await sendChatMessage(
         updatedMessages,
         employeeData as Record<string, unknown>[],
-        { model: 'groq/compound' },
+        { model: 'compound-beta-mini' },
         orgInfo,
         issueDate
       );
+
+      if (!response || response.trim() === '') {
+        throw new Error('Empty response from AI');
+      }
 
       // Check if AI wants to generate a document
       const parsed = parseGenerationResponse(response);
@@ -108,6 +114,7 @@ function AIAssistantContent() {
           timestamp: Date.now(),
         };
         await addMessage(assistantMessage);
+        toast.success('AI responded');
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -117,6 +124,7 @@ function AIAssistantContent() {
         timestamp: Date.now(),
       };
       await addMessage(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Failed to get response');
     } finally {
       setIsGenerating(false);
       setIsDocumentGeneration(false);

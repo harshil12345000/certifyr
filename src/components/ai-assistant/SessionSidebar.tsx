@@ -137,11 +137,29 @@ export function SessionSidebar({
         ))}
       </div>
 
-      {loading && sessions.length === 0 && (
-        <div className="text-center text-muted-foreground text-sm py-4">
-          Loading...
+      {(loading && sessions.length === 0) && (
+        <div className="space-y-2 px-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-9 rounded-md shimmer-skeleton"></div>
+          ))}
         </div>
       )}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .shimmer-skeleton {
+          background: linear-gradient(
+            90deg,
+            hsl(var(--muted)) 0%,
+            hsl(var(--muted-foreground) / 0.15) 50%,
+            hsl(var(--muted)) 100%
+          );
+          background-size: 200% 100%;
+          animation: shimmer 1.5s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

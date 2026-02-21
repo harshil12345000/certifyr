@@ -1,5 +1,4 @@
-// @ts-ignore
-import * as XLSX from 'xlsx';
+import { read, utils } from 'xlsx';
 
 export interface ParsedSpreadsheet {
   headers: string[];
@@ -38,10 +37,10 @@ export async function parseSpreadsheet(file: File): Promise<ParsedSpreadsheet> {
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        const workbook = read(data, { type: 'binary' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        const jsonData = utils.sheet_to_json(worksheet, { defval: '' });
         
         if (jsonData.length === 0) {
           reject(new Error('No data found in spreadsheet'));
