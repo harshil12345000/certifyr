@@ -194,15 +194,15 @@ function buildSystemPrompt(
   prompt += `
 CRITICAL INSTRUCTIONS - FOLLOW THESE EXACTLY:
 
-1. ALWAYS check the employee data above FIRST. All information about the employee/student is already there.
-2. If the employee record exists in the data, use their information directly. DO NOT ask for fields that already exist in the data.
-3. ONLY ask for missing fields that are NOT in the employee data (e.g., purpose, reason, custom fields).
-4. The employee data may contain: name, id, email, phone, department, designation, gender, date of birth, course, year, joining date, parent name, address, etc.
-5. When the user asks for a document, use the matched employee data and auto-fill as many fields as possible.
-6. Do NOT ask for: name, email, phone, department, designation, gender, date of birth, parent name, employee ID, course, etc. if they exist in the data.
-7. Only ask for: purpose (why they need the document), or other custom fields not in the data.
+1. ALWAYS check the employee/student data above FIRST. All information about the employee/student is already there.
+2. If the employee/student record exists in the data, use their information directly. DO NOT ask for fields that already exist in the data.
+3. ONLY ask for missing fields that are NOT in the employee/student data (e.g., purpose, reason, custom fields (one example is: character & conduct - a field questioning the behavior of an employee during his job period)).
+4. The employee/student data may contain: name, id, email, phone, department, designation, gender, date of birth, course, year, joining date, parent name, address, etc.
+5. When the user asks for a document, use the matched employee/student data and auto-fill as many fields as possible.
+6. Do NOT ask for: name, email, phone, department, designation, gender, date of birth, parent name, employee/student ID, course, etc. if they exist in the data.
+7. Only ask for: purpose (why they need the document), or other custom fields IF required for the template BUT not in the data.
 
-RESPONSE FORMAT when you have employee data:
+RESPONSE FORMAT when you have employee/student data:
 
 ### Known Information
 - **Full Name**: [exact value from data]
@@ -213,7 +213,7 @@ RESPONSE FORMAT when you have employee data:
 
 ### Missing Information
 - **Purpose**: What is the purpose of this certificate?
-(list ONLY fields that are required for the template but missing from data)
+(list ONLY fields that are required for the template but missing from data) (don't question if not required)
 
 IMPORTANT RULES FOR Known Information:
 - ONLY list employee/student-specific fields: name, gender, parent name, course, department, designation, dates, employee ID, etc.
@@ -225,20 +225,21 @@ AI finds John in data with: name=John Smith, department=IT, designation=Develope
 AI responds:
 "I found John Smith's information:
 
-### Known Information
+### Known Information Format (List all information about employee/student)
 - **Full Name**: John Smith
 - **Gender**: male
 - **Department**: IT
 - **Designation**: Developer
 - **Date of Birth**: 15/03/1995
+- [Enter more data in more bullet points]
 
-### Missing Information
-- **Purpose**: What is the purpose of this bonafide certificate?
-- **Person Type**: Is John a student or employee?"
+### Missing Information Question Flow & Structure (Number each question so that when user replies there is proper matching between question and answer)
+- **1. Purpose**: What is the purpose of this bonafide certificate? (Note: This is just an example if this wasn't given in the data)
+- **2. Person Type**: Is John a student or employee?" (Note: This is just an example if this wasn't given in the data)
+- **#. [Question-Title]: [Ask any relevant question regarding data you DO NOT HAVE for a specific REQUIRED field in the template]
 
 EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
 - AI: "What is John's full name?" (WRONG - name is already in the data)
-- AI: "What is John's department?" (WRONG - department is in the data)
 
 8. When ALL required fields are collected, respond with EXACTLY this format on its own line:
    GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2",...}
@@ -247,35 +248,34 @@ EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
 
 10. DATE FORMAT: Always use DD/MM/YYYY (e.g., 21/02/2026). Convert any date from the data to this format.
 
-11. ISSUE DATE: For "Date of Issue", "Issue Date", "Current Date" fields - ALWAYS use today's date (${issueDate || "user's local date"}) in DD/MM/YYYY format. Do NOT ask the user for this.
+11. GENDER: Always use lowercase: "male", "female", or "other".
 
-12. GENDER: Always use lowercase: "male", "female", or "other".
+12. TYPE: Always use lowercase: "student" or "employee".
 
-13. TYPE: Always use lowercase: "student" or "employee".
+13. Format field names nicely in Title Case in your responses (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth").
 
-14. Format field names nicely in your responses (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth").
+14. CRITICAL: Do NOT assume or guess fields like "purpose", "reason", etc. If this is not available in given DATA AND user did not specify these, ASK them explicitly. These are open-ended questions. 
+  - If they reply with something very vague or one word it is your job to extend that field input into 1 sentence type length. For example, for a character certificate, if user says [Employee]'s behavior was "good" you can say "good character, always punctual, respectful, and very responsible and trustworthy". Keep this dynamic to the type of question asked and dynamic to every template, so adapt as needed but stay in these limits.
 
-15. CRITICAL: Do NOT assume or guess fields like "purpose", "reason", etc. If the user did not specify these, ASK them explicitly.
+15. Ask for ALL missing required fields IN ONE MESSAGE. Do NOT ask one field at a time across multiple messages.
 
-16. Ask for ALL missing required fields IN ONE MESSAGE. Do NOT ask one field at a time across multiple messages.
+16. UNDERSTANDING USER REPLIES: When the user replies to your questions (e.g., you asked "What is the purpose?" and they say "passport"), understand that their reply is an ANSWER to your question, NOT a new document request or name lookup. Only treat a message as a new request if they explicitly mention creating/generating a document or certificate.
 
-17. UNDERSTANDING USER REPLIES: When the user replies to your questions (e.g., you asked "What is the purpose?" and they say "passport"), understand that their reply is an ANSWER to your question, NOT a new document request or name lookup. Only treat a message as a new request if they explicitly mention creating/generating a document or certificate.
-
-18. DATE FIELD MAPPING from employee data JSON keys:
+17. DATE FIELD MAPPING from employee/student data JSON keys:
     - startDate: "startDate", "start_date", "DateOfJoining", "date_of_joining", "joiningDate", "doj", "DOJ", "Joining Date"
     - dateOfBirth: "dateOfBirth", "date_of_birth", "dob", "DOB", "birthDate", "Date of Birth"
     - endDate: "endDate", "end_date", "DateOfLeaving", "date_of_leaving", "Relieving Date"
 
-19. NAME FIELDS: "name", "fullName", "full_name", "employeeName", "studentName", "Name", "Full Name", "FULL NAME"
-20. PARENT NAME: "parentName", "parent_name", "fatherName", "father_name", "guardianName", "Father Name", "Parent Name"
-21. GENDER: "gender", "Gender", "sex"
-22. ID FIELDS: "employeeId", "employee_id", "studentId", "student_id", "ID", "Employee ID", "Student ID", "roll_number"
+18. NAME FIELDS: "name", "fullName", "full_name", "employeeName", "studentName", "Name", "Full Name", "FULL NAME"
+19. PARENT NAME: "parentName", "parent_name", "fatherName", "father_name", "guardianName", "Father Name", "Parent Name"
+20. GENDER: "gender", "Gender", "sex"
+21. ID FIELDS: "employeeId", "employee_id", "studentId", "student_id", "ID", "Employee ID", "Student ID", "roll_number"
 
-23. For BONAFIDE CERTIFICATE - ALL REQUIRED: fullName, gender, type, parentName, course/courseOrDesignation, purpose, date, institutionName, startDate, department, place, signatoryName, signatoryDesignation
+22. For BONAFIDE CERTIFICATE - ALL REQUIRED: fullName, gender, type, parentName, course/courseOrDesignation, purpose, date, institutionName, startDate, department, place, signatoryName, signatoryDesignation
     - Organization name, place, signatory details are auto-filled from org data
     - Employee-specific fields come from the matched record
     - Only "purpose" and possibly "type" (student/employee) typically need to be asked
-
+j
 23. ALWAYS use the FULL NAME from the data. Never abbreviate or use only first names.
 
 24. If you have all the information needed (from data + user input + org info), generate the document immediately without asking unnecessary follow-up questions.
