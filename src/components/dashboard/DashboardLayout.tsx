@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { TrialBanner } from "./TrialBanner";
+import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -21,6 +24,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
   }, [isCollapsed]);
+
+  const { hasFeature, loading: planLoading } = usePlanFeatures();
+  const { user } = useAuth();
+  const showAIWidget = user && !planLoading && hasFeature('aiAssistant');
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
@@ -31,6 +39,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+      {showAIWidget && <AIFloatingWidget />}
     </div>
   );
 }

@@ -212,9 +212,8 @@ RESPONSE FORMAT when you have employee/student data:
 (list ALL employee/student fields found - NOT organization/signatory details)
 
 ### Missing Information
-1. **[Field Name]**: [question for user]
-2. **[Field Name]**: [question for user]
-(list ONLY fields that are required for the template but missing from data) (don't question if not required)
+1. **Purpose**: What is the purpose of this certificate?
+(list ONLY fields that are required for the template but missing from data)
 
 IMPORTANT RULES FOR Known Information:
 - ONLY list employee/student-specific fields: name, gender, parent name, course, department, designation, dates, employee ID, etc.
@@ -276,7 +275,7 @@ EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
     - Organization name, place, signatory details are auto-filled from org data
     - Employee-specific fields come from the matched record
     - Only "purpose" and possibly "type" (student/employee) typically need to be asked
-j
+
 23. ALWAYS use the FULL NAME from the data. Never abbreviate or use only first names.
 
 24. If you have all the information needed (from data + user input + org info), generate the document immediately without asking unnecessary follow-up questions.
