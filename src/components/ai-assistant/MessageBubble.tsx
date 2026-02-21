@@ -1,4 +1,5 @@
-import { Sparkles, User, CheckCircle, Circle } from 'lucide-react';
+import { Sparkles, User, CheckCircle, Circle, FileText, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ChatMessage } from '@/hooks/useChatSessions';
 import { DisambiguationCard } from './DisambiguationCard';
 import { cn } from '@/lib/utils';
@@ -185,7 +186,7 @@ function formatMessage(content: string): React.ReactNode[] {
     }
 
     // Hide internal commands
-    if (trimmed.includes('GENERATE_DOCUMENT:') || trimmed.startsWith('DISAMBIGUATE:')) {
+    if (trimmed.includes('GENERATE_DOCUMENT:') || trimmed.startsWith('DISAMBIGUATE:') || trimmed.startsWith('GENERATED_LINK:')) {
       return;
     }
 
@@ -233,6 +234,35 @@ function FieldCard({ fields, title, type }: { fields: FieldInfo[]; title: string
 export function MessageBubble({ message, onDisambiguationSelect }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   
+  // Check for generated document link
+  if (!isUser && message.content.startsWith('GENERATED_LINK:')) {
+    const parts = message.content.slice('GENERATED_LINK:'.length).split(':');
+    const templateLabel = parts[0] || 'Document';
+    const recipientName = parts[1] || '';
+    const docLink = parts.slice(2).join(':') || '/documents';
+
+    return (
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <FileText className="h-4 w-4 text-green-600" />
+        </div>
+        <div className="max-w-[80%]">
+          <div className="bg-muted rounded-lg rounded-tl-none px-4 py-3 space-y-2">
+            <p className="text-sm text-muted-foreground">Document generated successfully!</p>
+            <Link
+              to={docLink}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <FileText className="h-4 w-4" />
+              {templateLabel}{recipientName ? ` for ${recipientName}` : ''}
+              <ExternalLink className="h-3 w-3 ml-1" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Check for disambiguation message
   if (!isUser && message.content.startsWith('DISAMBIGUATE:')) {
     try {

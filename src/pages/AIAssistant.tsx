@@ -122,17 +122,28 @@ function AIAssistantContent() {
         setIsDocumentGeneration(true);
         setLoadingMessage('Generating document...');
         const { templateId, data } = parsed;
+        const recipientName = data.fullName || data.name || 'Document';
+        const templateLabel = templateId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         const queryString = new URLSearchParams(data).toString();
-        navigate(`/documents/${templateId}?${queryString}`);
-        toast.success(`Opening ${templateId.replace('-', ' ')} with your data`);
+        const docLink = `/documents/${templateId}?${queryString}`;
+
+        // Save a clean "document generated" message instead of the raw AI output
+        const generatedMessage: ChatMessage = {
+          role: 'assistant',
+          content: `GENERATED_LINK:${templateLabel}:${recipientName}:${docLink}`,
+          timestamp: Date.now(),
+        };
+        await addMessage(generatedMessage);
+        navigate(docLink);
+        toast.success(`Opening ${templateLabel} for ${recipientName}`);
+      } else {
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: aiContent,
+          timestamp: Date.now(),
+        };
+        await addMessage(assistantMessage);
       }
-      
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: aiContent,
-        timestamp: Date.now(),
-      };
-      await addMessage(assistantMessage);
 
       // Generate AI title for new chats
       if (currentSession?.title === 'New Chat') {
