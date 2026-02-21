@@ -71,6 +71,11 @@ function AIAssistantContent() {
   const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isGenerating) return;
 
+    // Wait briefly for employee data if still loading
+    if (employeeData.length === 0) {
+      console.log('Warning: No employee data loaded');
+    }
+
     const userMessage: ChatMessage = {
       role: 'user',
       content: message,
@@ -84,15 +89,19 @@ function AIAssistantContent() {
     const issueDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
     
     try {
-      const updatedMessages = await addMessage(userMessage);
-
+      // Add user message first
+      const messagesWithUser = [...(currentSession?.messages || []), userMessage];
+      
       const response = await sendChatMessage(
-        updatedMessages,
+        messagesWithUser,
         employeeData as Record<string, unknown>[],
         { model: 'compound-beta-mini' },
         orgInfo,
-        issueDate
+        issueDate,
+        contextCountry
       );
+
+      console.log('AI Response:', response.substring(0, 200));
 
       if (!response || response.trim() === '') {
         throw new Error('Empty response from AI');
@@ -104,9 +113,18 @@ function AIAssistantContent() {
       if (parsed) {
         setIsDocumentGeneration(true);
         const { templateId, data } = parsed;
+        console.log('Generating document:', templateId, data);
         const queryString = new URLSearchParams(data).toString();
         navigate(`/documents/${templateId}?${queryString}`);
         toast.success(`Opening ${templateId.replace('-', ' ')} with your data`);
+        
+        // Add the generation command as assistant message
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: response,
+          timestamp: Date.now(),
+        };
+        await addMessage(assistantMessage);
       } else {
         const assistantMessage: ChatMessage = {
           role: 'assistant',
@@ -129,7 +147,7 @@ function AIAssistantContent() {
       setIsGenerating(false);
       setIsDocumentGeneration(false);
     }
-  }, [addMessage, employeeData, isGenerating, navigate, orgInfo]);
+  }, [addMessage, currentSession, employeeData, isGenerating, navigate, orgInfo, contextCountry]);
 
   const handleNewChat = useCallback(async () => {
     await createSession();

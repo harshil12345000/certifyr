@@ -91,11 +91,23 @@ ${templates.map(t => `- ${t.name} (${t.id}): Required fields: ${t.requiredFields
 `;
 
   if (employeeData.length > 0) {
-    const sampleSize = Math.min(employeeData.length, 15);
-    prompt += `EMPLOYEE DATA AVAILABLE (${employeeData.length} records - USE THIS DATA TO FILL DOCUMENT FIELDS):
-${JSON.stringify(employeeData.slice(0, sampleSize), null, 2)}
+    const sampleSize = Math.min(employeeData.length, 20);
+    const employeeJson = JSON.stringify(employeeData.slice(0, sampleSize), null, 2);
+    prompt += `EMPLOYEE DATA AVAILABLE (${employeeData.length} total records - showing first ${sampleSize}):
+${employeeJson}
 
-CRITICAL: You MUST use this employee data to fill document fields. Do NOT ask for information that is already present in the employee data above. Always search this data first before asking the user.
+CRITICAL FIELD MAPPING - USE THESE EXACT MAPPINGS:
+Look for these field names in the JSON (they may have different case/spacing):
+- gender: "gender", "Gender", "sex"
+- type/person type: "type", "personType", "person_type", "role", "category"
+- parent name: "parentName", "parent_name", "parentName", "fatherName", "father_name", "guardianName"
+- full name: "name", "fullName", "full_name", "employeeName", "studentName"
+- date of birth: "dob", "dateOfBirth", "date_of_birth", "birthDate", "birth_date"
+- department: "department", "dept", "Department"
+- designation: "designation", "role", "position", "jobTitle"
+
+When you find a person, list ALL their known fields in "Known Information" section.
+Only put fields in "Missing Information" if they are truly NOT in the JSON data.
 `;
   } else {
     prompt += `NO EMPLOYEE DATA UPLOADED. You can ask the user to upload employee data in the Organization > Data tab, or collect all information manually.
@@ -114,32 +126,79 @@ CRITICAL: You MUST use this employee data to fill document fields. Do NOT ask fo
   }
 
   prompt += `
-CRITICAL INSTRUCTIONS - FOLLOW THESE EXACTLY:
-1. ALWAYS check the employee data first - all information about employees/students is already in the data provided above
-2. If the employee exists in the data, use their information directly - DO NOT ask for fields they already have
-3. ONLY ask for missing fields that are NOT in the employee data
-4. The employee data contains: name, id, email, phone, department, designation, gender, date of birth, course, year, joining date, etc.
-5. When user asks for a document, search the employee data for that person and use their existing info
-6. Do NOT ask for: name, email, phone, department, designation, gender, date of birth if it exists in the data
-7. Only ask for: purpose (why they need the document), or other custom fields not in the data
+CRITICAL INSTRUCTIONS:
+1. ALWAYS search the employee JSON data first for the person's information
+2. If person is found in data, use ALL their field values - DO NOT ask for them again
+3. Only ask for fields that are actually missing from the JSON
+4. When you have ALL required fields, generate the document IMMEDIATELY - NO confirmation, NO extra text
+5. If user provides purpose/intent in the same message (e.g. "for bank account"), extract it and generate immediately
+
+FOR BONAFIDE CERTIFICATE, these fields are NEEDED:
+- fullName (from "name" or "fullName" in data)
+- gender (from "gender" field in data) 
+- type (person type: "student" or "employee")
+- parentName (from "parentName", "parent_name", "fatherName" in data)
+- institutionName (use org name)
+- institutionAddress (use org address)
+- course (from "course", "class", "standard" in data)
+- purpose (if not in data, extract from user message like "for [purpose]")
+- date (use current date)
+
+If gender, type, parentName, course ARE in the employee data, put them in Known Information and DON'T ask for them.
+
+ONLY put in Missing Information if the field is truly NOT found in the employee JSON.
+
+### Known Information
+- Name: [value from JSON or "Not provided"]
+- Gender: [value from JSON - if exists, show it]
+- Type: [value from JSON - if exists, show it]
+- Parent Name: [value from JSON - if exists, show it]
+- Course: [value from JSON - if exists, show it]
+- Department: [value from JSON - if exists, show it]
+- Designation: [value from JSON - if exists, show it]
+
+### Missing Information
+- [ONLY list fields that are NOT in the employee data JSON]
+
+REQUIRED FIELD FORMATS - USE THESE EXACT VALUES:
+- Gender MUST be lowercase: use "male", "female", or "other" (NOT "Male", "Female", etc.)
+- Person Type MUST be lowercase: use "student" or "employee" (NOT "Student", "Employee", etc.)
+- All text fields should be proper case
 
 EXAMPLE CORRECT FLOW:
 - User: "Create bonafide for John"
-- AI finds John in employee data with: name=John, email=john@company.com, department=IT, designation=Developer, gender=male
-- AI responds: "I found John's information:
-- Name: John
-- Department: IT
-- Designation: Developer
+- AI searches employee data and finds John with all needed fields
+- AI immediately generates the document:
+GENERATE_DOCUMENT:bonafide:{"fullName":"John","gender":"male","type":"student","parentName":"Thomas","institutionName":"ABC School","institutionAddress":"123 School St","course":"Class 10","purpose":"for bank account","date":"15/01/2025"}
 
-I need one more field:
-- Purpose: What is this bonafide certificate for?"
+IF USER SAYS "for bank account" IN SAME MESSAGE:
+- User: "Create bonafide for John for bank account"
+- AI finds all fields from JSON + purpose from user message
+- AI immediately generates:
+GENERATE_DOCUMENT:bonafide:{"fullName":"John","gender":"male","type":"student","parentName":"Thomas","institutionName":"ABC School","institutionAddress":"123 School St","course":"Class 10","purpose":"for bank account","date":"15/01/2025"}
+
+EXAMPLE - WHEN FIELDS ARE MISSING:
+- User: "Create bonafide for John"
+- AI finds John but parentName is missing from data
+- AI responds with ONLY:
+### Known Information
+- Name: John
+- Gender: male
+
+### Missing Information
+- Parent Name: 
+
+THEN when user provides "parentName", AI generates immediately - NO confirmation needed.
 
 EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
-- AI: "What is John's full name?" (WRONG - name is in data)
-- AI: "What is John's department?" (WRONG - department is in data)
+- AI: "Is this correct?" (WRONG - don't ask for confirmation)
+- AI: "Shall I proceed?" (WRONG - just generate)
+- AI asking for fields that exist in data (WRONG)
 
-8. When all required fields are collected, respond with:
+8. When ALL required fields are available, respond with ONLY:
    GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2",...}
+   Use lowercase for gender ("male"/"female"/"other") and type ("student"/"employee")
+   DO NOT add any other text - just the GENERATE_DOCUMENT line
 `;
 
   return prompt;
@@ -162,14 +221,15 @@ export async function sendChatMessage(
   employeeData: Record<string, unknown>[],
   options: GroqChatOptions = {},
   orgInfo?: OrgInfo,
-  issueDate?: string
+  issueDate?: string,
+  contextCountry?: string
 ): Promise<string> {
   const { model = getModel(), temperature = 0.3, maxTokens = 1024 } = options;
 
   const templates = getTemplatesWithFields();
   const systemMessage: ChatMessage = {
     role: 'system',
-    content: buildSystemPrompt(employeeData, undefined, orgInfo, issueDate),
+    content: buildSystemPrompt(employeeData, contextCountry, orgInfo, issueDate),
   };
 
   const apiMessages = [
@@ -207,14 +267,20 @@ export async function sendChatMessage(
         
         if (response.status === 429) {
           console.log('Sarvam rate limited, trying Groq...');
+          // Fall through to Groq
+        } else {
+          console.log('Sarvam error, falling back to Groq...');
+          // Fall through to Groq for any error
         }
       } catch (err) {
-        console.log('Sarvam failed:', err);
+        console.log('Sarvam failed, trying Groq:', err);
+        // Continue to Groq fallback
       }
     }
 
-    // Fallback to Groq
+    // Fallback to Groq - use correct model for Groq
     if (getGroqApiKey()) {
+      const groqModel = 'llama-3.1-8b-instant';
       const response = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
@@ -222,7 +288,7 @@ export async function sendChatMessage(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model,
+          model: groqModel,
           messages: apiMessages,
           temperature,
           max_tokens: maxTokens,
@@ -252,13 +318,16 @@ export async function sendChatMessage(
 export async function* streamChatMessage(
   messages: ChatMessage[],
   employeeData: Record<string, unknown>[],
-  options: GroqChatOptions = {}
+  options: GroqChatOptions = {},
+  orgInfo?: OrgInfo,
+  issueDate?: string,
+  contextCountry?: string
 ): AsyncGenerator<string> {
   const { model = 'llama-3.1-8b-instant', temperature = 0.3 } = options;
 
   const systemMessage: ChatMessage = {
     role: 'system',
-    content: buildSystemPrompt(employeeData),
+    content: buildSystemPrompt(employeeData, contextCountry, orgInfo, issueDate),
   };
 
   const apiMessages = [
@@ -306,6 +375,7 @@ export async function* streamChatMessage(
       throw new Error('Backend issue with API, kindly contact support for a fix.');
     }
 
+    const groqModel = 'llama-3.1-8b-instant';
     response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
@@ -313,7 +383,7 @@ export async function* streamChatMessage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model,
+        model: groqModel,
         messages: apiMessages,
         temperature,
         stream: true,
@@ -366,13 +436,37 @@ export async function* streamChatMessage(
 }
 
 export function parseGenerationResponse(content: string): { templateId: string; data: Record<string, string> } | null {
-  const match = content.match(/GENERATE_DOCUMENT:([^:]+):(.+)/);
+  // Find GENERATE_DOCUMENT anywhere in the response
+  const match = content.match(/GENERATE_DOCUMENT:([^:]+):(.+)/s);
   if (!match) return null;
 
   try {
+    const data = JSON.parse(match[2]);
+    
+    // Normalize gender values to lowercase
+    if (data.gender) {
+      const genderMap: Record<string, string> = {
+        'male': 'male', 'm': 'male', 'man': 'male', 'boy': 'male',
+        'female': 'female', 'f': 'female', 'woman': 'female', 'girl': 'female',
+        'other': 'other', 'o': 'other', 'others': 'other'
+      };
+      const normalizedGender = data.gender.toString().toLowerCase().trim();
+      data.gender = genderMap[normalizedGender] || normalizedGender;
+    }
+    
+    // Normalize type values to lowercase
+    if (data.type) {
+      const typeMap: Record<string, string> = {
+        'student': 'student', 's': 'student', 'studying': 'student',
+        'employee': 'employee', 'e': 'employee', 'staff': 'employee', 'faculty': 'employee'
+      };
+      const normalizedType = data.type.toString().toLowerCase().trim();
+      data.type = typeMap[normalizedType] || normalizedType;
+    }
+    
     return {
       templateId: match[1],
-      data: JSON.parse(match[2]),
+      data,
     };
   } catch {
     return null;
