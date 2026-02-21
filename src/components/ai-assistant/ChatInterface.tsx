@@ -12,6 +12,7 @@ interface ChatInterfaceProps {
   employeeDataCount: number;
   contextCountry?: string;
   isGenerating?: boolean;
+  loading?: boolean;
 }
 
 export function ChatInterface({
@@ -20,6 +21,7 @@ export function ChatInterface({
   employeeDataCount,
   contextCountry,
   isGenerating,
+  loading,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export function ChatInterface({
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
+        {messages.length === 0 && !loading ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="p-4 rounded-full bg-blue-100 mb-4">
               <Bot className="h-8 w-8 text-blue-600" />
@@ -96,7 +98,11 @@ export function ChatInterface({
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800 max-w-md">
                 <strong>Tip:</strong> Upload employee data in Organization &gt; Data tab for faster certificate generation.
               </div>
-            )}
+          )}
+        </div>
+        ) : messages.length === 0 && loading ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <LoadingPlaceholder message="Loading session..." />
           </div>
         ) : (
           messages.map((message, index) => (

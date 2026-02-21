@@ -86,6 +86,7 @@ export function ChatLayout({
           employeeDataCount={employeeData.length}
           contextCountry={contextCountry}
           isGenerating={isGenerating}
+          loading={loading}
         />
       </div>
     </div>
