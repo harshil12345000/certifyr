@@ -26,7 +26,7 @@ export interface UseChatSessionsReturn {
   loadSession: (sessionId: string) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
   updateTitle: (sessionId: string, title: string) => Promise<void>;
-  addMessage: (message: ChatMessage) => Promise<void>;
+  addMessage: (message: ChatMessage) => Promise<ChatMessage[]>;
   clearError: () => void;
 }
 
@@ -147,7 +147,7 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
     }
   }, [currentSession]);
 
-  const addMessage = useCallback(async (message: ChatMessage) => {
+  const addMessage = useCallback(async (message: ChatMessage): Promise<ChatMessage[]> => {
     // If no current session, create one first
     let activeSession = currentSession;
     
@@ -206,6 +206,8 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
     setSessions(prev => prev.map(s => 
       s.id === activeSession!.id ? updatedSession : s
     ));
+    
+    return updatedMessages;
   }, [currentSession, organizationId, userId]);
 
   return {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +32,7 @@ export default function DocumentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { organizationId } = useOrganizationSecurity();
   const { saveDocument } = useDocumentHistory();
@@ -45,11 +46,19 @@ export default function DocumentDetail() {
   // Check if we have saved history data from navigation state
   const historyData = location.state?.historyData;
   
+  // Check for prefill data from query params (AI Assistant)
+  const prefillData = Object.fromEntries([...searchParams.entries()].filter(([key]) => !key.startsWith('_')));
+  const hasPrefill = Object.keys(prefillData).length > 0;
+  
   // Initialize form data state - use history data if available, otherwise use defaults
   const [formData, setFormData] = useState<any>(() => {
     if (historyData?.form_data) {
       console.log("Loading saved document data:", historyData.form_data);
       return historyData.form_data;
+    }
+    if (hasPrefill) {
+      console.log("Loading prefill data from query params:", prefillData);
+      return { ...getInitialData(id || ''), ...prefillData };
     }
     return getInitialData(id || '');
   });

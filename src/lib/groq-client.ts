@@ -7,7 +7,7 @@ export interface ChatMessage {
 }
 
 export interface GroqChatOptions {
-  model?: 'groq/compound' | 'groq/compound-mini' | 'llama-3.1-8b-instant' | 'llama-3.3-70b-versatile' | 'mixtral-8x7b-32768';
+  model?: 'groq/compound' | 'groq/compound-mini';
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
@@ -18,26 +18,55 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 function getApiKey(): string {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error('Groq API key not configured. Please add VITE_GROQ_API_KEY to your .env file.');
+    throw new Error('Backend issue with API, kindly contact support for a fix.');
   }
   return apiKey;
 }
 
-function buildSystemPrompt(employeeData: Record<string, unknown>[], contextCountry?: string): string {
+function buildSystemPrompt(
+  employeeData: Record<string, unknown>[], 
+  contextCountry?: string,
+  orgInfo?: OrgInfo,
+  issueDate?: string
+): string {
   const templates = getTemplatesWithFields();
   
   let prompt = `You are Certifyr AI Assistant, an intelligent document generation assistant.
 
 You help users create certificates and documents by extracting information from employee data or asking for missing details.
 
-AVAILABLE TEMPLATES AND THEIR FIELDS:
+`;
+
+  // Add organization info if available
+  if (orgInfo) {
+    prompt += `ORGANIZATION DETAILS:
+- Organization Name: ${orgInfo.name}
+- Organization Place: ${orgInfo.place}
+- Organization Address: ${orgInfo.address}
+- Organization Email: ${orgInfo.email}
+- Organization Phone: ${orgInfo.phone}
+- Signatory Name: ${orgInfo.signatoryName}
+- Signatory Designation: ${orgInfo.signatoryDesignation}
+
+USE THESE VALUES WHEN GENERATING DOCUMENTS:
+- Use "${orgInfo.name}" for organization/company name fields
+- Use "${orgInfo.place}" for organization place/address
+- Use "${orgInfo.signatoryName}" for signatory/authorizer name
+- Use "${orgInfo.signatoryDesignation}" for signatory designation
+- Use "${orgInfo.email}" for organization email
+- Use "${orgInfo.phone}" for organization phone
+
+`;
+  }
+
+  prompt += `AVAILABLE TEMPLATES AND THEIR FIELDS:
 ${templates.map(t => `- ${t.name} (${t.id}): Required fields: ${t.requiredFields.join(', ')}`).join('\n')}
 
 `;
 
   if (employeeData.length > 0) {
     prompt += `EMPLOYEE DATA AVAILABLE (${employeeData.length} records):
-${JSON.stringify(employeeData.slice(0, 10), null, 2)}
+${JSON.stringify(employeeData.slice(0, 10), null,2)}
 (Showing first 10 records)
 `;
   } else {
@@ -50,32 +79,57 @@ ${JSON.stringify(employeeData.slice(0, 10), null, 2)}
 `;
   }
 
+  // Add issue date info
+  if (issueDate) {
+    prompt += `\nCURRENT DATE: ${issueDate} (use this for Date field/Issue Date)
+`;
+  }
+
   prompt += `
 INSTRUCTIONS:
 1. When user asks to create a document, identify which template they want from their message
 2. Search the employee data for the person (exact match on name or ID first, then partial match)
 3. List which fields can be auto-filled from the data
-4. Ask specifically for any missing required fields
+4. Ask specifically for any missing required fields - use proper capitalization (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth")
 5. Once all required data is collected, respond with exactly this format:
    GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2",...}
 6. Be concise. No fluff. Ask direct questions for missing info.
 7. If no employee data is available, ask for all required fields manually.
+8. Use DD/MM/YYYY format for all dates (e.g., 21/02/2026).
+9. For gender field, use exactly: "male", "female", or "other" (lowercase)
+10. For category/type field (student/employee), use exactly: "student" or "employee" (lowercase)
+11. Normalize all values to match the expected format in the employee data
+12. When asking for field values, format field names nicely (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth", "Employee ID" not "employeeId")
+13. IMPORTANT: Do NOT assume or guess fields like "purpose", "reason", "for", "reasonFor", etc. If the user did not specify these, ASK them explicitly. For example: "What is the purpose of this certificate?" or "What do you need this document for?"
+14. Only generate a document when you have ALL required fields. Ask for each missing field one at a time.
 `;
 
   return prompt;
 }
 
+export interface OrgInfo {
+  name: string;
+  address: string;
+  place: string;
+  email: string;
+  phone: string;
+  signatoryName: string;
+  signatoryDesignation: string;
+}
+
 export async function sendChatMessage(
   messages: ChatMessage[],
   employeeData: Record<string, unknown>[],
-  options: GroqChatOptions = {}
+  options: GroqChatOptions = {},
+  orgInfo?: OrgInfo,
+  issueDate?: string
 ): Promise<string> {
   const { model = 'groq/compound', temperature = 0.3, maxTokens = 1024 } = options;
 
   const templates = getTemplatesWithFields();
   const systemMessage: ChatMessage = {
     role: 'system',
-    content: buildSystemPrompt(employeeData),
+    content: buildSystemPrompt(employeeData, undefined, orgInfo, issueDate),
   };
 
   const apiMessages = [
@@ -99,6 +153,9 @@ export async function sendChatMessage(
 
   if (!response.ok) {
     const error = await response.text();
+    if (response.status === 429) {
+      throw new Error("We're experiencing a lot of demand. Please try again in a bit.");
+    }
     throw new Error(`Groq API error: ${response.status} - ${error}`);
   }
 
@@ -139,6 +196,9 @@ export async function* streamChatMessage(
 
   if (!response.ok) {
     const error = await response.text();
+    if (response.status === 429) {
+      throw new Error("We're experiencing a lot of demand. Please try again in a bit.");
+    }
     throw new Error(`Groq API error: ${response.status} - ${error}`);
   }
 
