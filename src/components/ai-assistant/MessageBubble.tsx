@@ -17,6 +17,49 @@ interface ParsedFields {
   missing: FieldInfo[];
 }
 
+function formatFieldName(name: string): string {
+  const fieldMap: Record<string, string> = {
+    'fullName': 'Full Name',
+    'name': 'Name',
+    'gender': 'Gender',
+    'type': 'Person Type',
+    'person type': 'Person Type',
+    'parentName': 'Parent Name',
+    'parent name': 'Parent Name',
+    'fatherName': 'Father Name',
+    'motherName': 'Mother Name',
+    'dateOfBirth': 'Date of Birth',
+    'date of birth': 'Date of Birth',
+    'dob': 'Date of Birth',
+    'startDate': 'Start Date',
+    'start date': 'Start Date',
+    'dateOfJoining': 'Date of Joining',
+    'date of joining': 'Date of Joining',
+    'joiningDate': 'Joining Date',
+    'endDate': 'End Date',
+    'end date': 'End Date',
+    'course': 'Course',
+    'department': 'Department',
+    'designation': 'Designation',
+    'email': 'Email',
+    'phone': 'Phone',
+    'institutionName': 'Institution Name',
+    'institution address': 'Institution Address',
+    'purpose': 'Purpose',
+    'date': 'Date',
+  };
+  
+  const lower = name.toLowerCase();
+  return fieldMap[lower] || name
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim();
+}
+
+function cleanValue(value: string): string {
+  return value.replace(/\*\*/g, '').trim();
+}
+
 function parseFieldLists(content: string): ParsedFields | null {
   const known: FieldInfo[] = [];
   const missing: FieldInfo[] = [];
@@ -25,7 +68,6 @@ function parseFieldLists(content: string): ParsedFields | null {
   const missingMatch = content.match(/###?\s*Missing Information([\s\S]*?)$/i);
   
   if (!knownMatch && !missingMatch) {
-    // Try alternative format without headers
     const lines = content.split('\n');
     let inMissingSection = false;
     
@@ -41,9 +83,9 @@ function parseFieldLists(content: string): ParsedFields | null {
       if (fieldMatch) {
         const [, fieldName, fieldValue] = fieldMatch;
         if (inMissingSection || trimmed.includes('?')) {
-          missing.push({ name: fieldName.trim(), value: fieldValue.trim(), isMissing: true });
+          missing.push({ name: fieldName.trim(), value: cleanValue(fieldValue), isMissing: true });
         } else {
-          known.push({ name: fieldName.trim(), value: fieldValue.trim(), isMissing: false });
+          known.push({ name: fieldName.trim(), value: cleanValue(fieldValue), isMissing: false });
         }
       }
     }
@@ -59,7 +101,7 @@ function parseFieldLists(content: string): ParsedFields | null {
     for (const line of knownLines) {
       const match = line.match(/^[-*]\s*\*?([^:]+)\*?:\s*(.+)$/);
       if (match) {
-        known.push({ name: match[1].trim(), value: match[2].trim(), isMissing: false });
+        known.push({ name: match[1].trim(), value: cleanValue(match[2]), isMissing: false });
       }
     }
   }
@@ -69,7 +111,7 @@ function parseFieldLists(content: string): ParsedFields | null {
     for (const line of missingLines) {
       const match = line.match(/^[-*]\s*\*?([^:]+)\*?:\s*(.+)$/);
       if (match) {
-        missing.push({ name: match[1].trim(), value: match[2].trim(), isMissing: true });
+        missing.push({ name: match[1].trim(), value: cleanValue(match[2]), isMissing: true });
       }
     }
   }
@@ -159,7 +201,7 @@ function FieldCard({ fields, title, type }: { fields: FieldInfo[]; title: string
               <Circle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
-              <span className="text-xs text-muted-foreground">{field.name}:</span>
+              <span className="text-xs text-muted-foreground">{formatFieldName(field.name)}:</span>
               <span className={cn("ml-1 text-sm", type === 'known' ? "text-green-800" : "text-amber-800 font-medium")}>
                 {field.value}
               </span>

@@ -111,7 +111,7 @@ export function ChatInterface({
         )}
         
         {isGenerating && (
-          <LoadingPlaceholder message="Generating document..." />
+          <LoadingPlaceholder message="Verifying & fetching data..." />
         )}
         
         <div ref={messagesEndRef} />

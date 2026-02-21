@@ -96,18 +96,30 @@ ${templates.map(t => `- ${t.name} (${t.id}): Required fields: ${t.requiredFields
     prompt += `EMPLOYEE DATA AVAILABLE (${employeeData.length} total records - showing first ${sampleSize}):
 ${employeeJson}
 
-CRITICAL FIELD MAPPING - USE THESE EXACT MAPPINGS:
-Look for these field names in the JSON (they may have different case/spacing):
-- gender: "gender", "Gender", "sex"
-- type/person type: "type", "personType", "person_type", "role", "category"
-- parent name: "parentName", "parent_name", "parentName", "fatherName", "father_name", "guardianName"
-- full name: "name", "fullName", "full_name", "employeeName", "studentName"
-- date of birth: "dob", "dateOfBirth", "date_of_birth", "birthDate", "birth_date"
-- department: "department", "dept", "Department"
-- designation: "designation", "role", "position", "jobTitle"
+READ FROM JSON EXACTLY - USE ALL FIELDS YOU SEE:
+- Every field you see in the JSON MUST be used if needed for the template
+- If a field has a value in JSON, it EXISTS - use it
+- NEVER say a field is missing if you can see it in the JSON above
 
-When you find a person, list ALL their known fields in "Known Information" section.
-Only put fields in "Missing Information" if they are truly NOT in the JSON data.
+DATE FIELD MAPPING - SEARCH FOR THESE EXACT FIELD NAMES IN JSON:
+- startDate: "startDate", "start_date", "DateOfJoining", "date_of_joining", "joiningDate", "joining_date", "doj", "DOJ"
+- dateOfBirth: "dateOfBirth", "date_of_birth", "dob", "DOB", "birthDate", "birth_date"
+- endDate: "endDate", "end_date", "DateOfLeaving", "date_of_leaving"
+- issueDate: "issueDate", "issue_date", "issuedDate"
+
+GENDER FIELD MAPPING:
+- gender: "gender", "Gender", "sex" - values: "male", "female", "other"
+
+TYPE/PERSON CATEGORY:
+- type: "type", "personType", "person_type", "role", "category" - values: "student", "employee"
+
+PARENT NAME:
+- parentName: "parentName", "parent_name", "fatherName", "father_name", "guardianName"
+
+NAME FIELDS:
+- name: "name", "fullName", "full_name", "employeeName", "studentName"
+
+IF YOU SEE A FIELD IN THE JSON, IT IS NOT MISSING - USE IT DIRECTLY.
 `;
   } else {
     prompt += `NO EMPLOYEE DATA UPLOADED. You can ask the user to upload employee data in the Organization > Data tab, or collect all information manually.
@@ -126,79 +138,57 @@ Only put fields in "Missing Information" if they are truly NOT in the JSON data.
   }
 
   prompt += `
-CRITICAL INSTRUCTIONS:
-1. ALWAYS search the employee JSON data first for the person's information
-2. If person is found in data, use ALL their field values - DO NOT ask for them again
-3. Only ask for fields that are actually missing from the JSON
-4. When you have ALL required fields, generate the document IMMEDIATELY - NO confirmation, NO extra text
-5. If user provides purpose/intent in the same message (e.g. "for bank account"), extract it and generate immediately
+CRITICAL INSTRUCTIONS – FOLLOW EXACTLY:
 
-FOR BONAFIDE CERTIFICATE, these fields are NEEDED:
-- fullName (from "name" or "fullName" in data)
-- gender (from "gender" field in data) 
-- type (person type: "student" or "employee")
-- parentName (from "parentName", "parent_name", "fatherName" in data)
-- institutionName (use org name)
-- institutionAddress (use org address)
-- course (from "course", "class", "standard" in data)
-- purpose (if not in data, extract from user message like "for [purpose]")
-- date (use current date)
+1. VERIFICATION PROCESS - DO THIS FOR EVERY RESPONSE:
+   Step 1: Search the JSON data for the person's name using fuzzy matching
+   Step 2: Once found, COPY every single field value from that exact JSON row
+   Step 3: VERIFY each field by comparing with JSON - do not guess or infer
+   Step 4: List ONLY the exact values from JSON in Known Information
 
-If gender, type, parentName, course ARE in the employee data, put them in Known Information and DON'T ask for them.
+2. EXACT FIELD MATCHING - THIS IS MANDATORY:
+   - Find the person by name in JSON
+   - Take the ENTIRE row/record for that person
+   - Use EXACT values from that specific row
+   - DO NOT mix data from different rows
+   - Example: If John has gender="male" in JSON, use "male" - NOT from any other John
 
-ONLY put in Missing Information if the field is truly NOT found in the employee JSON.
+3. DATE FIELDS - SEARCH FOR THESE EXACT FIELD NAMES IN JSON:
+   - startDate: "startDate", "start_date", "DateOfJoining", "date_of_joining", "joiningDate", "joining_date", "doj", "DOJ"
+   - dateOfBirth: "dateOfBirth", "date_of_birth", "dob", "DOB", "birthDate", "birth_date"
+   - endDate: "endDate", "end_date", "DateOfLeaving", "date_of_leaving"
 
-### Known Information
-- Name: [value from JSON or "Not provided"]
-- Gender: [value from JSON - if exists, show it]
-- Type: [value from JSON - if exists, show it]
-- Parent Name: [value from JSON - if exists, show it]
-- Course: [value from JSON - if exists, show it]
-- Department: [value from JSON - if exists, show it]
-- Designation: [value from JSON - if exists, show it]
+4. GENDER FIELD - USE EXACT JSON VALUE:
+   - Look for: "gender", "Gender", "sex"
+   - If JSON says "male", use "male" - NEVER infer from name
+   - If JSON says "female", use "female" - NEVER infer from name
 
-### Missing Information
-- [ONLY list fields that are NOT in the employee data JSON]
+5. TYPE/ROLE FIELD - USE EXACT JSON VALUE:
+   - Look for: "type", "personType", "person_type", "role", "category"
+   - Values: "student", "employee"
 
-REQUIRED FIELD FORMATS - USE THESE EXACT VALUES:
-- Gender MUST be lowercase: use "male", "female", or "other" (NOT "Male", "Female", etc.)
-- Person Type MUST be lowercase: use "student" or "employee" (NOT "Student", "Employee", etc.)
-- All text fields should be proper case
+6. If you see a field in JSON with a value, it EXISTS - use it. DO NOT ask for it again.
 
-EXAMPLE CORRECT FLOW:
-- User: "Create bonafide for John"
-- AI searches employee data and finds John with all needed fields
-- AI immediately generates the document:
-GENERATE_DOCUMENT:bonafide:{"fullName":"John","gender":"male","type":"student","parentName":"Thomas","institutionName":"ABC School","institutionAddress":"123 School St","course":"Class 10","purpose":"for bank account","date":"15/01/2025"}
+7. When a document is requested, FIRST load and analyze the template structure.
 
-IF USER SAYS "for bank account" IN SAME MESSAGE:
-- User: "Create bonafide for John for bank account"
-- AI finds all fields from JSON + purpose from user message
-- AI immediately generates:
-GENERATE_DOCUMENT:bonafide:{"fullName":"John","gender":"male","type":"student","parentName":"Thomas","institutionName":"ABC School","institutionAddress":"123 School St","course":"Class 10","purpose":"for bank account","date":"15/01/2025"}
+8. DO NOT GENERATE DOCUMENT UNTIL EVERY SINGLE FIELD HAS A VALUE:
+   - gender must have a value (male/female/other)
+   - type must have a value (student/employee)
+   - parentName must have a value
+   - All other template fields must have values
+   - If ANY field is empty or missing, ASK FOR IT - do NOT generate
 
-EXAMPLE - WHEN FIELDS ARE MISSING:
-- User: "Create bonafide for John"
-- AI finds John but parentName is missing from data
-- AI responds with ONLY:
-### Known Information
-- Name: John
-- Gender: male
+9. When ALL required template fields are available, respond strictly in this format:
+   GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2"}
 
-### Missing Information
-- Parent Name: 
+10. Use DD/MM/YYYY date format (e.g., 21/02/2026).
+11. Gender must be exactly: "male", "female", or "other" (lowercase).
+12. Category/type must be exactly: "student" or "employee" (lowercase).
 
-THEN when user provides "parentName", AI generates immediately - NO confirmation needed.
+FOR BONAFIDE CERTIFICATE - ALL THESE FIELDS ARE REQUIRED:
+- fullName, gender, type, parentName, course, purpose, date
 
-EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
-- AI: "Is this correct?" (WRONG - don't ask for confirmation)
-- AI: "Shall I proceed?" (WRONG - just generate)
-- AI asking for fields that exist in data (WRONG)
-
-8. When ALL required fields are available, respond with ONLY:
-   GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2",...}
-   Use lowercase for gender ("male"/"female"/"other") and type ("student"/"employee")
-   DO NOT add any other text - just the GENERATE_DOCUMENT line
+IF ANY OF THESE FIELDS IS EMPTY/MISSING, ASK FOR IT. DO NOT GENERATE DOCUMENT.
 `;
 
   return prompt;
