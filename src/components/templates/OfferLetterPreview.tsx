@@ -7,7 +7,6 @@ import { Letterhead } from "./Letterhead";
 
 interface BrandingAssets {
   logoUrl: string | null;
-  signatureUrl: string | null;
   organizationAddress: string | null;
   organizationPhone: string | null;
   organizationEmail: string | null;
@@ -52,7 +51,6 @@ export const OfferLetterPreview: React.FC<ExtendedOfferLetterPreviewProps> = ({
 
   const [branding, setBranding] = useState<BrandingAssets>({
     logoUrl: null,
-    signatureUrl: null,
     organizationAddress: null,
     organizationPhone: null,
     organizationEmail: null,
@@ -108,7 +106,6 @@ export const OfferLetterPreview: React.FC<ExtendedOfferLetterPreviewProps> = ({
             console.error("Error fetching branding files:", filesError);
           } else if (filesData) {
             let newLogoUrl: string | null = null;
-            let newSignatureUrl: string | null = null;
 
             filesData.forEach((file) => {
               const publicUrlRes = supabase.storage
@@ -117,14 +114,12 @@ export const OfferLetterPreview: React.FC<ExtendedOfferLetterPreviewProps> = ({
               const publicUrl = publicUrlRes.data?.publicUrl;
               if (publicUrl) {
                 if (file.name === "logo") newLogoUrl = publicUrl;
-                if (file.name === "signature") newSignatureUrl = publicUrl;
               }
             });
 
             setBranding((prev) => ({
               ...prev,
               logoUrl: newLogoUrl,
-              signatureUrl: newSignatureUrl,
             }));
           }
         }

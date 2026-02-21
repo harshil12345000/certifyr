@@ -105,7 +105,7 @@ const Settings = () => {
           });
 
           // Load signature
-          const sigPath = (profile as any).signature_path as string | null;
+          const sigPath = profile.signature_path as string | null;
           if (sigPath) {
             setSignaturePath(sigPath);
             const { data: urlData } = supabase.storage
@@ -234,7 +234,7 @@ const Settings = () => {
       // Update user_profiles with signature_path
       const { error: dbError } = await supabase
         .from("user_profiles")
-        .update({ signature_path: filePath } as any)
+        .update({ signature_path: filePath })
         .eq("user_id", user.id);
 
       if (dbError) {
@@ -266,7 +266,7 @@ const Settings = () => {
       await supabase.storage.from("branding-assets").remove([signaturePath]);
       await supabase
         .from("user_profiles")
-        .update({ signature_path: null } as any)
+        .update({ signature_path: null })
         .eq("user_id", user.id);
 
       setSignaturePath(null);

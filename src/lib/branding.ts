@@ -231,19 +231,16 @@ export async function getOrganizationBranding() {
     const files = await getBrandingFiles();
     const branding = {
       logo: null as string | null,
-      signature: null as string | null,
     };
 
     for (const file of files) {
       if (file.name === "logo") {
         branding.logo = await getBrandingFileUrl(file.path);
-      } else if (file.name === "signature") {
-        branding.signature = await getBrandingFileUrl(file.path);
       }
     }
 
     return branding;
   } catch {
-    return { logo: null, signature: null };
+    return { logo: null };
   }
 }
