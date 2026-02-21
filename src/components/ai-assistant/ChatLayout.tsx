@@ -14,9 +14,12 @@ interface ChatLayoutProps {
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, title: string) => void;
   onSendMessage: (message: string) => Promise<void>;
+  onDisambiguationSelect?: (match: { name: string; id: string; department: string }) => void;
   employeeData: EmployeeRecord[];
   contextCountry?: string;
   isGenerating?: boolean;
+  isDocumentGeneration?: boolean;
+  loadingMessage?: string;
 }
 
 export function ChatLayout({
@@ -28,9 +31,12 @@ export function ChatLayout({
   onDeleteSession,
   onRenameSession,
   onSendMessage,
+  onDisambiguationSelect,
   employeeData,
   contextCountry,
   isGenerating,
+  isDocumentGeneration,
+  loadingMessage,
 }: ChatLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -83,9 +89,12 @@ export function ChatLayout({
         <ChatInterface
           messages={currentSession?.messages || []}
           onSendMessage={onSendMessage}
+          onDisambiguationSelect={onDisambiguationSelect}
           employeeDataCount={employeeData.length}
           contextCountry={contextCountry}
           isGenerating={isGenerating}
+          isDocumentGeneration={isDocumentGeneration}
+          loadingMessage={loadingMessage}
           loading={loading}
         />
       </div>

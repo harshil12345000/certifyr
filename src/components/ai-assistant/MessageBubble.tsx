@@ -1,9 +1,11 @@
-import { Bot, User, CheckCircle, Circle } from 'lucide-react';
+import { Sparkles, User, CheckCircle, Circle } from 'lucide-react';
 import { ChatMessage } from '@/hooks/useChatSessions';
+import { DisambiguationCard } from './DisambiguationCard';
 import { cn } from '@/lib/utils';
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  onDisambiguationSelect?: (match: { name: string; id: string; department: string }) => void;
 }
 
 interface FieldInfo {
@@ -16,6 +18,17 @@ interface ParsedFields {
   known: FieldInfo[];
   missing: FieldInfo[];
 }
+
+// Fields to exclude from Known Information (org/admin data)
+const EXCLUDED_FIELDS = new Set([
+  'organization name', 'institution name', 'company name',
+  'signatory name', 'authorizer name', 'admin name',
+  'signatory designation', 'admin designation',
+  'organization address', 'institution address',
+  'organization email', 'organization phone',
+  'organization place', 'organization location',
+  'organization type',
+]);
 
 function formatFieldName(name: string): string {
   const fieldMap: Record<string, string> = {
@@ -43,10 +56,10 @@ function formatFieldName(name: string): string {
     'designation': 'Designation',
     'email': 'Email',
     'phone': 'Phone',
-    'institutionName': 'Institution Name',
-    'institution address': 'Institution Address',
     'purpose': 'Purpose',
     'date': 'Date',
+    'employee id': 'Employee ID',
+    'student id': 'Student ID',
   };
   
   const lower = name.toLowerCase();
@@ -58,6 +71,10 @@ function formatFieldName(name: string): string {
 
 function cleanValue(value: string): string {
   return value.replace(/\*\*/g, '').trim();
+}
+
+function isExcludedField(fieldName: string): boolean {
+  return EXCLUDED_FIELDS.has(fieldName.toLowerCase().trim());
 }
 
 function parseFieldLists(content: string): ParsedFields | null {
@@ -79,9 +96,10 @@ function parseFieldLists(content: string): ParsedFields | null {
       }
       if (trimmed === '' || trimmed.startsWith('#')) continue;
       
-      const fieldMatch = line.match(/^[-*]\s*\*?([^:]+)\*?:\s*(.+)$/);
+      const fieldMatch = line.match(/^[-*]\s*\*?\*?([^:*]+)\*?\*?:\s*(.+)$/);
       if (fieldMatch) {
         const [, fieldName, fieldValue] = fieldMatch;
+        if (isExcludedField(fieldName)) continue;
         if (inMissingSection || trimmed.includes('?')) {
           missing.push({ name: fieldName.trim(), value: cleanValue(fieldValue), isMissing: true });
         } else {
@@ -99,8 +117,9 @@ function parseFieldLists(content: string): ParsedFields | null {
   if (knownMatch) {
     const knownLines = knownMatch[1].split('\n');
     for (const line of knownLines) {
-      const match = line.match(/^[-*]\s*\*?([^:]+)\*?:\s*(.+)$/);
+      const match = line.match(/^[-*]\s*\*?\*?([^:*]+)\*?\*?:\s*(.+)$/);
       if (match) {
+        if (isExcludedField(match[1])) continue;
         known.push({ name: match[1].trim(), value: cleanValue(match[2]), isMissing: false });
       }
     }
@@ -109,8 +128,9 @@ function parseFieldLists(content: string): ParsedFields | null {
   if (missingMatch) {
     const missingLines = missingMatch[1].split('\n');
     for (const line of missingLines) {
-      const match = line.match(/^[-*]\s*\*?([^:]+)\*?:\s*(.+)$/);
+      const match = line.match(/^[-*]\s*\*?\*?([^:*]+)\*?\*?:\s*(.+)$/);
       if (match) {
+        if (isExcludedField(match[1])) continue;
         missing.push({ name: match[1].trim(), value: cleanValue(match[2]), isMissing: true });
       }
     }
@@ -142,7 +162,6 @@ function formatMessage(content: string): React.ReactNode[] {
       return;
     }
 
-    // Handle unordered list items
     if (trimmed.match(/^[-*]\s/)) {
       const item = trimmed.replace(/^[-*]\s/, '');
       elements.push(
@@ -154,7 +173,6 @@ function formatMessage(content: string): React.ReactNode[] {
       return;
     }
 
-    // Handle ordered list items
     const orderedMatch = trimmed.match(/^(\d+)\.\s(.*)$/);
     if (orderedMatch) {
       elements.push(
@@ -166,12 +184,11 @@ function formatMessage(content: string): React.ReactNode[] {
       return;
     }
 
-    // Handle GENERATE_DOCUMENT line - hide it from user view
-    if (trimmed.includes('GENERATE_DOCUMENT:')) {
-      return; // Don't show internal command to user
+    // Hide internal commands
+    if (trimmed.includes('GENERATE_DOCUMENT:') || trimmed.startsWith('DISAMBIGUATE:')) {
+      return;
     }
 
-    // Regular line with formatting
     elements.push(
       <span key={`span-${lineIndex}`} dangerouslySetInnerHTML={{ __html: formatText(trimmed) }} />
     );
@@ -202,7 +219,7 @@ function FieldCard({ fields, title, type }: { fields: FieldInfo[]; title: string
             )}
             <div className="flex-1 min-w-0">
               <span className="text-xs text-muted-foreground">{formatFieldName(field.name)}:</span>
-              <span className={cn("ml-1 text-sm", type === 'known' ? "text-green-800" : "text-amber-800 font-medium")}>
+              <span className={cn("ml-1 text-sm", type === 'known' ? "text-green-800 font-medium" : "text-amber-800 font-medium")}>
                 {field.value}
               </span>
             </div>
@@ -213,8 +230,31 @@ function FieldCard({ fields, title, type }: { fields: FieldInfo[]; title: string
   );
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, onDisambiguationSelect }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  
+  // Check for disambiguation message
+  if (!isUser && message.content.startsWith('DISAMBIGUATE:')) {
+    try {
+      const matchesJson = message.content.slice('DISAMBIGUATE:'.length);
+      const matches = JSON.parse(matchesJson);
+      if (Array.isArray(matches) && onDisambiguationSelect) {
+        return (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+            </div>
+            <div className="max-w-[80%]">
+              <DisambiguationCard matches={matches} onSelect={onDisambiguationSelect} />
+            </div>
+          </div>
+        );
+      }
+    } catch {
+      // Fall through to normal rendering
+    }
+  }
+  
   const parsedFields = !isUser ? parseFieldLists(message.content) : null;
 
   return (
@@ -227,7 +267,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {isUser ? (
           <User className="h-4 w-4" />
         ) : (
-          <Bot className="h-4 w-4 text-blue-600" />
+          <Sparkles className="h-4 w-4 text-blue-600" />
         )}
       </div>
       <div

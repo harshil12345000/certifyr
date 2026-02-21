@@ -1,14 +1,28 @@
-import { Loader2 } from 'lucide-react';
+import { Sparkles, Lightbulb, Search, Hammer } from 'lucide-react';
 
 interface LoadingPlaceholderProps {
   message?: string;
+}
+
+function getIcon(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes('searching') || lower.includes('fetching')) {
+    return <Search className="h-4 w-4 text-blue-600 animate-pulse" />;
+  }
+  if (lower.includes('generating') || lower.includes('document')) {
+    return <Hammer className="h-4 w-4 text-blue-600 animate-bounce" />;
+  }
+  if (lower.includes('thinking')) {
+    return <Lightbulb className="h-4 w-4 text-blue-600 animate-pulse" />;
+  }
+  return <Sparkles className="h-4 w-4 text-blue-600 animate-spin" />;
 }
 
 export function LoadingPlaceholder({ message = 'Thinking...' }: LoadingPlaceholderProps) {
   return (
     <div className="flex items-start gap-3">
       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-        <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+        {getIcon(message)}
       </div>
       <div className="bg-muted px-4 py-3 rounded-lg rounded-tl-none min-w-[180px]">
         <div className="flex items-center gap-2">

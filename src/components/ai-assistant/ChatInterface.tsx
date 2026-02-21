@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, FileSpreadsheet, Globe, MoveUp } from 'lucide-react';
+import { Sparkles, FileSpreadsheet, Globe, MoveUp } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { LoadingPlaceholder } from './LoadingPlaceholder';
 import { ChatMessage } from '@/hooks/useChatSessions';
@@ -9,18 +9,24 @@ import { ChatMessage } from '@/hooks/useChatSessions';
 interface ChatInterfaceProps {
   messages: ChatMessage[];
   onSendMessage: (message: string) => Promise<void>;
+  onDisambiguationSelect?: (match: { name: string; id: string; department: string }) => void;
   employeeDataCount: number;
   contextCountry?: string;
   isGenerating?: boolean;
+  isDocumentGeneration?: boolean;
+  loadingMessage?: string;
   loading?: boolean;
 }
 
 export function ChatInterface({
   messages,
   onSendMessage,
+  onDisambiguationSelect,
   employeeDataCount,
   contextCountry,
   isGenerating,
+  isDocumentGeneration,
+  loadingMessage,
   loading,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
@@ -68,13 +74,18 @@ export function ChatInterface({
     }
   };
 
+  // Determine loading message
+  const currentLoadingMessage = isDocumentGeneration 
+    ? 'Generating document...' 
+    : loadingMessage || 'Thinking...';
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="p-4 rounded-full bg-blue-100 mb-4">
-              <Bot className="h-8 w-8 text-blue-600" />
+              <Sparkles className="h-8 w-8 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold mb-2">How can I help you?</h3>
             <p className="text-muted-foreground text-sm max-w-md mb-4">
@@ -106,12 +117,16 @@ export function ChatInterface({
           </div>
         ) : (
           messages.map((message, index) => (
-            <MessageBubble key={index} message={message} />
+            <MessageBubble 
+              key={index} 
+              message={message}
+              onDisambiguationSelect={onDisambiguationSelect}
+            />
           ))
         )}
         
         {isGenerating && (
-          <LoadingPlaceholder message="Verifying & fetching data..." />
+          <LoadingPlaceholder message={currentLoadingMessage} />
         )}
         
         <div ref={messagesEndRef} />
