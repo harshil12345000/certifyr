@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -12,7 +12,7 @@ interface AIFloatingWidgetProps {
   className?: string;
 }
 
-export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
+function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
   const { user } = useAuth();
   const { organizationId, organizationDetails, userProfile } = useBranding();
   
@@ -130,3 +130,5 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
     </div>
   );
 }
+
+export const AIFloatingWidget = React.memo(AIFloatingWidgetComponent);

@@ -4,7 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { TrialBanner } from "./TrialBanner";
 import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
-import { useAIWidgetEligibility } from "@/hooks/useAIWidgetEligibility";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
@@ -24,8 +24,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [isCollapsed]);
 
   const { user } = useAuth();
-  const isEligible = useAIWidgetEligibility();
-  const showAIWidget = user && isEligible;
+  const { subscription, loading } = useSubscription();
+  const showAIWidget = user && !loading && subscription?.active_plan?.toLowerCase() === 'ultra';
 
   return (
     <div className="min-h-screen bg-background">
