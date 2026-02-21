@@ -27,7 +27,7 @@ const basicFeatures = [
 ];
 
 const proFeatures = [
-  "Everything in Basic",
+  "Unlimited Document Generation",
   "QR Verification",
   "Request Portal (Up to 100 Members)",
   "Up to 5 Admins",

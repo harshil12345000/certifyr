@@ -5,23 +5,46 @@ import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { popularTemplates } from "@/data/mockData";
 import { TemplateCard } from "@/components/dashboard/TemplateCard";
 import { Button } from "@/components/ui/button";
-import { BarChart, FileText, Users, FolderOpen } from "lucide-react";
+import { BarChart, FileText, Users, FolderOpen, AlertTriangle } from "lucide-react";
 import { Document } from "@/types/document";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { useUserActivity } from "@/hooks/useUserActivity";
 import { useUserDocuments } from "@/hooks/useUserDocuments";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useSubscription } from "@/hooks/useSubscription";
 import { uniqueDocuments, uniqueTemplates } from "./Documents";
 import { getDocumentConfig } from "@/config/documentConfigs";
 import { Link } from "react-router-dom";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { BookmarkCheck } from "lucide-react";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const {
     user
   } = useAuth();
+  const { subscription } = useSubscription();
+
+  // Document usage for Basic plan
+  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
+
+  // Fetch document usage for Basic users
+  useEffect(() => {
+    const fetchDocumentUsage = async () => {
+      if (!isBasicFree || !user) return;
+      try {
+        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+        if (!error && data) {
+          setDocumentUsage({ used: data.used || 0, limit: data.limit || 25, remaining: data.remaining || 0 });
+        }
+      } catch (err) {
+        console.error('Error fetching document usage:', err);
+      }
+    };
+    fetchDocumentUsage();
+  }, [isBasicFree, user]);
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
@@ -89,6 +112,46 @@ const Index = () => {
             </p>
           </div>
         </div>
+
+        {/* Document Usage Banner for Basic Users */}
+        {isBasicFree && documentUsage && (
+          <div className={`p-4 rounded-lg border ${documentUsage.remaining <= 5 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className={`h-5 w-5 ${documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600'}`} />
+                <div>
+                  <p className={`font-medium ${documentUsage.remaining <= 5 ? 'text-red-800' : 'text-blue-800'}`}>
+                    Basic Plan - Document Limit
+                  </p>
+                  <p className={`text-sm ${documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600'}`}>
+                    You've used {documentUsage.used} of {documentUsage.limit} documents this month
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className={`text-2xl font-bold ${documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600'}`}>
+                    {documentUsage.remaining}
+                  </p>
+                  <p className={`text-xs ${documentUsage.remaining <= 5 ? 'text-red-500' : 'text-blue-500'}`}>
+                    remaining
+                  </p>
+                </div>
+                <Link to="/checkout">
+                  <Button size="sm" className="bg-[#1b80ff] hover:bg-[#1566d4]">
+                    Upgrade to Pro
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all ${documentUsage.remaining <= 5 ? 'bg-red-500' : 'bg-blue-500'}`}
+                style={{ width: `${Math.min((documentUsage.used / documentUsage.limit) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

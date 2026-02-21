@@ -229,8 +229,8 @@ CRITICAL INSTRUCTIONS - FOLLOW THESE EXACTLY:
 
 RESPONSE FORMAT when you have employee/student data:
 
-### Known Information
-- **Full Name**: [exact value from data]
+### Known Information [extract from JSON Data]
+- **Full Name**: [exact value from JSON data]
 - **Gender**: [value]
 - **Date of Birth**: [value in DD/MM/YYYY]
 - **Department**: [value]
@@ -250,7 +250,7 @@ AI finds John in data with: name=John Smith, department=IT, designation=Develope
 AI responds:
 "I found John Smith's information:
 
-### Known Information
+### Known Information (Show all employee/student data fetched from JSON data)
 - **Full Name**: John Smith
 - **Gender**: male
 - **Department**: IT
@@ -258,8 +258,8 @@ AI responds:
 - **Date of Birth**: 15/03/1995
 
 ### Missing Information
-1. **Purpose**: What is the purpose of this bonafide certificate?
-2. **Person Type**: Is John a student or employee?
+1. **Purpose**: What is the purpose of this bonafide certificate? (Note: this is an example question)
+2. **Person Type**: Is John a student or employee? (Note: this is an example question)
 
 EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
 - AI: "What is John's full name?" (WRONG - name is already in the data)
