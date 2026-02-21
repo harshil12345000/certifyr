@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Sparkles, X, MessageSquare } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useAIChat } from '@/hooks/useAIChat';
@@ -46,6 +46,13 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
     await sendMessage(content);
   }, [sendMessage]);
 
+  const handleDisambiguationSelect = useCallback(async (match: { name: string; id: string; department: string }) => {
+    const msg = match.id 
+      ? `I'm referring to ${match.name} (ID: ${match.id})`
+      : `I'm referring to ${match.name}`;
+    await handleSend(msg);
+  }, [handleSend]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -61,20 +68,20 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
   return (
     <>
       <div 
-        className={cn("fixed bottom-6 right-20 z-40 flex flex-col items-end", className)}
+        className={cn("fixed bottom-6 right-20 z-40 flex flex-col-reverse items-end", className)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {isOpen && (
-          <div className="mb-3 bg-background rounded-lg shadow-2xl border overflow-hidden w-[380px] h-[500px] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white">
+          <div className="mb-3 mr-0 bg-background rounded-lg shadow-2xl border overflow-hidden w-[380px] h-[450px] flex flex-col animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
+            <div className="flex items-center justify-between px-3 py-2.5 bg-blue-600 text-white shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
                 <span className="font-medium text-sm">AI Assistant</span>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/80 hover:text-white transition-colors"
+                className="text-white/80 hover:text-white transition-colors p-1"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -83,6 +90,7 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
             <ChatInterface
               messages={messages}
               onSendMessage={handleSend}
+              onDisambiguationSelect={handleDisambiguationSelect}
               employeeDataCount={employeeDataCount}
               contextCountry={contextCountry}
               isGenerating={isGenerating}
@@ -96,7 +104,7 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
         <Button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "h-12 w-12 rounded-full shadow-lg transition-all duration-200",
+            "h-11 w-11 rounded-full shadow-lg transition-all duration-200",
             "bg-blue-600 hover:bg-blue-700 text-white",
             isOpen && "rotate-90",
             isHovered && "scale-110"
