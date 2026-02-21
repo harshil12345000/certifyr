@@ -212,7 +212,8 @@ RESPONSE FORMAT when you have employee/student data:
 (list ALL employee/student fields found - NOT organization/signatory details)
 
 ### Missing Information
-- **Purpose**: What is the purpose of this certificate?
+1. **[Field Name]**: [question for user]
+2. **[Field Name]**: [question for user]
 (list ONLY fields that are required for the template but missing from data) (don't question if not required)
 
 IMPORTANT RULES FOR Known Information:
