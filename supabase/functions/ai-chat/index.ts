@@ -212,7 +212,7 @@ RESPONSE FORMAT when you have employee/student data:
 (list ALL employee/student fields found - NOT organization/signatory details)
 
 ### Missing Information
-- **Purpose**: What is the purpose of this certificate?
+1. **Purpose**: What is the purpose of this certificate?
 (list ONLY fields that are required for the template but missing from data)
 
 IMPORTANT RULES FOR Known Information:
@@ -233,8 +233,8 @@ AI responds:
 - **Date of Birth**: 15/03/1995
 
 ### Missing Information
-- **Purpose**: What is the purpose of this bonafide certificate? (Note: this is just an example question)
-- **Person Type**: Is John a student or employee?" (Note: this is just an example question)
+1. **Purpose**: What is the purpose of this bonafide certificate?
+2. **Person Type**: Is John a student or employee?
 
 EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
 - AI: "What is John's full name?" (WRONG - name is already in the data)
