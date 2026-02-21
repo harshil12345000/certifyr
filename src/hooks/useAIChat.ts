@@ -32,6 +32,9 @@ export function useAIChat(
   const [isDocumentGeneration, setIsDocumentGeneration] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Thinking...');
   
+  const messagesRef = useRef<ChatMessage[]>([]);
+  messagesRef.current = messages;
+  
   const { contextCountry } = useAIContext();
   const { employeeData, loadData } = useEmployeeData();
   const navigate = useNavigate();
@@ -99,7 +102,7 @@ export function useAIChat(
   }, [sessionId]);
 
   const handleSendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || isGenerating || loadingRef.current) return;
+    if (!content.trim() || loadingRef.current) return;
     
     loadingRef.current = true;
 
@@ -109,7 +112,7 @@ export function useAIChat(
       timestamp: Date.now(),
     };
 
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = [...messagesRef.current, userMessage];
     setMessages(updatedMessages);
 
     setIsGenerating(true);
@@ -198,7 +201,7 @@ export function useAIChat(
       setLoadingMessage('Thinking...');
       loadingRef.current = false;
     }
-  }, [messages, isGenerating, employeeData, orgInfo, contextCountry, organizationId, navigate, saveMessages]);
+  }, [employeeData, orgInfo, contextCountry, organizationId, navigate, saveMessages]);
 
   return {
     messages,
