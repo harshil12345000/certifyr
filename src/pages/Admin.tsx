@@ -44,6 +44,7 @@ import { AnnouncementAdminPanel } from "@/components/admin/AnnouncementAdminPane
 import { UserPermissionsPanel } from "@/components/admin/UserPermissionsPanel";
 import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { SubscriptionManagementPanel } from "@/components/admin/SubscriptionManagementPanel";
+import { DataTab } from "@/components/admin/DataTab";
 import { organizationTypes, organizationSizes } from "@/lib/defaults";
 
 interface UserProfileFormState {
@@ -239,7 +240,7 @@ const FileDropzone = ({
   );
 };
 
-const VALID_TABS = ["organization", "branding", "admin", "announcements", "subscription"];
+const VALID_TABS = ["organization", "branding", "admin", "announcements", "subscription", "data"];
 
 const AdminPage = () => {
   const { user } = useAuth();
@@ -704,6 +705,12 @@ const AdminPage = () => {
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
             <Separator orientation="vertical" className="h-6" />
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
+            {hasFeature('aiAssistant') && (
+              <>
+                <Separator orientation="vertical" className="h-6" />
+                <TabsTrigger value="data">Data</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="organization" className="space-y-6">
@@ -978,6 +985,12 @@ const AdminPage = () => {
           <TabsContent value="subscription" className="space-y-6">
             <SubscriptionManagementPanel organizationId={organizationId} />
           </TabsContent>
+
+          {hasFeature('aiAssistant') && (
+            <TabsContent value="data" className="space-y-6">
+              <DataTab organizationId={organizationId} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>

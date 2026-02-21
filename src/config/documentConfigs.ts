@@ -1482,3 +1482,27 @@ export const getDocumentConfig = (templateId: string): DocumentConfig | undefine
   const baseId = templateId.replace(/-\d+$/, '');
   return documentConfigs[baseId];
 };
+
+export interface TemplateWithFields {
+  id: string;
+  name: string;
+  requiredFields: string[];
+}
+
+export const getTemplatesWithFields = (): TemplateWithFields[] => {
+  return Object.values(documentConfigs).map(config => {
+    const requiredFields: string[] = [];
+    config.sections.forEach(section => {
+      section.fields.forEach(field => {
+        if (field.required) {
+          requiredFields.push(field.name);
+        }
+      });
+    });
+    return {
+      id: config.id,
+      name: config.name,
+      requiredFields,
+    };
+  });
+};

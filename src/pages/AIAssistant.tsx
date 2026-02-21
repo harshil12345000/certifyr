@@ -1,42 +1,98 @@
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Globe, Sparkles, FileText, Scale, MessageSquare, Zap } from 'lucide-react';
-import { CountryContextSelector } from '@/components/ai-assistant/CountryContextSelector';
+import { Globe, Sparkles, Bot } from 'lucide-react';
 import { useAIContext } from '@/hooks/useAIContext';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { UpgradePrompt } from '@/components/shared/UpgradePrompt';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const upcomingFeatures = [
-  {
-    icon: <MessageSquare className="h-5 w-5" />,
-    title: 'Natural Language Document Generation',
-    description: 'Describe what you need and let AI create the document for you.',
-  },
-  {
-    icon: <Scale className="h-5 w-5" />,
-    title: 'Country-Specific Legal Compliance',
-    description: 'AI follows the laws and standards of your selected country.',
-  },
-  {
-    icon: <FileText className="h-5 w-5" />,
-    title: 'Smart Template Suggestions',
-    description: 'Get intelligent recommendations based on your needs.',
-  },
-  {
-    icon: <Zap className="h-5 w-5" />,
-    title: 'Custom Document Requests',
-    description: 'Request any document type and AI will help create it.',
-  },
-];
+import { useAuth } from '@/contexts/AuthContext';
+import { useBranding } from '@/contexts/BrandingContext';
+import { useChatSessions, ChatMessage } from '@/hooks/useChatSessions';
+import { useEmployeeData } from '@/hooks/useEmployeeData';
+import { ChatLayout } from '@/components/ai-assistant/ChatLayout';
+import { CountryContextSelector } from '@/components/ai-assistant/CountryContextSelector';
+import { useState, useCallback, useEffect } from 'react';
+import { sendChatMessage } from '@/lib/groq-client';
 
 function AIAssistantContent() {
+  const { user } = useAuth();
+  const { organizationId } = useBranding();
   const { contextCountry, loading: contextLoading, updateContextCountry } = useAIContext();
+  const { employeeData, loadData } = useEmployeeData();
+  
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const {
+    sessions,
+    currentSession,
+    loading: sessionsLoading,
+    createSession,
+    loadSession,
+    deleteSession,
+    updateTitle,
+    addMessage,
+  } = useChatSessions(user?.id, organizationId);
+
+  useEffect(() => {
+    if (organizationId) {
+      loadData(organizationId);
+    }
+  }, [organizationId, loadData]);
+
+  const handleSendMessage = useCallback(async (message: string) => {
+    if (!message.trim() || isGenerating) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: message,
+      timestamp: Date.now(),
+    };
+
+    setIsGenerating(true);
+    
+    try {
+      await addMessage(userMessage);
+
+      const currentMessages = currentSession?.messages || [];
+      const allMessages = [...currentMessages, userMessage];
+
+      const response = await sendChatMessage(
+        allMessages,
+        employeeData as Record<string, unknown>[],
+        { model: 'llama-3.1-8b-instant' }
+      );
+
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: response,
+        timestamp: Date.now(),
+      };
+
+      await addMessage(assistantMessage);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to get response'}`,
+        timestamp: Date.now(),
+      };
+      await addMessage(errorMessage);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [addMessage, currentSession, employeeData, isGenerating]);
+
+  const handleNewChat = useCallback(async () => {
+    await createSession();
+  }, [createSession]);
+
+  const handleSelectSession = useCallback(async (sessionId: string) => {
+    await loadSession(sessionId);
+  }, [loadSession]);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -49,7 +105,6 @@ function AIAssistantContent() {
         </div>
       </div>
 
-      {/* Country Context Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -78,50 +133,34 @@ function AIAssistantContent() {
         </CardContent>
       </Card>
 
-      {/* Chat Placeholder */}
-      <Card className="min-h-[300px] flex flex-col items-center justify-center text-center">
-        <CardContent className="pt-6">
-          <div className="mx-auto mb-4 p-4 rounded-full bg-purple-100">
-            <Bot className="h-10 w-10 text-purple-600" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">AI Assistant Coming Soon</h3>
-          <p className="text-muted-foreground max-w-md">
-            We're building an intelligent AI assistant that will help you generate documents
-            through natural conversation. Stay tuned for updates!
-          </p>
-        </CardContent>
-      </Card>
+      {employeeData.length > 0 && (
+        <Card className="bg-purple-50 border-purple-200">
+          <CardContent className="py-3">
+            <p className="text-sm text-purple-700">
+              <Bot className="h-4 w-4 inline mr-1" />
+              {employeeData.length} employee records loaded. The AI can auto-fill certificate fields with this data.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Upcoming Features */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            <CardTitle className="text-lg">What's Coming</CardTitle>
-          </div>
-          <CardDescription>
-            Exciting AI-powered features we're working on for you
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            {upcomingFeatures.map((feature, index) => (
-              <div 
-                key={index}
-                className="flex gap-3 p-4 rounded-lg border bg-muted/30"
-              >
-                <div className="flex-shrink-0 p-2 rounded-md bg-purple-100 text-purple-600 h-fit">
-                  {feature.icon}
-                </div>
-                <div>
-                  <h4 className="font-medium mb-1">{feature.title}</h4>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <ChatLayout
+        sessions={sessions.map(s => ({ id: s.id, title: s.title, updated_at: s.updated_at }))}
+        currentSession={currentSession ? {
+          id: currentSession.id,
+          title: currentSession.title,
+          messages: currentSession.messages,
+        } : null}
+        loading={sessionsLoading}
+        onNewChat={handleNewChat}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={deleteSession}
+        onRenameSession={updateTitle}
+        onSendMessage={handleSendMessage}
+        employeeData={employeeData}
+        contextCountry={contextCountry}
+        isGenerating={isGenerating}
+      />
     </div>
   );
 }
@@ -141,7 +180,6 @@ export default function AIAssistant() {
     );
   }
 
-  // Check if user has access to AI Assistant (Ultra only)
   if (!hasFeature('aiAssistant')) {
     return (
       <DashboardLayout>
