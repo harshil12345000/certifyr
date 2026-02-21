@@ -368,9 +368,6 @@ export default function Branding() {
               icon={Image}
             />
           </div>
-          <p className="text-sm text-muted-foreground">
-            Digital signatures are now managed per admin under Account Settings → Profile Information.
-          </p>
         </TabsContent>
 
         <TabsContent value="files" className="space-y-6">

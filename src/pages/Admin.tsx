@@ -62,12 +62,10 @@ interface UserProfileFormState {
 
 interface BrandingFileState {
   logo: File | null;
-  signature: File | null;
 }
 
 interface BrandingFilePreview {
   logoUrl: string | null;
-  signatureUrl: string | null;
 }
 
 // FileDropzone component
@@ -91,7 +89,7 @@ const FileDropzone = ({
   icon?: React.ElementType;
   value?: File | null;
   previewSrc?: string;
-  type: "logo" | "signature";
+  type: "logo";
   boxClassName?: string;
 }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -142,7 +140,6 @@ const FileDropzone = ({
   let AssetIcon = Icon;
   if (!Icon) {
     if (type === "logo") AssetIcon = ImageIcon;
-    else if (type === "signature") AssetIcon = Pen;
     else AssetIcon = Cloud;
   }
 
@@ -270,12 +267,10 @@ const AdminPage = () => {
   });
   const [brandingFiles, setBrandingFiles] = useState<BrandingFileState>({
     logo: null,
-    signature: null,
   });
   const [brandingPreviews, setBrandingPreviews] = useState<BrandingFilePreview>(
     {
       logoUrl: null,
-      signatureUrl: null,
     },
   );
   const [isLoading, setIsLoading] = useState(true);
@@ -285,7 +280,6 @@ const AdminPage = () => {
     [key in keyof BrandingFileState]: File | null;
   }>({
     logo: null,
-    signature: null,
   });
 
 
@@ -395,7 +389,6 @@ const AdminPage = () => {
       if (filesData) {
         const previews: BrandingFilePreview = {
           logoUrl: null,
-          signatureUrl: null,
         };
 
         // Generate signed URLs for private storage access
@@ -409,8 +402,6 @@ const AdminPage = () => {
             if (!signedUrlError && signedUrlData?.signedUrl) {
               if (file.name === "logo")
                 previews.logoUrl = signedUrlData.signedUrl;
-              if (file.name === "signature")
-                previews.signatureUrl = signedUrlData.signedUrl;
             }
           } catch (error) {
             console.error(
@@ -665,7 +656,7 @@ const AdminPage = () => {
       if (currentOrgId) {
         await fetchBrandingFiles(currentOrgId);
         await refreshBranding();
-        setBrandingFiles({ logo: null, signature: null });
+        setBrandingFiles({ logo: null });
       }
     } catch (error) {
       console.error("Failed to save organization data:", error);
@@ -909,13 +900,13 @@ const AdminPage = () => {
                   <CardTitle>Branding Assets</CardTitle>
                   <CardDescription>
                     {organizationId
-                      ? "Upload your organization's logo and digital signature."
+                      ? "Upload your organization's logo."
                       : "Please add all your information in the Organization tab before uploading your branding."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {(
-                    ["logo", "signature"] as Array<
+                    ["logo"] as Array<
                       keyof BrandingFileState
                     >
                   ).map((type) => {
@@ -934,7 +925,6 @@ const AdminPage = () => {
                     };
                     let iconComp = Cloud;
                     if (type === "logo") iconComp = ImagePlus;
-                    else if (type === "signature") iconComp = Pen;
                     return (
                       <div key={type} className="space-y-2">
                         <Label
