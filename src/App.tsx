@@ -7,6 +7,7 @@ import { BrandingProvider } from "@/contexts/BrandingContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { RootRedirect } from "@/components/auth/RootRedirect";
+import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
 import Index from "@/pages/Index";
 import Documents from "@/pages/Documents";
 import NewDocuments from "@/pages/NewDocuments";
@@ -43,12 +44,62 @@ import OwnerDashboard from "@/pages/OwnerDashboard";
 
 const queryClient = new QueryClient();
 
-/** Helper: wraps a page in ProtectedRoute + SubscriptionGate */
 const Gated = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
     <SubscriptionGate>{children}</SubscriptionGate>
   </ProtectedRoute>
 );
+
+function AppContent() {
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<RootRedirect />} />
+        <Route path="/dashboard" element={<Gated><Index /></Gated>} />
+        <Route path="/documents" element={<Gated><NewDocuments /></Gated>} />
+        <Route path="/old-documents" element={<Gated><OldDocuments /></Gated>} />
+        <Route path="/documents/:id" element={<Gated><DocumentDetail /></Gated>} />
+        <Route path="/document-builder/:id" element={<Gated><DocumentBuilder /></Gated>} />
+        <Route path="/templates/:id" element={<Gated><DocumentDetail /></Gated>} />
+        <Route path="/templates/:id/edit" element={<Gated><DocumentBuilder /></Gated>} />
+        <Route path="/request-portal" element={<Gated><RequestPortal /></Gated>} />
+        <Route path="/ai-assistant" element={<Gated><AIAssistant /></Gated>} />
+        <Route path="/organization" element={<Gated><Admin /></Gated>} />
+        <Route path="/organization/documents" element={<Gated><AdminDocuments /></Gated>} />
+        <Route path="/organization/documents/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+        <Route path="/organization/templates" element={<Gated><AdminDocuments /></Gated>} />
+        <Route path="/organization/templates/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+        <Route path="/admin" element={<Gated><Admin /></Gated>} />
+        <Route path="/admin/documents" element={<Gated><AdminDocuments /></Gated>} />
+        <Route path="/admin/documents/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+        <Route path="/admin/templates" element={<Gated><AdminDocuments /></Gated>} />
+        <Route path="/admin/templates/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
+        <Route path="/settings" element={<Gated><Settings /></Gated>} />
+        <Route path="/history" element={<Gated><History /></Gated>} />
+        <Route path="/temp-doc/bonafide" element={<Gated><TempBonafideComparison /></Gated>} />
+        <Route path="/bookmarks" element={<Gated><BookmarksPage /></Gated>} />
+        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/confirm" element={<AuthConfirm />} />
+        <Route path="/auth/signup" element={<Onboarding />} />
+        <Route path="/auth/email-confirmed" element={<EmailConfirmed />} />
+        <Route path="/auth/email-verified" element={<EmailVerified />} />
+        <Route path="/auth/check-email" element={<CheckEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/portal/:slug" element={<EmployeePortal />} />
+        <Route path="/portal/:slug/documents/:id" element={<EmployeeDocumentDetail />} />
+        <Route path="/portal/:slug/templates/:id" element={<EmployeeDocumentDetail />} />
+        <Route path="/verify/:hash" element={<VerifyDocument />} />
+        <Route path="/no-access" element={<NoAccess />} />
+        <Route path="/owner" element={<OwnerDashboard />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+      <AIFloatingWidget />
+    </>
+  );
+}
 
 function App() {
   return (
@@ -57,58 +108,7 @@ function App() {
         <AuthProvider>
           <BrandingProvider>
             <BookmarksProvider>
-              <Routes>
-                {/* Root route */}
-                <Route path="/" element={<RootRedirect />} />
-
-                {/* All gated routes — require auth + active subscription */}
-                <Route path="/dashboard" element={<Gated><Index /></Gated>} />
-                <Route path="/documents" element={<Gated><NewDocuments /></Gated>} />
-                <Route path="/old-documents" element={<Gated><OldDocuments /></Gated>} />
-                <Route path="/documents/:id" element={<Gated><DocumentDetail /></Gated>} />
-                <Route path="/document-builder/:id" element={<Gated><DocumentBuilder /></Gated>} />
-                <Route path="/templates/:id" element={<Gated><DocumentDetail /></Gated>} />
-                <Route path="/templates/:id/edit" element={<Gated><DocumentBuilder /></Gated>} />
-                <Route path="/request-portal" element={<Gated><RequestPortal /></Gated>} />
-                <Route path="/ai-assistant" element={<Gated><AIAssistant /></Gated>} />
-                <Route path="/organization" element={<Gated><Admin /></Gated>} />
-                <Route path="/organization/documents" element={<Gated><AdminDocuments /></Gated>} />
-                <Route path="/organization/documents/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
-                <Route path="/organization/templates" element={<Gated><AdminDocuments /></Gated>} />
-                <Route path="/organization/templates/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
-                <Route path="/admin" element={<Gated><Admin /></Gated>} />
-                <Route path="/admin/documents" element={<Gated><AdminDocuments /></Gated>} />
-                <Route path="/admin/documents/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
-                <Route path="/admin/templates" element={<Gated><AdminDocuments /></Gated>} />
-                <Route path="/admin/templates/:id" element={<Gated><AdminDocumentBuilder /></Gated>} />
-                <Route path="/settings" element={<Gated><Settings /></Gated>} />
-                <Route path="/history" element={<Gated><History /></Gated>} />
-                <Route path="/temp-doc/bonafide" element={<Gated><TempBonafideComparison /></Gated>} />
-                <Route path="/bookmarks" element={<Gated><BookmarksPage /></Gated>} />
-
-                {/* Checkout routes — protected but NO subscription gate */}
-                <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-                <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
-
-                {/* Auth routes — public */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/auth/confirm" element={<AuthConfirm />} />
-                <Route path="/auth/signup" element={<Onboarding />} />
-                <Route path="/auth/email-confirmed" element={<EmailConfirmed />} />
-                <Route path="/auth/email-verified" element={<EmailVerified />} />
-                <Route path="/auth/check-email" element={<CheckEmail />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-
-                {/* Public routes */}
-                <Route path="/portal/:slug" element={<EmployeePortal />} />
-                <Route path="/portal/:slug/documents/:id" element={<EmployeeDocumentDetail />} />
-                <Route path="/portal/:slug/templates/:id" element={<EmployeeDocumentDetail />} />
-                <Route path="/verify/:hash" element={<VerifyDocument />} />
-                <Route path="/no-access" element={<NoAccess />} />
-                <Route path="/owner" element={<OwnerDashboard />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster />
+              <AppContent />
             </BookmarksProvider>
           </BrandingProvider>
         </AuthProvider>

@@ -3,9 +3,6 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { TrialBanner } from "./TrialBanner";
-import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -23,10 +20,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
   }, [isCollapsed]);
 
-  const { user } = useAuth();
-  const { subscription, loading } = useSubscription();
-  const showAIWidget = user && !loading && subscription?.active_plan?.toLowerCase() === 'ultra';
-
   return (
     <div className="min-h-screen bg-background">
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
@@ -37,7 +30,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
-      {showAIWidget && <AIFloatingWidget />}
     </div>
   );
 }

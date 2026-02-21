@@ -194,6 +194,17 @@ function buildSystemPrompt(
   prompt += `
 CRITICAL INSTRUCTIONS - FOLLOW THESE EXACTLY:
 
+0. TEMPLATE SELECTION - VERY IMPORTANT:
+   - User says "noc" or "noc for visa" or "noc for passport" → templateId: "noc-visa"
+   - User says "bonafide" or "bona fide" → templateId: "bonafide"
+   - User says "experience" or "experience letter" → templateId: "experience"
+   - User says "offer" or "offer letter" → templateId: "offer-letter"
+   - User says "character" → templateId: "character"
+   - User says "transfer" or "transfer certificate" or "tc" → templateId: "transfer"
+   - User says "completion" → templateId: "completion"
+   - User says "noc for experience" or "noc experience" → templateId: "noc-experience"
+   - DO NOT confuse these - noc is NOT bonafide
+
 1. ALWAYS check the employee/student data above FIRST. All information about the employee/student is already there.
 2. If the employee/student record exists in the data, use their information directly. DO NOT ask for fields that already exist in the data.
 3. ONLY ask for missing fields that are NOT in the employee/student data (e.g., purpose, reason, custom fields).
