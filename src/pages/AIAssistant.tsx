@@ -60,7 +60,7 @@ function AIAssistantContent() {
       const response = await sendChatMessage(
         allMessages,
         employeeData as Record<string, unknown>[],
-        { model: 'llama-3.1-8b-instant' }
+        { model: 'groq/compound' }
       );
 
       const assistantMessage: ChatMessage = {

@@ -7,7 +7,7 @@ export interface ChatMessage {
 }
 
 export interface GroqChatOptions {
-  model?: 'llama-3.1-8b-instant' | 'llama-3.3-70b-versatile' | 'mixtral-8x7b-32768';
+  model?: 'groq/compound' | 'groq/compound-mini' | 'llama-3.1-8b-instant' | 'llama-3.3-70b-versatile' | 'mixtral-8x7b-32768';
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
@@ -70,7 +70,7 @@ export async function sendChatMessage(
   employeeData: Record<string, unknown>[],
   options: GroqChatOptions = {}
 ): Promise<string> {
-  const { model = 'llama-3.1-8b-instant', temperature = 0.3, maxTokens = 1024 } = options;
+  const { model = 'groq/compound', temperature = 0.3, maxTokens = 1024 } = options;
 
   const templates = getTemplatesWithFields();
   const systemMessage: ChatMessage = {
@@ -78,7 +78,10 @@ export async function sendChatMessage(
     content: buildSystemPrompt(employeeData),
   };
 
-  const apiMessages = [systemMessage, ...messages];
+  const apiMessages = [
+    systemMessage,
+    ...messages.map(({ role, content }) => ({ role, content }))
+  ];
 
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
@@ -108,14 +111,17 @@ export async function* streamChatMessage(
   employeeData: Record<string, unknown>[],
   options: GroqChatOptions = {}
 ): AsyncGenerator<string> {
-  const { model = 'llama-3.1-8b-instant', temperature = 0.3 } = options;
+  const { model = 'groq/compound', temperature = 0.3 } = options;
 
   const systemMessage: ChatMessage = {
     role: 'system',
     content: buildSystemPrompt(employeeData),
   };
 
-  const apiMessages = [systemMessage, ...messages];
+  const apiMessages = [
+    systemMessage,
+    ...messages.map(({ role, content }) => ({ role, content }))
+  ];
 
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
