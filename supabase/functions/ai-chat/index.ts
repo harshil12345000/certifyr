@@ -350,7 +350,7 @@ serve(async (req) => {
         });
         if (resp.ok) {
           const data = await resp.json();
-          const title = (data.choices?.[0]?.message?.content || "New Chat").trim().replace(/["'.]+$/g, "");
+          const title = (data.choices?.[0]?.message?.content || "New Chat").trim().replace(/^["']+|["']+$/g, "");
           return new Response(JSON.stringify({ title }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });

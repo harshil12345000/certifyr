@@ -13,7 +13,7 @@ import {
   DoorOpen,
   Bookmark,
   Clock,
-  Bot,
+  Sparkles,
   Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
   {
     name: "AI Assistant",
     path: "/ai-assistant",
-    icon: <Bot className="h-5 w-5" />,
+    icon: <Sparkles className="h-5 w-5" />,
     requiredFeature: 'aiAssistant',
     planBadge: 'Ultra',
   },
