@@ -4,7 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { TrialBanner } from "./TrialBanner";
 import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
-import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { useAIWidgetEligibility } from "@/hooks/useAIWidgetEligibility";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
@@ -23,9 +23,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
   }, [isCollapsed]);
 
-  const { hasFeature, loading: planLoading } = usePlanFeatures();
   const { user } = useAuth();
-  const showAIWidget = user && !planLoading && hasFeature('aiAssistant');
+  const isEligible = useAIWidgetEligibility();
+  const showAIWidget = user && isEligible;
 
   return (
     <div className="min-h-screen bg-background">
