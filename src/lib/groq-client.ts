@@ -89,19 +89,30 @@ ${JSON.stringify(employeeData.slice(0, 10), null,2)}
 INSTRUCTIONS:
 1. When user asks to create a document, identify which template they want from their message
 2. Search the employee data for the person (exact match on name or ID first, then partial match)
-3. List which fields can be auto-filled from the data
-4. Ask specifically for any missing required fields - use proper capitalization (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth")
-5. Once all required data is collected, respond with exactly this format:
+3. FIRST, show what information you already have about this person from the employee data
+4. Then, list any MISSING required fields that are still needed
+5. Ask specifically for any missing required fields - use proper capitalization (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth")
+6. Format your response like this example by stating what you already know:
+   "I found John Doe's information:
+   - Name: John Doe
+   - Employee ID: EMP001
+   - Department: Engineering
+   - Designation: Software Engineer
+   
+   I still need the following information:
+   - Date of Birth: What is the employee's date of birth?
+   - Purpose: What is the purpose of this certificate?"
+7. Once all required data is collected, respond with exactly this format:
    GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2",...}
-6. Be concise. No fluff. Ask direct questions for missing info.
-7. If no employee data is available, ask for all required fields manually.
-8. Use DD/MM/YYYY format for all dates (e.g., 21/02/2026).
-9. For gender field, use exactly: "male", "female", or "other" (lowercase)
-10. For category/type field (student/employee), use exactly: "student" or "employee" (lowercase)
-11. Normalize all values to match the expected format in the employee data
-12. When asking for field values, format field names nicely (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth", "Employee ID" not "employeeId")
-13. IMPORTANT: Do NOT assume or guess fields like "purpose", "reason", "for", "reasonFor", etc. If the user did not specify these, ASK them explicitly. For example: "What is the purpose of this certificate?" or "What do you need this document for?"
-14. Only generate a document when you have ALL required fields. Ask for each missing field one at a time.
+8. Be concise. No fluff. Ask direct questions for missing info.
+9. If no employee data is available, ask for all required fields manually.
+10. Use DD/MM/YYYY format for all dates (e.g., 21/02/2026).
+11. For gender field, use exactly: "male", "female", or "other" (lowercase)
+12. For category/type field (student/employee), use exactly: "student" or "employee" (lowercase)
+13. Normalize all values to match the expected format in the employee data
+14. When asking for field values, format field names nicely (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth", "Employee ID" not "employeeId")
+15. IMPORTANT: Do NOT assume or guess fields like "purpose", "reason", "for", "reasonFor", etc. If the user did not specify these, ASK them explicitly. For example: "What is the purpose of this certificate?" or "What do you need this document for?"
+16. Only generate a document when you have ALL required fields. Ask for each missing field one at a time.
 `;
 
   return prompt;
@@ -124,7 +135,7 @@ export async function sendChatMessage(
   orgInfo?: OrgInfo,
   issueDate?: string
 ): Promise<string> {
-  const { model = 'groq/compound', temperature = 0.3, maxTokens = 1024 } = options;
+  const { model = 'groq/compound-mini', temperature = 0.3, maxTokens = 1024 } = options;
 
   const templates = getTemplatesWithFields();
   const systemMessage: ChatMessage = {
@@ -137,30 +148,39 @@ export async function sendChatMessage(
     ...messages.map(({ role, content }) => ({ role, content }))
   ];
 
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${getApiKey()}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages: apiMessages,
-      temperature,
-      max_tokens: maxTokens,
-    }),
-  });
+  const makeRequest = async (attempt: number): Promise<string> => {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getApiKey()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: apiMessages,
+        temperature,
+        max_tokens: maxTokens,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    if (response.status === 429) {
-      throw new Error("We're experiencing a lot of demand. Please try again in a bit.");
+    if (!response.ok) {
+      const error = await response.text();
+      if (response.status === 429 && attempt < 3) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(r => setTimeout(r, delay));
+        return makeRequest(attempt + 1);
+      }
+      if (response.status === 429) {
+        throw new Error("We're experiencing a lot of demand. Please try again in a bit.");
+      }
+      throw new Error(`Groq API error: ${response.status} - ${error}`);
     }
-    throw new Error(`Groq API error: ${response.status} - ${error}`);
-  }
 
-  const data = await response.json();
-  return data.choices[0]?.message?.content || '';
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  };
+
+  return makeRequest(0);
 }
 
 export async function* streamChatMessage(
@@ -168,7 +188,7 @@ export async function* streamChatMessage(
   employeeData: Record<string, unknown>[],
   options: GroqChatOptions = {}
 ): AsyncGenerator<string> {
-  const { model = 'groq/compound', temperature = 0.3 } = options;
+  const { model = 'groq/compound-mini', temperature = 0.3 } = options;
 
   const systemMessage: ChatMessage = {
     role: 'system',
@@ -180,27 +200,38 @@ export async function* streamChatMessage(
     ...messages.map(({ role, content }) => ({ role, content }))
   ];
 
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${getApiKey()}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages: apiMessages,
-      temperature,
-      stream: true,
-    }),
-  });
+  const makeRequest = async (attempt: number): Promise<Response> => {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getApiKey()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: apiMessages,
+        temperature,
+        stream: true,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    if (response.status === 429) {
-      throw new Error("We're experiencing a lot of demand. Please try again in a bit.");
+    if (!response.ok) {
+      const error = await response.text();
+      if (response.status === 429 && attempt < 3) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(r => setTimeout(r, delay));
+        return makeRequest(attempt + 1);
+      }
+      if (response.status === 429) {
+        throw new Error("We're experiencing a lot of demand. Please try again in a bit.");
+      }
+      throw new Error(`Groq API error: ${response.status} - ${error}`);
     }
-    throw new Error(`Groq API error: ${response.status} - ${error}`);
-  }
+
+    return response;
+  };
+
+  const response = await makeRequest(0);
 
   const reader = response.body?.getReader();
   const decoder = new TextDecoder();

@@ -5,6 +5,7 @@ import { Bot } from 'lucide-react';
 import { useAIContext } from '@/hooks/useAIContext';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { UpgradePrompt } from '@/components/shared/UpgradePrompt';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useChatSessions, ChatMessage } from '@/hooks/useChatSessions';
