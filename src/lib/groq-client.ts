@@ -53,8 +53,15 @@ export async function sendChatMessage(
     },
   });
 
+  // supabase.functions.invoke returns the parsed body in `data` even on non-2xx
+  // and sets `error` for non-2xx status codes
   if (error) {
-    throw new Error(error.message || 'Failed to get AI response');
+    // Try to extract the meaningful error from the response body
+    const serverMessage = data?.error || error.message || 'Failed to get AI response';
+    if (serverMessage.toLowerCase().includes('rate limit')) {
+      throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+    }
+    throw new Error(serverMessage);
   }
 
   if (data?.error) {
