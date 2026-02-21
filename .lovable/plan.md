@@ -1,143 +1,181 @@
-# Inline Document Editor -- Custom Text and Styling for All Documents
+# AI Assistant -- Complete Overhaul
 
-## Overview
+## Summary
 
-Add a lightweight "edit mode" to the document preview that lets organizations add custom text, rephrase existing content, and apply basic styling -- all without touching the underlying template code or layout structure. Think of it like a simple annotation layer on top of the rendered document.
+Fix all critical bugs (disappearing messages, duplicate chats, accuracy issues) and upgrade the AI Assistant to be production-grade: accurate data fetching, proper chat UX, smart loading states, MCQ disambiguation, AI-generated titles, and polished UI.
 
-## How It Works
+---
 
-When viewing a document preview, users see a **Pencil icon** button. Clicking it activates edit mode, which:
+## Issues Identified and Fixes
 
-1. Makes the document body `contentEditable`
-2. Shows a compact floating toolbar (pinned above the document) with minimal formatting options
-3. Any changes are saved as a `customContent` field inside the existing `form_data` JSONB -- no database schema changes needed
+### 1. Build Error Fix (dodo-webhook)
 
-When edit mode is off, the custom HTML is rendered on top of / merged with the base template output. The base layout components remain completely untouched.
+The `Uint8Array` to `ArrayBuffer` cast in `supabase/functions/dodo-webhook/index.ts` line 67 needs `as unknown as ArrayBuffer` instead of direct cast.
 
-## User Experience
+### 2. Replace All Bot Icons with Sparkles
+
+**Files**: `ChatInterface.tsx`, `MessageBubble.tsx`, `LoadingPlaceholder.tsx`, `AIAssistant.tsx`
+
+Replace every `Bot` import and usage with `Sparkles` from lucide-react. This includes the sidebar icon, message bubble avatars, and the employee data banner.
+
+### 3. Messages Disappearing -- Root Cause and Fix
+
+**Root cause**: In `AIAssistant.tsx`, `handleSendMessage` calls `addMessage()` only for the assistant response -- the user message is never persisted to state or DB. The `ChatInterface` clears input and calls `onSendMessage`, but the user message never gets added to the session.
+
+**Fix**: In `handleSendMessage`, call `await addMessage(userMessage)` FIRST before calling the AI, so the user message appears immediately. Then call `addMessage(assistantMessage)` for the response.
+
+### 4. Duplicate Chat Sessions
+
+**Root cause**: The `useEffect` on line 61-69 of `AIAssistant.tsx` auto-creates a session when `sessions.length === 0`. Meanwhile, `addMessage` in `useChatSessions.ts` also creates a session if `currentSession` is null. This race condition creates two sessions.
+
+**Fix**: Remove the auto-create logic from the useEffect. Instead, let `addMessage` handle session creation lazily (it already does). Only auto-load the first existing session if there is one.
+
+### 5. AI-Generated Chat Titles (4 words via AI)
+
+**Current**: Title is set to first 4 words of user message.
+
+**Fix**: After receiving the AI's first response in a new chat, make a lightweight secondary AI call (using the same Groq/Sarvam API) with a simple prompt: "Generate a 4-5 word title for this conversation: [user message]". Use the result to update the session title. Example: "Bonafide for Emma Williams".
+
+### 6. Move AI Calls to Edge Function (Security Fix)
+
+**Critical**: API keys (`VITE_GROQ_API_KEY`, `VITE_SARVAM_API_KEY`) are currently exposed in client-side `.env` variables. This violates the project's security rules.
+
+**Fix**: Create a new edge function `supabase/functions/ai-chat/index.ts` that:
+
+- Receives messages + employeeData + orgInfo from the client
+- Builds the system prompt server-side
+- Calls Groq/Sarvam with the keys stored as Supabase secrets
+- Returns the response
+
+Move `VITE_GROQ_API_KEY` and `VITE_SARVAM_API_KEY` to Supabase secrets as `GROQ_API_KEY` and `SARVAM_API_KEY`. Update `groq-client.ts` to call the edge function instead of directly calling external APIs.
+
+### 7. Data Accuracy -- Precise Employee Lookup
+
+**Problem**: The current approach dumps up to 20 employee records into the system prompt and relies on the LLM to find the right one. This causes hallucination and mixing of records.
+
+**Fix**: Instead of sending all employee data in the system prompt:
+
+1. When the user mentions a name, do a **server-side exact lookup** in the edge function
+2. The edge function queries `organization_data_records` for the matching name
+3. If exactly 1 match: include ONLY that record in the prompt
+4. If multiple matches: return a special `DISAMBIGUATE` response with the list of matching names
+5. If 0 matches: tell the user no record was found
+
+This eliminates hallucination because the LLM only sees the ONE correct record.
+
+### 8. MCQ Disambiguation Card
+
+When multiple employees match (e.g., 4 "Emma"s), render a selection card in the chat UI.
+
+**New component**: `DisambiguationCard.tsx` -- renders radio-button style cards for each match (showing name, employee ID, department). When user selects one, it sends a follow-up message like "I'm referring to Emma Williams (ID: EMP-042)".
+
+**MessageBubble update**: Detect `DISAMBIGUATE:` prefix in assistant messages and render the `DisambiguationCard` component instead of text.
+
+### 9. Loading/Thinking States
+
+**Fix `isGenerating` prop**: Currently `AIAssistant.tsx` passes `isDocumentGeneration` as `isGenerating` to `ChatLayout`. This means the loading state only shows during document navigation, not during AI thinking.
+
+**Fix**: Pass the actual `isGenerating` state (which is `true` from when the user sends until the AI responds). Add a secondary `isDocumentGeneration` prop for the "Generating document..." message variant.
+
+**Loading messages progression (Shimmering and Wave animation**:
+
+- "Thinking..." (default while waiting for AI) -- Use lightbulb icon
+- "Searching records..." (when name lookup is happening) -- Use Loading spinner icon
+- "Generating document..." (when navigating to document page) -- Use hammer icon
+
+### 10. Known/Missing Information UI (Green/Yellow Cards)
+
+The current `MessageBubble.tsx` already has `FieldCard` components with green/yellow styling. The parsing logic needs improvement:
+
+- Exclude organization/admin fields (signatory name, org name, etc.) from the "Known Information" card -- only show employee/student data
+- Ensure the AI prompt instructs it to format Known/Missing sections with markdown headers `### Known Information` and `### Missing Information` in proper format and styling
+
+### 11. Date Format DD/MM/YYYY and Gender Lowercase
+
+Already partially implemented in the system prompt. Reinforce in the edge function prompt and in the `parseGenerationResponse` normalizer.
+
+### 12. Organization/Admin Data Exclusion from Known Info
+
+Update the system prompt to explicitly say: "In your Known Information section, only list employee/student-specific fields (name, gender, parent name, course, department, designation, dates). Do NOT list organization name, signatory name, signatory designation, place, email, or phone -- these are already known."
+
+---
+
+## Technical Plan -- Files to Create/Modify
+
+### New Files
+
+
+| File                                                 | Purpose                                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `supabase/functions/ai-chat/index.ts`                | Edge function for AI calls -- keeps API keys server-side, does precise employee lookup |
+| `src/components/ai-assistant/DisambiguationCard.tsx` | MCQ selection card for multiple employee matches                                       |
+
+
+### Modified Files
+
+
+| File                                                 | Changes                                                                                                                                                                                                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `supabase/functions/dodo-webhook/index.ts`           | Fix `Uint8Array` cast: `secretBytes as unknown as ArrayBuffer`                                                                                                                                                                                     |
+| `src/lib/groq-client.ts`                             | Rewrite `sendChatMessage` to call the `ai-chat` edge function instead of direct API calls. Remove client-side API key usage. Keep `parseGenerationResponse` and helper functions.                                                                  |
+| `src/pages/AIAssistant.tsx`                          | (1) Replace `Bot` with `Sparkles`. (2) Add user message via `addMessage` before AI call. (3) Pass both `isGenerating` and `isDocumentGeneration`. (4) Remove auto-create session useEffect race. (5) Add AI title generation after first response. |
+| `src/hooks/useChatSessions.ts`                       | Fix `addMessage` to not create duplicate sessions. Remove the auto-title logic from `addMessage` (title will be set by AI call in `AIAssistant.tsx`).                                                                                              |
+| `src/components/ai-assistant/ChatInterface.tsx`      | Replace `Bot` with `Sparkles`. Accept separate `isThinking` and `isGeneratingDoc` props for different loading messages.                                                                                                                            |
+| `src/components/ai-assistant/ChatLayout.tsx`         | Pass through new loading state props.                                                                                                                                                                                                              |
+| `src/components/ai-assistant/MessageBubble.tsx`      | (1) Replace `Bot` with `Sparkles`. (2) Add disambiguation card rendering. (3) Improve field parsing to exclude org/admin fields.                                                                                                                   |
+| `src/components/ai-assistant/LoadingPlaceholder.tsx` | Accept dynamic message prop (already does), ensure shimmer is visible.                                                                                                                                                                             |
+| `src/components/ai-assistant/SessionSidebar.tsx`     | No icon changes needed (no Bot icon here).                                                                                                                                                                                                         |
+
+
+### Edge Function: `ai-chat/index.ts` Design
 
 ```text
-Preview Tab (normal)
- [Download PDF]  [Print]  [Save History] [Pencil icon]
-  +--------------------------------------------+
-  |  Rendered document (read-only view)        |
-  +--------------------------------------------+
+POST /ai-chat
+Body: { messages, orgInfo, contextCountry, issueDate, organizationId, searchName? }
 
-Preview Tab (edit mode active)
-  [Save Edits]  B  I  U  |  Font  |  Size  |  Color (10 swatches)
-  +--------------------------------------------+
-  |  Document content is now editable          |
-  |  User can click anywhere to type,          |
-  |  select text and apply formatting,         |
-  |  add new paragraphs at the end, etc.       |
-  +--------------------------------------------+
+1. Auth check (get user from JWT)
+2. If searchName provided:
+   a. Query organization_data_records for organizationId
+   b. Parse JSON records, fuzzy-match by name
+   c. If 1 match: attach ONLY that record to system prompt
+   d. If multiple: return { type: "disambiguate", matches: [...] }
+   e. If 0: return { type: "no_match" }
+3. Build system prompt with single employee record (not all 20)
+4. Call Sarvam/Groq API with server-side keys
+5. Return AI response
 ```
 
-### Toolbar Options (Minimal)
-
-- **Bold** / **Italic** / **Underline** -- toggle buttons
-- **Font family** -- dropdown with 5 options: Default, Arial, Times New Roman, Georgia
-- **Font size** -- dropdown: 8px, 10px, 12px, 14px, 16px, 18px, 20px, 24px, 30px, 36px
-- **Text color** -- 10 preset color swatches (black, dark gray, red, blue, green, orange, purple, brown, pink, navy)
-
-For pencil icon use "pencil_line" lucide icon.
-
-### Key Behaviors
-
-- Clicking the Pencil icon toggles edit mode on
-- Clicking "Save Edits" or clicking outside, saves and exits edit mode
-- Formatting only applies to selected text (does not affect other content)
-- Users can type new text inline, add paragraphs, delete text
-- All changes persist via the existing Save Document button into `form_data.customContent`
-- When loading from history, `customContent` is restored
-- PDF/Print export captures the edited content since it uses the rendered DOM
-
-## Technical Details
-
-### No Database Changes
-
-The `form_data` JSONB column already stores arbitrary data. We add a `customContent` key:
-
-```json
-{
-  "fullName": "John Doe",
-  "parentName": "Richard Roe",
-  "customContent": "<div>...edited HTML snapshot of the document body...</div>"
-}
-```
-
-### Files to Create
-
-
-| File                                               | Purpose                                                                 |
-| -------------------------------------------------- | ----------------------------------------------------------------------- |
-| `src/components/templates/DocumentEditToolbar.tsx` | Floating toolbar with Bold/Italic/Underline, font, size, color controls |
-
-
-### Files to Modify
-
-
-| File                                                     | Change                                                                                                                                                                  |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/pages/DocumentDetail.tsx`                           | Add edit mode state, Pencil button, wrap preview in editable container, capture edited HTML into formData                                                               |
-| `src/components/templates/DynamicPreview.tsx`            | Accept optional `contentEditable` and `customContent` props; when `customContent` exists and not editing, render the saved HTML snapshot instead of the template output |
-| `src/components/templates/layouts/CertificateLayout.tsx` | No changes -- base templates stay untouched                                                                                                                             |
-| `src/components/templates/layouts/LetterLayout.tsx`      | No changes                                                                                                                                                              |
-| `src/components/templates/layouts/AgreementLayout.tsx`   | No changes                                                                                                                                                              |
-| `src/components/templates/layouts/TranscriptLayout.tsx`  | No changes                                                                                                                                                              |
-
-
-### Implementation Approach
-
-**1. `DocumentEditToolbar.tsx` (new component)**
-
-A compact toolbar rendered above the document preview when edit mode is active:
-
-- Uses `document.execCommand()` for formatting (Bold, Italic, Underline, fontSize, foreColor, fontName)
-- 10 color swatches rendered as small circles
-- Font and size as small `<select>` dropdowns
-- Close button (X icon) to exit edit mode
-
-**2. `DocumentDetail.tsx` changes**
-
-- Add `isEditing` state and `editedHtml` state
-- Add Pencil icon button in the action bar
-- When entering edit mode: capture the current rendered HTML from `previewRef`, set `contentEditable="true"` on the preview container
-- When exiting edit mode: read `innerHTML` from the container, store in `formData.customContent`, set `contentEditable="false"`
-- The Save Document button already saves `formData` -- so `customContent` persists automatically
-- When loading from history with `customContent`, the preview renders the saved snapshot
-
-**3. `DynamicPreview.tsx` changes**
-
-- Accept optional `customContent` prop
-- If `customContent` is provided (and not in edit mode), render it via `dangerouslySetInnerHTML` (sanitized with DOMPurify) instead of the template layout
-- If no `customContent`, render normally via layout components
-
-**4. Edit mode flow**
+### Message Flow (Fixed)
 
 ```text
-User clicks Pencil
-  --> isEditing = true
-  --> Preview container gets contentEditable="true"
-  --> Toolbar appears
-  --> User edits text, applies formatting
-  --> User clicks Close or Save
-  --> innerHTML captured --> stored as formData.customContent
-  --> contentEditable removed
-  --> Next render uses customContent snapshot
+User types "Create bonafide for Emma"
+  --> addMessage(userMessage) -- user msg appears immediately
+  --> setIsGenerating(true) -- "Thinking..." shimmer shows
+  --> Call ai-chat edge function with searchName="Emma"
+  --> Edge function finds 1 match: returns AI response with precise data
+  --> addMessage(assistantMessage) -- response appears
+  --> If GENERATE_DOCUMENT detected: setIsDocumentGeneration(true), navigate
+  --> Generate 3-word title via secondary AI call, update session title
 ```
 
-### Security
+### Secrets to Add
 
-- All user-generated HTML is sanitized through DOMPurify before rendering (already used in the codebase)
-- `customContent` is stored in JSONB, never executed server-side
-- No new database tables or columns -- no migration needed
-- No RLS changes needed
+- `GROQ_API_KEY` (move from VITE_GROQ_API_KEY)
+- `SARVAM_API_KEY` (move from VITE_SARVAM_API_KEY)
 
-### What Does NOT Change
+The client-side `VITE_*` keys should be removed from `.env` after migration.
 
-- Template layout components (Certificate, Letter, Agreement, Transcript) -- completely untouched
-- Form fields and form data structure -- only a new optional key added
-- PDF/Print export -- works automatically since it captures the rendered DOM
-- Document save/load flow -- uses existing `form_data` JSONB
-- Employee portal preview -- unaffected (edit mode only available on the main DocumentDetail page)
+---
+
+## Priority Order
+
+1. Implement precise employee lookup in edge function
+2. Fix build error (dodo-webhook cast)
+3. Fix message disappearing (add user message to session)
+4. Fix duplicate chat creation (remove race condition)
+5. Replace Bot icons with Sparkles everywhere
+6. Fix loading state pass-through (isGenerating vs isDocumentGeneration)
+7. Create ai-chat edge function and migrate API calls server-side
+8. Add disambiguation card for multiple matches
+9. AI-generated 4/5-word chat titles
+10. Refine system prompt (exclude org data from Known Info, enforce formats)
