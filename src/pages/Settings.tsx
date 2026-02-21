@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import {
   Card,
@@ -21,7 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Moon, Sun, User, Palette, Shield, Globe } from "lucide-react";
+import { Bell, Moon, Sun, User, Palette, Shield, Globe, Upload, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { SettingsSkeleton } from "@/components/dashboard/SettingsSkeleton";
+import { processSignatureImage } from "@/lib/signature-utils";
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -46,6 +47,12 @@ const Settings = () => {
     designation: "",
     phone: "",
   });
+
+  // Signature state
+  const [signaturePath, setSignaturePath] = useState<string | null>(null);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+  const [uploadingSignature, setUploadingSignature] = useState(false);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
 
   const [preferences, setPreferences] = useState({
     theme: "light",
@@ -96,6 +103,16 @@ const Settings = () => {
             designation: profile.designation || "",
             phone: profile.phone_number || "",
           });
+
+          // Load signature
+          const sigPath = (profile as any).signature_path as string | null;
+          if (sigPath) {
+            setSignaturePath(sigPath);
+            const { data: urlData } = supabase.storage
+              .from("branding-assets")
+              .getPublicUrl(sigPath);
+            setSignatureUrl(urlData.publicUrl);
+          }
         } else {
           // If no profile exists, just set email from user
           setFormData((prev) => ({
@@ -171,6 +188,92 @@ const Settings = () => {
       toast.error("Failed to save profile: " + (error?.message || "Unknown error"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Signature upload handler
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type: only PNG or JPG
+    if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+      toast.error("Please upload PNG or JPG files only");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setUploadingSignature(true);
+    try {
+      // Process image: B&W + remove background
+      const processedBlob = await processSignatureImage(file);
+      const processedFile = new File([processedBlob], "signature.png", { type: "image/png" });
+
+      const timestamp = Date.now();
+      const filePath = `signatures/${user.id}/signature-${timestamp}.png`;
+
+      // Delete old signature from storage if exists
+      if (signaturePath) {
+        await supabase.storage.from("branding-assets").remove([signaturePath]);
+      }
+
+      // Upload new signature
+      const { error: uploadError } = await supabase.storage
+        .from("branding-assets")
+        .upload(filePath, processedFile, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) {
+        toast.error("Failed to upload signature: " + uploadError.message);
+        return;
+      }
+
+      // Update user_profiles with signature_path
+      const { error: dbError } = await supabase
+        .from("user_profiles")
+        .update({ signature_path: filePath } as any)
+        .eq("user_id", user.id);
+
+      if (dbError) {
+        // Cleanup uploaded file
+        await supabase.storage.from("branding-assets").remove([filePath]);
+        toast.error("Failed to save signature: " + dbError.message);
+        return;
+      }
+
+      setSignaturePath(filePath);
+      const { data: urlData } = supabase.storage
+        .from("branding-assets")
+        .getPublicUrl(filePath);
+      setSignatureUrl(urlData.publicUrl);
+      toast.success("Signature uploaded successfully");
+    } catch (err: any) {
+      toast.error("Failed to process signature: " + (err?.message || "Unknown error"));
+    } finally {
+      setUploadingSignature(false);
+      e.target.value = "";
+    }
+  };
+
+  // Signature delete handler
+  const handleDeleteSignature = async () => {
+    if (!user || !signaturePath) return;
+
+    try {
+      await supabase.storage.from("branding-assets").remove([signaturePath]);
+      await supabase
+        .from("user_profiles")
+        .update({ signature_path: null } as any)
+        .eq("user_id", user.id);
+
+      setSignaturePath(null);
+      setSignatureUrl(null);
+      toast.success("Signature deleted");
+    } catch (err) {
+      toast.error("Failed to delete signature");
     }
   };
 
@@ -376,6 +479,64 @@ const Settings = () => {
                     }
                     placeholder="Enter your phone number"
                   />
+                </div>
+
+                <Separator />
+
+                {/* Digital Signature Upload */}
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-base">Digital Signature</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Upload your personal digital signature (PNG or JPG only). Images are automatically converted to black &amp; white with transparent background.
+                    </p>
+                  </div>
+
+                  {signatureUrl ? (
+                    <div className="flex items-center gap-4">
+                      <div className="border rounded-lg p-3 bg-background">
+                        <img
+                          src={signatureUrl}
+                          alt="Your signature"
+                          className="max-h-16 max-w-[200px] object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteSignature}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No signature uploaded</p>
+                  )}
+
+                  <div>
+                    <input
+                      ref={signatureInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      className="hidden"
+                      onChange={handleSignatureUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingSignature}
+                      onClick={() => signatureInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      {uploadingSignature ? "Processing..." : signatureUrl ? "Replace Signature" : "Upload Signature"}
+                    </Button>
+                  </div>
                 </div>
 
                 <Button

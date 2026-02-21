@@ -76,7 +76,7 @@ serve(async (req) => {
     // Create Dodo Payments checkout session via REST API
     const customerData: Record<string, string> = {
       email: userEmail!,
-      name: fullName,
+      name: fullName || "",
     };
     if (phoneNumber) {
       customerData.phone_number = phoneNumber;

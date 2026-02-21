@@ -118,7 +118,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
         setEnableQr(true);
       }
 
-      // Fetch branding files
+      // Fetch branding files (logo only - signature is now per-admin)
       const { data: filesData, error: filesError } = await supabase
         .from("branding_files")
         .select("name, path")
@@ -128,28 +128,40 @@ export function BrandingProvider({ children, organizationId }: { children: React
         console.error("Error fetching branding files:", filesError);
       }
 
-      if (filesData && filesData.length > 0) {
-        let newLogoUrl: string | null = null;
-        let newSignatureUrl: string | null = null;
+      let newLogoUrl: string | null = null;
 
+      if (filesData && filesData.length > 0) {
         filesData.forEach((file) => {
-          if (file.path) {
+          if (file.path && file.name === "logo") {
             const { data: urlData } = supabase.storage
               .from("branding-assets")
               .getPublicUrl(file.path);
-            const publicUrl = urlData.publicUrl;
-
-            if (file.name === "logo") newLogoUrl = publicUrl;
-            if (file.name === "signature") newSignatureUrl = publicUrl;
+            newLogoUrl = urlData.publicUrl;
           }
         });
+      }
 
-        console.log("Loaded branding assets - Logo:", newLogoUrl, "Signature:", newSignatureUrl);
-        setLogoUrl(newLogoUrl);
-        setSignatureUrl(newSignatureUrl);
+      console.log("Loaded branding assets - Logo:", newLogoUrl);
+      setLogoUrl(newLogoUrl);
+
+      // Fetch signature from user's profile (admin-specific)
+      if (user?.id) {
+        const { data: sigProfile } = await supabase
+          .from("user_profiles")
+          .select("signature_path")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (sigProfile && (sigProfile as any).signature_path) {
+          const { data: sigUrlData } = supabase.storage
+            .from("branding-assets")
+            .getPublicUrl((sigProfile as any).signature_path);
+          setSignatureUrl(sigUrlData.publicUrl);
+          console.log("Loaded admin signature:", sigUrlData.publicUrl);
+        } else {
+          setSignatureUrl(null);
+        }
       } else {
-        console.log("No branding files found for organization");
-        setLogoUrl(null);
         setSignatureUrl(null);
       }
 

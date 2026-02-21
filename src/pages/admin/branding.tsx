@@ -367,13 +367,10 @@ export default function Branding() {
               description="Primary logo for letterheads and documents"
               icon={Image}
             />
-            <FileUploadCard
-              type="signature"
-              title="Digital Signature"
-              description="Authorized signatory's digital signature"
-              icon={Upload}
-            />
           </div>
+          <p className="text-sm text-muted-foreground">
+            Digital signatures are now managed per admin under Account Settings → Profile Information.
+          </p>
         </TabsContent>
 
         <TabsContent value="files" className="space-y-6">
