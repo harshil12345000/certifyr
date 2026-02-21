@@ -74,8 +74,8 @@ function AIAssistantContent() {
       timestamp: Date.now(),
     };
 
-    // Add user message FIRST so it appears immediately
-    await addMessage(userMessage);
+    // Add user message FIRST so it appears immediately and is persisted
+    const updatedMessages = await addMessage(userMessage);
 
     setIsGenerating(true);
     setLoadingMessage('Thinking...');
@@ -86,8 +86,9 @@ function AIAssistantContent() {
     try {
       setLoadingMessage('Searching records...');
       
+      // Use the returned updatedMessages which includes the user message
       const response = await sendChatMessage(
-        [...(currentSession?.messages || []), userMessage],
+        updatedMessages,
         employeeData as Record<string, unknown>[],
         { model: 'sarvam-m' },
         orgInfo,

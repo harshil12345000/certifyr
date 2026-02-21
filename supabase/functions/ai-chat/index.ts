@@ -28,9 +28,36 @@ interface TemplateInfo {
   requiredFields: string[];
 }
 
+// ─── Employee search helpers ───
+
+function getNameFromRecord(record: Record<string, unknown>): string {
+  const nameFields = ["name", "fullName", "full_name", "employeeName", "studentName", "Name", "FullName", "FULL NAME", "Full Name", "full name"];
+  for (const field of nameFields) {
+    const val = record[field];
+    if (typeof val === "string" && val.trim()) return val.trim();
+  }
+  return "";
+}
+
+function getIdFromRecord(record: Record<string, unknown>): string {
+  const idFields = ["employeeId", "employee_id", "id", "ID", "studentId", "student_id", "Employee ID", "Student ID", "emp_id", "roll_number", "rollNumber"];
+  for (const field of idFields) {
+    if (record[field] !== undefined && record[field] !== null) return String(record[field]);
+  }
+  return "";
+}
+
+function getDeptFromRecord(record: Record<string, unknown>): string {
+  const deptFields = ["department", "Department", "dept", "course", "Course", "DEPARTMENT"];
+  for (const field of deptFields) {
+    if (typeof record[field] === "string") return record[field] as string;
+  }
+  return "";
+}
+
 /**
  * Search employee records for a name match.
- * Returns { type: "exact", record } | { type: "disambiguate", matches } | { type: "none" }
+ * Uses flexible partial matching on any name-like field.
  */
 function searchEmployeeByName(
   employeeData: Record<string, unknown>[],
@@ -38,22 +65,16 @@ function searchEmployeeByName(
 ): { type: "exact"; record: Record<string, unknown> }
   | { type: "disambiguate"; matches: Record<string, unknown>[] }
   | { type: "none" } {
-  if (!searchName || employeeData.length === 0) {
-    return { type: "none" };
-  }
+  if (!searchName || employeeData.length === 0) return { type: "none" };
 
   const search = searchName.toLowerCase().trim();
+  if (search.length < 2) return { type: "none" };
 
-  // Find all matches (partial name matching)
   const matches = employeeData.filter((record) => {
-    const nameFields = ["name", "fullName", "full_name", "employeeName", "studentName", "Name", "FullName"];
-    for (const field of nameFields) {
-      const val = record[field];
-      if (typeof val === "string" && val.toLowerCase().includes(search)) {
-        return true;
-      }
-    }
-    return false;
+    const name = getNameFromRecord(record).toLowerCase();
+    if (!name) return false;
+    // Match if the search term is contained in the name OR the name contains the search
+    return name.includes(search) || search.includes(name);
   });
 
   if (matches.length === 1) {
@@ -65,23 +86,61 @@ function searchEmployeeByName(
 }
 
 /**
- * Extract a person name from the user message for lookup.
+ * Extract a person name from the user message.
+ * Much more flexible than before — handles many patterns.
  */
-function extractNameFromMessage(message: string): string | null {
-  // Common patterns: "create bonafide for John Smith", "generate certificate for Emma"
-  const patterns = [
-    /(?:for|of)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/,
-    /(?:certificate|bonafide|letter|document|noc|offer|experience|transfer|transcript|nda|agreement)\s+(?:for|of)\s+(.+?)(?:\.|$)/i,
-  ];
+function extractNameFromMessage(message: string, hasEmployeeData: boolean): string | null {
+  if (!hasEmployeeData) return null;
 
-  for (const pattern of patterns) {
-    const match = message.match(pattern);
-    if (match) {
-      return match[1].trim();
+  const lowerMsg = message.toLowerCase();
+
+  // Skip messages that are clearly answers to questions (not name lookups)
+  const answerPatterns = [
+    /^(passport|visa|bank|loan|education|employment|travel|admission|scholarship|verification|proof|legal|personal|official)/i,
+    /^(yes|no|ok|okay|sure|done|thanks|thank you|correct|right|wrong|exactly)/i,
+    /^(the purpose|purpose is|for |it'?s for|i need it for)/i,
+  ];
+  for (const pattern of answerPatterns) {
+    if (pattern.test(message.trim())) return null;
+  }
+
+  // Pattern 1: "for <Name>" or "of <Name>"
+  const forOfMatch = message.match(/(?:for|of)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/);
+  if (forOfMatch) return forOfMatch[1].trim();
+
+  // Pattern 2: "certificate/bonafide/document ... <Name>" at end
+  const docNameMatch = message.match(
+    /(?:certificate|bonafide|letter|document|noc|offer|experience|transfer|transcript|nda|agreement)\s+(?:for|of|to)\s+(.+?)(?:\.|,|$)/i
+  );
+  if (docNameMatch) return docNameMatch[1].trim();
+
+  // Pattern 3: Explicit name mention with "create/generate/make" + name
+  const createMatch = message.match(/(?:create|generate|make|prepare|issue|draft)\s+(?:\w+\s+){0,3}(?:for|of)\s+(.+?)(?:\.|,|$)/i);
+  if (createMatch) return createMatch[1].trim();
+
+  // Pattern 4: "I'm referring to <Name>" (disambiguation follow-up)
+  const referMatch = message.match(/(?:i'?m\s+referring\s+to|i\s+mean|it'?s)\s+(.+?)(?:\s*\(|$)/i);
+  if (referMatch) return referMatch[1].trim();
+
+  // Pattern 5: Just a name by itself (capitalized words, 1-4 words)
+  const standaloneNameMatch = message.trim().match(/^([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3})$/);
+  if (standaloneNameMatch) return standaloneNameMatch[1].trim();
+
+  // Pattern 6: Message contains a capitalized name (2+ chars) anywhere — only if short message
+  if (message.trim().split(/\s+/).length <= 6) {
+    const capitalMatch = message.match(/\b([A-Z][a-z]{1,}(?:\s+[A-Z][a-z]+)*)\b/);
+    if (capitalMatch) {
+      const candidate = capitalMatch[1];
+      // Filter out common words that aren't names
+      const nonNames = new Set(["The", "This", "That", "What", "When", "Where", "How", "Who", "Please", "Thank", "Thanks", "Hello", "Create", "Generate", "Make", "Issue", "Draft", "Prepare", "Send", "Get", "Give", "Show", "List", "Find", "Search", "Known", "Missing", "Information", "Certificate", "Document", "Letter", "Bonafide"]);
+      if (!nonNames.has(candidate)) return candidate;
     }
   }
+
   return null;
 }
+
+// ─── System prompt builder ───
 
 function buildSystemPrompt(
   employeeRecord: Record<string, unknown> | null,
@@ -91,51 +150,37 @@ function buildSystemPrompt(
   orgInfo: OrgInfo | undefined,
   issueDate: string | undefined,
 ): string {
-  let prompt = `You are Certifyr AI Assistant, an intelligent document generation assistant.
+  let prompt = `You are Certifyr AI Assistant, an intelligent document generation assistant for organizations. You help users create certificates and official documents by using employee/student data that is already available in the system.\n\n`;
 
-You help users create certificates and documents by extracting information from employee data or asking for missing details.
-
-`;
-
-  // Organization info (NOT shown in Known Information cards)
+  // Organization info
   if (orgInfo) {
-    prompt += `ORGANIZATION DETAILS (these are pre-filled, do NOT list in Known Information):
+    prompt += `ORGANIZATION DETAILS (pre-filled, use when generating documents but do NOT show in Known Information):
 - Organization Name: ${orgInfo.name}
-- Organization Place/Location: ${orgInfo.place || orgInfo.organizationLocation || "N/A"}
-- Organization Address: ${orgInfo.address}
-- Organization Email: ${orgInfo.email}
-- Organization Phone: ${orgInfo.phone}
+- Place/Location: ${orgInfo.place || orgInfo.organizationLocation || "N/A"}
+- Address: ${orgInfo.address || "N/A"}
+- Email: ${orgInfo.email || "N/A"}
+- Phone: ${orgInfo.phone || "N/A"}
 - Organization Type: ${orgInfo.organizationType || "N/A"}
-- Signatory Name (Admin): ${orgInfo.signatoryName}
-- Signatory Designation: ${orgInfo.signatoryDesignation}
-
-USE THESE VALUES WHEN GENERATING DOCUMENTS but do NOT display them in Known Information section.
+- Signatory Name: ${orgInfo.signatoryName || "N/A"}
+- Signatory Designation: ${orgInfo.signatoryDesignation || "N/A"}
 
 `;
   }
 
-  prompt += `AVAILABLE TEMPLATES AND THEIR FIELDS:
-${templates.map((t) => `- ${t.name} (${t.id}): Required fields: ${t.requiredFields.join(", ")}`).join("\n")}
-
-`;
+  prompt += `AVAILABLE DOCUMENT TEMPLATES:\n`;
+  for (const t of templates) {
+    prompt += `- ${t.name} (ID: ${t.id}): Fields: ${t.requiredFields.join(", ")}\n`;
+  }
+  prompt += `\n`;
 
   if (employeeRecord) {
-    const employeeJson = JSON.stringify(employeeRecord, null, 2);
-    prompt += `MATCHED EMPLOYEE RECORD (verified from database):
-${employeeJson}
-
-THIS IS THE EXACT RECORD FROM THE DATABASE. Use ONLY these values. Do NOT modify, guess, or infer any values.
-Every field you see here is confirmed accurate. Use them exactly as shown.
-
-`;
+    prompt += `MATCHED EMPLOYEE/STUDENT RECORD (verified from database - use EXACTLY as shown):\n`;
+    prompt += JSON.stringify(employeeRecord, null, 2);
+    prompt += `\n\nThis is the EXACT record from the database. Use ONLY these values. Do NOT modify, guess, or infer any values.\n\n`;
   } else if (allEmployeeCount > 0) {
-    prompt += `There are ${allEmployeeCount} employee/student records in the database. When the user mentions a name, the system will automatically look up the exact record. If no data is provided here, ask the user for the person's name to look up.
-
-`;
+    prompt += `There are ${allEmployeeCount} employee/student records in the database. When the user mentions a person's name, the system automatically looks up the exact record. If no record is shown above, ask the user for the person's name so we can look them up.\n\n`;
   } else {
-    prompt += `NO EMPLOYEE DATA UPLOADED. Collect all information manually from the user.
-
-`;
+    prompt += `NO EMPLOYEE/STUDENT DATA UPLOADED. Collect all information manually from the user.\n\n`;
   }
 
   if (contextCountry && contextCountry !== "global") {
@@ -143,54 +188,101 @@ Every field you see here is confirmed accurate. Use them exactly as shown.
   }
 
   if (issueDate) {
-    prompt += `CURRENT DATE: ${issueDate} (use for Date/Issue Date fields)\n`;
+    prompt += `TODAY'S DATE: ${issueDate} (use for Issue Date / Date fields)\n`;
   }
 
   prompt += `
-CRITICAL INSTRUCTIONS:
+CRITICAL INSTRUCTIONS - FOLLOW THESE EXACTLY:
 
-1. RESPONSE FORMAT for showing employee data:
-   When you have found employee data, format your response with these EXACT markdown headers:
+1. ALWAYS check the employee data above FIRST. All information about the employee/student is already there.
+2. If the employee record exists in the data, use their information directly. DO NOT ask for fields that already exist in the data.
+3. ONLY ask for missing fields that are NOT in the employee data (e.g., purpose, reason, custom fields).
+4. The employee data may contain: name, id, email, phone, department, designation, gender, date of birth, course, year, joining date, parent name, address, etc.
+5. When the user asks for a document, use the matched employee data and auto-fill as many fields as possible.
+6. Do NOT ask for: name, email, phone, department, designation, gender, date of birth, parent name, employee ID, course, etc. if they exist in the data.
+7. Only ask for: purpose (why they need the document), or other custom fields not in the data.
 
-   ### Known Information
-   - **Full Name**: [value]
-   - **Gender**: [value]
-   - **Date of Birth**: [value in DD/MM/YYYY]
-   (list ONLY employee/student fields - NOT organization details)
+RESPONSE FORMAT when you have employee data:
 
-   ### Missing Information
-   - **Purpose**: Please provide the purpose of this certificate
-   - **Course**: What course/program?
-   (list fields that are required but not in the data)
+### Known Information
+- **Full Name**: [exact value from data]
+- **Gender**: [value]
+- **Date of Birth**: [value in DD/MM/YYYY]
+- **Department**: [value]
+(list ALL employee/student fields found - NOT organization/signatory details)
 
-2. In Known Information, ONLY list employee/student-specific fields:
-   name, gender, parent name, course, department, designation, dates, employee ID, etc.
-   Do NOT list: organization name, signatory name, signatory designation, place, email, phone.
+### Missing Information
+- **Purpose**: What is the purpose of this certificate?
+(list ONLY fields that are required for the template but missing from data)
 
-3. DATE FORMAT: Always use DD/MM/YYYY (e.g., 21/02/2026).
-4. GENDER: Always lowercase: "male", "female", or "other".
-5. TYPE: Always lowercase: "student" or "employee".
+IMPORTANT RULES FOR Known Information:
+- ONLY list employee/student-specific fields: name, gender, parent name, course, department, designation, dates, employee ID, etc.
+- Do NOT list: organization name, signatory name, signatory designation, place, email, phone, address (these are pre-filled from org data).
 
-6. DO NOT GENERATE DOCUMENT until ALL required template fields have values.
-   If ANY field is missing, ask for it.
+EXAMPLE CORRECT FLOW:
+User: "Create bonafide for John"
+AI finds John in data with: name=John Smith, department=IT, designation=Developer, gender=male, dob=15/03/1995
+AI responds:
+"I found John Smith's information:
 
-7. When ALL fields are ready, respond with:
-   GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2"}
+### Known Information
+- **Full Name**: John Smith
+- **Gender**: male
+- **Department**: IT
+- **Designation**: Developer
+- **Date of Birth**: 15/03/1995
 
-8. DATE FIELD MAPPING from JSON:
-   - startDate: "startDate", "start_date", "DateOfJoining", "date_of_joining", "joiningDate", "doj", "DOJ"
-   - dateOfBirth: "dateOfBirth", "date_of_birth", "dob", "DOB", "birthDate"
-   - endDate: "endDate", "end_date", "DateOfLeaving", "date_of_leaving"
+### Missing Information
+- **Purpose**: What is the purpose of this bonafide certificate?
+- **Person Type**: Is John a student or employee?"
 
-9. GENDER FIELD MAPPING: "gender", "Gender", "sex"
-10. NAME FIELDS: "name", "fullName", "full_name", "employeeName", "studentName"
-11. PARENT NAME: "parentName", "parent_name", "fatherName", "father_name", "guardianName"
+EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
+- AI: "What is John's full name?" (WRONG - name is already in the data)
+- AI: "What is John's department?" (WRONG - department is in the data)
 
-FOR BONAFIDE CERTIFICATE - ALL REQUIRED: fullName, gender, type, parentName, course, purpose, date
+8. When ALL required fields are collected, respond with EXACTLY this format on its own line:
+   GENERATE_DOCUMENT:{templateId}:{"field1":"value1","field2":"value2",...}
+
+9. If NO employee data is available and no record was matched, ask for all required fields manually. Collect ALL missing fields IN ONE MESSAGE.
+
+10. DATE FORMAT: Always use DD/MM/YYYY (e.g., 21/02/2026). Convert any date from the data to this format.
+
+11. GENDER: Always use lowercase: "male", "female", or "other".
+
+12. TYPE: Always use lowercase: "student" or "employee".
+
+13. Format field names nicely in your responses (e.g., "Full Name" not "fullName", "Date of Birth" not "dateOfBirth").
+
+14. CRITICAL: Do NOT assume or guess fields like "purpose", "reason", etc. If the user did not specify these, ASK them explicitly.
+
+15. Ask for ALL missing required fields IN ONE MESSAGE. Do NOT ask one field at a time across multiple messages.
+
+16. UNDERSTANDING USER REPLIES: When the user replies to your questions (e.g., you asked "What is the purpose?" and they say "passport"), understand that their reply is an ANSWER to your question, NOT a new document request or name lookup. Only treat a message as a new request if they explicitly mention creating/generating a document or certificate.
+
+17. DATE FIELD MAPPING from employee data JSON keys:
+    - startDate: "startDate", "start_date", "DateOfJoining", "date_of_joining", "joiningDate", "doj", "DOJ", "Joining Date"
+    - dateOfBirth: "dateOfBirth", "date_of_birth", "dob", "DOB", "birthDate", "Date of Birth"
+    - endDate: "endDate", "end_date", "DateOfLeaving", "date_of_leaving", "Relieving Date"
+
+18. NAME FIELDS: "name", "fullName", "full_name", "employeeName", "studentName", "Name", "Full Name", "FULL NAME"
+19. PARENT NAME: "parentName", "parent_name", "fatherName", "father_name", "guardianName", "Father Name", "Parent Name"
+20. GENDER: "gender", "Gender", "sex"
+21. ID FIELDS: "employeeId", "employee_id", "studentId", "student_id", "ID", "Employee ID", "Student ID", "roll_number"
+
+22. For BONAFIDE CERTIFICATE - ALL REQUIRED: fullName, gender, type, parentName, course/courseOrDesignation, purpose, date, institutionName, startDate, department, place, signatoryName, signatoryDesignation
+    - Organization name, place, signatory details are auto-filled from org data
+    - Employee-specific fields come from the matched record
+    - Only "purpose" and possibly "type" (student/employee) typically need to be asked
+
+23. ALWAYS use the FULL NAME from the data. Never abbreviate or use only first names.
+
+24. If you have all the information needed (from data + user input + org info), generate the document immediately without asking unnecessary follow-up questions.
 `;
 
   return prompt;
 }
+
+// ─── Main handler ───
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -198,7 +290,6 @@ serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -213,10 +304,9 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsError || !claimsData?.claims) {
+    // Verify auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -235,7 +325,7 @@ serve(async (req) => {
       action,
     } = body;
 
-    // Handle title generation request
+    // ─── Title generation ───
     if (action === "generate_title") {
       const userMessage = body.userMessage || "";
       const titlePrompt = `Generate a concise 4-5 word title for a chat conversation that starts with this message: "${userMessage}". Return ONLY the title, nothing else. No quotes, no punctuation at the end.`;
@@ -252,102 +342,84 @@ serve(async (req) => {
         });
       }
 
-      const resp = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: titlePrompt }],
-          temperature: 0.5,
-          max_tokens: 20,
-        }),
-      });
-
-      if (resp.ok) {
-        const data = await resp.json();
-        const title = (data.choices?.[0]?.message?.content || "New Chat").trim().replace(/["'.]+$/g, "");
-        return new Response(JSON.stringify({ title }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      try {
+        const resp = await fetch(apiUrl, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model, messages: [{ role: "user", content: titlePrompt }], temperature: 0.5, max_tokens: 20 }),
         });
-      }
+        if (resp.ok) {
+          const data = await resp.json();
+          const title = (data.choices?.[0]?.message?.content || "New Chat").trim().replace(/["'.]+$/g, "");
+          return new Response(JSON.stringify({ title }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } catch { /* fall through */ }
 
       return new Response(JSON.stringify({ title: "New Chat" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Main chat logic
-    // Step 1: If user mentions a name, do precise employee lookup
-    let employeeRecord: Record<string, unknown> | null = null;
-    let disambiguateMatches: Record<string, unknown>[] | null = null;
+    // ─── Main chat logic ───
 
-    if (organizationId && messages.length > 0) {
-      const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === "user");
-      if (lastUserMsg) {
-        const searchName = extractNameFromMessage(lastUserMsg.content);
-        if (searchName) {
-          // Fetch employee data from DB server-side
-          const serviceClient = createClient(
-            supabaseUrl,
-            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-          );
+    // Step 1: Load all employee data for this org
+    let allEmployees: Record<string, unknown>[] = [];
+    if (organizationId) {
+      const serviceClient = createClient(
+        supabaseUrl,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
 
-          const { data: records } = await serviceClient
-            .from("organization_data_records")
-            .select("data")
-            .eq("organization_id", organizationId);
+      const { data: records } = await serviceClient
+        .from("organization_data_records")
+        .select("data")
+        .eq("organization_id", organizationId);
 
-          const allEmployees: Record<string, unknown>[] = [];
-          if (records) {
-            for (const record of records) {
-              if (record.data) {
-                if (Array.isArray(record.data)) {
-                  allEmployees.push(...record.data);
-                } else if (typeof record.data === "object") {
-                  allEmployees.push(record.data as Record<string, unknown>);
-                }
-              }
+      if (records) {
+        for (const record of records) {
+          if (record.data) {
+            if (Array.isArray(record.data)) {
+              allEmployees.push(...record.data);
+            } else if (typeof record.data === "object") {
+              allEmployees.push(record.data as Record<string, unknown>);
             }
-          }
-
-          const result = searchEmployeeByName(allEmployees, searchName);
-          if (result.type === "exact") {
-            employeeRecord = result.record;
-          } else if (result.type === "disambiguate") {
-            disambiguateMatches = result.matches;
           }
         }
       }
     }
 
-    // If multiple matches, return disambiguation response
-    if (disambiguateMatches && disambiguateMatches.length > 1) {
-      const nameField = (r: Record<string, unknown>) => {
-        for (const f of ["name", "fullName", "full_name", "employeeName", "studentName", "Name"]) {
-          if (typeof r[f] === "string") return r[f] as string;
-        }
-        return "Unknown";
-      };
-      const idField = (r: Record<string, unknown>) => {
-        for (const f of ["employeeId", "employee_id", "id", "ID", "studentId", "student_id"]) {
-          if (r[f] !== undefined) return String(r[f]);
-        }
-        return "";
-      };
-      const deptField = (r: Record<string, unknown>) => {
-        for (const f of ["department", "Department", "dept", "course", "Course"]) {
-          if (typeof r[f] === "string") return r[f] as string;
-        }
-        return "";
-      };
+    // Step 2: Check if user mentions a name — do precise lookup
+    let employeeRecord: Record<string, unknown> | null = null;
+    let disambiguateMatches: Record<string, unknown>[] | null = null;
 
+    if (allEmployees.length > 0 && messages.length > 0) {
+      const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === "user");
+      if (lastUserMsg) {
+        const searchName = extractNameFromMessage(lastUserMsg.content, true);
+        if (searchName) {
+          console.log(`[ai-chat] Searching for name: "${searchName}" in ${allEmployees.length} records`);
+          const result = searchEmployeeByName(allEmployees, searchName);
+          if (result.type === "exact") {
+            employeeRecord = result.record;
+            console.log(`[ai-chat] Exact match found: ${getNameFromRecord(result.record)}`);
+          } else if (result.type === "disambiguate") {
+            disambiguateMatches = result.matches;
+            console.log(`[ai-chat] Multiple matches found: ${result.matches.length}`);
+          } else {
+            console.log(`[ai-chat] No matches found for "${searchName}"`);
+          }
+        }
+      }
+    }
+
+    // Step 3: Return disambiguation if multiple matches
+    if (disambiguateMatches && disambiguateMatches.length > 1) {
       const matchList = disambiguateMatches.map((m) => ({
-        name: nameField(m),
-        id: idField(m),
-        department: deptField(m),
+        name: getNameFromRecord(m),
+        id: getIdFromRecord(m),
+        department: getDeptFromRecord(m),
       }));
 
       return new Response(
@@ -360,10 +432,10 @@ serve(async (req) => {
       );
     }
 
-    // Build system prompt with the single matched record
+    // Step 4: Build system prompt with single matched record
     const systemPrompt = buildSystemPrompt(
       employeeRecord,
-      employeeCount || 0,
+      employeeCount || allEmployees.length || 0,
       templates || [],
       contextCountry,
       orgInfo,
@@ -378,10 +450,9 @@ serve(async (req) => {
       })),
     ];
 
-    // Call AI API
+    // Step 5: Call AI API
     const sarvamKey = Deno.env.get("SARVAM_API_KEY");
     const groqKey = Deno.env.get("GROQ_API_KEY");
-
     let aiResponse = "";
 
     // Try Sarvam first
@@ -389,18 +460,9 @@ serve(async (req) => {
       try {
         const resp = await fetch(SARVAM_API_URL, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${sarvamKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "sarvam-m",
-            messages: apiMessages,
-            temperature: 0.3,
-            max_tokens: 1024,
-          }),
+          headers: { Authorization: `Bearer ${sarvamKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "sarvam-m", messages: apiMessages, temperature: 0.3, max_tokens: 1500 }),
         });
-
         if (resp.ok) {
           const data = await resp.json();
           aiResponse = data.choices?.[0]?.message?.content || "";
@@ -416,18 +478,9 @@ serve(async (req) => {
     if (!aiResponse && groqKey) {
       const resp = await fetch(GROQ_API_URL, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${groqKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: apiMessages,
-          temperature: 0.3,
-          max_tokens: 1024,
-        }),
+        headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: apiMessages, temperature: 0.3, max_tokens: 1500 }),
       });
-
       if (resp.ok) {
         const data = await resp.json();
         aiResponse = data.choices?.[0]?.message?.content || "";
