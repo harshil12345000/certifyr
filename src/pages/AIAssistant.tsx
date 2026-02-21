@@ -1,7 +1,7 @@
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useAIContext } from '@/hooks/useAIContext';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { UpgradePrompt } from '@/components/shared/UpgradePrompt';
@@ -13,7 +13,7 @@ import { useEmployeeData } from '@/hooks/useEmployeeData';
 import { ChatLayout } from '@/components/ai-assistant/ChatLayout';
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendChatMessage, parseGenerationResponse } from '@/lib/groq-client';
+import { sendChatMessage, parseGenerationResponse, generateChatTitle } from '@/lib/groq-client';
 import { toast } from 'sonner';
 
 function AIAssistantContent() {
@@ -25,6 +25,7 @@ function AIAssistantContent() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDocumentGeneration, setIsDocumentGeneration] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Thinking...');
 
   const orgInfo = {
     name: organizationDetails?.name || 'Unknown Organization',
@@ -57,24 +58,15 @@ function AIAssistantContent() {
     }
   }, [organizationId, loadData]);
 
-  // Auto-create or load session on mount
+  // Only auto-load first session if one exists (no auto-create)
   useEffect(() => {
-    if (!sessionsLoading) {
-      if (sessions.length === 0) {
-        createSession();
-      } else if (!currentSession) {
-        loadSession(sessions[0].id);
-      }
+    if (!sessionsLoading && sessions.length > 0 && !currentSession) {
+      loadSession(sessions[0].id);
     }
-  }, [sessions, sessionsLoading, currentSession, createSession, loadSession]);
+  }, [sessions, sessionsLoading, currentSession, loadSession]);
 
   const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isGenerating) return;
-
-    // Wait briefly for employee data if still loading
-    if (employeeData.length === 0) {
-      console.log('Warning: No employee data loaded');
-    }
 
     const userMessage: ChatMessage = {
       role: 'user',
@@ -82,57 +74,72 @@ function AIAssistantContent() {
       timestamp: Date.now(),
     };
 
+    // Add user message FIRST so it appears immediately
+    await addMessage(userMessage);
+
     setIsGenerating(true);
+    setLoadingMessage('Thinking...');
     
-    // Get today's date in DD/MM/YYYY format
     const today = new Date();
     const issueDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
     
     try {
-      // Add user message first
-      const messagesWithUser = [...(currentSession?.messages || []), userMessage];
+      setLoadingMessage('Searching records...');
       
       const response = await sendChatMessage(
-        messagesWithUser,
+        [...(currentSession?.messages || []), userMessage],
         employeeData as Record<string, unknown>[],
-        { model: 'compound-beta-mini' },
+        { model: 'sarvam-m' },
         orgInfo,
         issueDate,
-        contextCountry
+        contextCountry,
+        organizationId || undefined,
       );
 
-      console.log('AI Response:', response.substring(0, 200));
+      // Handle disambiguation response
+      if (response.type === 'disambiguate' && response.matches) {
+        const disambiguateContent = `DISAMBIGUATE:${JSON.stringify(response.matches)}`;
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: disambiguateContent,
+          timestamp: Date.now(),
+        };
+        await addMessage(assistantMessage);
+        return;
+      }
 
-      if (!response || response.trim() === '') {
+      const aiContent = response.message || '';
+
+      if (!aiContent || aiContent.trim() === '') {
         throw new Error('Empty response from AI');
       }
 
       // Check if AI wants to generate a document
-      const parsed = parseGenerationResponse(response);
+      const parsed = parseGenerationResponse(aiContent);
       
       if (parsed) {
         setIsDocumentGeneration(true);
+        setLoadingMessage('Generating document...');
         const { templateId, data } = parsed;
-        console.log('Generating document:', templateId, data);
         const queryString = new URLSearchParams(data).toString();
         navigate(`/documents/${templateId}?${queryString}`);
         toast.success(`Opening ${templateId.replace('-', ' ')} with your data`);
-        
-        // Add the generation command as assistant message
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response,
-          timestamp: Date.now(),
-        };
-        await addMessage(assistantMessage);
-      } else {
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response,
-          timestamp: Date.now(),
-        };
-        await addMessage(assistantMessage);
-        toast.success('AI responded');
+      }
+      
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: aiContent,
+        timestamp: Date.now(),
+      };
+      await addMessage(assistantMessage);
+
+      // Generate AI title for new chats
+      if (currentSession?.title === 'New Chat') {
+        generateChatTitle(message).then((title) => {
+          if (title && title !== 'New Chat' && currentSession) {
+            updateTitle(currentSession.id, title);
+          }
+        });
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -146,8 +153,16 @@ function AIAssistantContent() {
     } finally {
       setIsGenerating(false);
       setIsDocumentGeneration(false);
+      setLoadingMessage('Thinking...');
     }
-  }, [addMessage, currentSession, employeeData, isGenerating, navigate, orgInfo, contextCountry]);
+  }, [addMessage, currentSession, employeeData, isGenerating, navigate, orgInfo, contextCountry, organizationId, updateTitle]);
+
+  const handleSendDisambiguation = useCallback(async (match: { name: string; id: string }) => {
+    const msg = match.id 
+      ? `I'm referring to ${match.name} (ID: ${match.id})`
+      : `I'm referring to ${match.name}`;
+    await handleSendMessage(msg);
+  }, [handleSendMessage]);
 
   const handleNewChat = useCallback(async () => {
     await createSession();
@@ -175,7 +190,7 @@ function AIAssistantContent() {
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="py-3">
             <p className="text-sm text-blue-700">
-              <Bot className="h-4 w-4 inline mr-1" />
+              <Sparkles className="h-4 w-4 inline mr-1" />
               {employeeData.length} employee records loaded. The AI can auto-fill certificate fields with this data.
             </p>
           </CardContent>
@@ -195,9 +210,12 @@ function AIAssistantContent() {
         onDeleteSession={deleteSession}
         onRenameSession={updateTitle}
         onSendMessage={handleSendMessage}
+        onDisambiguationSelect={handleSendDisambiguation}
         employeeData={employeeData}
         contextCountry={contextCountry}
-        isGenerating={isDocumentGeneration}
+        isGenerating={isGenerating}
+        isDocumentGeneration={isDocumentGeneration}
+        loadingMessage={loadingMessage}
       />
     </div>
   );

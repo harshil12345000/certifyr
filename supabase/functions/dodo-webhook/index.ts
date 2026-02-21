@@ -55,7 +55,7 @@ async function verifyWebhookSignature(
     const binaryStr = atob(rawSecret);
     secretBytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) {
-      secretBytes[i] = binaryStr.charCodeAt(i);
+    secretBytes[i] = binaryStr.charCodeAt(i);
     }
   } catch {
     // If not base64, use raw UTF-8
@@ -64,7 +64,7 @@ async function verifyWebhookSignature(
 
   const key = await crypto.subtle.importKey(
     "raw",
-    secretBytes as ArrayBuffer,
+    secretBytes.buffer as ArrayBuffer,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
