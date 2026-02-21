@@ -150,7 +150,7 @@ export function ChatInterface({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+            placeholder="Enter your message..."
             className="min-h-[40px] max-h-[200px] resize-none py-3"
             disabled={isGenerating}
             rows={1}

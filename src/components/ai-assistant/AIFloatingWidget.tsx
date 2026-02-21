@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranding } from '@/contexts/BrandingContext';
@@ -15,10 +15,11 @@ interface AIFloatingWidgetProps {
 export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
   const { user } = useAuth();
   const { organizationId, organizationDetails, userProfile } = useBranding();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const orgInfo: OrgInfo = {
+  const orgInfo = useMemo<OrgInfo>(() => ({
     name: organizationDetails?.name || 'Unknown Organization',
     address: organizationDetails?.address || '',
     place: organizationDetails?.address?.split(',').pop()?.trim() || userProfile?.organizationLocation || '',
@@ -30,7 +31,7 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
     signatoryDesignation: userProfile?.designation || '',
     organizationType: userProfile?.organizationType || '',
     organizationLocation: userProfile?.organizationLocation || '',
-  };
+  }), [organizationDetails, userProfile]);
 
   const {
     messages,
@@ -66,66 +67,66 @@ export function AIFloatingWidget({ className }: AIFloatingWidgetProps) {
   if (!user || !organizationId) return null;
 
   return (
-    <>
-      <div 
-        className={cn("fixed bottom-6 right-20 z-40 flex flex-col-reverse items-end", className)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {isOpen && (
-          <div className="mb-3 mr-0 bg-background rounded-lg shadow-2xl border overflow-hidden w-[380px] h-[450px] flex flex-col animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
-            <div className="flex items-center justify-between px-3 py-2.5 bg-blue-600 text-white shrink-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                <span className="font-medium text-sm">AI Assistant</span>
-              </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-white/80 hover:text-white transition-colors p-1"
-              >
-                <X className="h-4 w-4" />
-              </button>
+    <div 
+      className={cn("fixed bottom-6 right-20 z-40 flex flex-col-reverse items-end", className)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {isOpen && (
+        <div style={{ width: '380px', height: '420px' }} className="mb-3 mr-0 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
+          <div className="flex items-center justify-between px-3 py-2.5 bg-blue-600 text-white shrink-0">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="font-medium text-sm">AI Assistant</span>
             </div>
-            
-            <ChatInterface
-              messages={messages}
-              onSendMessage={handleSend}
-              onDisambiguationSelect={handleDisambiguationSelect}
-              employeeDataCount={employeeDataCount}
-              contextCountry={contextCountry}
-              isGenerating={isGenerating}
-              isDocumentGeneration={isDocumentGeneration}
-              loadingMessage={loadingMessage}
-              minimal
-            />
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-white/80 hover:text-white transition-colors p-1"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-        )}
+          
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSend}
+            onDisambiguationSelect={handleDisambiguationSelect}
+            employeeDataCount={employeeDataCount}
+            contextCountry={contextCountry}
+            isGenerating={isGenerating}
+            isDocumentGeneration={isDocumentGeneration}
+            loadingMessage={loadingMessage}
+            minimal
+          />
+        </div>
+      )}
 
-        <Button
-          onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "h-11 w-11 rounded-full shadow-lg transition-all duration-200",
-            "bg-blue-600 hover:bg-blue-700 text-white",
-            isOpen && "rotate-90",
-            isHovered && "scale-110"
-          )}
-        >
-          {isOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Sparkles className="h-5 w-5" />
-          )}
-        </Button>
-        
-        {!isOpen && (
-          <div className={cn(
-            "mr-1 mb-2 px-2 py-1 bg-white rounded-md shadow border text-xs text-muted-foreground whitespace-nowrap transition-all duration-200",
-            isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
-          )}>
-            Chat with AI
-          </div>
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "h-12 w-12 rounded-full shadow-lg transition-all duration-200",
+          "bg-blue-600 hover:bg-blue-700 text-white",
+          isOpen && "rotate-90",
+          isHovered && "scale-110"
         )}
-      </div>
-    </>
+      >
+        {isOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <Sparkles className="h-5 w-5" />
+        )}
+      </Button>
+      
+      {!isOpen && (
+        <div className={cn(
+          "mr-1 mb-2 px-2 py-1 bg-white rounded-md shadow border text-xs text-muted-foreground whitespace-nowrap transition-all duration-200",
+          isHovered
+            ? "opacity-100 translate-y-0 translate-x-6"
+            : "opacity-0 translate-y-2 translate-x-6 pointer-events-none"
+        )}>
+          AI Assistant
+        </div>
+      )}
+    </div>
   );
 }

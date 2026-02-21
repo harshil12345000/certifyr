@@ -14,13 +14,11 @@ interface DashboardLayoutProps {
 const SIDEBAR_STORAGE_KEY = "sidebar-collapsed-state";
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  // Initialize state from localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     return stored === "true";
   });
 
-  // Persist state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
   }, [isCollapsed]);
