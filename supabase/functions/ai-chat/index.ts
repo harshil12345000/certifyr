@@ -28,7 +28,14 @@ interface TemplateInfo {
   requiredFields: string[];
 }
 
-// ─── Employee search helpers ───
+// Compact extended rules (for first message only)
+const EXTENDED_RULES = `
+
+IMPORTANT EXTENDED RULES:
+- For descriptive fields (character, conduct, performance): expand user answers to full sentences
+- For tenure questions: calculate (today - joining date) in years/months  
+- Number all missing info questions: 1., 2., etc.
+`;
 
 function getNameFromRecord(record: Record<string, unknown>): string {
   const nameFields = ["name", "fullName", "full_name", "employeeName", "studentName", "Name", "FullName", "FULL NAME", "Full Name", "full name"];
@@ -149,8 +156,15 @@ function buildSystemPrompt(
   contextCountry: string | undefined,
   orgInfo: OrgInfo | undefined,
   issueDate: string | undefined,
+  isFirstMessage: boolean = false,
 ): string {
   let prompt = `You are Certifyr AI Assistant, an intelligent document generation assistant for organizations. You help users create certificates and official documents by using employee/student data that is already available in the system.\n\n`;
+
+  if (isFirstMessage) {
+    prompt += EXTENDED_RULES + "\n\n";
+  } else {
+    prompt += "[Continue with same rules. Answer user question.]\n\n";
+  }
 
   // Organization info
   if (orgInfo) {
@@ -336,6 +350,7 @@ serve(async (req) => {
       templates,
       employeeCount,
       action,
+      isFirstMessage,
     } = body;
 
     // ─── Title generation ───
@@ -453,6 +468,7 @@ serve(async (req) => {
       contextCountry,
       orgInfo,
       issueDate,
+      isFirstMessage ?? false,
     );
 
     const apiMessages = [

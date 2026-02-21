@@ -86,6 +86,9 @@ function AIAssistantContent() {
     try {
       setLoadingMessage('Searching records...');
       
+      // Check if this is the first message in the session
+      const isFirstMessage = !currentSession?.messages || currentSession.messages.length === 0;
+      
       // Use the returned updatedMessages which includes the user message
       const response = await sendChatMessage(
         updatedMessages,
@@ -95,6 +98,7 @@ function AIAssistantContent() {
         issueDate,
         contextCountry,
         organizationId || undefined,
+        isFirstMessage,
       );
 
       // Handle disambiguation response

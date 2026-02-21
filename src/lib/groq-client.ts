@@ -38,6 +38,7 @@ export async function sendChatMessage(
   issueDate?: string,
   contextCountry?: string,
   organizationId?: string,
+  isFirstMessage?: boolean,
 ): Promise<{ type: string; message: string; matches?: { name: string; id: string; department: string }[] }> {
   const templates = getTemplatesWithFields();
 
@@ -50,6 +51,7 @@ export async function sendChatMessage(
       organizationId,
       templates,
       employeeCount: _employeeData.length,
+      isFirstMessage,
     },
   });
 

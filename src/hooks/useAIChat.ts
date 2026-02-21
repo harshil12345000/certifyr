@@ -214,15 +214,30 @@ export function useAIChat(
 }
 
 function parseGenerationResponse(aiContent: string) {
+  // Try LINK format first
   const linkMatch = aiContent.match(/\[LINK:([^\]]+)\]/);
-  if (!linkMatch) return null;
-
-  try {
-    const templateId = linkMatch[1];
-    const dataMatch = aiContent.match(/\[DATA:([^\]]+)\]/);
-    const data = dataMatch ? JSON.parse(dataMatch[1]) : {};
-    return { templateId, data };
-  } catch {
-    return null;
+  if (linkMatch) {
+    try {
+      const templateId = linkMatch[1];
+      const dataMatch = aiContent.match(/\[DATA:([^\]]+)\]/);
+      const data = dataMatch ? JSON.parse(dataMatch[1]) : {};
+      return { templateId, data };
+    } catch {
+      return null;
+    }
   }
+
+  // Try GENERATE_DOCUMENT format from LLM
+  const generateMatch = aiContent.match(/GENERATE_DOCUMENT:([^:]+):(.+)/);
+  if (generateMatch) {
+    try {
+      const templateId = generateMatch[1].trim();
+      const data = JSON.parse(generateMatch[2].trim());
+      return { templateId, data };
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
