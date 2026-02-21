@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { TransferCertificatePreviewProps } from "@/types/templates";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/contexts/BrandingContext";
 import { Letterhead } from "./Letterhead";
 
 interface BrandingAssets {
   logoUrl: string | null;
-  signatureUrl: string | null;
   organizationAddress: string | null;
   organizationPhone: string | null;
   organizationEmail: string | null;
@@ -43,9 +43,9 @@ export const TransferCertificatePreview: React.FC<
     includeDigitalSignature,
   } = data;
 
+  const { signatureUrl } = useBranding();
   const [branding, setBranding] = useState<BrandingAssets>({
     logoUrl: null,
-    signatureUrl: null,
     organizationAddress: null,
     organizationPhone: null,
     organizationEmail: null,
@@ -102,7 +102,6 @@ export const TransferCertificatePreview: React.FC<
             console.error("Error fetching branding files:", filesError);
           } else if (filesData) {
             let newLogoUrl: string | null = null;
-            let newSignatureUrl: string | null = null;
 
             filesData.forEach((file) => {
               const publicUrlRes = supabase.storage
@@ -111,14 +110,12 @@ export const TransferCertificatePreview: React.FC<
               const publicUrl = publicUrlRes.data?.publicUrl;
               if (publicUrl) {
                 if (file.name === "logo") newLogoUrl = publicUrl;
-                if (file.name === "signature") newSignatureUrl = publicUrl;
               }
             });
 
             setBranding((prev) => ({
               ...prev,
               logoUrl: newLogoUrl,
-              signatureUrl: newSignatureUrl,
             }));
           }
         }
@@ -316,11 +313,11 @@ export const TransferCertificatePreview: React.FC<
       {/* Signatory Section */}
       <div className="flex justify-end items-end">
         <div className="text-right">
-          {includeDigitalSignature && branding.signatureUrl && (
+          {includeDigitalSignature && signatureUrl && (
             <div className="h-16 mb-4 flex justify-end relative">
               <div className="border-b border-gray-800 px-6">
                 <img
-                  src={branding.signatureUrl}
+                  src={signatureUrl}
                   alt="Digital Signature"
                   className={`h-12 object-contain ${shouldBlur ? "blur-sm" : ""}`}
                   onError={(e) => handleImageError(e, "signature")}
