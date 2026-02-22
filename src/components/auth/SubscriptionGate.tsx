@@ -1,8 +1,8 @@
-import { ReactNode, useEffect, useState } from 'react';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
-import { activateBasicPlan } from '@/lib/subscription-activation';
+import { ReactNode, useEffect, useState } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
+import { activateBasicPlan } from "@/lib/subscription-activation";
 
 interface SubscriptionGateProps {
   children: ReactNode;
@@ -21,18 +21,20 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
   useEffect(() => {
     const createBasicSubscription = async () => {
       if (!user || subscription || subLoading) return;
-      
+
       // Only create if user is authenticated and has no subscription
       setIsCreatingSubscription(true);
       try {
         const result = await activateBasicPlan(user.id);
         if (!result.success) {
-          throw new Error(result.error || 'Failed to create Basic subscription');
+          throw new Error(
+            result.error || "Failed to create Basic subscription",
+          );
         }
 
         await refetch();
       } catch (err) {
-        console.error('Error creating basic subscription:', err);
+        console.error("Error creating basic subscription:", err);
       } finally {
         setIsCreatingSubscription(false);
       }

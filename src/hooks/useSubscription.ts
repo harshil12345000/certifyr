@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { activateBasicPlan } from '@/lib/subscription-activation';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { activateBasicPlan } from "@/lib/subscription-activation";
 
 export interface Subscription {
   id: string;
@@ -30,7 +30,9 @@ export function useSubscription() {
 
     const result = await activateBasicPlan(user.id);
     if (!result.success) {
-      throw new Error(result.error || 'Failed to auto-create Basic subscription');
+      throw new Error(
+        result.error || "Failed to auto-create Basic subscription",
+      );
     }
 
     return true;
@@ -49,13 +51,13 @@ export function useSubscription() {
         setLoading(true);
       }
       const { data, error: fetchError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (fetchError) {
-        console.error('Error fetching subscription:', fetchError);
+        console.error("Error fetching subscription:", fetchError);
         setError(fetchError.message);
       } else {
         const hasNoPlan = !data || (!data.active_plan && !data.selected_plan);
@@ -65,20 +67,23 @@ export function useSubscription() {
             hasAttemptedBasicEnsure.current = true;
             await ensureBasicSubscription();
 
-            const { data: refreshedData, error: refreshedError } = await supabase
-              .from('subscriptions')
-              .select('*')
-              .eq('user_id', user.id)
-              .maybeSingle();
+            const { data: refreshedData, error: refreshedError } =
+              await supabase
+                .from("subscriptions")
+                .select("*")
+                .eq("user_id", user.id)
+                .maybeSingle();
 
             if (refreshedError) {
               throw refreshedError;
             }
 
-            setSubscription((refreshedData ?? null) as unknown as Subscription | null);
+            setSubscription(
+              (refreshedData ?? null) as unknown as Subscription | null,
+            );
           } catch (basicErr: any) {
-            console.error('Error ensuring basic subscription:', basicErr);
-            setError(basicErr.message || 'Failed to auto-assign Basic plan');
+            console.error("Error ensuring basic subscription:", basicErr);
+            setError(basicErr.message || "Failed to auto-assign Basic plan");
             setSubscription((data ?? null) as unknown as Subscription | null);
           }
         } else {
@@ -86,7 +91,7 @@ export function useSubscription() {
         }
       }
     } catch (err: any) {
-      console.error('Error in fetchSubscription:', err);
+      console.error("Error in fetchSubscription:", err);
       setError(err.message);
     } finally {
       hasFetchedOnce.current = true;
@@ -104,23 +109,23 @@ export function useSubscription() {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('subscription-changes')
+      .channel("subscription-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'subscriptions',
+          event: "*",
+          schema: "public",
+          table: "subscriptions",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('Subscription updated:', payload);
-          if (payload.eventType === 'DELETE') {
+          console.log("Subscription updated:", payload);
+          if (payload.eventType === "DELETE") {
             setSubscription(null);
           } else {
             setSubscription(payload.new as Subscription);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -129,18 +134,16 @@ export function useSubscription() {
     };
   }, [user?.id]);
 
-  const updateSelectedPlan = async (plan: 'basic' | 'pro' | 'ultra') => {
-    if (!user?.id) return { error: new Error('Not authenticated') };
+  const updateSelectedPlan = async (plan: "basic" | "pro" | "ultra") => {
+    if (!user?.id) return { error: new Error("Not authenticated") };
 
-    const { error: updateError } = await supabase
-      .from('subscriptions')
-      .upsert(
-        {
-          user_id: user.id,
-          selected_plan: plan,
-        },
-        { onConflict: 'user_id' }
-      );
+    const { error: updateError } = await supabase.from("subscriptions").upsert(
+      {
+        user_id: user.id,
+        selected_plan: plan,
+      },
+      { onConflict: "user_id" },
+    );
 
     if (updateError) {
       return { error: updateError };
@@ -150,22 +153,31 @@ export function useSubscription() {
     return { error: null };
   };
 
-  const isTrialing = subscription?.subscription_status === 'trialing' &&
+  const isTrialing =
+    subscription?.subscription_status === "trialing" &&
     !!subscription?.current_period_end &&
     new Date(subscription.current_period_end) > new Date();
 
-  const isBasicFree = subscription?.active_plan === 'basic' &&
-    subscription?.subscription_status === 'active';
+  const isBasicFree =
+    subscription?.active_plan === "basic" &&
+    subscription?.subscription_status === "active";
 
-  const hasActiveSubscription = subscription?.active_plan != null && (
-    subscription?.subscription_status === 'active' || isTrialing || isBasicFree
-  );
+  const hasActiveSubscription =
+    subscription?.active_plan != null &&
+    (subscription?.subscription_status === "active" ||
+      isTrialing ||
+      isBasicFree);
 
-  const trialDaysRemaining = isTrialing && subscription?.current_period_end
-    ? Math.max(0, Math.ceil(
-        (new Date(subscription.current_period_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-      ))
-    : 0;
+  const trialDaysRemaining =
+    isTrialing && subscription?.current_period_end
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(subscription.current_period_end).getTime() - Date.now()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 0;
 
   const activePlan = subscription?.active_plan ?? null;
   const selectedPlan = subscription?.selected_plan ?? null;
