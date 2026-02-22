@@ -7,6 +7,7 @@ import { ChatInterface } from '@/components/ai-assistant/ChatInterface';
 import { Button } from '@/components/ui/button';
 import { OrgInfo } from '@/lib/groq-client';
 import { cn } from '@/lib/utils';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface AIFloatingWidgetProps {
   className?: string;
@@ -15,6 +16,9 @@ interface AIFloatingWidgetProps {
 function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
   const { user } = useAuth();
   const { organizationId, organizationDetails, userProfile } = useBranding();
+  const { subscription } = useSubscription();
+  
+  const isUltraPlan = subscription?.active_plan?.toLowerCase() === 'ultra';
   
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -64,7 +68,7 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  if (!user || !organizationId) return null;
+  if (!user || !organizationId || !isUltraPlan) return null;
 
   return (
     <div 
