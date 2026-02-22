@@ -18,6 +18,8 @@ import { useDocumentHistory } from '@/hooks/useDocumentHistory';
 import { useOrganizationSecurity } from '@/hooks/useOrganizationSecurity';
 import { usePreviewTracking } from '@/hooks/usePreviewTracking';
 import { DocumentEditToolbar } from '@/components/templates/DocumentEditToolbar';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradePrompt } from '@/components/shared/UpgradePrompt';
 
 // Helper function to parse organization location to show only country
 const parseLocation = (location: string | null | undefined): string => {
@@ -38,6 +40,8 @@ export default function DocumentDetail() {
   const { saveDocument } = useDocumentHistory();
   const { userProfile, organizationDetails, isLoading: brandingLoading } = useBranding();
   const { trackPreviewGeneration } = usePreviewTracking();
+  const { subscription } = useSubscription();
+  const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   
   // Find the document config by ID
@@ -250,10 +254,21 @@ export default function DocumentDetail() {
                   initialData={formData}
                   organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
+                    // Check document limit for Basic users before allowing preview
+                    const isBasicPlan = subscription?.active_plan === 'basic';
+                    if (isBasicPlan && user?.id) {
+                      const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+                      if (limitData && (!limitData.allowed || limitData.used >= 25)) {
+                        setShowUpgradePaywall(true);
+                        return;
+                      }
+                    }
+                    
                     // Clear custom content when form is re-submitted so preview regenerates from template
                     setFormData({ ...data, customContent: undefined });
                     setActiveTab('preview');
                     await trackPreviewGeneration(documentConfig?.id || id || '', 'update');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                 />
               </CardContent>
@@ -318,6 +333,13 @@ export default function DocumentDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <UpgradePrompt 
+        requiredPlan="pro" 
+        variant="force"
+        open={showUpgradePaywall}
+        onOpenChange={setShowUpgradePaywall}
+      />
     </DashboardLayout>
   );
 }
