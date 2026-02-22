@@ -89,22 +89,33 @@ function AIAssistantContent() {
       }, [showPersonInfo, conversation.missingFields]);
 
       // Auto-generate when person is selected, template is set, and there are no missing fields
+      // BUT only if the field collection card was never shown (all data came from the record).
+      // If any fields needed user input, wait for the explicit Generate button click.
       const autoGenerateRef = useRef(false);
       const handleFieldSubmitRef = useRef<() => Promise<void>>(async () => {});
+      const fieldCardWasShownRef = useRef(false);
+      useEffect(() => {
+        if (showPersonInfo && stableMissingFields.current.length > 0) {
+          fieldCardWasShownRef.current = true;
+        }
+        if (!showPersonInfo) {
+          fieldCardWasShownRef.current = false;
+          autoGenerateRef.current = false;
+        }
+      }, [showPersonInfo, conversation.missingFields]);
+
       useEffect(() => {
         if (
           showPersonInfo &&
           conversation.state.selectedRecord &&
           conversation.state.templateId &&
           conversation.missingFields.length === 0 &&
+          !fieldCardWasShownRef.current &&
           !autoGenerateRef.current &&
           !isGenerating
         ) {
           autoGenerateRef.current = true;
           handleFieldSubmitRef.current();
-        }
-        if (!showPersonInfo) {
-          autoGenerateRef.current = false;
         }
       // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [showPersonInfo, conversation.state.selectedRecord, conversation.state.templateId, conversation.missingFields.length, isGenerating]);
