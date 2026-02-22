@@ -17,6 +17,7 @@ const DODO_PRODUCTS: Record<string, Record<string, string>> = {
 };
 
 const pricing = {
+  basic: { monthly: 0, yearly: 0 },
   pro: { monthly: 49, yearly: 299 },
   ultra: { monthly: 99, yearly: 599 },
 };
@@ -42,13 +43,21 @@ const ultraFeatures = [
   'Custom Document Requests',
 ];
 
+const basicFeatures = [
+  '25 Documents per Month',
+  'All Templates Available',
+  'Single Admin Access',
+  'Organization Branding',
+  'Basic Support',
+];
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { subscription, loading: subLoading, hasActiveSubscription, isTrialing } = useSubscription();
   const { toast } = useToast();
 
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'ultra'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra'>('pro');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -62,10 +71,10 @@ export default function Checkout() {
   useEffect(() => {
     // Check sessionStorage for plan intent (only Pro/Ultra for paid plans)
     const storedPlan = sessionStorage.getItem('selectedPlanIntent');
-    if (storedPlan && ['pro', 'ultra'].includes(storedPlan)) {
-      setSelectedPlan(storedPlan as 'pro' | 'ultra');
-    } else if (subscription?.selected_plan && ['pro', 'ultra'].includes(subscription.selected_plan)) {
-      setSelectedPlan(subscription.selected_plan as 'pro' | 'ultra');
+    if (storedPlan && ['basic', 'pro', 'ultra'].includes(storedPlan)) {
+      setSelectedPlan(storedPlan as 'basic' | 'pro' | 'ultra');
+    } else if (subscription?.selected_plan && ['basic', 'pro', 'ultra'].includes(subscription.selected_plan)) {
+      setSelectedPlan(subscription.selected_plan as 'basic' | 'pro' | 'ultra');
     }
   }, [subscription]);
 
@@ -79,6 +88,26 @@ export default function Checkout() {
     if (!user?.id || !user?.email) {
       toast({ title: 'Error', description: 'You must be logged in to proceed', variant: 'destructive' });
       return;
+    }
+
+    // Handle free Basic plan
+    if (selectedPlan === 'basic') {
+      try {
+        const { error } = await supabase.rpc('create_free_subscription', {
+          p_user_id: user.id,
+          p_plan: 'basic',
+        });
+        
+        if (error) throw error;
+        
+        toast({ title: 'Success', description: 'You are now on the Basic plan!' });
+        navigate('/dashboard', { replace: true });
+        return;
+      } catch (err: any) {
+        console.error('Plan update error:', err);
+        toast({ title: 'Error', description: err.message || 'Failed to activate Basic plan. Please try again.', variant: 'destructive' });
+        return;
+      }
     }
 
     setIsRedirecting(true);
@@ -132,7 +161,7 @@ export default function Checkout() {
         <div className="text-center mb-8">
           <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr Logo" className="mx-auto h-16 mb-4" />
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Plan to Continue</h1>
-          <p className="text-gray-600">Try Pro or Ultra free for 7 days. Cancel anytime.</p>
+          <p className="text-gray-600">Basic is free forever, or try Pro or Ultra free for 7 days. Cancel anytime.</p>
         </div>
 
         {/* Billing Toggle — matches onboarding PricingStage */}
@@ -157,6 +186,50 @@ export default function Checkout() {
 
         {/* Plan Cards — matches onboarding PricingStage layout */}
         <div className="flex flex-row justify-center gap-x-4 mb-8 pt-3">
+          {/* Basic Plan */}
+          <Card
+            className={cn(
+              'relative cursor-pointer transition-all duration-300 hover:shadow-xl pt-3 max-w-xs w-full',
+              selectedPlan === 'basic'
+                ? 'ring-2 ring-green-500 bg-green-50 backdrop-blur-sm'
+                : 'bg-white/70 backdrop-blur-sm hover:bg-white/80'
+            )}
+            onClick={() => setSelectedPlan('basic')}
+          >
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge className="bg-green-600 text-white px-4 py-1">Free</Badge>
+            </div>
+            <CardHeader className="text-center pb-4 pt-8">
+              <CardTitle className="text-xl font-semibold">Basic</CardTitle>
+              <div className="py-4">
+                <div className="text-4xl font-bold text-gray-800">$0</div>
+                <div className="text-gray-500">Free forever</div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={(e) => { e.stopPropagation(); setSelectedPlan('basic'); }}
+                variant={selectedPlan === 'basic' ? 'default' : 'outline'}
+                className={cn(
+                  'w-full mb-6 h-12 transition-all duration-200 hover:scale-105',
+                  selectedPlan === 'basic'
+                    ? 'bg-green-600 text-white border border-green-600'
+                    : 'bg-white text-green-600 border border-green-600 hover:bg-green-600 hover:text-white'
+                )}
+              >
+                {selectedPlan === 'basic' ? 'Selected' : 'Select Basic'}
+              </Button>
+              <ul className="space-y-3">
+                {basicFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-center space-x-3">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
           {/* Pro Plan */}
           <Card
             className={cn(
@@ -260,12 +333,21 @@ export default function Checkout() {
           <Button
             onClick={handleProceedToPayment}
             disabled={isRedirecting}
-            className="w-full h-12 bg-[#1b80ff] hover:bg-[#1566d4] text-lg font-semibold"
+            className={cn(
+              "w-full h-12 text-lg font-semibold",
+              selectedPlan === 'basic' 
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-[#1b80ff] hover:bg-[#1566d4]"
+            )}
           >
             {isRedirecting ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Redirecting to payment...
+              </>
+            ) : selectedPlan === 'basic' ? (
+              <>
+                Get Started for Free
               </>
             ) : (
               <>
