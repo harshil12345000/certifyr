@@ -11,7 +11,7 @@ import { useBranding } from '@/contexts/BrandingContext';
 import { useChatSessions, ChatMessage } from '@/hooks/useChatSessions';
 import { useEmployeeData } from '@/hooks/useEmployeeData';
 import { ChatLayout } from '@/components/ai-assistant/ChatLayout';
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendChatMessage, parseGenerationResponse, generateChatTitle } from '@/lib/groq-client';
 import { toast } from 'sonner';
@@ -74,8 +74,19 @@ function AIAssistantContent() {
   const [showPersonInfo, setShowPersonInfo] = useState(false);
   const [selectedPersonRecord, setSelectedPersonRecord] = useState<EmployeeRecord | null>(null);
 
-  const conversation = useAIConversation();
-  const templates = useMemo(() => getTemplatesWithFields(), []);
+    const conversation = useAIConversation();
+    const templates = useMemo(() => getTemplatesWithFields(), []);
+    const stableMissingFields = useRef<string[]>([]);
+
+    // Capture missing fields when they first appear (don't update while user is filling them)
+    useEffect(() => {
+      if (showPersonInfo && conversation.missingFields.length > 0 && stableMissingFields.current.length === 0) {
+        stableMissingFields.current = [...conversation.missingFields];
+      }
+      if (!showPersonInfo) {
+        stableMissingFields.current = [];
+      }
+    }, [showPersonInfo, conversation.missingFields]);
 
   const orgInfo = {
     name: organizationDetails?.name || 'Unknown Organization',
@@ -143,10 +154,119 @@ function AIAssistantContent() {
 
     const docData: Record<string, string> = {};
 
-    // Add all employee record fields
+    // Map from lowercase alias -> canonical template field name
+    const aliasToField: Record<string, string> = {
+      // fullName
+      'fullname': 'fullName', 'full name': 'fullName', 'full_name': 'fullName',
+      'name': 'fullName', 'employeename': 'fullName', 'employee name': 'fullName',
+      'employee_name': 'fullName', 'studentname': 'fullName', 'student name': 'fullName',
+      'student_name': 'fullName',
+      // parentName / fatherName aliases — handled contextually below based on template fields
+      // (kept here as fallback only; overridden by isFatherKey logic)
+      'parentname': 'parentName', 'parent name': 'parentName', 'parent_name': 'parentName',
+      // employeeId
+      'employeeid': 'employeeId', 'employee id': 'employeeId', 'employee_id': 'employeeId',
+      'studentid': 'employeeId', 'student id': 'employeeId', 'student_id': 'employeeId',
+      'emp_id': 'employeeId', 'emp id': 'employeeId', 'empid': 'employeeId',
+      'roll_number': 'employeeId', 'roll number': 'employeeId', 'rollnumber': 'employeeId',
+      'roll_no': 'employeeId',
+      // department
+      'department': 'department', 'dept': 'department', 'dept.': 'department',
+      'division': 'department',
+      // courseOrDesignation — only map if the template actually uses this field; we handle below
+      // designation (for templates that use it directly)
+      'designation': 'designation', 'jobtitle': 'designation', 'job title': 'designation',
+      'job_title': 'designation', 'position': 'designation', 'role': 'designation', 'title': 'designation',
+      // course
+      'course': 'course', 'course name': 'course', 'course_name': 'course',
+      'program': 'course', 'programme': 'course',
+      // gender
+      'gender': 'gender', 'sex': 'gender',
+      // type
+      'type': 'type',
+      // dateOfBirth
+      'dateofbirth': 'dateOfBirth', 'date of birth': 'dateOfBirth', 'date_of_birth': 'dateOfBirth',
+      'dob': 'dateOfBirth', 'birthdate': 'dateOfBirth', 'birth date': 'dateOfBirth', 'birth_date': 'dateOfBirth',
+      // startDate / joiningDate
+      'startdate': 'startDate', 'start date': 'startDate', 'start_date': 'startDate',
+      'joiningdate': 'joiningDate', 'joining date': 'joiningDate', 'date_of_joining': 'joiningDate',
+      'date of joining': 'joiningDate', 'doj': 'joiningDate', 'dateofjoining': 'joiningDate',
+      'join_date': 'joiningDate', 'joindate': 'joinDate', 'join date': 'joinDate',
+      'admission date': 'startDate',
+      // endDate / relievingDate
+      'enddate': 'endDate', 'end date': 'endDate', 'end_date': 'endDate',
+      'leavingdate': 'endDate', 'leaving date': 'endDate', 'date_of_leaving': 'endDate',
+      'date of leaving': 'endDate', 'relieving_date': 'relievingDate', 'dateofleaving': 'endDate',
+      'relievingdate': 'relievingDate', 'relieving date': 'relievingDate',
+      // address
+      'address': 'address', 'residentialaddress': 'address', 'residential address': 'address',
+      'residential_address': 'address', 'permanentaddress': 'address', 'permanent address': 'address',
+      'permanent_address': 'address',
+      // email / phone / salary
+      'email': 'email', 'emailaddress': 'email', 'email address': 'email',
+      'email_address': 'email', 'e-mail': 'email', 'mail': 'email',
+      'phone': 'phone', 'phonenumber': 'phone', 'phone number': 'phone',
+      'phone_number': 'phone', 'mobilenumber': 'phone', 'mobile number': 'phone',
+      'mobile': 'phone', 'contact': 'phone', 'contactnumber': 'phone',
+      'contact number': 'phone', 'contact_number': 'phone',
+      'salary': 'salary', 'income': 'salary', 'monthly salary': 'salary', 'ctc': 'salary', 'pay': 'salary',
+      // motherName (fatherName is handled contextually below)
+      'mothername': 'motherName', 'mother name': 'motherName', 'mother_name': 'motherName',
+      "mother's name": 'motherName',
+    };
+
+    // Determine which template fields are required so we can map aliases correctly
+    const requiredFieldSet = new Set(templateConfig.requiredFields.map(f => f.toLowerCase()));
+    const usesCourseOrDesignation = requiredFieldSet.has('courseordesignation');
+    const usesDesignation = requiredFieldSet.has('designation');
+    const usesCourse = requiredFieldSet.has('course');
+    const usesParentName = requiredFieldSet.has('parentname');
+    const usesFatherName = requiredFieldSet.has('fathername');
+
+    // Add employee record fields, remapping keys to canonical template field names
     Object.entries(selectedRecord).forEach(([key, value]) => {
       if (value !== null && value !== undefined && value !== '') {
-        docData[key] = String(value);
+        const normalizedKey = key.toLowerCase().trim();
+        let mappedKey = aliasToField[normalizedKey] || key;
+
+        // Special handling for fatherName vs parentName (template-dependent)
+        const isFatherKey = ['fathername', 'father name', 'father_name', "father's name", 'guardianname', 'guardian name', 'guardian_name', 'father', 'parent', 'parentname', 'parent name', 'parent_name'].includes(normalizedKey);
+        if (isFatherKey) {
+          mappedKey = usesParentName ? 'parentName' : usesFatherName ? 'fatherName' : 'parentName';
+        }
+
+        // Special handling for courseOrDesignation vs designation vs course
+        if (['designation', 'jobtitle', 'job title', 'job_title', 'position', 'role', 'title'].includes(normalizedKey)) {
+          mappedKey = (usesCourseOrDesignation && !usesDesignation) ? 'courseOrDesignation' : 'designation';
+        }
+        if (['course', 'course name', 'course_name', 'program', 'programme'].includes(normalizedKey)) {
+          mappedKey = (usesCourseOrDesignation && !usesCourse) ? 'courseOrDesignation' : 'course';
+        }
+
+        // Normalize gender values
+        if (mappedKey === 'gender') {
+          const genderMap: Record<string, string> = {
+            'male': 'male', 'm': 'male', 'man': 'male', 'boy': 'male',
+            'female': 'female', 'f': 'female', 'woman': 'female', 'girl': 'female',
+            'other': 'other', 'o': 'other', 'others': 'other',
+          };
+          const v = String(value).toLowerCase().trim();
+          docData[mappedKey] = genderMap[v] || v;
+          return;
+        }
+
+        // Normalize type values
+        if (mappedKey === 'type') {
+          const typeMap: Record<string, string> = {
+            'student': 'student', 's': 'student', 'studying': 'student',
+            'employee': 'employee', 'e': 'employee', 'staff': 'employee', 'faculty': 'employee',
+          };
+          const v = String(value).toLowerCase().trim();
+          docData[mappedKey] = typeMap[v] || v;
+          return;
+        }
+
+        docData[mappedKey] = String(value);
       }
     });
 
@@ -414,7 +534,7 @@ function AIAssistantContent() {
         loadingMessage={loadingMessage}
         personInfoRecord={showPersonInfo ? selectedPersonRecord || undefined : undefined}
         personInfoTemplateName={showPersonInfo ? templateName : undefined}
-        missingFields={showPersonInfo ? conversation.missingFields : undefined}
+          missingFields={showPersonInfo ? (stableMissingFields.current.length > 0 ? stableMissingFields.current : conversation.missingFields) : undefined}
         collectedFields={showPersonInfo ? conversation.state.collectedFields : undefined}
         templateName={showPersonInfo ? templateName : undefined}
         onFieldChange={conversation.updateCollectedField}

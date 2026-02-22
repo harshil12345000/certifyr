@@ -97,50 +97,57 @@ export function useAIConversation(): UseAIConversationReturn {
       return value !== null && value !== undefined && value !== '';
     });
 
-    // Create a map of all possible aliases for each field
-    const fieldToAliases: Record<string, string[]> = {
-      fullName: ['fullname', 'name', 'full_name', 'employeename', 'studentname', 'employee_name', 'student_name', 'full-name'],
-      parentName: ['parentname', 'parent_name', 'fathername', 'father_name', 'guardianname', 'guardian_name', 'father', 'parent'],
-      employeeId: ['employeeid', 'employee_id', 'studentid', 'student_id', 'id', 'emp_id', 'empid', 'empid', 'employeeid', 'student_id', 'roll_number', 'rollnumber', 'roll_no'],
-      department: ['department', 'dept', 'department_name', 'dept_name'],
-      courseOrDesignation: ['course', 'designation', 'jobtitle', 'job_title', 'course_name'],
-      designation: ['designation', 'jobtitle', 'job_title', 'position', 'role'],
-      course: ['course', 'course_name', 'program', 'programme'],
-      gender: ['gender', 'sex', 'gender_type'],
-      type: ['type', 'persontype', 'person_type', 'studenttype', 'employeetype'],
-      personType: ['type', 'persontype', 'person_type', 'studenttype', 'employeetype'],
-      dateOfBirth: ['dateofbirth', 'date_of_birth', 'dob', 'birthdate', 'birth_date', 'birthday'],
-      startDate: ['startdate', 'start_date', 'joiningdate', 'date_of_joining', 'doj', 'dateofjoining', 'join_date'],
-      joiningDate: ['joiningdate', 'date_of_joining', 'startdate', 'start_date', 'doj', 'dateofjoining', 'join_date'],
-      endDate: ['enddate', 'end_date', 'leavingdate', 'date_of_leaving', 'relieving_date', 'dateofleaving'],
-      address: ['address', 'residentialaddress', 'residential_address', 'permanentaddress', 'permanent_address', 'city', 'location'],
-      email: ['email', 'emailaddress', 'email_address', 'mail'],
-      phone: ['phone', 'phonenumber', 'phone_number', 'mobilenumber', 'mobile', 'contact', 'contactnumber', 'contact_number'],
-    };
+      // Create a map of all possible aliases for each field (keyed by lowercase field name)
+      const fieldToAliases: Record<string, string[]> = {
+        fullname: ['fullname', 'full name', 'full_name', 'name', 'employeename', 'employee name', 'employee_name', 'studentname', 'student name', 'student_name', 'full-name'],
+        parentname: ['parentname', 'parent name', 'parent_name', 'fathername', 'father name', 'father_name', "father's name", 'guardianname', 'guardian name', 'guardian_name', 'father', 'parent'],
+        employeeid: ['employeeid', 'employee id', 'employee_id', 'studentid', 'student id', 'student_id', 'id', 'emp_id', 'emp id', 'empid', 'roll_number', 'roll number', 'rollnumber', 'roll_no'],
+        department: ['department', 'dept', 'dept.', 'department_name', 'dept_name', 'division'],
+        courseordesignation: ['courseordesignation', 'course', 'course name', 'course_name', 'designation', 'jobtitle', 'job title', 'job_title', 'position', 'role', 'program', 'programme'],
+        designation: ['designation', 'jobtitle', 'job title', 'job_title', 'position', 'role', 'title'],
+        course: ['course', 'course name', 'course_name', 'program', 'programme'],
+        gender: ['gender', 'sex', 'gender_type'],
+        type: ['type', 'persontype', 'person type', 'person_type', 'studenttype', 'employeetype'],
+        persontype: ['type', 'persontype', 'person type', 'person_type', 'studenttype', 'employeetype'],
+        dateofbirth: ['dateofbirth', 'date of birth', 'date_of_birth', 'dob', 'birthdate', 'birth date', 'birth_date', 'birthday'],
+        startdate: ['startdate', 'start date', 'start_date', 'joiningdate', 'joining date', 'date_of_joining', 'date of joining', 'doj', 'dateofjoining', 'join_date', 'admission date'],
+        joiningdate: ['joiningdate', 'joining date', 'date_of_joining', 'date of joining', 'startdate', 'start date', 'start_date', 'doj', 'dateofjoining', 'join_date'],
+        enddate: ['enddate', 'end date', 'end_date', 'leavingdate', 'leaving date', 'date_of_leaving', 'date of leaving', 'relieving_date', 'dateofleaving'],
+        address: ['address', 'residentialaddress', 'residential address', 'residential_address', 'permanentaddress', 'permanent address', 'permanent_address', 'city', 'location'],
+        email: ['email', 'emailaddress', 'email address', 'email_address', 'e-mail', 'mail'],
+        phone: ['phone', 'phonenumber', 'phone number', 'phone_number', 'mobilenumber', 'mobile number', 'mobile', 'contact', 'contactnumber', 'contact number', 'contact_number'],
+        salary: ['salary', 'income', 'monthly salary', 'ctc', 'pay'],
+        joindate: ['joindate', 'join date', 'join_date', 'joiningdate', 'joining date', 'date of joining', 'startdate', 'start date'],
+        relievingdate: ['relievingdate', 'relieving date', 'relieving_date', 'enddate', 'end date', 'last date', 'lastdate'],
+        workdescription: ['workdescription', 'work description', 'work_description', 'jobdescription', 'job description', 'responsibilities'],
+        fathername: ['fathername', 'father name', 'father_name', "father's name", 'parentname', 'parent name'],
+        mothername: ['mothername', 'mother name', 'mother_name', "mother's name"],
+      };
 
-    // Fields that are auto-filled from org data, not user input
-    const orgAutoFields = new Set([
-      'institutionname', 'signatoryname', 'signatorydesignation', 'place', 'date'
-    ]);
+      // Fields that are auto-filled from org data, not user input
+      const orgAutoFields = new Set([
+        'institutionname', 'signatoryname', 'signatorydesignation', 'place', 'date'
+      ]);
 
-    return requiredFields.filter(field => {
-      // Skip org auto-filled fields
-      if (orgAutoFields.has(field.toLowerCase())) return false;
-      
-      // Check if already collected from user
-      if (state.collectedFields[field]) return false;
+      return requiredFields.filter(field => {
+        // Skip org auto-filled fields
+        if (orgAutoFields.has(field.toLowerCase())) return false;
+        
+        // Check if already collected from user
+        if (state.collectedFields[field]) return false;
 
-      // Check if field exists in record (case-insensitive check)
-      const normalizedField = field.toLowerCase();
-      const aliases = fieldToAliases[normalizedField] || [normalizedField];
-      
-      // Check if any alias exists in record keys
-      const existsInRecord = recordKeys.some(key => 
-        aliases.includes(key.toLowerCase())
-      );
-      
-      return !existsInRecord;
-    });
+        // Check if field exists in record (case-insensitive check)
+        // Use lowercase field name as key into fieldToAliases
+        const normalizedField = field.toLowerCase();
+        const aliases = fieldToAliases[normalizedField] || [normalizedField];
+        
+        // Check if any record key matches any alias (both normalized to lowercase)
+        const existsInRecord = recordKeys.some(key => 
+          aliases.includes(key.toLowerCase().trim())
+        );
+        
+        return !existsInRecord;
+      });
   }, [requiredFields, state.selectedRecord, state.collectedFields, templateConfig]);
 
   const detectedTemplate = useMemo(() => {

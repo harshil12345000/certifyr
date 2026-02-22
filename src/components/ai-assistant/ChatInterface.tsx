@@ -141,20 +141,23 @@ export function ChatInterface({
             <LoadingPlaceholder message="Loading session..." />
           </div>
         ) : (
-          messages.map((message, index) => (
-            <MessageBubble 
-              key={index} 
-              message={message}
-              onDisambiguationSelect={onDisambiguationSelect}
-              personInfoRecord={personInfoRecord}
-              personInfoTemplateName={personInfoTemplateName}
-              missingFields={missingFields}
-              collectedFields={collectedFields}
-              templateName={templateName}
-              onFieldChange={onFieldChange}
-              onFieldSubmit={onFieldSubmit}
-            />
-          ))
+          messages.map((message, index) => {
+              const isLastMessage = index === messages.length - 1;
+              return (
+                <MessageBubble 
+                  key={index} 
+                  message={message}
+                  onDisambiguationSelect={onDisambiguationSelect}
+                  personInfoRecord={isLastMessage ? personInfoRecord : undefined}
+                  personInfoTemplateName={isLastMessage ? personInfoTemplateName : undefined}
+                  missingFields={isLastMessage ? missingFields : undefined}
+                  collectedFields={isLastMessage ? collectedFields : undefined}
+                  templateName={isLastMessage ? templateName : undefined}
+                  onFieldChange={isLastMessage ? onFieldChange : undefined}
+                  onFieldSubmit={isLastMessage ? onFieldSubmit : undefined}
+                />
+              );
+            })
         )}
         
         {isGenerating && (

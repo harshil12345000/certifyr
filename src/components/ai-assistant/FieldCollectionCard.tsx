@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -81,6 +80,42 @@ function getFieldPlaceholder(fieldName: string): string {
   return `Enter ${formatFieldName(fieldName).toLowerCase()}`;
 }
 
+function AutoResizeTextarea({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      rows={1}
+      className={cn(
+        'flex w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none overflow-hidden',
+        className
+      )}
+      style={{ minHeight: '36px', maxHeight: '120px' }}
+    />
+  );
+}
+
 export function FieldCollectionCard({
   missingFields,
   collectedFields,
@@ -89,19 +124,12 @@ export function FieldCollectionCard({
   onSubmit,
   className,
 }: FieldCollectionCardProps) {
-  const [localValues, setLocalValues] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    setLocalValues(collectedFields);
-  }, [collectedFields]);
-
   const handleChange = (field: string, value: string) => {
-    setLocalValues(prev => ({ ...prev, [field]: value }));
     onFieldChange(field, value);
   };
 
   const isReady = missingFields.every(field => 
-    localValues[field] && localValues[field].trim() !== ''
+    collectedFields[field] && collectedFields[field].trim() !== ''
   );
 
   if (missingFields.length === 0) {
@@ -126,7 +154,7 @@ export function FieldCollectionCard({
         
         {missingFields.map((field) => {
           const fieldType = getFieldType(field);
-          const currentValue = localValues[field] || '';
+            const currentValue = collectedFields[field] || '';
           
           return (
             <div key={field} className="space-y-1">
@@ -156,13 +184,12 @@ export function FieldCollectionCard({
                     ) : null}
                   </SelectContent>
                 </Select>
-              ) : fieldType === 'textarea' ? (
-                <Textarea
-                  value={currentValue}
-                  onChange={(e) => handleChange(field, e.target.value)}
-                  placeholder={getFieldPlaceholder(field)}
-                  className="bg-white min-h-[80px]"
-                />
+                ) : fieldType === 'textarea' ? (
+                  <AutoResizeTextarea
+                    value={currentValue}
+                    onChange={(e) => handleChange(field, e.target.value)}
+                    placeholder={getFieldPlaceholder(field)}
+                  />
               ) : (
                 <Input
                   type={fieldType === 'date' ? 'date' : 'text'}
