@@ -166,10 +166,10 @@ const Documents = () => {
       const isBasicPlan = subscription?.active_plan === 'basic';
       
       if (isBasicPlan && user.id) {
-        const { data: limitData } = await supabase.rpc('check_document_limit_v2', { p_user_id: user.id });
+        const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
         
         // Block access and redirect to dashboard if limit reached
-        if (limitData && (!(limitData as any).allowed || (limitData as any).used >= 25)) {
+        if (limitData && (!limitData.allowed || limitData.used >= 25)) {
           setShowUpgradePaywall(true);
           // Redirect to dashboard after showing paywall
           setTimeout(() => {

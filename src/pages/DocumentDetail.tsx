@@ -253,20 +253,13 @@ export default function DocumentDetail() {
                   initialData={formData}
                   organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
-                    // Check document limit for Basic users - server-side enforcement
+                    // Check document limit for Basic users before allowing preview
                     const isBasicPlan = subscription?.active_plan === 'basic';
                     if (isBasicPlan && user?.id) {
-                      try {
-                        const { data: limitResponse, error } = await supabase.functions.invoke('enforce-preview-limit');
-                        
-                        // Handle 403 response (limit reached) - show strict paywall
-                        if (limitResponse?.error === 'PLAN_LIMIT_REACHED' || limitResponse?.allowed === false) {
-                          setShowUpgradePaywall(true);
-                          return;
-                        }
-                      } catch (err) {
-                        console.error('Error checking preview limit:', err);
-                        // On error, allow the preview but log the issue
+                      const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+                      if (limitData && (!limitData.allowed || limitData.used >= 25)) {
+                        setShowUpgradePaywall(true);
+                        return;
                       }
                     }
                     

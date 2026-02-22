@@ -380,16 +380,27 @@ export function Header() {
                 </span>
               </div>
               <DropdownMenuSeparator />
-              {loadingNotifications ? <NotificationSkeleton /> : notifications.length === 0 ? <div className="py-12 text-center">
+              {loadingNotifications ? (
+                <NotificationSkeleton />
+              ) : notifications.length === 0 ? (
+                <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">
                     No notifications yet.
                   </p>
-                </div> : notifications.map((n, i) => <>
-                    <DropdownMenuItem key={n.id} className="cursor-pointer p-3 relative flex items-start" onClick={() => markAsRead(n.id)}>
+                </div>
+              ) : (
+                notifications.map((n, i) => (
+                  <div key={n.id}>
+                    <DropdownMenuItem
+                      className="cursor-pointer p-3 relative flex items-start"
+                      onClick={() => markAsRead(n.id)}
+                    >
                       <div className="flex-1">
                         <p className="font-medium flex items-center">
                           {n.subject}
-                          {unread.includes(n.id) && <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />}
+                          {unread.includes(n.id) && (
+                            <span className="ml-2 inline-block w-2 h-2 rounded-full bg-primary-600" />
+                          )}
                         </p>
                         <p className="text-sm text-muted-foreground whitespace-pre-line">
                           {n.body}
@@ -398,22 +409,35 @@ export function Header() {
                           {dayjs(n.created_at).format("MMM D, YYYY HH:mm")}
                         </p>
                       </div>
+
                       <div className="relative ml-3 flex-shrink-0">
-                        <button className="w-6 h-6 flex items-center justify-center rounded-full border border-border bg-background hover:bg-green-50 hover:text-green-600 transition-colors" title="Completed" onClick={e => {
-                    e.stopPropagation();
-                    markAsCompleted(n.id);
-                  }} type="button" tabIndex={0}>
+                        <button
+                          className="w-6 h-6 flex items-center justify-center rounded-full border border-border bg-background hover:bg-green-50 hover:text-green-600 transition-colors"
+                          title="Completed"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsCompleted(n.id);
+                          }}
+                          type="button"
+                        >
                           <Check className="w-[14px] h-[14px]" />
                         </button>
-                        <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-7 px-2 py-1 rounded bg-black text-white text-xs opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-lg" style={{
-                    minWidth: '70px'
-                  }}>
+
+                        <span
+                          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-7 px-2 py-1 rounded bg-black text-white text-xs opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-lg"
+                          style={{ minWidth: "70px" }}
+                        >
                           Completed
                         </span>
                       </div>
                     </DropdownMenuItem>
-                    {i < notifications.length - 1 && <div className="border-t border-gray-200 my-2 mx-2" />}
-                  </>)}
+
+                    {i < notifications.length - 1 && (
+                      <div className="border-t border-gray-200 my-2 mx-2" />
+                    )}
+                  </div>
+                ))
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 

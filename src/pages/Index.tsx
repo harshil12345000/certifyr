@@ -28,14 +28,19 @@ const Index = () => {
 
   // Document usage for Basic plan
   const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date: string | null } | null>(null);
-  const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
+  const isBasicPlan = subscription?.active_plan === 'basic';
+  const isBasicFree = isBasicPlan && (
+    subscription?.subscription_status === 'active' || 
+    subscription?.subscription_status === null || 
+    subscription?.subscription_status === ''
+  );
 
-  // Fetch document usage for Basic users using v2 function
+  // Fetch document usage for Basic users
   useEffect(() => {
     const fetchDocumentUsage = async () => {
-      if (!isBasicFree || !user) return;
+      if (!isBasicPlan || !user) return;
       try {
-        const { data, error } = await supabase.rpc('check_document_limit_v2', { p_user_id: user.id });
+        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
         if (!error && data) {
           const d = data as any;
           setDocumentUsage({ 
@@ -50,7 +55,7 @@ const Index = () => {
       }
     };
     fetchDocumentUsage();
-  }, [isBasicFree, user]);
+  }, [isBasicPlan, user]);
 
   // Determine progress bar color based on usage
   const getProgressColor = () => {

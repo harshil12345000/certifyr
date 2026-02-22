@@ -54,7 +54,7 @@ const basicFeatures = [
 export default function Checkout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { subscription, loading: subLoading, hasActiveSubscription, isTrialing } = useSubscription();
+  const { subscription, loading: subLoading, hasActiveSubscription, isTrialing, refetch } = useSubscription();
   const { toast } = useToast();
 
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra'>('pro');
@@ -162,10 +162,8 @@ export default function Checkout() {
         
         toast({ title: 'Success', description: 'You are now on the Basic plan!' });
         
-        // Small delay to ensure subscription is saved, then navigate
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 500);
+        // Force subscription refresh before navigating
+        window.location.href = '/dashboard';
         return;
       } catch (err: any) {
         console.error('Plan update error:', err);

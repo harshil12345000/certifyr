@@ -115,10 +115,11 @@ export function useSubscription() {
     !!subscription?.current_period_end &&
     new Date(subscription.current_period_end) > new Date();
 
-  const isBasicPlan = subscription?.active_plan === 'basic';
+  const isBasicFree = subscription?.active_plan === 'basic' && 
+    subscription?.subscription_status === 'active';
 
   const hasActiveSubscription = subscription?.active_plan != null && (
-    subscription?.subscription_status === 'active' || isTrialing || isBasicPlan
+    subscription?.subscription_status === 'active' || isTrialing || isBasicFree
   );
 
   const trialDaysRemaining = isTrialing && subscription?.current_period_end

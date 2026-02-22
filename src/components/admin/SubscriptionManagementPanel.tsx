@@ -75,18 +75,17 @@ export const SubscriptionManagementPanel: React.FC<
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; reset_date: string | null } | null>(null);
 
-  // Fetch document usage for Basic users using v2 function
+  // Fetch document usage for Basic users
   useEffect(() => {
     const fetchDocumentUsage = async () => {
       if (!subscription?.user_id) return;
       try {
-        const { data, error } = await supabase.rpc('check_document_limit_v2', { p_user_id: subscription.user_id });
+        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id });
         if (!error && data) {
-          const d = data as any;
           setDocumentUsage({ 
-            used: d.used || 0, 
-            limit: d.limit || 25,
-            reset_date: d.reset_date || null
+            used: data.used || 0, 
+            limit: data.limit || 25,
+            reset_date: data.reset_date || null
           });
         }
       } catch (err) {

@@ -1,6 +1,5 @@
--- Fix: Create or update create_free_subscription function
--- Sets monthly_usage_reset_date to first day of next month
--- Safe: Only adds/updates function, no data changes
+-- Fix: Create or update create_free_subscription function to match old working version
+-- Uses current month start (not next month) like the original
 
 CREATE OR REPLACE FUNCTION public.create_free_subscription(
   p_user_id UUID,
@@ -12,10 +11,9 @@ CREATE OR REPLACE FUNCTION public.create_free_subscription(
  SET search_path TO 'public'
 AS $$
 DECLARE
-  v_next_month_start TIMESTAMPTZ;
+  v_current_month TIMESTAMPTZ;
 BEGIN
-  -- Calculate first day of next month
-  v_next_month_start := DATE_TRUNC('month', NOW()) + INTERVAL '1 month';
+  v_current_month := DATE_TRUNC('month', NOW());
   
   INSERT INTO subscriptions (
     user_id,
@@ -25,9 +23,7 @@ BEGIN
     current_period_start,
     current_period_end,
     documents_used_this_month,
-    monthly_usage_reset_date,
-    created_at,
-    updated_at
+    monthly_usage_reset_date
   ) VALUES (
     p_user_id,
     p_plan,
@@ -36,9 +32,7 @@ BEGIN
     NOW(),
     NULL,
     0,
-    v_next_month_start,
-    NOW(),
-    NOW()
+    v_current_month
   )
   ON CONFLICT (user_id) DO UPDATE SET
     active_plan = EXCLUDED.active_plan,
@@ -46,7 +40,7 @@ BEGIN
     subscription_status = EXCLUDED.subscription_status,
     current_period_start = EXCLUDED.current_period_start,
     documents_used_this_month = 0,
-    monthly_usage_reset_date = v_next_month_start,
+    monthly_usage_reset_date = v_current_month,
     updated_at = now();
     
   RETURN json_build_object('success', true, 'plan', p_plan);
