@@ -97,6 +97,12 @@ const Index = () => {
   } = useUserDocuments(5);
   const isLoading = statsLoading || activityLoading || documentsLoading;
 
+  const getTextColor = () => documentUsage && documentUsage.remaining <= 5 ? 'text-red-700' : 'text-blue-700';
+  const getSubTextColor = () => documentUsage && documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600';
+  const getProgressBgColor = () => documentUsage && documentUsage.remaining <= 5 ? 'bg-red-200' : 'bg-blue-200';
+  const getProgressColor = () => documentUsage && documentUsage.remaining <= 5 ? 'bg-red-500' : 'bg-blue-500';
+  const formatResetDate = (_date: any) => { const d = new Date(); d.setMonth(d.getMonth() + 1, 1); return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }); };
+
   // Update last loaded values when not loading
   useEffect(() => {
     if (!statsLoading && stats) setLastStats(stats);

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ChatMessage {
@@ -33,11 +33,23 @@ export interface UseChatSessionsReturn {
 export function useChatSessions(userId: string | undefined, organizationId: string | null): UseChatSessionsReturn {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  // Ref always holds the latest currentSession value, avoiding stale closures in addMessage
+  const currentSessionRef = useRef<ChatSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const isCreatingSessionRef = useRef(false);
 
   const clearError = useCallback(() => setError(null), []);
+
+  // Helper: set currentSession and keep ref in sync
+  const setSession = useCallback((session: ChatSession | null | ((prev: ChatSession | null) => ChatSession | null)) => {
+    setCurrentSession(prev => {
+      const next = typeof session === 'function' ? session(prev) : session;
+      currentSessionRef.current = next;
+      return next;
+    });
+  }, []);
 
   const loadSessions = useCallback(async () => {
     if (!organizationId) return;
@@ -84,9 +96,9 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
     if (insertError) throw insertError;
 
     setSessions(prev => [data, ...prev]);
-    setCurrentSession(data);
+    setSession(data);
     return data;
-  }, [organizationId, userId]);
+  }, [organizationId, userId, setSession]);
 
   const loadSession = useCallback(async (sessionId: string) => {
     setLoading(true);
@@ -98,13 +110,13 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
         .single() as unknown as { data: ChatSession; error: Error | null };
 
       if (fetchError) throw fetchError;
-      setCurrentSession(data);
+      setSession(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load session');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setSession]);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     setLoading(true);
@@ -117,15 +129,15 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
       if (deleteError) throw deleteError;
 
       setSessions(prev => prev.filter(s => s.id !== sessionId));
-      if (currentSession?.id === sessionId) {
-        setCurrentSession(null);
+      if (currentSessionRef.current?.id === sessionId) {
+        setSession(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete session');
     } finally {
       setLoading(false);
     }
-  }, [currentSession]);
+  }, [setSession]);
 
   const updateTitle = useCallback(async (sessionId: string, title: string) => {
     try {
@@ -140,23 +152,21 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
         s.id === sessionId ? { ...s, title } : s
       ));
       
-      if (currentSession?.id === sessionId) {
-        setCurrentSession(prev => prev ? { ...prev, title } : null);
+      if (currentSessionRef.current?.id === sessionId) {
+        setSession(prev => prev ? { ...prev, title } : null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update title');
     }
-  }, [currentSession]);
+  }, [setSession]);
 
   const addMessage = useCallback(async (message: ChatMessage): Promise<ChatMessage[]> => {
-    // If no current session, create one first (with guard against race condition)
-    let activeSession = currentSession;
+    // Always read from ref to get the latest session (avoids stale closure)
+    let activeSession = currentSessionRef.current;
     
     if (!activeSession) {
-      if (isCreatingSession) {
-        // Wait briefly for the in-flight creation to complete
+      if (isCreatingSessionRef.current) {
         await new Promise(r => setTimeout(r, 500));
-        // Re-check after wait
         return addMessage(message);
       }
 
@@ -164,6 +174,7 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
         throw new Error('Organization or user not found');
       }
 
+      isCreatingSessionRef.current = true;
       setIsCreatingSession(true);
       try {
         const newSession: Omit<ChatSession, 'id' | 'created_at' | 'updated_at'> = {
@@ -183,16 +194,16 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
 
         activeSession = data;
         setSessions(prev => [data, ...prev]);
-        setCurrentSession(data);
+        setSession(data);
       } finally {
+        isCreatingSessionRef.current = false;
         setIsCreatingSession(false);
       }
     }
 
-    // Add message to the session
+    // Build updated messages on top of the latest known session
     const updatedMessages = [...activeSession.messages, message];
 
-    // Update in database (no auto-title — title is generated by AI separately)
     const { error: updateError } = await supabase
       .from('ai_chat_sessions' as 'announcements')
       .update({ 
@@ -205,15 +216,14 @@ export function useChatSessions(userId: string | undefined, organizationId: stri
       console.error('Failed to save message:', updateError);
     }
 
-    // Update local state immediately
     const updatedSession = { ...activeSession, messages: updatedMessages };
-    setCurrentSession(updatedSession);
+    setSession(updatedSession);
     setSessions(prev => prev.map(s => 
       s.id === activeSession!.id ? updatedSession : s
     ));
     
     return updatedMessages;
-  }, [currentSession, organizationId, userId, isCreatingSession]);
+  }, [organizationId, userId, setSession]);
 
   return {
     sessions,

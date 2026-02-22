@@ -40,6 +40,8 @@ function formatFieldName(name: string): string {
     'institutionName': 'Institution Name',
     'place': 'Place',
     'date': 'Date',
+    'visaType': 'Visa Type',
+    'visatype': 'Visa Type',
   };
   
   const lower = name.toLowerCase();
@@ -51,13 +53,16 @@ function formatFieldName(name: string): string {
 
 function getFieldType(fieldName: string): 'text' | 'textarea' | 'select' | 'date' {
   const textFields = ['purpose', 'reason', 'conduct', 'workDescription', 'benefits', 'jobResponsibilities'];
-  const selectFields = ['gender', 'type', 'personType'];
+  const selectFields = ['gender', 'visaType', 'visatype'];
+  const exactSelectFields = ['type', 'personType', 'persontype'];
   const dateFields = ['date', 'startDate', 'endDate', 'dateOfBirth', 'joiningDate', 'startDate', 'joiningDate'];
   
   const lower = fieldName.toLowerCase();
-  if (selectFields.some(f => lower.includes(f))) return 'select';
-  if (dateFields.some(f => lower.includes(f))) return 'date';
-  if (textFields.some(f => lower.includes(f))) return 'textarea';
+  if (selectFields.some(f => lower === f.toLowerCase())) return 'select';
+  if (exactSelectFields.some(f => lower === f.toLowerCase())) return 'select';
+  if (lower === 'gender') return 'select';
+  if (dateFields.some(f => lower.includes(f.toLowerCase()))) return 'date';
+  if (textFields.some(f => lower.includes(f.toLowerCase()))) return 'textarea';
   return 'text';
 }
 
@@ -168,21 +173,35 @@ export function FieldCollectionCard({
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder={`Select ${formatFieldName(field)}`} />
                   </SelectTrigger>
-                  <SelectContent>
-                    {field.toLowerCase() === 'gender' && (
-                      <>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </>
-                    )}
-                    {field.toLowerCase() === 'type' || field.toLowerCase() === 'persontype' ? (
-                      <>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="employee">Employee</SelectItem>
-                      </>
-                    ) : null}
-                  </SelectContent>
+                    <SelectContent>
+                      {field.toLowerCase() === 'gender' && (
+                        <>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </>
+                      )}
+                      {(field.toLowerCase() === 'type' || field.toLowerCase() === 'persontype') && (
+                        <>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="employee">Employee</SelectItem>
+                        </>
+                      )}
+                      {field.toLowerCase() === 'visatype' && (
+                        <>
+                          <SelectItem value="Tourist Visa">Tourist Visa</SelectItem>
+                          <SelectItem value="Business Visa">Business Visa</SelectItem>
+                          <SelectItem value="Student Visa">Student Visa</SelectItem>
+                          <SelectItem value="Work Visa">Work Visa</SelectItem>
+                          <SelectItem value="Transit Visa">Transit Visa</SelectItem>
+                          <SelectItem value="Medical Visa">Medical Visa</SelectItem>
+                          <SelectItem value="Conference Visa">Conference Visa</SelectItem>
+                          <SelectItem value="Research Visa">Research Visa</SelectItem>
+                          <SelectItem value="Dependent Visa">Dependent Visa</SelectItem>
+                          <SelectItem value="Immigrant Visa">Immigrant Visa</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
                 </Select>
                 ) : fieldType === 'textarea' ? (
                   <AutoResizeTextarea
