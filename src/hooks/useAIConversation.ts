@@ -89,63 +89,59 @@ export function useAIConversation(): UseAIConversationReturn {
   }, [templateConfig]);
 
   const missingFields = useMemo(() => {
-    if (!state.selectedRecord) return requiredFields;
+    if (!state.selectedRecord || !templateConfig) return requiredFields;
     
-    const availableFields = new Set<string>();
-    
-    // Add all keys from selected record as available
-    Object.keys(state.selectedRecord).forEach(key => {
+    // Get all non-empty keys from employee record
+    const recordKeys = Object.keys(state.selectedRecord).filter(key => {
       const value = state.selectedRecord[key];
-      if (value !== null && value !== undefined && value !== '') {
-        availableFields.add(key.toLowerCase());
-        // Also add common aliases
-        if (key === 'fullName') availableFields.add('fullname');
-        if (key === 'parentName') availableFields.add('parentname');
-        if (key === 'employeeId') availableFields.add('employeeid');
-        if (key === 'studentId') availableFields.add('studentid');
-        if (key === 'dateOfBirth') availableFields.add('dateofbirth');
-        if (key === 'joiningDate') availableFields.add('joiningdate');
-        if (key === 'startDate') availableFields.add('startdate');
-      }
+      return value !== null && value !== undefined && value !== '';
     });
 
-    // Map template field names to record field names
-    const fieldMappings: Record<string, string[]> = {
-      fullName: ['fullname', 'name', 'full_name', 'employeename', 'studentname'],
-      parentName: ['parentname', 'parent_name', 'fathername', 'father_name', 'guardianname'],
-      employeeId: ['employeeid', 'employee_id', 'studentid', 'student_id', 'id'],
-      department: ['department', 'dept'],
-      courseOrDesignation: ['course', 'designation', 'jobtitle'],
-      designation: ['designation', 'jobtitle'],
-      course: ['course'],
-      gender: ['gender', 'sex'],
-      dateOfBirth: ['dateofbirth', 'dob', 'date_of_birth', 'birthdate'],
-      startDate: ['startdate', 'start_date', 'joiningdate', 'dateofjoining', 'doj'],
-      joiningDate: ['joiningdate', 'dateofjoining', 'startdate', 'doj'],
+    // Create a map of all possible aliases for each field
+    const fieldToAliases: Record<string, string[]> = {
+      fullName: ['fullname', 'name', 'full_name', 'employeename', 'studentname', 'employee_name', 'student_name', 'full-name'],
+      parentName: ['parentname', 'parent_name', 'fathername', 'father_name', 'guardianname', 'guardian_name', 'father', 'parent'],
+      employeeId: ['employeeid', 'employee_id', 'studentid', 'student_id', 'id', 'emp_id', 'empid', 'empid', 'employeeid', 'student_id', 'roll_number', 'rollnumber', 'roll_no'],
+      department: ['department', 'dept', 'department_name', 'dept_name'],
+      courseOrDesignation: ['course', 'designation', 'jobtitle', 'job_title', 'course_name'],
+      designation: ['designation', 'jobtitle', 'job_title', 'position', 'role'],
+      course: ['course', 'course_name', 'program', 'programme'],
+      gender: ['gender', 'sex', 'gender_type'],
+      type: ['type', 'persontype', 'person_type', 'studenttype', 'employeetype'],
+      personType: ['type', 'persontype', 'person_type', 'studenttype', 'employeetype'],
+      dateOfBirth: ['dateofbirth', 'date_of_birth', 'dob', 'birthdate', 'birth_date', 'birthday'],
+      startDate: ['startdate', 'start_date', 'joiningdate', 'date_of_joining', 'doj', 'dateofjoining', 'join_date'],
+      joiningDate: ['joiningdate', 'date_of_joining', 'startdate', 'start_date', 'doj', 'dateofjoining', 'join_date'],
+      endDate: ['enddate', 'end_date', 'leavingdate', 'date_of_leaving', 'relieving_date', 'dateofleaving'],
+      address: ['address', 'residentialaddress', 'residential_address', 'permanentaddress', 'permanent_address', 'city', 'location'],
+      email: ['email', 'emailaddress', 'email_address', 'mail'],
+      phone: ['phone', 'phonenumber', 'phone_number', 'mobilenumber', 'mobile', 'contact', 'contactnumber', 'contact_number'],
     };
 
+    // Fields that are auto-filled from org data, not user input
+    const orgAutoFields = new Set([
+      'institutionname', 'signatoryname', 'signatorydesignation', 'place', 'date'
+    ]);
+
     return requiredFields.filter(field => {
-      const normalizedField = field.toLowerCase();
-      
-      // Check if we have this field from the employee record
-      if (availableFields.has(normalizedField)) return false;
-      
-      // Check mapped fields
-      const mappedFields = fieldMappings[normalizedField] || [];
-      for (const mapped of mappedFields) {
-        if (availableFields.has(mapped)) return false;
-      }
+      // Skip org auto-filled fields
+      if (orgAutoFields.has(field.toLowerCase())) return false;
       
       // Check if already collected from user
       if (state.collectedFields[field]) return false;
+
+      // Check if field exists in record (case-insensitive check)
+      const normalizedField = field.toLowerCase();
+      const aliases = fieldToAliases[normalizedField] || [normalizedField];
       
-      // These fields are auto-filled from org data, not user input
-      const orgAutoFields = ['institutionname', 'signatoryname', 'signatorydesignation', 'place', 'date'];
-      if (orgAutoFields.includes(normalizedField)) return false;
+      // Check if any alias exists in record keys
+      const existsInRecord = recordKeys.some(key => 
+        aliases.includes(key.toLowerCase())
+      );
       
-      return true;
+      return !existsInRecord;
     });
-  }, [requiredFields, state.selectedRecord, state.collectedFields]);
+  }, [requiredFields, state.selectedRecord, state.collectedFields, templateConfig]);
 
   const detectedTemplate = useMemo(() => {
     return state.templateId;

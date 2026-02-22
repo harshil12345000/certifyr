@@ -40,6 +40,44 @@ const EXCLUDED_FIELDS = new Set([
   'organization type',
 ]);
 
+const FIELD_ORDER: string[] = [
+  'fullName',
+  'firstName',
+  'lastName',
+  'email',
+  'phone',
+  'gender',
+  'parentName',
+  'designation',
+  'department',
+  'course',
+  'salary',
+  'address',
+  'dateOfBirth',
+  'joiningDate',
+];
+
+function getFieldPriority(fieldName: string): number {
+  const lowerName = fieldName.toLowerCase().replace(/\s+/g, '');
+  const normalizedField = lowerName.replace(/[^a-z]/g, '');
+  
+  for (let i = 0; i < FIELD_ORDER.length; i++) {
+    const orderField = FIELD_ORDER[i].toLowerCase();
+    if (normalizedField === orderField || lowerName.includes(orderField)) {
+      return i;
+    }
+  }
+  return FIELD_ORDER.length;
+}
+
+function sortFieldsByPriority(fields: FieldInfo[]): FieldInfo[] {
+  return [...fields].sort((a, b) => {
+    const priorityA = getFieldPriority(a.name);
+    const priorityB = getFieldPriority(b.name);
+    return priorityA - priorityB;
+  });
+}
+
 function formatFieldName(name: string): string {
   const fieldMap: Record<string, string> = {
     'fullName': 'Full Name',
@@ -119,7 +157,7 @@ function parseFieldLists(content: string): ParsedFields | null {
     }
     
     if (known.length > 0 || missing.length > 0) {
-      return { known, missing };
+      return { known: sortFieldsByPriority(known), missing: sortFieldsByPriority(missing) };
     }
     return null;
   }
@@ -147,7 +185,7 @@ function parseFieldLists(content: string): ParsedFields | null {
   }
   
   if (known.length > 0 || missing.length > 0) {
-    return { known, missing };
+    return { known: sortFieldsByPriority(known), missing: sortFieldsByPriority(missing) };
   }
   
   return null;

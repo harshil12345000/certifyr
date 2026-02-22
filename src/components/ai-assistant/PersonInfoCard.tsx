@@ -84,6 +84,35 @@ const EXCLUDED_FIELDS = new Set([
   'company_name',
 ]);
 
+const FIELD_ORDER: string[] = [
+  'fullName',
+  'firstName',
+  'lastName',
+  'email',
+  'phone',
+  'gender',
+  'parentName',
+  'designation',
+  'department',
+  'course',
+  'salary',
+  'address',
+  'dateOfBirth',
+  'joiningDate',
+];
+
+function getFieldPriority(key: string): number {
+  const lowerKey = key.toLowerCase().replace(/[_\s]/g, '');
+  
+  for (let i = 0; i < FIELD_ORDER.length; i++) {
+    const orderField = FIELD_ORDER[i].toLowerCase();
+    if (lowerKey === orderField || lowerKey.includes(orderField)) {
+      return i;
+    }
+  }
+  return FIELD_ORDER.length;
+}
+
 export function PersonInfoCard({ record, templateName, className }: PersonInfoCardProps) {
   // Get all non-empty fields from the record
   const displayFields = Object.entries(record)
@@ -94,6 +123,7 @@ export function PersonInfoCard({ record, templateName, className }: PersonInfoCa
       if (EXCLUDED_FIELDS.has(key.toLowerCase())) return false;
       return true;
     })
+    .sort(([keyA], [keyB]) => getFieldPriority(keyA) - getFieldPriority(keyB))
     .map(([key, value]) => ({
       label: formatFieldName(key),
       value: String(value),
