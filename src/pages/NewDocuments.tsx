@@ -170,11 +170,14 @@ const NewDocuments = () => {
     setSearchQuery("");
   };
   if (loading) {
-    return <DashboardLayout>
+    return (
+      <DashboardLayout>
         <TemplatesSkeleton />
-      </DashboardLayout>;
+      </DashboardLayout>
+    );
   }
-  return <DashboardLayout>
+  return (
+    <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -264,7 +267,7 @@ const NewDocuments = () => {
         open={showUpgradePaywall}
         onOpenChange={setShowUpgradePaywall}
       />
-    </DashboardLayout>;
+    </DashboardLayout>
   );
 };
 

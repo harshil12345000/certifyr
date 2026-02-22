@@ -9,6 +9,7 @@ import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { RootRedirect } from "@/components/auth/RootRedirect";
 import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
 import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import Index from "@/pages/Index";
 import Documents from "@/pages/Documents";
 import NewDocuments from "@/pages/NewDocuments";
@@ -53,6 +54,7 @@ const Gated = ({ children }: { children: React.ReactNode }) => (
 
 function AppContent() {
   const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
+  const { hasFeature } = usePlanFeatures();
 
   useEffect(() => {
     const handleShowUpgradePaywall = () => {
@@ -107,7 +109,7 @@ function AppContent() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
-      <AIFloatingWidget />
+      {hasFeature('aiAssistant') && <AIFloatingWidget />}
       <UpgradePrompt 
         requiredPlan="pro" 
         variant="dialog"

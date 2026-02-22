@@ -60,7 +60,7 @@ export function UpgradePrompt({
     const isForce = variant === 'force';
     return (
       <Dialog open={open} onOpenChange={isForce ? () => {} : onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`sm:max-w-md ${isForce ? '[&>button]:hidden' : ''}`}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5 text-red-500" />
