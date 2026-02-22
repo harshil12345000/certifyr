@@ -291,18 +291,46 @@ function AIAssistantContent() {
           return;
         }
 
-        // Normalize type values
-        if (mappedKey === 'type') {
-          const typeMap: Record<string, string> = {
-            'student': 'student', 's': 'student', 'studying': 'student',
-            'employee': 'employee', 'e': 'employee', 'staff': 'employee', 'faculty': 'employee',
-          };
-          const v = String(value).toLowerCase().trim();
-          docData[mappedKey] = typeMap[v] || v;
-          return;
-        }
+          // Normalize type values
+          if (mappedKey === 'type') {
+            const typeMap: Record<string, string> = {
+              'student': 'student', 's': 'student', 'studying': 'student',
+              'employee': 'employee', 'e': 'employee', 'staff': 'employee', 'faculty': 'employee',
+            };
+            const v = String(value).toLowerCase().trim();
+            docData[mappedKey] = typeMap[v] || v;
+            return;
+          }
 
-        docData[mappedKey] = String(value);
+          // Normalize date fields to DD/MM/YYYY
+          const dateFields = ['startDate', 'joiningDate', 'endDate', 'relievingDate', 'dateOfBirth', 'date', 'joinDate'];
+          if (dateFields.includes(mappedKey)) {
+            const raw = String(value).trim();
+            // Try to parse various formats and convert to DD/MM/YYYY
+            const formatted = (() => {
+              // Already DD/MM/YYYY
+              if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
+              // YYYY-MM-DD (ISO)
+              const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+              if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+              // MM/DD/YYYY
+              const us = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+              if (us) return `${us[2].padStart(2,'0')}/${us[1].padStart(2,'0')}/${us[3]}`;
+              // DD-MM-YYYY
+              const dmy = raw.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+              if (dmy) return `${dmy[1].padStart(2,'0')}/${dmy[2].padStart(2,'0')}/${dmy[3]}`;
+              // Fallback: try JS Date parse
+              const d = new Date(raw);
+              if (!isNaN(d.getTime())) {
+                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+              }
+              return raw;
+            })();
+            docData[mappedKey] = formatted;
+            return;
+          }
+
+          docData[mappedKey] = String(value);
       }
     });
 
