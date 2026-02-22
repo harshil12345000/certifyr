@@ -21,6 +21,7 @@ export interface ConversationState {
   stage: ConversationStage;
   selectedRecord: EmployeeRecord | null;
   templateId: string | null;
+  pendingTemplateId: string | null;  // Template detected before disambiguation
   collectedFields: Record<string, string>;
   disambiguationMatches: MatchOption[];
 }
@@ -31,14 +32,14 @@ export interface UseAIConversationReturn {
   templateConfig: TemplateWithFields | null;
   missingFields: string[];
   detectedTemplate: string | null;
-  handleDisambiguationSelect: (match: MatchOption, employeeData: EmployeeRecord[]) => void;
+  handleDisambiguationSelect: (match: MatchOption, employeeData: EmployeeRecord[], templateId?: string | null) => void;
   handlePersonSelected: (record: EmployeeRecord, templateId: string | null) => void;
   setTemplateId: (templateId: string | null) => void;
   updateCollectedField: (field: string, value: string) => void;
   submitCollectedFields: () => Record<string, string> | null;
   resetConversation: () => void;
   processUserMessage: (message: string) => { templateId: string | null; searchName: string | null };
-  handleDisambiguationNeeded: (matches: MatchOption[]) => void;
+  handleDisambiguationNeeded: (matches: MatchOption[], templateId?: string | null) => void;
 }
 
 function getNameFromRecord(record: EmployeeRecord): string {
@@ -71,6 +72,7 @@ export function useAIConversation(): UseAIConversationReturn {
     stage: 'idle',
     selectedRecord: null,
     templateId: null,
+    pendingTemplateId: null,
     collectedFields: {},
     disambiguationMatches: [],
   });
@@ -149,7 +151,7 @@ export function useAIConversation(): UseAIConversationReturn {
     return state.templateId;
   }, [state.templateId]);
 
-  const handleDisambiguationSelect = useCallback((match: MatchOption, employeeData: EmployeeRecord[]) => {
+  const handleDisambiguationSelect = useCallback((match: MatchOption, employeeData: EmployeeRecord[], templateId?: string | null) => {
     // Find the full record from employee data
     const fullRecord = employeeData.find(record => {
       const name = getNameFromRecord(record).toLowerCase();
@@ -160,8 +162,9 @@ export function useAIConversation(): UseAIConversationReturn {
     if (fullRecord) {
       setState(prev => ({
         ...prev,
-        stage: 'showing_person_info',
+        stage: templateId ? 'collecting_fields' : 'showing_person_info',
         selectedRecord: fullRecord,
+        templateId: templateId || prev.templateId,
       }));
     }
   }, []);
@@ -206,6 +209,7 @@ export function useAIConversation(): UseAIConversationReturn {
       stage: 'idle',
       selectedRecord: null,
       templateId: null,
+      pendingTemplateId: null,
       collectedFields: {},
       disambiguationMatches: [],
     });
@@ -260,11 +264,12 @@ export function useAIConversation(): UseAIConversationReturn {
     return { templateId: foundTemplate, searchName };
   }, []);
 
-  const handleDisambiguationNeeded = useCallback((matches: MatchOption[]) => {
+  const handleDisambiguationNeeded = useCallback((matches: MatchOption[], templateId?: string | null) => {
     setState(prev => ({
       ...prev,
       stage: 'awaiting_disambiguation',
       disambiguationMatches: matches,
+      pendingTemplateId: templateId || prev.pendingTemplateId,
     }));
   }, []);
 

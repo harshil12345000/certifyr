@@ -201,15 +201,32 @@ function AIAssistantContent() {
       // Check if this is the first message in the session
       const isFirstMessage = !currentSession?.messages || currentSession.messages.length === 0;
 
-      // Check if user is responding to field collection
+      // Detect template and name from user's message
       const { templateId: detectedTemplate, searchName } = conversation.processUserMessage(message);
       
-      // If we already have a person selected and are collecting fields, handle that first
-      if (selectedPersonRecord && conversation.state.templateId) {
-        // User is providing field values - let AI handle it naturally
-        // But also check if AI should generate the document
+      // FIRST: Try to handle client-side if we have employee data, template, and name
+      if (detectedTemplate && searchName && employeeData.length > 0) {
+        const matchedRecord = searchEmployeeByName(employeeData as EmployeeRecord[], searchName);
+        
+        if (matchedRecord) {
+          // Single match found - show person info and field collection
+          conversation.handlePersonSelected(matchedRecord, detectedTemplate);
+          setSelectedPersonRecord(matchedRecord);
+          setShowPersonInfo(true);
+
+          // Add a message indicating we found the person
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: `Found ${getNameFromRecord(matchedRecord)} in records. Please provide additional details below.`,
+            timestamp: Date.now(),
+          };
+          await addMessage(assistantMessage);
+          setIsGenerating(false);
+          return;
+        }
       }
 
+      // If we get here, we need to call AI (no local match or no template detected)
       // Use the returned updatedMessages which includes the user message
       const response = await sendChatMessage(
         updatedMessages,
@@ -232,30 +249,10 @@ function AIAssistantContent() {
         };
         await addMessage(assistantMessage);
         
-        // Update conversation state
-        conversation.handleDisambiguationNeeded(response.matches);
+        // Update conversation state with detected template
+        conversation.handleDisambiguationNeeded(response.matches, detectedTemplate);
+        setIsGenerating(false);
         return;
-      }
-
-      // Handle client-side: if we detected a template and name in user's message, try to match locally
-      if (detectedTemplate && searchName && employeeData.length > 0) {
-        const matchedRecord = searchEmployeeByName(employeeData as EmployeeRecord[], searchName);
-        
-        if (matchedRecord) {
-          // Found a match - show person info and start field collection
-          conversation.handlePersonSelected(matchedRecord, detectedTemplate);
-          setSelectedPersonRecord(matchedRecord);
-          setShowPersonInfo(true);
-
-          // Add a message indicating we found the person
-          const assistantMessage: ChatMessage = {
-            role: 'assistant',
-            content: `Found ${getNameFromRecord(matchedRecord)} in records. Please provide additional details below.`,
-            timestamp: Date.now(),
-          };
-          await addMessage(assistantMessage);
-          return;
-        }
       }
 
       const aiContent = response.message || '';
@@ -327,8 +324,11 @@ function AIAssistantContent() {
     });
 
     if (fullRecord) {
-      // Update conversation state
-      conversation.handleDisambiguationSelect(match, employeeData as EmployeeRecord[]);
+      // Use pendingTemplateId if set, otherwise templateId
+      const templateId = conversation.state.pendingTemplateId || conversation.state.templateId;
+      
+      // Update conversation state with the template
+      conversation.handleDisambiguationSelect(match, employeeData as EmployeeRecord[], templateId);
       setSelectedPersonRecord(fullRecord);
       setShowPersonInfo(true);
 
