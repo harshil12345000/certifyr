@@ -55,13 +55,14 @@ function getFieldType(fieldName: string): 'text' | 'textarea' | 'select' | 'date
   const textFields = ['purpose', 'reason', 'conduct', 'workDescription', 'benefits', 'jobResponsibilities'];
   const selectFields = ['gender', 'visaType', 'visatype'];
   const exactSelectFields = ['type', 'personType', 'persontype'];
-  const dateFields = ['date', 'startDate', 'endDate', 'dateOfBirth', 'joiningDate', 'startDate', 'joiningDate'];
+  // Date detection — these all become text inputs with DD/MM/YYYY format
+  const dateKeywords = ['date', 'dob', 'birthday', 'birthdate', 'joining', 'leaving', 'relieving', 'start', 'end'];
   
   const lower = fieldName.toLowerCase();
   if (selectFields.some(f => lower === f.toLowerCase())) return 'select';
   if (exactSelectFields.some(f => lower === f.toLowerCase())) return 'select';
   if (lower === 'gender') return 'select';
-  if (dateFields.some(f => lower.includes(f.toLowerCase()))) return 'date';
+  if (dateKeywords.some(kw => lower.includes(kw))) return 'date';
   if (textFields.some(f => lower.includes(f.toLowerCase()))) return 'textarea';
   return 'text';
 }
@@ -209,14 +210,23 @@ export function FieldCollectionCard({
                     onChange={(e) => handleChange(field, e.target.value)}
                     placeholder={getFieldPlaceholder(field)}
                   />
-              ) : (
-                <Input
-                  type={fieldType === 'date' ? 'date' : 'text'}
-                  value={currentValue}
-                  onChange={(e) => handleChange(field, e.target.value)}
-                  placeholder={getFieldPlaceholder(field)}
-                  className="bg-white"
-                />
+                ) : (
+                  <Input
+                    type="text"
+                    value={currentValue}
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      // Auto-insert slashes for DD/MM/YYYY
+                      val = val.replace(/[^\d/]/g, '');
+                      if (val.length === 2 && !val.includes('/')) val += '/';
+                      if (val.length === 5 && val.split('/').length === 2) val += '/';
+                      if (val.length > 10) val = val.slice(0, 10);
+                      handleChange(field, val);
+                    }}
+                    placeholder={fieldType === 'date' ? 'DD/MM/YYYY' : getFieldPlaceholder(field)}
+                    className="bg-white"
+                    maxLength={fieldType === 'date' ? 10 : undefined}
+                  />
               )}
             </div>
           );

@@ -146,7 +146,11 @@ function AIAssistantContent() {
   const handleFieldSubmit = useCallback(async () => {
     const { selectedRecord, templateId, collectedFields } = conversation.state;
     const missingFields = conversation.missingFields;
-    if (!selectedRecord || !templateId || missingFields.length > 0) return;
+    // Hard block: never generate if any required field is still missing
+    if (!selectedRecord || !templateId || missingFields.length > 0) {
+      console.warn('[handleFieldSubmit] Blocked: missing fields', missingFields);
+      return;
+    }
 
     // Build complete data from employee record + collected fields
     const templateConfig = templates.find(t => t.id === templateId);
@@ -309,6 +313,23 @@ function AIAssistantContent() {
     // Add user message FIRST so it appears immediately and is persisted
     const updatedMessages = await addMessage(userMessage);
 
+    // Generate title when this is the very first message (only 1 message = the one we just added)
+    const isFirstMessage = updatedMessages.length === 1;
+    if (isFirstMessage) {
+      // Fire-and-forget: generate a descriptive title from the first message
+      generateChatTitle(message).then((title) => {
+        if (title && title !== 'New Chat') {
+          // currentSessionRef is always up-to-date in useChatSessions; use updateTitle with the session id
+          // We get the current session id from currentSession (already set by addMessage before this runs)
+          // Use a small delay to ensure the session is persisted
+          setTimeout(() => {
+            const sessionId = currentSession?.id;
+            if (sessionId) updateTitle(sessionId, title);
+          }, 200);
+        }
+      });
+    }
+
     setIsGenerating(true);
     setLoadingMessage('Thinking...');
     
@@ -318,15 +339,39 @@ function AIAssistantContent() {
     try {
       setLoadingMessage('Searching records...');
       
-      // Check if this is the first message in the session
-      const isFirstMessage = !currentSession?.messages || currentSession.messages.length === 0;
-
       // Detect template and name from user's message
       const { templateId: detectedTemplate, searchName } = conversation.processUserMessage(message);
       
       // FIRST: Try to handle client-side if we have employee data, template, and name
       if (detectedTemplate && searchName && employeeData.length > 0) {
-        const matchedRecord = searchEmployeeByName(employeeData as EmployeeRecord[], searchName);
+        // Check for multiple matches (disambiguation needed)
+        const allMatches = (employeeData as EmployeeRecord[]).filter((record) => {
+          const name = getNameFromRecord(record).toLowerCase();
+          if (!name) return false;
+          const search = searchName.toLowerCase().trim();
+          return name.includes(search) || search.includes(name);
+        });
+
+        if (allMatches.length > 1) {
+          // Multiple matches — show disambiguation card client-side (no AI call needed)
+          const matchOptions = allMatches.map(r => ({
+            name: getNameFromRecord(r),
+            id: getIdFromRecord(r),
+            department: getDeptFromRecord(r),
+          }));
+          const disambiguateContent = `DISAMBIGUATE:${JSON.stringify(matchOptions)}`;
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: disambiguateContent,
+            timestamp: Date.now(),
+          };
+          await addMessage(assistantMessage);
+          conversation.handleDisambiguationNeeded(matchOptions, detectedTemplate);
+          setIsGenerating(false);
+          return;
+        }
+
+        const matchedRecord = allMatches.length === 1 ? allMatches[0] : null;
         
         if (matchedRecord) {
           // Single match found - show person info and field collection
@@ -411,14 +456,6 @@ function AIAssistantContent() {
         await addMessage(assistantMessage);
       }
 
-      // Generate AI title for new chats
-      if (currentSession?.title === 'New Chat') {
-        generateChatTitle(message).then((title) => {
-          if (title && title !== 'New Chat' && currentSession) {
-            updateTitle(currentSession.id, title);
-          }
-        });
-      }
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: ChatMessage = {
