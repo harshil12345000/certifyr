@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { activateBasicPlan } from '@/lib/subscription-activation';
 
 interface SubscriptionGateProps {
   children: ReactNode;
@@ -25,17 +25,8 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
       // Only create if user is authenticated and has no subscription
       setIsCreatingSubscription(true);
       try {
-        const { data, error } = await supabase.rpc('create_free_subscription', {
-          p_user_id: user.id,
-          p_plan: 'basic',
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        const result = data as { success?: boolean; error?: string } | null;
-        if (result?.success === false) {
+        const result = await activateBasicPlan(user.id);
+        if (!result.success) {
           throw new Error(result.error || 'Failed to create Basic subscription');
         }
 

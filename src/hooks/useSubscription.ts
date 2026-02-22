@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { activateBasicPlan } from '@/lib/subscription-activation';
 
 export interface Subscription {
   id: string;
@@ -27,17 +28,8 @@ export function useSubscription() {
   const ensureBasicSubscription = useCallback(async () => {
     if (!user?.id) return false;
 
-    const { data, error: createError } = await supabase.rpc('create_free_subscription', {
-      p_user_id: user.id,
-      p_plan: 'basic',
-    });
-
-    if (createError) {
-      throw createError;
-    }
-
-    const result = data as { success?: boolean; error?: string } | null;
-    if (result?.success === false) {
+    const result = await activateBasicPlan(user.id);
+    if (!result.success) {
       throw new Error(result.error || 'Failed to auto-create Basic subscription');
     }
 

@@ -10,6 +10,7 @@ import { Check, Loader2, CreditCard, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { activateBasicPlan } from '@/lib/subscription-activation';
 
 const DODO_PRODUCTS: Record<string, Record<string, string>> = {
   pro: { monthly: 'pdt_0NYXEA30vMCJgSxp0pcRw', yearly: 'pdt_0NYXIQ6Nqc7tDx0YXn8OY' },
@@ -153,15 +154,9 @@ export default function Checkout() {
     // Handle free Basic plan
     if (selectedPlan === 'basic') {
       try {
-        const { data, error } = await supabase.rpc('create_free_subscription', {
-          p_user_id: user.id,
-          p_plan: 'basic',
-        });
-        
-        if (error) throw error;
-        const result = data as { success?: boolean; error?: string } | null;
-        if (result?.success === false) {
-          throw new Error(result.error || 'Failed to activate Basic plan');
+        const activation = await activateBasicPlan(user.id);
+        if (!activation.success) {
+          throw new Error(activation.error || 'Failed to activate Basic plan');
         }
 
         await refetch();
