@@ -523,11 +523,16 @@ function AIAssistantContent() {
   }, [addMessage, currentSession, employeeData, isGenerating, navigate, orgInfo, contextCountry, organizationId, updateTitle, conversation, selectedPersonRecord]);
 
   const handleSendDisambiguation = useCallback(async (match: { name: string; id: string; department: string }) => {
-    // Find the full record from employee data
+    // Find the full record from employee data — match by name first (exact), then by ID only if non-empty
+    const matchNameLower = match.name.toLowerCase().trim();
     const fullRecord = (employeeData as EmployeeRecord[]).find(record => {
-      const name = getNameFromRecord(record).toLowerCase();
+      const name = getNameFromRecord(record).toLowerCase().trim();
       const id = getIdFromRecord(record);
-      return name.includes(match.name.toLowerCase()) || id === match.id;
+      // Prefer exact name match
+      if (name === matchNameLower) return true;
+      // Fall back to ID match only when ID is non-empty
+      if (match.id && id && id === match.id) return true;
+      return false;
     });
 
     if (fullRecord) {

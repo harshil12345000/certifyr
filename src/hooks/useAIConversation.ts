@@ -155,11 +155,13 @@ export function useAIConversation(): UseAIConversationReturn {
   }, [state.templateId]);
 
   const handleDisambiguationSelect = useCallback((match: MatchOption, employeeData: EmployeeRecord[], templateId?: string | null) => {
-    // Find the full record from employee data
+    const matchNameLower = match.name.toLowerCase().trim();
     const fullRecord = employeeData.find(record => {
-      const name = getNameFromRecord(record).toLowerCase();
+      const name = getNameFromRecord(record).toLowerCase().trim();
       const id = getIdFromRecord(record);
-      return name.includes(match.name.toLowerCase()) || id === match.id;
+      if (name === matchNameLower) return true;
+      if (match.id && id && id === match.id) return true;
+      return false;
     });
 
     if (fullRecord) {
