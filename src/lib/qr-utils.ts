@@ -47,12 +47,15 @@ export const saveVerifiedDocument = async (
 ): Promise<string | null> => {
   try {
     // Check document limit for Basic users before allowing save
+    // Count from preview_generations table (same source as "Documents Created" card)
     if (data.userId) {
-      const { data: limitData, error: limitError } = await supabase.rpc(
-        'check_document_limit',
-        { p_user_id: data.userId }
+      // Get organization ID first
+      const { data: orgData } = await supabase.rpc(
+        'get_user_organization_id',
+        { user_id: data.userId }
       );
       
+<<<<<<< HEAD
       if (limitError) {
         console.error('Error checking document limit:', limitError);
       } else if (limitData && !(limitData as any).allowed) {
@@ -67,6 +70,24 @@ export const saveVerifiedDocument = async (
       // If allowed, increment the document count
       if (limitData && (limitData as any).allowed) {
         await supabase.rpc('increment_document_count', { p_user_id: data.userId });
+=======
+      if (orgData) {
+        const { count, error: countError } = await supabase
+          .from('preview_generations')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', orgData);
+        
+        if (countError) {
+          console.error('Error checking document limit:', countError);
+        } else if (count && count >= 25) {
+          console.warn('Document limit reached:', count);
+          // Dispatch custom event to show upgrade dialog
+          window.dispatchEvent(new CustomEvent('show-upgrade-paywall', { 
+            detail: { reason: 'document_limit' } 
+          }));
+          return 'LIMIT_REACHED';
+        }
+>>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
       }
     }
 

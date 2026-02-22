@@ -11,10 +11,55 @@ import { useBranding } from '@/contexts/BrandingContext';
 import { useChatSessions, ChatMessage } from '@/hooks/useChatSessions';
 import { useEmployeeData } from '@/hooks/useEmployeeData';
 import { ChatLayout } from '@/components/ai-assistant/ChatLayout';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendChatMessage, parseGenerationResponse, generateChatTitle } from '@/lib/groq-client';
 import { toast } from 'sonner';
+import { useAIConversation, EmployeeRecord, MatchOption } from '@/hooks/useAIConversation';
+import { getTemplatesWithFields } from '@/config/documentConfigs';
+
+function getNameFromRecord(record: Record<string, unknown>): string {
+  const nameFields = ['name', 'fullName', 'full_name', 'employeeName', 'studentName', 'Name', 'FullName', 'FULL NAME', 'Full Name', 'full name'];
+  for (const field of nameFields) {
+    const val = record[field];
+    if (typeof val === 'string' && val.trim()) return val.trim();
+  }
+  return '';
+}
+
+function getIdFromRecord(record: Record<string, unknown>): string {
+  const idFields = ['employeeId', 'employee_id', 'id', 'ID', 'studentId', 'student_id', 'Employee ID', 'Student ID', 'emp_id', 'roll_number', 'rollNumber'];
+  for (const field of idFields) {
+    if (record[field] !== undefined && record[field] !== null) return String(record[field]);
+  }
+  return '';
+}
+
+function getDeptFromRecord(record: Record<string, unknown>): string {
+  const deptFields = ['department', 'Department', 'dept', 'course', 'Course', 'DEPARTMENT'];
+  for (const field of deptFields) {
+    if (typeof record[field] === 'string') return record[field] as string;
+  }
+  return '';
+}
+
+function searchEmployeeByName(employeeData: EmployeeRecord[], searchName: string): EmployeeRecord | null {
+  if (!searchName || employeeData.length === 0) return null;
+
+  const search = searchName.toLowerCase().trim();
+  if (search.length < 2) return null;
+
+  const matches = employeeData.filter((record) => {
+    const name = getNameFromRecord(record).toLowerCase();
+    if (!name) return false;
+    return name.includes(search) || search.includes(name);
+  });
+
+  if (matches.length === 1) {
+    return matches[0];
+  }
+  return null;
+}
 
 function AIAssistantContent() {
   const { user } = useAuth();
@@ -26,6 +71,11 @@ function AIAssistantContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDocumentGeneration, setIsDocumentGeneration] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Thinking...');
+  const [showPersonInfo, setShowPersonInfo] = useState(false);
+  const [selectedPersonRecord, setSelectedPersonRecord] = useState<EmployeeRecord | null>(null);
+
+  const conversation = useAIConversation();
+  const templates = useMemo(() => getTemplatesWithFields(), []);
 
   const orgInfo = {
     name: organizationDetails?.name || 'Unknown Organization',
@@ -65,6 +115,68 @@ function AIAssistantContent() {
     }
   }, [sessions, sessionsLoading, currentSession, loadSession]);
 
+  const generateDocument = useCallback(async (templateId: string, data: Record<string, string>) => {
+    const templateLabel = templateId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const recipientName = data.fullName || data.name || 'Document';
+    const queryString = new URLSearchParams(data).toString();
+    const docLink = `/documents/${templateId}?${queryString}`;
+
+    // Save a clean "document generated" message
+    const generatedMessage: ChatMessage = {
+      role: 'assistant',
+      content: `GENERATED_LINK:${templateLabel}:${recipientName}:${docLink}`,
+      timestamp: Date.now(),
+    };
+    await addMessage(generatedMessage);
+    navigate(docLink);
+    toast.success(`Opening ${templateLabel} for ${recipientName}`);
+  }, [addMessage, navigate]);
+
+  const handleFieldSubmit = useCallback(async () => {
+    const { selectedRecord, templateId, collectedFields } = conversation.state;
+    const missingFields = conversation.missingFields;
+    if (!selectedRecord || !templateId || missingFields.length > 0) return;
+
+    // Build complete data from employee record + collected fields
+    const templateConfig = templates.find(t => t.id === templateId);
+    if (!templateConfig) return;
+
+    const docData: Record<string, string> = {};
+
+    // Add all employee record fields
+    Object.entries(selectedRecord).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        docData[key] = String(value);
+      }
+    });
+
+    // Add collected fields (user input)
+    Object.entries(collectedFields).forEach(([key, value]) => {
+      if (value) {
+        docData[key] = value;
+      }
+    });
+
+    // Add org info defaults
+    docData.institutionName = orgInfo.name;
+    docData.place = orgInfo.place || '';
+    docData.signatoryName = orgInfo.signatoryName || '';
+    docData.signatoryDesignation = orgInfo.signatoryDesignation || '';
+
+    // Add today's date
+    const today = new Date();
+    const issueDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    docData.date = issueDate;
+
+    // Generate the document
+    await generateDocument(templateId, docData);
+
+    // Reset conversation state
+    conversation.resetConversation();
+    setShowPersonInfo(false);
+    setSelectedPersonRecord(null);
+  }, [conversation, templates, orgInfo, generateDocument]);
+
   const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isGenerating) return;
 
@@ -88,7 +200,33 @@ function AIAssistantContent() {
       
       // Check if this is the first message in the session
       const isFirstMessage = !currentSession?.messages || currentSession.messages.length === 0;
+
+      // Detect template and name from user's message
+      const { templateId: detectedTemplate, searchName } = conversation.processUserMessage(message);
       
+      // FIRST: Try to handle client-side if we have employee data, template, and name
+      if (detectedTemplate && searchName && employeeData.length > 0) {
+        const matchedRecord = searchEmployeeByName(employeeData as EmployeeRecord[], searchName);
+        
+        if (matchedRecord) {
+          // Single match found - show person info and field collection
+          conversation.handlePersonSelected(matchedRecord, detectedTemplate);
+          setSelectedPersonRecord(matchedRecord);
+          setShowPersonInfo(true);
+
+          // Add a message indicating we found the person
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: `Found ${getNameFromRecord(matchedRecord)} in records. Please provide additional details below.`,
+            timestamp: Date.now(),
+          };
+          await addMessage(assistantMessage);
+          setIsGenerating(false);
+          return;
+        }
+      }
+
+      // If we get here, we need to call AI (no local match or no template detected)
       // Use the returned updatedMessages which includes the user message
       const response = await sendChatMessage(
         updatedMessages,
@@ -110,6 +248,10 @@ function AIAssistantContent() {
           timestamp: Date.now(),
         };
         await addMessage(assistantMessage);
+        
+        // Update conversation state with detected template
+        conversation.handleDisambiguationNeeded(response.matches, detectedTemplate);
+        setIsGenerating(false);
         return;
       }
 
@@ -171,22 +313,60 @@ function AIAssistantContent() {
       setIsDocumentGeneration(false);
       setLoadingMessage('Thinking...');
     }
-  }, [addMessage, currentSession, employeeData, isGenerating, navigate, orgInfo, contextCountry, organizationId, updateTitle]);
+  }, [addMessage, currentSession, employeeData, isGenerating, navigate, orgInfo, contextCountry, organizationId, updateTitle, conversation, selectedPersonRecord]);
 
-  const handleSendDisambiguation = useCallback(async (match: { name: string; id: string }) => {
-    const msg = match.id 
-      ? `I'm referring to ${match.name} (ID: ${match.id})`
-      : `I'm referring to ${match.name}`;
-    await handleSendMessage(msg);
-  }, [handleSendMessage]);
+  const handleSendDisambiguation = useCallback(async (match: { name: string; id: string; department: string }) => {
+    // Find the full record from employee data
+    const fullRecord = (employeeData as EmployeeRecord[]).find(record => {
+      const name = getNameFromRecord(record).toLowerCase();
+      const id = getIdFromRecord(record);
+      return name.includes(match.name.toLowerCase()) || id === match.id;
+    });
+
+    if (fullRecord) {
+      // Use pendingTemplateId if set, otherwise templateId
+      const templateId = conversation.state.pendingTemplateId || conversation.state.templateId;
+      
+      // Update conversation state with the template
+      conversation.handleDisambiguationSelect(match, employeeData as EmployeeRecord[], templateId);
+      setSelectedPersonRecord(fullRecord);
+      setShowPersonInfo(true);
+
+      // Add confirmation message
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: `Selected ${getNameFromRecord(fullRecord)}. Please provide the additional details below.`,
+        timestamp: Date.now(),
+      };
+      await addMessage(assistantMessage);
+    } else {
+      // Fallback: send message to AI
+      const msg = match.id 
+        ? `I'm referring to ${match.name} (ID: ${match.id})`
+        : `I'm referring to ${match.name}`;
+      await handleSendMessage(msg);
+    }
+  }, [employeeData, conversation, addMessage, handleSendMessage]);
 
   const handleNewChat = useCallback(async () => {
     await createSession();
-  }, [createSession]);
+    conversation.resetConversation();
+    setShowPersonInfo(false);
+    setSelectedPersonRecord(null);
+  }, [createSession, conversation]);
 
   const handleSelectSession = useCallback(async (sessionId: string) => {
     await loadSession(sessionId);
-  }, [loadSession]);
+    conversation.resetConversation();
+    setShowPersonInfo(false);
+    setSelectedPersonRecord(null);
+  }, [loadSession, conversation]);
+
+  const templateName = useMemo(() => {
+    if (!conversation.state.templateId) return undefined;
+    const t = templates.find(t => t.id === conversation.state.templateId);
+    return t?.name || conversation.state.templateId;
+  }, [conversation.state.templateId, templates]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -232,6 +412,13 @@ function AIAssistantContent() {
         isGenerating={isGenerating}
         isDocumentGeneration={isDocumentGeneration}
         loadingMessage={loadingMessage}
+        personInfoRecord={showPersonInfo ? selectedPersonRecord || undefined : undefined}
+        personInfoTemplateName={showPersonInfo ? templateName : undefined}
+        missingFields={showPersonInfo ? conversation.missingFields : undefined}
+        collectedFields={showPersonInfo ? conversation.state.collectedFields : undefined}
+        templateName={showPersonInfo ? templateName : undefined}
+        onFieldChange={conversation.updateCollectedField}
+        onFieldSubmit={handleFieldSubmit}
       />
     </div>
   );

@@ -301,9 +301,11 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
               <div className="text-4xl font-bold text-gray-800">
                 {pricing.basic[data.billingPeriod] === 0 ? 'Free' : `$${pricing.basic[data.billingPeriod]}`}
               </div>
-              <div className="text-gray-500">
-                {isYearly ? "per year" : "per month"}
-              </div>
+              {pricing.basic[data.billingPeriod] > 0 && (
+                <div className="text-gray-500">
+                  {isYearly ? "per year" : "per month"}
+                </div>
+              )}
               {isYearly && pricing.basic[data.billingPeriod] > 0 && (
                 <div className="text-sm text-green-600 font-medium">
                   Save {savingsPercent.basic}%

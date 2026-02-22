@@ -30,6 +30,84 @@ const COMMON_FIELD_MAPPINGS: Record<string, string[]> = {
   salary: ['salary', 'income', 'monthly salary', 'ctc', 'pay'],
 };
 
+const FIELD_ORDER: string[] = [
+  'fullName',
+  'firstName',
+  'lastName',
+  'email',
+  'phone',
+  'gender',
+  'parentName',
+  'designation',
+  'department',
+  'course',
+  'salary',
+  'address',
+  'dateOfBirth',
+  'joiningDate',
+];
+
+function convertToDateFormat(value: unknown): string | unknown {
+  if (value === null || value === undefined || value === '') {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    const day = String(value.getDate()).padStart(2, '0');
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const year = value.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  if (typeof value === 'string') {
+    const datePatterns = [
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, format: 'DD/MM/YYYY' },
+      { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, format: 'DD-MM-YYYY' },
+      { regex: /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/, format: 'YYYY/MM/DD' },
+      { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/, format: 'YYYY-MM-DD' },
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, format: 'DD/MM/YY' },
+    ];
+
+    for (const pattern of datePatterns) {
+      const match = value.match(pattern.regex);
+      if (match) {
+        let day: string, month: string, year: string;
+
+        if (pattern.format === 'DD/MM/YYYY' || pattern.format === 'DD-MM-YYYY') {
+          day = match[1].padStart(2, '0');
+          month = match[2].padStart(2, '0');
+          year = match[3];
+          if (year.length === 2) {
+            year = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+          }
+        } else if (pattern.format === 'YYYY/MM/DD' || pattern.format === 'YYYY-MM-DD') {
+          year = match[1];
+          month = match[2].padStart(2, '0');
+          day = match[3].padStart(2, '0');
+        } else {
+          day = match[1].padStart(2, '0');
+          month = match[2].padStart(2, '0');
+          year = match[3];
+          year = parseInt(year) > 50 ? `19${year}` : `20${year}`;
+        }
+
+        return `${day}/${month}/${year}`;
+      }
+    }
+
+    const parsed = Date.parse(value);
+    if (!isNaN(parsed)) {
+      const date = new Date(parsed);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  }
+
+  return value;
+}
+
 export async function parseSpreadsheet(file: File): Promise<ParsedSpreadsheet> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -90,17 +168,35 @@ export function applyFieldMappings(
   rows: Record<string, unknown>[],
   mappings: FieldMapping[]
 ): Record<string, unknown>[] {
+  const dateFields = ['dateOfBirth', 'joiningDate'];
+  
   return rows.map(row => {
     const mappedRow: Record<string, unknown> = {};
+    const orderedRow: Record<string, unknown> = {};
     
     for (const mapping of mappings) {
       const value = row[mapping.spreadsheetColumn];
       if (value !== undefined && value !== '') {
-        mappedRow[mapping.targetField] = value;
+        const processedValue = dateFields.includes(mapping.targetField)
+          ? convertToDateFormat(value)
+          : value;
+        mappedRow[mapping.targetField] = processedValue;
       }
     }
     
-    return mappedRow;
+    for (const field of FIELD_ORDER) {
+      if (field in mappedRow) {
+        orderedRow[field] = mappedRow[field];
+      }
+    }
+    
+    for (const key of Object.keys(mappedRow)) {
+      if (!FIELD_ORDER.includes(key)) {
+        orderedRow[key] = mappedRow[key];
+      }
+    }
+    
+    return orderedRow;
   });
 }
 

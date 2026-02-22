@@ -253,13 +253,27 @@ export default function DocumentDetail() {
                   initialData={formData}
                   organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
-                    // Check document limit for Basic users before allowing preview
-                    const isBasicPlan = subscription?.active_plan === 'basic';
+                    // Check document limit for Basic users (or users without subscription) before allowing preview
+                    const isBasicPlan = subscription?.active_plan === 'basic' || !subscription?.active_plan;
                     if (isBasicPlan && user?.id) {
-                      const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-                      if (limitData && (!limitData.allowed || limitData.used >= 25)) {
-                        setShowUpgradePaywall(true);
-                        return;
+                      // Get organization ID first
+                      const { data: orgData } = await supabase.rpc(
+                        'get_user_organization_id',
+                        { user_id: user.id }
+                      );
+                      
+                      if (orgData) {
+                        // Count from preview_generations table (same as "Documents Created" card)
+                        const { count } = await supabase
+                          .from('preview_generations')
+                          .select('*', { count: 'exact', head: true })
+                          .eq('organization_id', orgData);
+                        
+                        const used = count || 0;
+                        if (used >= 25) {
+                          setShowUpgradePaywall(true);
+                          return;
+                        }
                       }
                     }
                     

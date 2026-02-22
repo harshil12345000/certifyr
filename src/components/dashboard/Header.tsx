@@ -49,7 +49,7 @@ const allDocuments = [{
 }, {
   id: "transfer-certificate-1",
   title: "Transfer Certificate",
-  description: "Certificate for students moving between institutions",
+  description: "Certificate for students transferring between institutions",
   category: "Educational"
 }, {
   id: "noc-visa-1",

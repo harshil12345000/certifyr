@@ -1,45 +1,4 @@
--- Add document usage tracking for Basic plan limits
-ALTER TABLE public.subscriptions
-  ADD COLUMN IF NOT EXISTS documents_used_this_month INT DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS monthly_usage_reset_date TIMESTAMPTZ DEFAULT DATE_TRUNC('month', NOW());
-
--- Update has_active_subscription to recognize free Basic users
-CREATE OR REPLACE FUNCTION public.has_active_subscription(check_user_id uuid)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM subscriptions
-    WHERE user_id = check_user_id
-    AND active_plan IS NOT NULL
-    AND (
-      subscription_status = 'active'
-      OR (subscription_status = 'trialing' AND current_period_end > now())
-      OR active_plan = 'basic'  -- Free Basic users are active
-    )
-  );
-$$;
-
--- Update get_active_plan to return Basic for free users
-CREATE OR REPLACE FUNCTION public.get_active_plan(check_user_id uuid)
- RETURNS text
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $$
-  SELECT active_plan FROM subscriptions
-  WHERE user_id = check_user_id
-  AND active_plan IS NOT NULL
-  AND (
-    subscription_status = 'active'
-    OR (subscription_status = 'trialing' AND current_period_end > now())
-    OR active_plan = 'basic'
-  )
-  LIMIT 1;
-$$;
-
+-- Add missing freemium functions
 -- Function to check document limit for Basic users
 CREATE OR REPLACE FUNCTION public.check_document_limit(p_user_id UUID)
  RETURNS JSON
@@ -55,7 +14,6 @@ DECLARE
 BEGIN
   v_current_month := DATE_TRUNC('month', NOW());
   
-  -- Get subscription info
   SELECT 
     COALESCE(active_plan, selected_plan),
     documents_used_this_month,
@@ -64,7 +22,6 @@ BEGIN
   FROM subscriptions
   WHERE user_id = p_user_id;
   
-  -- If no subscription, treat as Basic with full limit (25 documents)
   IF v_active_plan IS NULL THEN
     RETURN json_build_object(
       'allowed', true, 
@@ -76,17 +33,14 @@ BEGIN
     );
   END IF;
   
-  -- If not Basic plan, unlimited
   IF v_active_plan != 'basic' THEN
     RETURN json_build_object('allowed', true, 'plan', v_active_plan, 'reason', 'unlimited');
   END IF;
   
-  -- Check if we need to reset for new month
   IF v_reset_date IS NULL OR v_reset_date < v_current_month THEN
     v_documents_used := 0;
   END IF;
   
-  -- Check limit (25 documents per month for Basic)
   IF v_documents_used >= 25 THEN
     RETURN json_build_object(
       'allowed', false, 
@@ -121,12 +75,10 @@ DECLARE
 BEGIN
   v_current_month := DATE_TRUNC('month', NOW());
   
-  -- Get current reset date
   SELECT monthly_usage_reset_date INTO v_reset_date
   FROM subscriptions
   WHERE user_id = p_user_id;
   
-  -- If reset date is null or in the past, reset counter
   IF v_reset_date IS NULL OR v_reset_date < v_current_month THEN
     UPDATE subscriptions
     SET 
@@ -141,7 +93,7 @@ BEGIN
 END;
 $$;
 
--- Function to create free Basic subscription (no payment required)
+-- Function to create free Basic subscription
 CREATE OR REPLACE FUNCTION public.create_free_subscription(
   p_user_id UUID,
   p_plan TEXT DEFAULT 'basic'

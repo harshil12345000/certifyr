@@ -17,6 +17,13 @@ interface ChatInterfaceProps {
   loadingMessage?: string;
   loading?: boolean;
   minimal?: boolean;
+  personInfoRecord?: Record<string, unknown>;
+  personInfoTemplateName?: string;
+  missingFields?: string[];
+  collectedFields?: Record<string, string>;
+  templateName?: string;
+  onFieldChange?: (field: string, value: string) => void;
+  onFieldSubmit?: () => void;
 }
 
 export function ChatInterface({
@@ -30,6 +37,13 @@ export function ChatInterface({
   loadingMessage,
   loading,
   minimal = false,
+  personInfoRecord,
+  personInfoTemplateName,
+  missingFields,
+  collectedFields,
+  templateName,
+  onFieldChange,
+  onFieldSubmit,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -132,6 +146,13 @@ export function ChatInterface({
               key={index} 
               message={message}
               onDisambiguationSelect={onDisambiguationSelect}
+              personInfoRecord={personInfoRecord}
+              personInfoTemplateName={personInfoTemplateName}
+              missingFields={missingFields}
+              collectedFields={collectedFields}
+              templateName={templateName}
+              onFieldChange={onFieldChange}
+              onFieldSubmit={onFieldSubmit}
             />
           ))
         )}

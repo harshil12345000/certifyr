@@ -20,6 +20,13 @@ interface ChatLayoutProps {
   isGenerating?: boolean;
   isDocumentGeneration?: boolean;
   loadingMessage?: string;
+  personInfoRecord?: Record<string, unknown>;
+  personInfoTemplateName?: string;
+  missingFields?: string[];
+  collectedFields?: Record<string, string>;
+  templateName?: string;
+  onFieldChange?: (field: string, value: string) => void;
+  onFieldSubmit?: () => void;
 }
 
 export function ChatLayout({
@@ -37,6 +44,13 @@ export function ChatLayout({
   isGenerating,
   isDocumentGeneration,
   loadingMessage,
+  personInfoRecord,
+  personInfoTemplateName,
+  missingFields,
+  collectedFields,
+  templateName,
+  onFieldChange,
+  onFieldSubmit,
 }: ChatLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -96,6 +110,13 @@ export function ChatLayout({
           isDocumentGeneration={isDocumentGeneration}
           loadingMessage={loadingMessage}
           loading={loading}
+          personInfoRecord={personInfoRecord}
+          personInfoTemplateName={personInfoTemplateName}
+          missingFields={missingFields}
+          collectedFields={collectedFields}
+          templateName={templateName}
+          onFieldChange={onFieldChange}
+          onFieldSubmit={onFieldSubmit}
         />
       </div>
     </div>
