@@ -349,22 +349,22 @@ export const getInitialData = (
         ...commonFields,
       } as TransferCertificateData;
 
-    case "noc-visa-1":
-      return {
-        fullName: "",
-        gender: "male" as const,
-        designation: "",
-        employeeId: "",
-        department: "",
-        passportNumber: "",
-        visaType: "",
-        destinationCountry: "",
-        travelPurpose: "",
-        travelDates: "",
-        returnDate: "",
-        sponsorDetails: "",
-        ...commonFields,
-      } as NocVisaData;
+      case "noc-visa-1":
+        return {
+          fullName: "",
+          gender: "male" as const,
+          designation: "",
+          employeeId: "",
+          department: "",
+          passportNumber: "",
+          visaType: "Tourist Visa",
+          destinationCountry: "",
+          travelPurpose: "",
+          travelDates: "",
+          returnDate: "",
+          sponsorDetails: "",
+          ...commonFields,
+        } as NocVisaData;
 
     case "income-certificate-1":
       return {

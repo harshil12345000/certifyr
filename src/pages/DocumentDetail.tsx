@@ -253,9 +253,9 @@ export default function DocumentDetail() {
                   initialData={formData}
                   organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
-                    // Check document limit for Basic users (or users without subscription) before allowing preview
-                    const isBasicPlan = subscription?.active_plan === 'basic' || !subscription?.active_plan;
-                    if (isBasicPlan && user?.id) {
+                      // Check document limit for Basic plan users only (not pro/ultra)
+                      const isBasicPlan = subscription?.active_plan === 'basic';
+                      if (isBasicPlan && user?.id) {
                       // Get organization ID first
                       const { data: orgData } = await supabase.rpc(
                         'get_user_organization_id',

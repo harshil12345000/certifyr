@@ -722,10 +722,27 @@ export const nocVisaConfig: DocumentConfig = {
       id: "travel-details",
       title: "Travel Details",
       columns: 2,
-      fields: [
-        { name: "passportNumber", label: "Passport Number", type: "text", required: true },
-        { name: "visaType", label: "Visa Type", type: "text", required: true },
-        { name: "destinationCountry", label: "Destination Country", type: "text", required: true },
+        fields: [
+          { name: "passportNumber", label: "Passport Number", type: "text", required: true },
+          { 
+            name: "visaType", 
+            label: "Visa Type", 
+            type: "select", 
+            required: true,
+            options: [
+              { value: "Tourist Visa", label: "Tourist Visa" },
+              { value: "Business Visa", label: "Business Visa" },
+              { value: "Student Visa", label: "Student Visa" },
+              { value: "Work Visa", label: "Work Visa" },
+              { value: "Transit Visa", label: "Transit Visa" },
+              { value: "Medical Visa", label: "Medical Visa" },
+              { value: "Conference Visa", label: "Conference Visa" },
+              { value: "Research Visa", label: "Research Visa" },
+              { value: "Dependent Visa", label: "Dependent Visa" },
+              { value: "Immigrant Visa", label: "Immigrant Visa" }
+            ]
+          },
+          { name: "destinationCountry", label: "Destination Country", type: "text", required: true },
         { name: "travelPurpose", label: "Travel Purpose", type: "text", required: true },
         { name: "travelDates", label: "Travel Dates", type: "text", required: true },
         { name: "returnDate", label: "Return Date", type: "date", required: true },

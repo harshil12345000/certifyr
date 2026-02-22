@@ -163,7 +163,7 @@ const Documents = () => {
       if (!user?.id) return;
       
       // Check if user is on Basic plan (or has no subscription - treat as basic)
-      const isBasicPlan = subscription?.active_plan === 'basic' || !subscription?.active_plan;
+      const isBasicPlan = subscription?.active_plan === 'basic';
       
       if (isBasicPlan && user.id) {
         // Get organization ID first

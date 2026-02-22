@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { NocVisaData } from "@/types/templates";
 import { usePreviewTracking } from "@/hooks/usePreviewTracking";
 
@@ -139,9 +146,25 @@ export const NocVisaForm: React.FC<NocVisaFormProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Visa Type</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter visa type" {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select visa type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Tourist Visa">Tourist Visa</SelectItem>
+                    <SelectItem value="Business Visa">Business Visa</SelectItem>
+                    <SelectItem value="Student Visa">Student Visa</SelectItem>
+                    <SelectItem value="Work Visa">Work Visa</SelectItem>
+                    <SelectItem value="Transit Visa">Transit Visa</SelectItem>
+                    <SelectItem value="Medical Visa">Medical Visa</SelectItem>
+                    <SelectItem value="Conference Visa">Conference Visa</SelectItem>
+                    <SelectItem value="Research Visa">Research Visa</SelectItem>
+                    <SelectItem value="Dependent Visa">Dependent Visa</SelectItem>
+                    <SelectItem value="Immigrant Visa">Immigrant Visa</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

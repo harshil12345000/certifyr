@@ -91,10 +91,9 @@ export function useDocumentHistory() {
       return null;
     }
 
-    // Check document limit for Basic (free) users or users without subscription
-    const isBasicFree = (subscription?.active_plan === 'basic' || !subscription?.active_plan) && 
-      (subscription?.subscription_status === 'active' || !subscription?.subscription_status);
-    if (isBasicFree) {
+      // Check document limit for Basic plan users only (not pro/ultra)
+      const isBasicFree = subscription?.active_plan === 'basic';
+      if (isBasicFree) {
       // Get organization ID first
       const { data: orgData } = await supabase.rpc(
         'get_user_organization_id',

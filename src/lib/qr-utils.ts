@@ -56,22 +56,32 @@ export const saveVerifiedDocument = async (
       );
       
       if (orgData) {
-        const { count, error: countError } = await supabase
-          .from('preview_generations')
-          .select('*', { count: 'exact', head: true })
-          .eq('organization_id', orgData);
-        
-        if (countError) {
-          console.error('Error checking document limit:', countError);
-        } else if (count && count >= 25) {
-          console.warn('Document limit reached:', count);
-          // Dispatch custom event to show upgrade dialog
-          window.dispatchEvent(new CustomEvent('show-upgrade-paywall', { 
-            detail: { reason: 'document_limit' } 
-          }));
-          return 'LIMIT_REACHED';
+          // Check plan first — only basic plan users have a document limit
+          const { data: subData } = await supabase
+            .from('subscriptions')
+            .select('active_plan')
+            .eq('user_id', data.userId)
+            .maybeSingle();
+
+          const isBasic = subData?.active_plan === 'basic';
+
+          if (isBasic) {
+            const { count, error: countError } = await supabase
+              .from('preview_generations')
+              .select('*', { count: 'exact', head: true })
+              .eq('organization_id', orgData);
+            
+            if (countError) {
+              console.error('Error checking document limit:', countError);
+            } else if (count && count >= 25) {
+              console.warn('Document limit reached:', count);
+              window.dispatchEvent(new CustomEvent('show-upgrade-paywall', { 
+                detail: { reason: 'document_limit' } 
+              }));
+              return 'LIMIT_REACHED';
+            }
+          }
         }
-      }
     }
 
     const verificationHash = generateVerificationHash();

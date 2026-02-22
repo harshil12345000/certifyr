@@ -170,9 +170,8 @@ export function useSubscription() {
   const activePlan = subscription?.active_plan ?? null;
   const selectedPlan = subscription?.selected_plan ?? null;
 
-  // Export isBasicFree for use in components - includes users without subscription
-  const isBasicFreeExported = (subscription?.active_plan === 'basic' || !subscription?.active_plan) && 
-    (subscription?.subscription_status === 'active' || !subscription?.subscription_status);
+  // Export isBasicFree for use in components - only true when explicitly on basic plan
+  const isBasicFreeExported = subscription?.active_plan === 'basic';
 
   return {
     subscription,

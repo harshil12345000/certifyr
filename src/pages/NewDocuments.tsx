@@ -111,8 +111,8 @@ const NewDocuments = () => {
     const checkDocumentLimit = async () => {
       if (!user?.id) return;
       
-      // Check if user is on Basic plan (or has no subscription - treat as basic)
-      const isBasicPlan = subscription?.active_plan === 'basic' || !subscription?.active_plan;
+        // Check if user is on Basic plan only (not pro/ultra)
+        const isBasicPlan = subscription?.active_plan === 'basic';
       
       if (isBasicPlan && user.id) {
         // Get organization ID first
