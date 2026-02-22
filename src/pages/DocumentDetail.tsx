@@ -188,8 +188,7 @@ export default function DocumentDetail() {
         // Increment documents_created stat
         await supabase.rpc('increment_user_stat', {
           p_user_id: user.id,
-          p_organization_id: organizationId,
-          p_stat_field: 'documents_created'
+          p_stat_name: 'documents_created'
         });
       }
       
@@ -258,7 +257,7 @@ export default function DocumentDetail() {
                     const isBasicPlan = subscription?.active_plan === 'basic';
                     if (isBasicPlan && user?.id) {
                       const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-                      if (limitData && (!limitData.allowed || limitData.used >= 25)) {
+                      if (limitData && (!(limitData as any).allowed || (limitData as any).used >= 25)) {
                         setShowUpgradePaywall(true);
                         return;
                       }

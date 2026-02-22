@@ -55,7 +55,7 @@ export const saveVerifiedDocument = async (
       
       if (limitError) {
         console.error('Error checking document limit:', limitError);
-      } else if (limitData && !limitData.allowed) {
+      } else if (limitData && !(limitData as any).allowed) {
         console.warn('Document limit reached:', limitData);
         // Dispatch custom event to show upgrade dialog
         window.dispatchEvent(new CustomEvent('show-upgrade-paywall', { 
@@ -65,7 +65,7 @@ export const saveVerifiedDocument = async (
       }
       
       // If allowed, increment the document count
-      if (limitData && limitData.allowed) {
+      if (limitData && (limitData as any).allowed) {
         await supabase.rpc('increment_document_count', { p_user_id: data.userId });
       }
     }
@@ -185,8 +185,7 @@ export const logQRVerification = async (
           // Fallback to legacy method without organization_id
           const { error: legacyError } = await supabase.rpc("increment_user_stat", {
             p_user_id: userId,
-            p_organization_id: null,
-            p_stat_field: "total_verifications",
+            p_stat_name: "total_verifications",
           });
           if (legacyError) {
             console.error("Error incrementing legacy total_verifications stat:", legacyError);

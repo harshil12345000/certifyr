@@ -179,8 +179,7 @@ export async function incrementUserStat({
   try {
     const { error } = await supabase.rpc("increment_user_stat", {
       p_user_id: userId,
-      p_organization_id: organizationId,
-      p_stat_field: statField,
+      p_stat_name: statField,
     });
     if (error) {
       console.error("Error incrementing stat:", error);

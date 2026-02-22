@@ -95,7 +95,7 @@ export function useDocumentHistory() {
     const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
     if (isBasicFree) {
       const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-      if (limitData && limitData.allowed === false) {
+      if (limitData && (limitData as any).allowed === false) {
         setShowUpgradePaywall(true);
         toast({
           title: "Document Limit Reached",

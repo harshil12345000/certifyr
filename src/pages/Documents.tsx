@@ -169,7 +169,7 @@ const Documents = () => {
         const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
         
         // Show upgrade popup if limit reached OR if they've already used 25+ docs
-        if (limitData && (!limitData.allowed || limitData.used >= 25)) {
+        if (limitData && (!(limitData as any).allowed || (limitData as any).used >= 25)) {
           setShowUpgradePaywall(true);
         }
       }

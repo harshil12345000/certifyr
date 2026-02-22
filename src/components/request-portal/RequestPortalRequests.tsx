@@ -109,7 +109,7 @@ export function RequestPortalRequests({
       if (error) throw error;
 
       const formattedRequests =
-        requestsData?.map((req) => ({
+        requestsData?.map((req: any) => ({
           id: req.id,
           template_id: req.template_id,
           template_data: req.template_data,
@@ -117,11 +117,11 @@ export function RequestPortalRequests({
           requested_at: req.requested_at,
           processed_at: req.processed_at,
           employee: {
-            id: req.request_portal_employees.id,
-            full_name: req.request_portal_employees.full_name,
-            email: req.request_portal_employees.email,
-            employee_id: req.request_portal_employees.employee_id,
-            manager_name: req.request_portal_employees.manager_name,
+            id: req.request_portal_employees?.id,
+            full_name: req.request_portal_employees?.full_name,
+            email: req.request_portal_employees?.email,
+            employee_id: req.request_portal_employees?.employee_id,
+            manager_name: req.request_portal_employees?.manager_name,
           },
         })) || [];
 

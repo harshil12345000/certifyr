@@ -82,7 +82,8 @@ export const SubscriptionManagementPanel: React.FC<
       try {
         const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id });
         if (!error && data) {
-          setDocumentUsage({ used: data.used || 0, limit: data.limit || 25 });
+          const d = data as any;
+          setDocumentUsage({ used: d.used || 0, limit: d.limit || 25 });
         }
       } catch (err) {
         console.error('Error fetching document usage:', err);
