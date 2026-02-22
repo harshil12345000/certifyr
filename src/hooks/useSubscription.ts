@@ -36,26 +36,6 @@ export function useSubscription() {
     return true;
   }, [user?.id]);
 
-  const ensureBasicSubscription = useCallback(async () => {
-    if (!user?.id) return false;
-
-    const { data, error: createError } = await supabase.rpc('create_free_subscription', {
-      p_user_id: user.id,
-      p_plan: 'basic',
-    });
-
-    if (createError) {
-      throw createError;
-    }
-
-    const result = data as { success?: boolean; error?: string } | null;
-    if (result?.success === false) {
-      throw new Error(result.error || 'Failed to auto-create Basic subscription');
-    }
-
-    return true;
-  }, [user?.id]);
-
   const fetchSubscription = useCallback(async () => {
     if (!user?.id) {
       setSubscription(null);
