@@ -28,27 +28,26 @@ const Index = () => {
 
   // Document usage for Basic plan
   const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date: string | null } | null>(null);
-  const isBasicPlan = subscription?.active_plan === 'basic';
-  const isBasicFree = isBasicPlan && (
-    subscription?.subscription_status === 'active' || 
-    subscription?.subscription_status === null || 
-    subscription?.subscription_status === ''
-  );
+  const isBasicPlan = subscription?.active_plan === 'basic' || subscription?.selected_plan === 'basic';
 
   // Fetch document usage for Basic users
   useEffect(() => {
     const fetchDocumentUsage = async () => {
       if (!isBasicPlan || !user) return;
       try {
-        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-        if (!error && data) {
-          const d = data as any;
+        const { data, error } = await supabase.rpc('check_document_limit_v2', { p_user_id: user.id });
+        const fallback = error ? await supabase.rpc('check_document_limit', { p_user_id: user.id }) : { data, error };
+
+        if (!fallback.error && fallback.data) {
+          const payload = fallback.data as any;
           setDocumentUsage({ 
-            used: d.used || 0, 
-            limit: d.limit || 25, 
-            remaining: d.remaining || 0,
-            reset_date: d.reset_date || null
+            used: payload.used || 0,
+            limit: payload.limit || 25,
+            remaining: payload.remaining ?? Math.max((payload.limit || 25) - (payload.used || 0), 0),
+            reset_date: payload.reset_date || null
           });
+        } else if (!fallback.error) {
+          setDocumentUsage({ used: 0, limit: 25, remaining: 25, reset_date: null });
         }
       } catch (err) {
         console.error('Error fetching document usage:', err);
@@ -171,7 +170,7 @@ const Index = () => {
         </div>
 
         {/* Document Usage Banner for Basic Users */}
-        {isBasicFree && documentUsage && (
+        {isBasicPlan && documentUsage && (
           <div className={`p-4 rounded-lg border ${getBannerColor()}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

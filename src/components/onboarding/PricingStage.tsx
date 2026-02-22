@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { activateBasicPlan } from "@/lib/subscription-activation";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PricingStageProps {
@@ -181,12 +182,10 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         }
 
         const actualUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-        const { data: subData, error: subError } = await supabase.rpc(
-          'create_free_subscription',
-          { p_user_id: actualUserId!, p_plan: 'basic' }
-        );
-        
-        if (subError) throw subError;
+        const result = await activateBasicPlan(actualUserId!);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to activate Basic plan');
+        }
 
         toast({
           title: "Account Created!",

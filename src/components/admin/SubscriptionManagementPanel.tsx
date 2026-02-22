@@ -80,12 +80,15 @@ export const SubscriptionManagementPanel: React.FC<
     const fetchDocumentUsage = async () => {
       if (!subscription?.user_id) return;
       try {
-        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id });
-        if (!error && data) {
+        const { data, error } = await supabase.rpc('check_document_limit_v2', { p_user_id: subscription.user_id });
+        const fallback = error ? await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id }) : { data, error };
+
+        if (!fallback.error && fallback.data) {
+          const payload = fallback.data as any;
           setDocumentUsage({ 
-            used: data.used || 0, 
-            limit: data.limit || 25,
-            reset_date: data.reset_date || null
+            used: payload.used || 0,
+            limit: payload.limit || 25,
+            reset_date: payload.reset_date || null
           });
         }
       } catch (err) {
@@ -127,7 +130,7 @@ export const SubscriptionManagementPanel: React.FC<
   const planConfig = activePlan ? PLAN_PRICING[activePlan] : null;
   const status = subscription?.subscription_status || "none";
   const isCanceled = status === "canceled" || !!subscription?.canceled_at;
-  const isBasicFree = activePlan === 'basic' && status === 'active';
+  const isBasicFree = activePlan === 'basic';
 
   // Determine billing period from dates
   const periodStart = subscription?.current_period_start
@@ -313,7 +316,7 @@ export const SubscriptionManagementPanel: React.FC<
                 {planConfig?.label || activePlan}
               </div>
               <div className="text-sm text-muted-foreground">
-                {isYearly ? "Yearly billing" : "Monthly billing"}
+                {isBasicFree ? "25 generations per month" : isYearly ? "Yearly billing" : "Monthly billing"}
               </div>
             </div>
 
@@ -338,7 +341,7 @@ export const SubscriptionManagementPanel: React.FC<
                 )}
               </div>
               <div className="text-2xl font-bold">
-                {isBasicFree ? 'Free' : `$${currentPrice}`}
+                {isBasicFree ? '$0' : `$${currentPrice}`}
                 {!isBasicFree && (
                   <span className="text-sm font-normal text-muted-foreground">
                     /{isYearly ? "year" : "month"}
@@ -359,9 +362,10 @@ export const SubscriptionManagementPanel: React.FC<
                 {isBasicFree ? "Plan Status" : "Billing Period"}
               </div>
               {isBasicFree ? (
-                <div className="text-sm font-medium text-green-600">
-                  Free Plan
-                </div>
+                <>
+                  <div className="text-sm font-medium text-green-600">Free</div>
+                  <div className="text-xs text-muted-foreground">No payment method required</div>
+                </>
               ) : (
                 <>
                   <div className="text-sm font-medium">

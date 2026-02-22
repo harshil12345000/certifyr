@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { activateBasicPlan } from '@/lib/subscription-activation';
 
 export interface Subscription {
   id: string;
@@ -22,6 +23,18 @@ export function useSubscription() {
   const [error, setError] = useState<string | null>(null);
 
   const hasFetchedOnce = useRef(false);
+  const hasAttemptedBasicEnsure = useRef(false);
+
+  const ensureBasicSubscription = useCallback(async () => {
+    if (!user?.id) return false;
+
+    const result = await activateBasicPlan(user.id);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to auto-create Basic subscription');
+    }
+
+    return true;
+  }, [user?.id]);
 
   const fetchSubscription = useCallback(async () => {
     if (!user?.id) {
@@ -45,7 +58,32 @@ export function useSubscription() {
         console.error('Error fetching subscription:', fetchError);
         setError(fetchError.message);
       } else {
-        setSubscription(data as unknown as Subscription);
+        const hasNoPlan = !data || (!data.active_plan && !data.selected_plan);
+
+        if (hasNoPlan && !hasAttemptedBasicEnsure.current) {
+          try {
+            hasAttemptedBasicEnsure.current = true;
+            await ensureBasicSubscription();
+
+            const { data: refreshedData, error: refreshedError } = await supabase
+              .from('subscriptions')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (refreshedError) {
+              throw refreshedError;
+            }
+
+            setSubscription((refreshedData ?? null) as unknown as Subscription | null);
+          } catch (basicErr: any) {
+            console.error('Error ensuring basic subscription:', basicErr);
+            setError(basicErr.message || 'Failed to auto-assign Basic plan');
+            setSubscription((data ?? null) as unknown as Subscription | null);
+          }
+        } else {
+          setSubscription(data as unknown as Subscription);
+        }
       }
     } catch (err: any) {
       console.error('Error in fetchSubscription:', err);
@@ -54,9 +92,10 @@ export function useSubscription() {
       hasFetchedOnce.current = true;
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [ensureBasicSubscription, user?.id]);
 
   useEffect(() => {
+    hasAttemptedBasicEnsure.current = false;
     fetchSubscription();
   }, [fetchSubscription]);
 
@@ -115,7 +154,7 @@ export function useSubscription() {
     !!subscription?.current_period_end &&
     new Date(subscription.current_period_end) > new Date();
 
-  const isBasicFree = subscription?.active_plan === 'basic' && 
+  const isBasicFree = subscription?.active_plan === 'basic' &&
     subscription?.subscription_status === 'active';
 
   const hasActiveSubscription = subscription?.active_plan != null && (

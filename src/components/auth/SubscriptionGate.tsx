@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { activateBasicPlan } from '@/lib/subscription-activation';
 
 interface SubscriptionGateProps {
   children: ReactNode;
@@ -14,7 +14,7 @@ interface SubscriptionGateProps {
  */
 export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const { user, loading: authLoading } = useAuth();
-  const { subscription, loading: subLoading } = useSubscription();
+  const { subscription, loading: subLoading, refetch } = useSubscription();
   const [isCreatingSubscription, setIsCreatingSubscription] = useState(false);
 
   // Auto-create Basic subscription for users without one
@@ -25,10 +25,12 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
       // Only create if user is authenticated and has no subscription
       setIsCreatingSubscription(true);
       try {
-        await supabase.rpc('create_free_subscription', {
-          p_user_id: user.id,
-          p_plan: 'basic',
-        });
+        const result = await activateBasicPlan(user.id);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create Basic subscription');
+        }
+
+        await refetch();
       } catch (err) {
         console.error('Error creating basic subscription:', err);
       } finally {
@@ -37,7 +39,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
     };
 
     createBasicSubscription();
-  }, [user, subscription, subLoading]);
+  }, [user, subscription, subLoading, refetch]);
 
   const isLoading = authLoading || subLoading || isCreatingSubscription;
 
