@@ -182,8 +182,14 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         }
 
         const actualUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-        const result = await activateBasicPlan(actualUserId!);
-        if (!result.success) {
+        const { data: subData, error: subError } = await supabase.rpc(
+          'create_free_subscription',
+          { p_user_id: actualUserId!, p_plan: 'basic' }
+        );
+        
+        if (subError) throw subError;
+        const result = subData as { success?: boolean; error?: string } | null;
+        if (result?.success === false) {
           throw new Error(result.error || 'Failed to activate Basic plan');
         }
 

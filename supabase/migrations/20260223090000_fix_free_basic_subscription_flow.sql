@@ -1,8 +1,11 @@
 -- Ensure Basic checkout reliably activates the free plan and updates reset date semantics.
+<<<<<<< codex/fix-basic-paywall-not-setting-user-plan-xey5ba
 ALTER TABLE public.subscriptions
   ADD COLUMN IF NOT EXISTS documents_used_this_month INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS monthly_usage_reset_date TIMESTAMPTZ DEFAULT (date_trunc('month', now()) + interval '1 month');
 
+=======
+>>>>>>> main
 CREATE OR REPLACE FUNCTION public.create_free_subscription(
   p_user_id UUID,
   p_plan TEXT DEFAULT 'basic'
