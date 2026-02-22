@@ -25,22 +25,8 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
       // Only create if user is authenticated and has no subscription
       setIsCreatingSubscription(true);
       try {
-<<<<<<< codex/fix-basic-paywall-not-setting-user-plan-xey5ba
         const result = await activateBasicPlan(user.id);
         if (!result.success) {
-=======
-        const { data, error } = await supabase.rpc('create_free_subscription', {
-          p_user_id: user.id,
-          p_plan: 'basic',
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        const result = data as { success?: boolean; error?: string } | null;
-        if (result?.success === false) {
->>>>>>> main
           throw new Error(result.error || 'Failed to create Basic subscription');
         }
 
