@@ -13,6 +13,9 @@ interface SubscriptionGateProps {
  * Strict SubscriptionGate — blocks ALL access unless user has an active subscription.
  * No sessionStorage bypass, no close button, no escape.
  * Checks on every render. Children are never rendered without active plan.
+ * 
+ * BASIC USERS: Always allowed through (regardless of subscription_status)
+ * PRO/ULTRA USERS: Must have active subscription_status
  */
 export function SubscriptionGate({ children }: SubscriptionGateProps) {
   const navigate = useNavigate();
@@ -21,7 +24,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
 
   const isLoading = authLoading || subLoading;
 
-  // Loading state
+  // Loading state - wait for auth to load
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -38,8 +41,25 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
     return null;
   }
 
-  // No active subscription — show unskippable paywall
-  if (!hasActiveSubscription) {
+  // Get the active plan
+  const activePlan = subscription?.active_plan;
+  const subscriptionStatus = subscription?.subscription_status;
+
+  // Check if Basic plan - ALLOW ALWAYS
+  const isBasicPlan = activePlan === 'basic';
+  
+  // Check if Pro or Ultra with active status
+  const isProOrUltra = activePlan === 'pro' || activePlan === 'ultra';
+  const isProUltraActive = isProOrUltra && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing');
+
+  // BASIC USERS: Allow through always (this is the freemium tier)
+  // Also allow if no subscription exists yet (treat as Basic)
+  if (isBasicPlan || !subscription) {
+    return <>{children}</>;
+  }
+
+  // PRO/ULTRA: Must have active subscription
+  if (!hasActiveSubscription || !isProUltraActive) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 backdrop-blur-sm">
         <div className="w-full max-w-md mx-4 rounded-xl border bg-card p-8 shadow-2xl text-center">
@@ -50,9 +70,9 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
             Subscription Required
           </h2>
           <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-            {subscription?.subscription_status === 'trialing' || subscription?.subscription_status === 'canceled'
+            {subscriptionStatus === 'trialing' || subscriptionStatus === 'canceled'
               ? 'Your free trial has ended. Choose a plan to continue using Certifyr.'
-              : !subscription?.active_plan
+              : !activePlan
                 ? 'You need a subscription to access Certifyr. Start with our free Basic plan or choose Pro/Ultra for more features.'
                 : 'You need an active subscription to access Certifyr. Choose a plan to unlock all features and start creating documents.'}
           </p>
@@ -64,7 +84,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
             Choose a Plan
           </Button>
           <p className="text-xs text-muted-foreground mt-4">
-            Plans start at $49/month. Cancel anytime.
+            Plans start at $0/month with Basic. Cancel anytime.
           </p>
         </div>
       </div>

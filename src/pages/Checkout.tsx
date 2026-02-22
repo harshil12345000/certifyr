@@ -161,7 +161,11 @@ export default function Checkout() {
         if (error) throw error;
         
         toast({ title: 'Success', description: 'You are now on the Basic plan!' });
-        navigate('/dashboard', { replace: true });
+        
+        // Small delay to ensure subscription is saved, then navigate
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 500);
         return;
       } catch (err: any) {
         console.error('Plan update error:', err);
