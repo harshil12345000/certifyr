@@ -24,27 +24,57 @@ const Index = () => {
   const {
     user
   } = useAuth();
-  const { subscription } = useSubscription();
+  const { subscription, isBasicFree } = useSubscription();
 
-  // Document usage for Basic plan
+  // Document usage for Basic plan - count from preview_generations table (same as "Documents Created" card)
   const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
-  const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
 
-  // Fetch document usage for Basic users
+  // Fetch document usage - count from preview_generations table to match "Documents Created" card
   useEffect(() => {
     const fetchDocumentUsage = async () => {
-      if (!isBasicFree || !user) return;
+      if (!user) return;
+      
+      // Only show banner for Basic users or users without subscription
+      const isBasicUser = subscription?.active_plan === 'basic' || !subscription?.active_plan;
+      if (!isBasicUser) return;
+      
       try {
-        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-        if (!error && data) {
-          setDocumentUsage({ used: data.used || 0, limit: data.limit || 25, remaining: data.remaining || 0 });
+        // Get organization ID first
+        const { data: orgData, error: orgError } = await supabase.rpc(
+          'get_user_organization_id',
+          { user_id: user.id }
+        );
+        
+        if (orgError || !orgData) {
+          console.error('Error getting organization:', orgError);
+          setDocumentUsage({ used: 0, limit: 25, remaining: 25 });
+          return;
         }
+        
+        // Count from preview_generations table (same source as "Documents Created" card)
+        const { count, error } = await supabase
+          .from('preview_generations')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', orgData);
+        
+        if (error) {
+          console.error('Error counting preview generations:', error);
+          setDocumentUsage({ used: 0, limit: 25, remaining: 25 });
+          return;
+        }
+        
+        const used = count || 0;
+        const limit = 25;
+        const remaining = Math.max(0, limit - used);
+        
+        setDocumentUsage({ used, limit, remaining });
       } catch (err) {
         console.error('Error fetching document usage:', err);
+        setDocumentUsage({ used: 0, limit: 25, remaining: 25 });
       }
     };
     fetchDocumentUsage();
-  }, [isBasicFree, user]);
+  }, [user, subscription]);
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
@@ -114,7 +144,7 @@ const Index = () => {
         </div>
 
         {/* Document Usage Banner for Basic Users */}
-        {isBasicFree && documentUsage && (
+        {documentUsage && (subscription?.active_plan === 'basic' || !subscription?.active_plan) && (
           <div className={`p-4 rounded-lg border ${documentUsage.remaining <= 5 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

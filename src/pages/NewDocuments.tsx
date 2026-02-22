@@ -111,15 +111,27 @@ const NewDocuments = () => {
     const checkDocumentLimit = async () => {
       if (!user?.id) return;
       
-      // Check if user is on Basic plan
-      const isBasicPlan = subscription?.active_plan === 'basic';
+      // Check if user is on Basic plan (or has no subscription - treat as basic)
+      const isBasicPlan = subscription?.active_plan === 'basic' || !subscription?.active_plan;
       
       if (isBasicPlan && user.id) {
-        const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+        // Get organization ID first
+        const { data: orgData } = await supabase.rpc(
+          'get_user_organization_id',
+          { user_id: user.id }
+        );
         
-        // Show upgrade popup if limit reached OR if they've already used 25+ docs
-        if (limitData && (!limitData.allowed || limitData.used >= 25)) {
-          setShowUpgradePaywall(true);
+        if (orgData) {
+          // Count from preview_generations table (same as "Documents Created" card)
+          const { count } = await supabase
+            .from('preview_generations')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', orgData);
+          
+          const used = count || 0;
+          if (used >= 25) {
+            setShowUpgradePaywall(true);
+          }
         }
       }
     };
