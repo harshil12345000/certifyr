@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { activateBasicPlan } from '@/lib/subscription-activation';
 
 interface SubscriptionGateProps {
   children: ReactNode;
@@ -25,6 +25,10 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
       // Only create if user is authenticated and has no subscription
       setIsCreatingSubscription(true);
       try {
+<<<<<<< codex/fix-basic-paywall-not-setting-user-plan-xey5ba
+        const result = await activateBasicPlan(user.id);
+        if (!result.success) {
+=======
         const { data, error } = await supabase.rpc('create_free_subscription', {
           p_user_id: user.id,
           p_plan: 'basic',
@@ -36,6 +40,7 @@ export function SubscriptionGate({ children }: SubscriptionGateProps) {
 
         const result = data as { success?: boolean; error?: string } | null;
         if (result?.success === false) {
+>>>>>>> main
           throw new Error(result.error || 'Failed to create Basic subscription');
         }
 

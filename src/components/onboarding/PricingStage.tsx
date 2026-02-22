@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { OnboardingData } from "@/pages/Onboarding";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { activateBasicPlan } from "@/lib/subscription-activation";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PricingStageProps {

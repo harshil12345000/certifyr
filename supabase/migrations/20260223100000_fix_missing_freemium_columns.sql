@@ -1,11 +1,16 @@
--- Ensure Basic checkout reliably activates the free plan and updates reset date semantics.
-<<<<<<< codex/fix-basic-paywall-not-setting-user-plan-xey5ba
+-- Hotfix: ensure freemium usage columns exist so create_free_subscription cannot fail.
 ALTER TABLE public.subscriptions
   ADD COLUMN IF NOT EXISTS documents_used_this_month INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS monthly_usage_reset_date TIMESTAMPTZ DEFAULT (date_trunc('month', now()) + interval '1 month');
 
-=======
->>>>>>> main
+UPDATE public.subscriptions
+SET documents_used_this_month = COALESCE(documents_used_this_month, 0)
+WHERE documents_used_this_month IS NULL;
+
+UPDATE public.subscriptions
+SET monthly_usage_reset_date = (date_trunc('month', now()) + interval '1 month')
+WHERE monthly_usage_reset_date IS NULL;
+
 CREATE OR REPLACE FUNCTION public.create_free_subscription(
   p_user_id UUID,
   p_plan TEXT DEFAULT 'basic'
@@ -24,7 +29,7 @@ BEGIN
 
   v_next_month_start := date_trunc('month', now()) + interval '1 month';
 
-  INSERT INTO subscriptions (
+  INSERT INTO public.subscriptions (
     user_id,
     active_plan,
     selected_plan,
@@ -55,7 +60,7 @@ BEGIN
     monthly_usage_reset_date = EXCLUDED.monthly_usage_reset_date,
     updated_at = now();
 
-  UPDATE user_profiles
+  UPDATE public.user_profiles
   SET plan = p_plan,
       updated_at = now()
   WHERE user_id = p_user_id;
