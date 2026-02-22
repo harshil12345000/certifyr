@@ -27,18 +27,23 @@ const Index = () => {
   const { subscription } = useSubscription();
 
   // Document usage for Basic plan
-  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date: string | null } | null>(null);
   const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
 
-  // Fetch document usage for Basic users
+  // Fetch document usage for Basic users using v2 function
   useEffect(() => {
     const fetchDocumentUsage = async () => {
       if (!isBasicFree || !user) return;
       try {
-        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+        const { data, error } = await supabase.rpc('check_document_limit_v2', { p_user_id: user.id });
         if (!error && data) {
           const d = data as any;
-          setDocumentUsage({ used: d.used || 0, limit: d.limit || 25, remaining: d.remaining || 0 });
+          setDocumentUsage({ 
+            used: d.used || 0, 
+            limit: d.limit || 25, 
+            remaining: d.remaining || 0,
+            reset_date: d.reset_date || null
+          });
         }
       } catch (err) {
         console.error('Error fetching document usage:', err);
@@ -46,6 +51,52 @@ const Index = () => {
     };
     fetchDocumentUsage();
   }, [isBasicFree, user]);
+
+  // Determine progress bar color based on usage
+  const getProgressColor = () => {
+    if (!documentUsage) return 'bg-blue-500';
+    if (documentUsage.used >= 25) return 'bg-red-500';
+    if (documentUsage.used >= 20) return 'bg-orange-500';
+    return 'bg-blue-500';
+  };
+
+  const getProgressBgColor = () => {
+    if (!documentUsage) return 'bg-gray-200';
+    if (documentUsage.used >= 25) return 'bg-red-100';
+    if (documentUsage.used >= 20) return 'bg-orange-100';
+    return 'bg-blue-100';
+  };
+
+  const getBannerColor = () => {
+    if (!documentUsage) return 'bg-blue-50 border-blue-200';
+    if (documentUsage.used >= 25) return 'bg-red-50 border-red-200';
+    if (documentUsage.used >= 20) return 'bg-orange-50 border-orange-200';
+    return 'bg-blue-50 border-blue-200';
+  };
+
+  const getTextColor = () => {
+    if (!documentUsage) return 'text-blue-800';
+    if (documentUsage.used >= 25) return 'text-red-800';
+    if (documentUsage.used >= 20) return 'text-orange-800';
+    return 'text-blue-800';
+  };
+
+  const getSubTextColor = () => {
+    if (!documentUsage) return 'text-blue-600';
+    if (documentUsage.used >= 25) return 'text-red-600';
+    if (documentUsage.used >= 20) return 'text-orange-600';
+    return 'text-blue-600';
+  };
+
+  const formatResetDate = (dateStr: string | null) => {
+    if (!dateStr) return 'next month';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    } catch {
+      return 'next month';
+    }
+  };
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
@@ -116,26 +167,29 @@ const Index = () => {
 
         {/* Document Usage Banner for Basic Users */}
         {isBasicFree && documentUsage && (
-          <div className={`p-4 rounded-lg border ${documentUsage.remaining <= 5 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+          <div className={`p-4 rounded-lg border ${getBannerColor()}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <AlertTriangle className={`h-5 w-5 ${documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600'}`} />
+                <AlertTriangle className={`h-5 w-5 ${getSubTextColor()}`} />
                 <div>
-                  <p className={`font-medium ${documentUsage.remaining <= 5 ? 'text-red-800' : 'text-blue-800'}`}>
-                    Basic Plan - Document Limit
+                  <p className={`font-medium ${getTextColor()}`}>
+                    {documentUsage.used >= 25 ? 'Limit Reached' : 'Basic Plan - Document Limit'}
                   </p>
-                  <p className={`text-sm ${documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600'}`}>
-                    You've used {documentUsage.used} of {documentUsage.limit} documents this month
+                  <p className={`text-sm ${getSubTextColor()}`}>
+                    {documentUsage.used >= 25 
+                      ? `You've used all ${documentUsage.limit} document generations this month`
+                      : `You've used ${documentUsage.used} of ${documentUsage.limit} document generations this month`
+                    }
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className={`text-2xl font-bold ${documentUsage.remaining <= 5 ? 'text-red-600' : 'text-blue-600'}`}>
-                    {documentUsage.remaining}
+                  <p className={`text-2xl font-bold ${getSubTextColor()}`}>
+                    {documentUsage.used >= 25 ? '0' : documentUsage.remaining}
                   </p>
-                  <p className={`text-xs ${documentUsage.remaining <= 5 ? 'text-red-500' : 'text-blue-500'}`}>
-                    remaining
+                  <p className={`text-xs ${getSubTextColor()}`}>
+                    {documentUsage.used >= 25 ? 'Limit reached' : 'remaining'}
                   </p>
                 </div>
                 <Link to="/checkout?plan=pro">
@@ -145,12 +199,15 @@ const Index = () => {
                 </Link>
               </div>
             </div>
-            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+            <div className={`mt-3 w-full rounded-full h-2 ${getProgressBgColor()}`}>
               <div 
-                className={`h-2 rounded-full transition-all ${documentUsage.remaining <= 5 ? 'bg-red-500' : 'bg-blue-500'}`}
+                className={`h-2 rounded-full transition-all ${getProgressColor()}`}
                 style={{ width: `${Math.min((documentUsage.used / documentUsage.limit) * 100, 100)}%` }}
               />
             </div>
+            <p className={`text-xs ${getSubTextColor()} mt-2`}>
+              Your document limit resets on {formatResetDate(documentUsage.reset_date)}
+            </p>
           </div>
         )}
 

@@ -73,17 +73,21 @@ export const SubscriptionManagementPanel: React.FC<
   const [isCanceling, setIsCanceling] = useState(false);
   const [dodoDetails, setDodoDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number } | null>(null);
+  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; reset_date: string | null } | null>(null);
 
-  // Fetch document usage for Basic users
+  // Fetch document usage for Basic users using v2 function
   useEffect(() => {
     const fetchDocumentUsage = async () => {
       if (!subscription?.user_id) return;
       try {
-        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id });
+        const { data, error } = await supabase.rpc('check_document_limit_v2', { p_user_id: subscription.user_id });
         if (!error && data) {
           const d = data as any;
-          setDocumentUsage({ used: d.used || 0, limit: d.limit || 25 });
+          setDocumentUsage({ 
+            used: d.used || 0, 
+            limit: d.limit || 25,
+            reset_date: d.reset_date || null
+          });
         }
       } catch (err) {
         console.error('Error fetching document usage:', err);

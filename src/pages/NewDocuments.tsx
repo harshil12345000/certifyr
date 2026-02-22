@@ -106,7 +106,7 @@ const NewDocuments = () => {
   const [orgType, setOrgType] = useState<string>("");
   const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
 
-  // Check document limit on mount for Basic users
+  // Check document limit on mount for Basic users - block access if at limit
   useEffect(() => {
     const checkDocumentLimit = async () => {
       if (!user?.id) return;
@@ -115,11 +115,15 @@ const NewDocuments = () => {
       const isBasicPlan = subscription?.active_plan === 'basic';
       
       if (isBasicPlan && user.id) {
-        const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+        const { data: limitData } = await supabase.rpc('check_document_limit_v2', { p_user_id: user.id });
         
-        // Show upgrade popup if limit reached OR if they've already used 25+ docs
+        // Block access and redirect to dashboard if limit reached
         if (limitData && (!(limitData as any).allowed || (limitData as any).used >= 25)) {
           setShowUpgradePaywall(true);
+          // Redirect to dashboard after showing paywall
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
         }
       }
     };

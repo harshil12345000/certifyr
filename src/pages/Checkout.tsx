@@ -93,11 +93,11 @@ export default function Checkout() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const planParam = params.get('plan');
-    const yearlyParam = params.get('yearly');
+    const yearlyParam = params.get('yearly') || params.get('interval');
     
     if (planParam && ['basic', 'pro', 'ultra'].includes(planParam)) {
       setSelectedPlan(planParam as 'basic' | 'pro' | 'ultra');
-      if (yearlyParam === 'true') {
+      if (yearlyParam === 'true' || yearlyParam === 'yearly') {
         setBillingPeriod('yearly');
       }
     }
