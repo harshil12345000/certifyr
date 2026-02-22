@@ -153,17 +153,22 @@ export default function Checkout() {
     // Handle free Basic plan
     if (selectedPlan === 'basic') {
       try {
-        const { error } = await supabase.rpc('create_free_subscription', {
+        const { data, error } = await supabase.rpc('create_free_subscription', {
           p_user_id: user.id,
           p_plan: 'basic',
         });
         
         if (error) throw error;
+        const result = data as { success?: boolean; error?: string } | null;
+        if (result?.success === false) {
+          throw new Error(result.error || 'Failed to activate Basic plan');
+        }
+
+        await refetch();
         
         toast({ title: 'Success', description: 'You are now on the Basic plan!' });
         
-        // Force subscription refresh before navigating
-        window.location.href = '/dashboard';
+        navigate('/dashboard', { replace: true });
         return;
       } catch (err: any) {
         console.error('Plan update error:', err);
