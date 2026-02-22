@@ -61,7 +61,7 @@ export function RequestPortalMembers({
 
       if (error) throw error;
 
-      setEmployees(employeesData || []);
+      setEmployees((employeesData || []) as unknown as PortalEmployee[]);
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast({

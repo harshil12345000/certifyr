@@ -61,7 +61,7 @@ export function useUserActivity(refreshIndex?: number) {
 
         // Build query with proper null handling
         let query = supabase
-          .from("preview_generations")
+          .from("preview_generations" as any)
           .select("created_at")
           .gte("created_at", sevenMonthsAgo.toISOString());
 
@@ -80,7 +80,7 @@ export function useUserActivity(refreshIndex?: number) {
 
         // Count preview generations by month
         if (previewGenerations && previewGenerations.length > 0) {
-          previewGenerations.forEach((generation) => {
+          previewGenerations.forEach((generation: any) => {
             const generationDate = new Date(generation.created_at);
             const monthKey = monthNames[generationDate.getMonth()];
             if (activityByMonth.hasOwnProperty(monthKey)) {

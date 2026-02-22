@@ -18,8 +18,7 @@ export function usePreviewTracking() {
           user_id: user.id,
           organization_id: orgId,
           template_id: templateId,
-          action_type: actionType,
-        });
+        } as any);
 
       if (error) {
         console.error("Error tracking preview generation:", error);

@@ -54,7 +54,7 @@ export function useNotifications() {
           return;
         }
 
-        setNotifications(data || []);
+        setNotifications((data || []) as unknown as Notification[]);
       } catch (err) {
         console.error("Unexpected error fetching notifications:", err);
         setError("Failed to fetch notifications");

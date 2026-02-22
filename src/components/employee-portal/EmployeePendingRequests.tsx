@@ -70,7 +70,7 @@ export function EmployeePendingRequests() {
         .order("requested_at", { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+      setRequests((data || []) as unknown as DocumentRequest[]);
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {

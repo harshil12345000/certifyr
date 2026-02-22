@@ -43,8 +43,7 @@ export function useDocumentTracking() {
           try {
             const { error: legacyError } = await supabase.rpc("increment_user_stat", {
               p_user_id: user.id,
-              p_organization_id: null,
-              p_stat_field: "documents_created",
+              p_stat_name: "documents_created",
             });
             if (legacyError) {
               console.error("Error incrementing legacy user statistics:", legacyError);

@@ -180,9 +180,10 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
           if (!newUser) throw new Error("Failed to get user");
         }
 
+        const actualUserId = userId || (await supabase.auth.getUser()).data.user?.id;
         const { data: subData, error: subError } = await supabase.rpc(
           'create_free_subscription',
-          { p_plan: 'basic' }
+          { p_user_id: actualUserId!, p_plan: 'basic' }
         );
         
         if (subError) throw subError;

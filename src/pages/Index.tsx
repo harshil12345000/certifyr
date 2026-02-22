@@ -37,7 +37,8 @@ const Index = () => {
       try {
         const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
         if (!error && data) {
-          setDocumentUsage({ used: data.used || 0, limit: data.limit || 25, remaining: data.remaining || 0 });
+          const d = data as any;
+          setDocumentUsage({ used: d.used || 0, limit: d.limit || 25, remaining: d.remaining || 0 });
         }
       } catch (err) {
         console.error('Error fetching document usage:', err);
