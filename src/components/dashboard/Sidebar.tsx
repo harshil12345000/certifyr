@@ -140,7 +140,7 @@ const SidebarProfile = React.memo(function SidebarProfile({
       {!isCollapsed && (
         <div className="ml-3">
           <p className="text-sm font-medium">{displayName}</p>
-          <p className="text-xs text-muted-foreground">{email}</p>
+          <p className="text-xs text-muted-foreground truncate max-w-[140px]">{email}</p>
         </div>
       )}
     </div>
@@ -248,7 +248,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean;
           "fixed inset-y-0 left-0 z-40 flex flex-col glass-card border-r border-border/50",
           isCollapsed ? "w-20" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-          "transition-[width,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "transition-[width,transform] duration-300",
         )}
       >
         {/* Toggle button - above logo when collapsed */}

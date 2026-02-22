@@ -49,6 +49,25 @@ export default function Onboarding() {
   const [currentStage, setCurrentStage] = useState(1);
   const [loading, setLoading] = useState(false);
   
+  // Check if user returned from checkout without paying
+  useEffect(() => {
+    const accountCreatedPendingPayment = sessionStorage.getItem('accountCreatedPendingPayment');
+    const pendingPlan = sessionStorage.getItem('pendingPlan');
+    
+    if (accountCreatedPendingPayment === 'true') {
+      // Clear the flags
+      sessionStorage.removeItem('accountCreatedPendingPayment');
+      sessionStorage.removeItem('pendingPlan');
+      
+      // Redirect to login with message to complete payment
+      toast({
+        title: "Complete your subscription",
+        description: `You selected the ${pendingPlan || 'Pro'} plan. Please log in to complete your subscription.`,
+      });
+      navigate('/auth?plan=' + (pendingPlan || 'pro'), { replace: true });
+    }
+  }, [navigate, toast]);
+  
   // Parse plan from URL param or sessionStorage
   // Format: basic, pro, ultra
   const getInitialPlanAndBilling = (): { plan: 'basic' | 'pro' | 'ultra'; billing: 'monthly' | 'yearly' } => {

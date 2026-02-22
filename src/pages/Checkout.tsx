@@ -67,11 +67,17 @@ export default function Checkout() {
     const planParam = params.get('plan');
     const isPlanChange = planParam && ['pro', 'ultra'].includes(planParam);
 
+    // Redirect if not logged in
+    if (!authLoading && !user) {
+      navigate('/auth?plan=' + (planParam || 'pro'), { replace: true });
+      return;
+    }
+
     // Allow plan change users to proceed, otherwise redirect as usual
     if (!subLoading && hasActiveSubscription && !isTrialing && subscription?.active_plan !== 'basic' && !isPlanChange) {
       navigate('/dashboard', { replace: true });
     }
-  }, [subLoading, hasActiveSubscription, isTrialing, subscription, navigate]);
+  }, [subLoading, hasActiveSubscription, isTrialing, subscription, navigate, user, authLoading]);
 
   useEffect(() => {
     // Check sessionStorage for plan intent (only Pro/Ultra for paid plans)

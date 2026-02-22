@@ -197,6 +197,10 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         return;
       }
 
+      // Mark that account was created - used if user returns from checkout
+      sessionStorage.setItem('accountCreatedPendingPayment', 'true');
+      sessionStorage.setItem('pendingPlan', data.selectedPlan);
+
       // For Pro/Ultra, proceed with payment
       toast({
         title: "Account Created!",
