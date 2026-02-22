@@ -95,17 +95,6 @@ export function useDocumentHistory() {
     const isBasicFree = (subscription?.active_plan === 'basic' || !subscription?.active_plan) && 
       (subscription?.subscription_status === 'active' || !subscription?.subscription_status);
     if (isBasicFree) {
-<<<<<<< HEAD
-      const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-      if (limitData && (limitData as any).allowed === false) {
-        setShowUpgradePaywall(true);
-        toast({
-          title: "Document Limit Reached",
-          description: "You've reached your 25 document limit. Upgrade to Pro for unlimited documents.",
-          variant: "destructive",
-        });
-        return null;
-=======
       // Get organization ID first
       const { data: orgData } = await supabase.rpc(
         'get_user_organization_id',
@@ -129,7 +118,6 @@ export function useDocumentHistory() {
           });
           return null;
         }
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
       }
     }
 

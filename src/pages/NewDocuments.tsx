@@ -121,15 +121,6 @@ const NewDocuments = () => {
           { user_id: user.id }
         );
         
-<<<<<<< HEAD
-        // Block access and redirect to dashboard if limit reached
-        if (limitData && (!limitData.allowed || limitData.used >= 25)) {
-          setShowUpgradePaywall(true);
-          // Redirect to dashboard after showing paywall
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 100);
-=======
         if (orgData) {
           // Count from preview_generations table (same as "Documents Created" card)
           const { count } = await supabase
@@ -141,7 +132,6 @@ const NewDocuments = () => {
           if (used >= 25) {
             setShowUpgradePaywall(true);
           }
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
         }
       }
     };

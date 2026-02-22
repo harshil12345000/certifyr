@@ -26,36 +26,12 @@ const Index = () => {
   } = useAuth();
   const { subscription, isBasicFree } = useSubscription();
 
-<<<<<<< HEAD
-  // Document usage for Basic plan
-  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date: string | null } | null>(null);
-  const isBasicPlan = subscription?.active_plan === 'basic';
-  const isBasicFree = isBasicPlan && (
-    subscription?.subscription_status === 'active' || 
-    subscription?.subscription_status === null || 
-    subscription?.subscription_status === ''
-  );
-=======
   // Document usage for Basic plan - count from preview_generations table (same as "Documents Created" card)
   const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
 
   // Fetch document usage - count from preview_generations table to match "Documents Created" card
   useEffect(() => {
     const fetchDocumentUsage = async () => {
-<<<<<<< HEAD
-      if (!isBasicPlan || !user) return;
-      try {
-        const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-        if (!error && data) {
-          const d = data as any;
-          setDocumentUsage({ 
-            used: d.used || 0, 
-            limit: d.limit || 25, 
-            remaining: d.remaining || 0,
-            reset_date: d.reset_date || null
-          });
-=======
       if (!user) return;
       
       // Only show banner for Basic users or users without subscription
@@ -73,7 +49,6 @@ const Index = () => {
           console.error('Error getting organization:', orgError);
           setDocumentUsage({ used: 0, limit: 25, remaining: 25 });
           return;
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
         }
         
         // Count from preview_generations table (same source as "Documents Created" card)
@@ -99,57 +74,7 @@ const Index = () => {
       }
     };
     fetchDocumentUsage();
-<<<<<<< HEAD
-  }, [isBasicPlan, user]);
-
-  // Determine progress bar color based on usage
-  const getProgressColor = () => {
-    if (!documentUsage) return 'bg-blue-500';
-    if (documentUsage.used >= 25) return 'bg-red-500';
-    if (documentUsage.used >= 20) return 'bg-orange-500';
-    return 'bg-blue-500';
-  };
-
-  const getProgressBgColor = () => {
-    if (!documentUsage) return 'bg-gray-200';
-    if (documentUsage.used >= 25) return 'bg-red-100';
-    if (documentUsage.used >= 20) return 'bg-orange-100';
-    return 'bg-blue-100';
-  };
-
-  const getBannerColor = () => {
-    if (!documentUsage) return 'bg-blue-50 border-blue-200';
-    if (documentUsage.used >= 25) return 'bg-red-50 border-red-200';
-    if (documentUsage.used >= 20) return 'bg-orange-50 border-orange-200';
-    return 'bg-blue-50 border-blue-200';
-  };
-
-  const getTextColor = () => {
-    if (!documentUsage) return 'text-blue-800';
-    if (documentUsage.used >= 25) return 'text-red-800';
-    if (documentUsage.used >= 20) return 'text-orange-800';
-    return 'text-blue-800';
-  };
-
-  const getSubTextColor = () => {
-    if (!documentUsage) return 'text-blue-600';
-    if (documentUsage.used >= 25) return 'text-red-600';
-    if (documentUsage.used >= 20) return 'text-orange-600';
-    return 'text-blue-600';
-  };
-
-  const formatResetDate = (dateStr: string | null) => {
-    if (!dateStr) return 'next month';
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    } catch {
-      return 'next month';
-    }
-  };
-=======
   }, [user, subscription]);
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
@@ -219,13 +144,8 @@ const Index = () => {
         </div>
 
         {/* Document Usage Banner for Basic Users */}
-<<<<<<< HEAD
-        {isBasicFree && documentUsage && (
-          <div className={`p-4 rounded-lg border ${getBannerColor()}`}>
-=======
         {documentUsage && (subscription?.active_plan === 'basic' || !subscription?.active_plan) && (
           <div className={`p-4 rounded-lg border ${documentUsage.remaining <= 5 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <AlertTriangle className={`h-5 w-5 ${getSubTextColor()}`} />

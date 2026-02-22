@@ -55,22 +55,6 @@ export const saveVerifiedDocument = async (
         { user_id: data.userId }
       );
       
-<<<<<<< HEAD
-      if (limitError) {
-        console.error('Error checking document limit:', limitError);
-      } else if (limitData && !(limitData as any).allowed) {
-        console.warn('Document limit reached:', limitData);
-        // Dispatch custom event to show upgrade dialog
-        window.dispatchEvent(new CustomEvent('show-upgrade-paywall', { 
-          detail: { reason: 'document_limit' } 
-        }));
-        return 'LIMIT_REACHED';
-      }
-      
-      // If allowed, increment the document count
-      if (limitData && (limitData as any).allowed) {
-        await supabase.rpc('increment_document_count', { p_user_id: data.userId });
-=======
       if (orgData) {
         const { count, error: countError } = await supabase
           .from('preview_generations')
@@ -87,7 +71,6 @@ export const saveVerifiedDocument = async (
           }));
           return 'LIMIT_REACHED';
         }
->>>>>>> e50189e7b235b49819cf4f08b587fd7eb9f0f98c
       }
     }
 
