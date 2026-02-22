@@ -16,6 +16,7 @@ import { downloadPDF, downloadJPG, printDocument } from "@/lib/document-utils";
 import { useToast } from "@/hooks/use-toast";
 import { Letterhead } from "@/components/templates/Letterhead";
 import { useDocumentHistory } from "@/hooks/useDocumentHistory";
+import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
 
 interface PreviewPanelProps {
   elements: Section[];
@@ -29,7 +30,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   templateName = "Document Title",
 }) => {
   const { toast } = useToast();
-  const { saveDocument } = useDocumentHistory();
+  const { saveDocument, showUpgradePaywall, setShowUpgradePaywall } = useDocumentHistory();
   const [sampleData, setSampleData] = useState<Record<string, any>>({});
   const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
   const [isEditingBody, setIsEditingBody] = useState(false);
@@ -261,6 +262,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           </div>
         </div>
       </div>
+
+      <UpgradePrompt 
+        requiredPlan="pro" 
+        variant="dialog"
+        open={showUpgradePaywall}
+        onOpenChange={setShowUpgradePaywall}
+      />
     </div>
   );
 };

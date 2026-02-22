@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { RootRedirect } from "@/components/auth/RootRedirect";
 import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
+import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
 import Index from "@/pages/Index";
 import Documents from "@/pages/Documents";
 import NewDocuments from "@/pages/NewDocuments";
@@ -51,6 +52,16 @@ const Gated = ({ children }: { children: React.ReactNode }) => (
 );
 
 function AppContent() {
+  const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
+
+  useEffect(() => {
+    const handleShowUpgradePaywall = () => {
+      setShowUpgradePaywall(true);
+    };
+    window.addEventListener('show-upgrade-paywall', handleShowUpgradePaywall);
+    return () => window.removeEventListener('show-upgrade-paywall', handleShowUpgradePaywall);
+  }, []);
+
   return (
     <>
       <Routes>
@@ -97,6 +108,12 @@ function AppContent() {
       </Routes>
       <Toaster />
       <AIFloatingWidget />
+      <UpgradePrompt 
+        requiredPlan="pro" 
+        variant="dialog"
+        open={showUpgradePaywall}
+        onOpenChange={setShowUpgradePaywall}
+      />
     </>
   );
 }

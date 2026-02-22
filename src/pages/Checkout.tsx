@@ -45,7 +45,7 @@ const ultraFeatures = [
 
 const basicFeatures = [
   '25 Documents per Month',
-  'All Templates Available',
+  'Limited Templates Available',
   'Single Admin Access',
   'Organization Branding',
   'Basic Support',
@@ -62,8 +62,13 @@ export default function Checkout() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    // Allow trialing users and Basic (free) users to visit checkout to upgrade
-    if (!subLoading && hasActiveSubscription && !isTrialing && subscription?.active_plan !== 'basic') {
+    // Check if user is trying to change plans via URL params - allow them through
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get('plan');
+    const isPlanChange = planParam && ['pro', 'ultra'].includes(planParam);
+
+    // Allow plan change users to proceed, otherwise redirect as usual
+    if (!subLoading && hasActiveSubscription && !isTrialing && subscription?.active_plan !== 'basic' && !isPlanChange) {
       navigate('/dashboard', { replace: true });
     }
   }, [subLoading, hasActiveSubscription, isTrialing, subscription, navigate]);
@@ -77,6 +82,55 @@ export default function Checkout() {
       setSelectedPlan(subscription.selected_plan as 'basic' | 'pro' | 'ultra');
     }
   }, [subscription]);
+
+  // Handle plan change from URL query params (for existing paid users upgrading/downgrading)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get('plan');
+    const yearlyParam = params.get('yearly');
+    
+    if (planParam && ['basic', 'pro', 'ultra'].includes(planParam)) {
+      setSelectedPlan(planParam as 'basic' | 'pro' | 'ultra');
+      if (yearlyParam === 'true') {
+        setBillingPeriod('yearly');
+      }
+    }
+  }, []);
+
+  // Auto-process plan change if user is already on a paid plan (not Basic)
+  useEffect(() => {
+    const processPlanChange = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const planParam = params.get('plan');
+      
+      if (!planParam || !['pro', 'ultra'].includes(planParam)) return;
+      if (!user?.id || subLoading) return;
+      if (!hasActiveSubscription || subscription?.active_plan === 'basic') return;
+      
+      // User is on a paid plan and wants to change - auto-process and redirect to dashboard
+      try {
+        const { data, error } = await supabase.functions.invoke('manage-subscription', {
+          body: { action: 'change-plan', plan: planParam, billingPeriod },
+        });
+        
+        if (error) throw error;
+        
+        if (data?.error) {
+          toast({ title: 'Error', description: data.error, variant: 'destructive' });
+        } else {
+          toast({ title: 'Plan Updated', description: `Your subscription has been changed to ${planParam.toUpperCase()}` });
+          navigate('/dashboard', { replace: true });
+        }
+      } catch (err: any) {
+        console.error('Plan change error:', err);
+        toast({ title: 'Error', description: err.message || 'Failed to change plan', variant: 'destructive' });
+      }
+    };
+    
+    if (!subLoading && subscription) {
+      processPlanChange();
+    }
+  }, [subLoading, subscription, user, navigate, toast, billingPeriod]);
 
   useEffect(() => {
     if (!authLoading && !user) {

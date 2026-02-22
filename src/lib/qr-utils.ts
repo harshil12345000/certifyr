@@ -57,6 +57,10 @@ export const saveVerifiedDocument = async (
         console.error('Error checking document limit:', limitError);
       } else if (limitData && !limitData.allowed) {
         console.warn('Document limit reached:', limitData);
+        // Dispatch custom event to show upgrade dialog
+        window.dispatchEvent(new CustomEvent('show-upgrade-paywall', { 
+          detail: { reason: 'document_limit' } 
+        }));
         return 'LIMIT_REACHED';
       }
       

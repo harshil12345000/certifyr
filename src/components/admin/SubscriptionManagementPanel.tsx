@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -66,6 +67,7 @@ interface SubscriptionManagementPanelProps {
 export const SubscriptionManagementPanel: React.FC<
   SubscriptionManagementPanelProps
 > = ({ organizationId }) => {
+  const navigate = useNavigate();
   const { subscription, loading, refetch } = useSubscription();
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
@@ -201,10 +203,9 @@ export const SubscriptionManagementPanel: React.FC<
   const handleCancelSubscription = async () => {
     setIsCanceling(true);
     try {
-      // For paid plans, instead of canceling via Dodo, we downgrade to Basic (free)
       const { data, error } = await supabase.rpc(
         'create_free_subscription',
-        { p_plan: 'basic' }
+        { p_user_id: subscription?.user_id, p_plan: 'basic' }
       );
 
       if (error) throw error;
@@ -397,122 +398,35 @@ export const SubscriptionManagementPanel: React.FC<
         </CardContent>
       </Card>
 
-      {/* Upgrade Section for Basic (Free) Users */}
-      {isBasicFree && (
+      {/* Change Plan Section */}
+      {availablePlans.length > 0 && (status === "active" || status === "trialing") && !isCanceled && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-blue-600" />
-              Upgrade Your Plan
+              {isBasicFree ? 'Upgrade Your Plan' : 'Change Plan'}
             </CardTitle>
             <CardDescription>
-              Unlock more features and remove document limits with Pro or Ultra.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Pro Upgrade */}
-              <div className="rounded-lg border bg-white p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-lg">Pro</h4>
-                  <Badge className="bg-[#1b80ff] text-white">
-                    <ArrowUpRight className="h-3 w-3 mr-1" />Upgrade
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">
-                    $49/mo or $299/year
-                  </div>
-                  <div className="text-xs text-green-600">
-                    Save $289/year with yearly
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-[#1b80ff] hover:bg-[#1566d4]"
-                    onClick={() => window.location.href = '/checkout?plan=pro'}
-                  >
-                    Monthly
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-[#1b80ff] hover:bg-[#1566d4]"
-                    onClick={() => window.location.href = '/checkout?plan=pro&yearly=true'}
-                  >
-                    Yearly
-                  </Button>
-                </div>
-              </div>
-
-              {/* Ultra Upgrade */}
-              <div className="rounded-lg border bg-white p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-lg">Ultra</h4>
-                  <Badge className="bg-purple-600 text-white">
-                    <ArrowUpRight className="h-3 w-3 mr-1" />Upgrade
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">
-                    $99/mo or $599/year
-                  </div>
-                  <div className="text-xs text-green-600">
-                    Save $589/year with yearly
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
-                    onClick={() => window.location.href = '/checkout?plan=ultra'}
-                  >
-                    Monthly
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-purple-600 hover:bg-purple-700"
-                    onClick={() => window.location.href = '/checkout?plan=ultra&yearly=true'}
-                  >
-                    Yearly
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Change Plan Section */}
-      {availablePlans.length > 0 && (status === "active" || status === "trialing") && !isCanceled && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Change Plan
-            </CardTitle>
-            <CardDescription>
-              Switch to a different plan. Changes apply at the next billing cycle.
+              {isBasicFree 
+                ? 'Unlock more features and remove document limits with Pro or Ultra.'
+                : 'Switch to a different plan. Changes apply at the next billing cycle.'
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {availablePlans.map((plan) => {
                 const isUpgrade = planConfig ? plan.order > planConfig.order : false;
+                const isPro = plan.key === 'pro';
                 return (
                   <div
                     key={plan.key}
-                    className="rounded-lg border p-4 space-y-3"
+                    className="rounded-lg border bg-white p-3"
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-semibold text-lg">{plan.label}</h4>
-                      <Badge variant="outline">
-                        {isUpgrade ? (
-                          <><ArrowUpRight className="h-3 w-3 mr-1" />Upgrade</>
-                        ) : (
-                          <>Downgrade</>
-                        )}
+                      <Badge className={isUpgrade ? "bg-[#1b80ff] text-white" : "bg-gray-500 text-white"}>
+                        <ArrowUpRight className="h-3 w-3 mr-1" />{isUpgrade ? 'Upgrade' : 'Downgrade'}
                       </Badge>
                     </div>
                     <div className="space-y-1">
@@ -528,23 +442,17 @@ export const SubscriptionManagementPanel: React.FC<
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        variant="outline"
-                        disabled={isChangingPlan}
-                        onClick={() => handleChangePlan(plan.key, "monthly")}
+                        className={isPro ? "bg-[#1b80ff] hover:bg-[#1566d4]" : "bg-purple-600 hover:bg-purple-700"}
+                        onClick={() => navigate(`/checkout?plan=${plan.key}`)}
                       >
-                        {isChangingPlan ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                        ) : null}
                         Monthly
                       </Button>
                       <Button
                         size="sm"
-                        disabled={isChangingPlan}
-                        onClick={() => handleChangePlan(plan.key, "yearly")}
+                        variant="outline"
+                        className={isPro ? "border-[#1b80ff] text-[#1b80ff] hover:bg-[#1b80ff] hover:text-white" : "border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"}
+                        onClick={() => navigate(`/checkout?plan=${plan.key}&yearly=true`)}
                       >
-                        {isChangingPlan ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                        ) : null}
                         Yearly
                       </Button>
                     </div>

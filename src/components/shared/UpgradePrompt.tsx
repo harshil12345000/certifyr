@@ -3,6 +3,14 @@ import { Lock, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PlanType, PLAN_METADATA, FEATURE_DISPLAY_NAMES, PlanFeatureSet } from '@/config/planFeatures';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +20,9 @@ interface UpgradePromptProps {
   title?: string;
   description?: string;
   className?: string;
-  variant?: 'card' | 'inline' | 'banner';
+  variant?: 'card' | 'inline' | 'banner' | 'dialog' | 'force';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function UpgradePrompt({
@@ -22,6 +32,8 @@ export function UpgradePrompt({
   description,
   className,
   variant = 'card',
+  open,
+  onOpenChange,
 }: UpgradePromptProps) {
   const navigate = useNavigate();
   const planMeta = PLAN_METADATA[requiredPlan];
@@ -36,8 +48,78 @@ export function UpgradePrompt({
   const handleUpgrade = () => {
     // Store the desired plan and navigate to checkout
     sessionStorage.setItem('selectedPlanIntent', requiredPlan);
-    navigate('/checkout');
+    navigate(`/checkout?plan=${requiredPlan === 'basic' ? 'pro' : requiredPlan}`);
+    onOpenChange?.(false);
   };
+
+  const handleClose = () => {
+    onOpenChange?.(false);
+  };
+
+  if ((variant === 'dialog' || variant === 'force') && open !== undefined) {
+    const isForce = variant === 'force';
+    return (
+      <Dialog open={open} onOpenChange={isForce ? () => {} : onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-red-500" />
+              Document Limit Reached
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              You've reached your 25 documents per month limit on the Basic plan. 
+              Upgrade to Pro for unlimited documents and more features.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div 
+                className="cursor-pointer rounded-lg border-2 border-[#1b80ff] bg-blue-50 p-4 text-center hover:bg-blue-100 transition-colors"
+                onClick={() => {
+                  sessionStorage.setItem('selectedPlanIntent', 'pro');
+                  navigate('/checkout?plan=pro');
+                  onOpenChange?.(false);
+                }}
+              >
+                <div className="font-semibold text-lg">Pro</div>
+                <div className="text-sm text-gray-600">$49/month</div>
+                <Badge className="mt-2 bg-[#1b80ff] text-white text-xs">Most Popular</Badge>
+              </div>
+              <div 
+                className="cursor-pointer rounded-lg border-2 border-purple-600 bg-purple-50 p-4 text-center hover:bg-purple-100 transition-colors"
+                onClick={() => {
+                  sessionStorage.setItem('selectedPlanIntent', 'ultra');
+                  navigate('/checkout?plan=ultra');
+                  onOpenChange?.(false);
+                }}
+              >
+                <div className="font-semibold text-lg">Ultra</div>
+                <div className="text-sm text-gray-600">$99/month</div>
+              </div>
+            </div>
+            <Button 
+              onClick={handleUpgrade}
+              className="w-full bg-[#1b80ff] hover:bg-[#1566d4]"
+            >
+              Upgrade Now
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+            <button
+              onClick={() => {
+                onOpenChange?.(false);
+                if (isForce) {
+                  navigate('/dashboard');
+                }
+              }}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Maybe later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (variant === 'inline') {
     return (

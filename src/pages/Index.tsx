@@ -137,7 +137,7 @@ const Index = () => {
                     remaining
                   </p>
                 </div>
-                <Link to="/checkout">
+                <Link to="/checkout?plan=pro">
                   <Button size="sm" className="bg-[#1b80ff] hover:bg-[#1566d4]">
                     Upgrade to Pro
                   </Button>

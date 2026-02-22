@@ -20,6 +20,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { popularTemplates } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { TemplatesSkeleton } from "@/components/dashboard/TemplatesSkeleton";
+import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
+import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
 
 // Define a minimal Template type to maintain correct typings
 type Template = {
@@ -148,9 +151,27 @@ const Documents = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [loading, setLoading] = useState(true);
+  const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
   // TODO: Replace with real admin check
   const isAdmin = true;
+
+  // Check document limit on mount for Basic users
+  useEffect(() => {
+    const checkDocumentLimit = async () => {
+      const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
+      if (isBasicFree && user?.id) {
+        const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+        if (limitData && !limitData.allowed) {
+          setShowUpgradePaywall(true);
+        }
+      }
+    };
+    if (subscription) {
+      checkDocumentLimit();
+    }
+  }, [subscription, user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -402,6 +423,13 @@ const Documents = () => {
           })}
         </div>
       </div>
+
+      <UpgradePrompt 
+        requiredPlan="pro" 
+        variant="force"
+        open={showUpgradePaywall}
+        onOpenChange={setShowUpgradePaywall}
+      />
     </DashboardLayout>
   );
 };

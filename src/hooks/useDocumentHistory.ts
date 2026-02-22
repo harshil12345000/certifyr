@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizationSecurity } from "./useOrganizationSecurity";
 import { toast } from "@/hooks/use-toast";
+import { useSubscription } from "./useSubscription";
 
 export interface DocumentHistoryItem {
   id: string;
@@ -20,8 +21,10 @@ export interface DocumentHistoryItem {
 export function useDocumentHistory() {
   const { user } = useAuth();
   const { organizationId } = useOrganizationSecurity();
+  const { subscription } = useSubscription();
   const [history, setHistory] = useState<DocumentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
 
   const fetchHistory = async () => {
     if (!user) {
@@ -86,6 +89,21 @@ export function useDocumentHistory() {
         variant: "destructive",
       });
       return null;
+    }
+
+    // Check document limit for Basic (free) users
+    const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
+    if (isBasicFree) {
+      const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+      if (limitData && limitData.allowed === false) {
+        setShowUpgradePaywall(true);
+        toast({
+          title: "Document Limit Reached",
+          description: "You've reached your 25 document limit. Upgrade to Pro for unlimited documents.",
+          variant: "destructive",
+        });
+        return null;
+      }
     }
 
     // Ensure we have an organization ID; fetch via RPC if missing
@@ -269,5 +287,7 @@ export function useDocumentHistory() {
     updateDocument,
     deleteDocument,
     refetch: fetchHistory,
+    showUpgradePaywall,
+    setShowUpgradePaywall,
   };
 }

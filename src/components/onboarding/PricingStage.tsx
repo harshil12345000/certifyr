@@ -20,7 +20,7 @@ interface PricingStageProps {
 
 const basicFeatures = [
   "25 Documents per Month",
-  "All Templates Available", 
+  "Limited Templates Available", 
   "Single Admin Access",
   "Organization Branding",
   "Basic Support"
