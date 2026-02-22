@@ -385,7 +385,7 @@ export function Header() {
               ) : notifications.length === 0 ? (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">
-                    No notifications yet.
+                    No notifications.
                   </p>
                 </div>
               ) : (
