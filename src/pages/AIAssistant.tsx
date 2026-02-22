@@ -78,15 +78,36 @@ function AIAssistantContent() {
     const templates = useMemo(() => getTemplatesWithFields(), []);
     const stableMissingFields = useRef<string[]>([]);
 
-    // Capture missing fields when they first appear (don't update while user is filling them)
-    useEffect(() => {
-      if (showPersonInfo && conversation.missingFields.length > 0 && stableMissingFields.current.length === 0) {
-        stableMissingFields.current = [...conversation.missingFields];
-      }
-      if (!showPersonInfo) {
-        stableMissingFields.current = [];
-      }
-    }, [showPersonInfo, conversation.missingFields]);
+      // Capture missing fields when they first appear (don't update while user is filling them)
+      useEffect(() => {
+        if (showPersonInfo && conversation.missingFields.length > 0 && stableMissingFields.current.length === 0) {
+          stableMissingFields.current = [...conversation.missingFields];
+        }
+        if (!showPersonInfo) {
+          stableMissingFields.current = [];
+        }
+      }, [showPersonInfo, conversation.missingFields]);
+
+      // Auto-generate when person is selected, template is set, and there are no missing fields
+      const autoGenerateRef = useRef(false);
+      const handleFieldSubmitRef = useRef<() => Promise<void>>(async () => {});
+      useEffect(() => {
+        if (
+          showPersonInfo &&
+          conversation.state.selectedRecord &&
+          conversation.state.templateId &&
+          conversation.missingFields.length === 0 &&
+          !autoGenerateRef.current &&
+          !isGenerating
+        ) {
+          autoGenerateRef.current = true;
+          handleFieldSubmitRef.current();
+        }
+        if (!showPersonInfo) {
+          autoGenerateRef.current = false;
+        }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [showPersonInfo, conversation.state.selectedRecord, conversation.state.templateId, conversation.missingFields.length, isGenerating]);
 
   const orgInfo = {
     name: organizationDetails?.name || 'Unknown Organization',
@@ -296,10 +317,13 @@ function AIAssistantContent() {
     await generateDocument(templateId, docData);
 
     // Reset conversation state
-    conversation.resetConversation();
-    setShowPersonInfo(false);
-    setSelectedPersonRecord(null);
-  }, [conversation, templates, orgInfo, generateDocument]);
+      conversation.resetConversation();
+      setShowPersonInfo(false);
+      setSelectedPersonRecord(null);
+    }, [conversation, templates, orgInfo, generateDocument]);
+
+    // Keep ref in sync so the auto-generate effect can call the latest version
+    handleFieldSubmitRef.current = handleFieldSubmit;
 
   const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isGenerating) return;
@@ -391,70 +415,96 @@ function AIAssistantContent() {
         }
       }
 
-      // If we get here, we need to call AI (no local match or no template detected)
-      // Use the returned updatedMessages which includes the user message
-      const response = await sendChatMessage(
-        updatedMessages,
-        employeeData as Record<string, unknown>[],
-        { model: 'sarvam-m' },
-        orgInfo,
-        issueDate,
-        contextCountry,
-        organizationId || undefined,
-        isFirstMessage,
-      );
+       // If we get here, we need to call AI (no local match or no template detected)
+       // Use the returned updatedMessages which includes the user message
+       const response = await sendChatMessage(
+         updatedMessages,
+         employeeData as Record<string, unknown>[],
+         { model: 'sarvam-m' },
+         orgInfo,
+         issueDate,
+         contextCountry,
+         organizationId || undefined,
+         isFirstMessage,
+       );
+ 
+       // Handle disambiguation response
+       if (response.type === 'disambiguate' && response.matches) {
+         const disambiguateContent = `DISAMBIGUATE:${JSON.stringify(response.matches)}`;
+         const assistantMessage: ChatMessage = {
+           role: 'assistant',
+           content: disambiguateContent,
+           timestamp: Date.now(),
+         };
+         await addMessage(assistantMessage);
+         
+         // Update conversation state with detected template
+         conversation.handleDisambiguationNeeded(response.matches, detectedTemplate);
+         setIsGenerating(false);
+         return;
+       }
+ 
+       const aiContent = response.message || '';
+ 
+       if (!aiContent || aiContent.trim() === '') {
+         throw new Error('Empty response from AI');
+       }
+ 
+       // Check if AI wants to generate a document
+       const parsed = parseGenerationResponse(aiContent);
+       
+       if (parsed) {
+         setIsDocumentGeneration(true);
+         setLoadingMessage('Generating document...');
+         const { templateId, data } = parsed;
+         const recipientName = data.fullName || data.name || 'Document';
+         const templateLabel = templateId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+         const queryString = new URLSearchParams(data).toString();
+         const docLink = `/documents/${templateId}?${queryString}`;
+ 
+         // Save a clean "document generated" message instead of the raw AI output
+         const generatedMessage: ChatMessage = {
+           role: 'assistant',
+           content: `GENERATED_LINK:${templateLabel}:${recipientName}:${docLink}`,
+           timestamp: Date.now(),
+         };
+         await addMessage(generatedMessage);
+         navigate(docLink);
+         toast.success(`Opening ${templateLabel} for ${recipientName}`);
+       } else {
+         const assistantMessage: ChatMessage = {
+           role: 'assistant',
+           content: aiContent,
+           timestamp: Date.now(),
+         };
+         await addMessage(assistantMessage);
 
-      // Handle disambiguation response
-      if (response.type === 'disambiguate' && response.matches) {
-        const disambiguateContent = `DISAMBIGUATE:${JSON.stringify(response.matches)}`;
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: disambiguateContent,
-          timestamp: Date.now(),
-        };
-        await addMessage(assistantMessage);
-        
-        // Update conversation state with detected template
-        conversation.handleDisambiguationNeeded(response.matches, detectedTemplate);
-        setIsGenerating(false);
-        return;
-      }
-
-      const aiContent = response.message || '';
-
-      if (!aiContent || aiContent.trim() === '') {
-        throw new Error('Empty response from AI');
-      }
-
-      // Check if AI wants to generate a document
-      const parsed = parseGenerationResponse(aiContent);
-      
-      if (parsed) {
-        setIsDocumentGeneration(true);
-        setLoadingMessage('Generating document...');
-        const { templateId, data } = parsed;
-        const recipientName = data.fullName || data.name || 'Document';
-        const templateLabel = templateId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        const queryString = new URLSearchParams(data).toString();
-        const docLink = `/documents/${templateId}?${queryString}`;
-
-        // Save a clean "document generated" message instead of the raw AI output
-        const generatedMessage: ChatMessage = {
-          role: 'assistant',
-          content: `GENERATED_LINK:${templateLabel}:${recipientName}:${docLink}`,
-          timestamp: Date.now(),
-        };
-        await addMessage(generatedMessage);
-        navigate(docLink);
-        toast.success(`Opening ${templateLabel} for ${recipientName}`);
-      } else {
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: aiContent,
-          timestamp: Date.now(),
-        };
-        await addMessage(assistantMessage);
-      }
+         // If the AI returned a matched employee record AND the response contains Known/Missing info,
+         // activate the interactive field collection flow so the user doesn't get stuck.
+         const hasKnownInfoSection = /###?\s*Known Information/i.test(aiContent);
+         const hasMissingInfoSection = /###?\s*Missing Information/i.test(aiContent);
+         
+         if (response.matchedRecord && hasKnownInfoSection && detectedTemplate) {
+           // AI found the employee and showed known info — now activate field collection UI
+           conversation.handlePersonSelected(response.matchedRecord as EmployeeRecord, detectedTemplate);
+           setSelectedPersonRecord(response.matchedRecord as EmployeeRecord);
+           setShowPersonInfo(true);
+         } else if (response.matchedRecord && hasKnownInfoSection && !detectedTemplate) {
+           // AI found employee but we need to detect template from conversation context
+           // Try to extract template from the original message
+           const { templateId: msgTemplate } = conversation.processUserMessage(message);
+           if (msgTemplate) {
+             conversation.handlePersonSelected(response.matchedRecord as EmployeeRecord, msgTemplate);
+             setSelectedPersonRecord(response.matchedRecord as EmployeeRecord);
+             setShowPersonInfo(true);
+           } else if (hasMissingInfoSection) {
+             // Still show the person info even without template - user can provide template selection
+             conversation.handlePersonSelected(response.matchedRecord as EmployeeRecord, null);
+             setSelectedPersonRecord(response.matchedRecord as EmployeeRecord);
+             setShowPersonInfo(true);
+           }
+         }
+       }
 
     } catch (error) {
       console.error('Chat error:', error);

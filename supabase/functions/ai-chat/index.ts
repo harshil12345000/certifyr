@@ -304,6 +304,16 @@ EXAMPLE INCORRECT FLOW (DO NOT DO THIS):
 25. ALWAYS use the FULL NAME from the data. Never abbreviate or use only first names.
 
 26. If you have all the information needed (from data + user input + org info), generate the document immediately without asking unnecessary follow-up questions.
+
+27. TASK COMPLETION - CRITICAL: Your task is NOT complete until the document is GENERATED. Showing "Known Information" is only step 1. You MUST always follow through:
+    Step 1: Show Known Information from the record.
+    Step 2: Ask for ONLY the missing fields not in the record (in one message).
+    Step 3: Once the user provides answers, IMMEDIATELY generate the document using GENERATE_DOCUMENT format.
+    NEVER stop after step 1 or step 2. Always drive toward document generation.
+
+28. When the user answers your missing-field questions, do NOT ask again or show info again. Immediately proceed to GENERATE_DOCUMENT.
+
+29. The interactive UI will collect missing fields from the user — so you do NOT need to wait for another message. As soon as the user submits the field collection form, their answers will be sent back to you. Then GENERATE_DOCUMENT immediately.
 `;
 
   return prompt;
@@ -536,10 +546,15 @@ serve(async (req) => {
       );
     }
 
-    return new Response(
-      JSON.stringify({ type: "response", message: aiResponse }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      return new Response(
+        JSON.stringify({
+          type: "response",
+          message: aiResponse,
+          // Return the matched employee record so the client can show interactive field collection
+          matchedRecord: employeeRecord || null,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
   } catch (error) {
     console.error("ai-chat error:", error);
     return new Response(

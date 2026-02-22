@@ -39,7 +39,7 @@ export async function sendChatMessage(
   contextCountry?: string,
   organizationId?: string,
   isFirstMessage?: boolean,
-): Promise<{ type: string; message: string; matches?: { name: string; id: string; department: string }[]; templateId?: string }> {
+): Promise<{ type: string; message: string; matches?: { name: string; id: string; department: string }[]; templateId?: string; matchedRecord?: Record<string, unknown> | null }> {
   const templates = getTemplatesWithFields();
 
   const { data, error } = await supabase.functions.invoke('ai-chat', {

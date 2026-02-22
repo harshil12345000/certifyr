@@ -77,15 +77,36 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
   const templates = useMemo(() => getTemplatesWithFields(), []);
   const stableMissingFields = useRef<string[]>([]);
 
-  // Keep stableMissingFields in sync
-  useEffect(() => {
-    if (showPersonInfo && conversation.missingFields.length > 0 && stableMissingFields.current.length === 0) {
-      stableMissingFields.current = [...conversation.missingFields];
-    }
-    if (!showPersonInfo) {
-      stableMissingFields.current = [];
-    }
-  }, [showPersonInfo, conversation.missingFields]);
+    // Keep stableMissingFields in sync
+    useEffect(() => {
+      if (showPersonInfo && conversation.missingFields.length > 0 && stableMissingFields.current.length === 0) {
+        stableMissingFields.current = [...conversation.missingFields];
+      }
+      if (!showPersonInfo) {
+        stableMissingFields.current = [];
+      }
+    }, [showPersonInfo, conversation.missingFields]);
+
+    // Auto-generate when person is selected, template is set, and there are no missing fields
+    const autoGenerateRef = useRef(false);
+    const handleFieldSubmitRef = useRef<() => Promise<void>>(async () => {});
+    useEffect(() => {
+      if (
+        showPersonInfo &&
+        conversation.state.selectedRecord &&
+        conversation.state.templateId &&
+        conversation.missingFields.length === 0 &&
+        !autoGenerateRef.current &&
+        !isGenerating
+      ) {
+        autoGenerateRef.current = true;
+        handleFieldSubmitRef.current();
+      }
+      if (!showPersonInfo) {
+        autoGenerateRef.current = false;
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showPersonInfo, conversation.state.selectedRecord, conversation.state.templateId, conversation.missingFields.length, isGenerating]);
 
   const orgInfo = useMemo<OrgInfo>(() => ({
     name: organizationDetails?.name || 'Unknown Organization',
@@ -253,11 +274,14 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
     const today = new Date();
     docData.date = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
 
-    await generateDocument(templateId, docData);
-    conversation.resetConversation();
-    setShowPersonInfo(false);
-    setSelectedPersonRecord(null);
-  }, [conversation, templates, generateDocument]);
+      await generateDocument(templateId, docData);
+      conversation.resetConversation();
+      setShowPersonInfo(false);
+      setSelectedPersonRecord(null);
+    }, [conversation, templates, generateDocument]);
+
+    // Keep ref in sync
+    handleFieldSubmitRef.current = handleFieldSubmit;
 
   const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isGenerating) return;
@@ -325,21 +349,34 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
       const aiContent = response.message || '';
       if (!aiContent.trim()) throw new Error('Empty response from AI');
 
-      const parsed = parseGenerationResponse(aiContent);
-      if (parsed) {
-        setIsDocumentGeneration(true);
-        setLoadingMessage('Generating document...');
-        const { templateId, data } = parsed;
-        const recipientName = data.fullName || data.name || 'Document';
-        const templateLabel = templateId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        const queryString = new URLSearchParams(data).toString();
-        const docLink = `/documents/${templateId}?${queryString}`;
-        await addMessage({ role: 'assistant', content: `GENERATED_LINK:${templateLabel}:${recipientName}:${docLink}`, timestamp: Date.now() });
-        navigate(docLink);
-        toast.success(`Opening ${templateLabel} for ${recipientName}`);
-      } else {
-        await addMessage({ role: 'assistant', content: aiContent, timestamp: Date.now() });
-      }
+        const parsed = parseGenerationResponse(aiContent);
+        if (parsed) {
+          setIsDocumentGeneration(true);
+          setLoadingMessage('Generating document...');
+          const { templateId, data } = parsed;
+          const recipientName = data.fullName || data.name || 'Document';
+          const templateLabel = templateId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          const queryString = new URLSearchParams(data).toString();
+          const docLink = `/documents/${templateId}?${queryString}`;
+          await addMessage({ role: 'assistant', content: `GENERATED_LINK:${templateLabel}:${recipientName}:${docLink}`, timestamp: Date.now() });
+          navigate(docLink);
+          toast.success(`Opening ${templateLabel} for ${recipientName}`);
+        } else {
+          await addMessage({ role: 'assistant', content: aiContent, timestamp: Date.now() });
+
+          // If the AI returned a matched employee record AND the response contains Known/Missing info,
+          // activate the interactive field collection flow so the user doesn't get stuck.
+          const hasKnownInfoSection = /###?\s*Known Information/i.test(aiContent);
+          if (response.matchedRecord && hasKnownInfoSection) {
+            const { templateId: msgTemplate } = conversation.processUserMessage(message);
+            const resolvedTemplate = detectedTemplate || msgTemplate;
+            if (resolvedTemplate) {
+              conversation.handlePersonSelected(response.matchedRecord as EmployeeRecord, resolvedTemplate);
+              setSelectedPersonRecord(response.matchedRecord as EmployeeRecord);
+              setShowPersonInfo(true);
+            }
+          }
+        }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Failed to get response';
       await addMessage({ role: 'assistant', content: `Error: ${errMsg}`, timestamp: Date.now() });
