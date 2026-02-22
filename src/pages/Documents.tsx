@@ -160,16 +160,25 @@ const Documents = () => {
   // Check document limit on mount for Basic users
   useEffect(() => {
     const checkDocumentLimit = async () => {
-      const isBasicFree = subscription?.active_plan === 'basic' && subscription?.subscription_status === 'active';
-      if (isBasicFree && user?.id) {
+      if (!user?.id) return;
+      
+      // Check if user is on Basic plan
+      const isBasicPlan = subscription?.active_plan === 'basic';
+      
+      if (isBasicPlan && user.id) {
         const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
-        if (limitData && !limitData.allowed) {
+        
+        // Show upgrade popup if limit reached OR if they've already used 25+ docs
+        if (limitData && (!limitData.allowed || limitData.used >= 25)) {
           setShowUpgradePaywall(true);
         }
       }
     };
-    if (subscription) {
-      checkDocumentLimit();
+    
+    // Run check after a short delay to ensure subscription is loaded
+    if (subscription !== undefined) {
+      const timer = setTimeout(checkDocumentLimit, 100);
+      return () => clearTimeout(timer);
     }
   }, [subscription, user]);
 

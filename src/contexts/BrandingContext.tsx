@@ -7,6 +7,7 @@ import {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 
 interface OrganizationDetails {
   name: string | null;
@@ -56,6 +57,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
   const [enableQr, setEnableQr] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { activePlan, hasFeature } = usePlanFeatures();
 
   const loadBrandingData = async () => {
     // If organizationId is provided, use it directly (for employee portal)
@@ -111,11 +113,13 @@ export function BrandingProvider({ children, organizationId }: { children: React
         };
         console.log("Loaded organization details:", orgDetails);
         setOrganizationDetails(orgDetails);
-        setEnableQr(orgData.enable_qr ?? true);
+        const qrEnabledByOrg = orgData.enable_qr ?? true;
+        const qrEnabledByPlan = hasFeature('qrVerification');
+        setEnableQr(qrEnabledByOrg && qrEnabledByPlan);
       } else {
         console.log("No organization details found");
         setOrganizationDetails(null);
-        setEnableQr(true);
+        setEnableQr(hasFeature('qrVerification'));
       }
 
       // Fetch branding files (logo only - signature is now per-admin)
@@ -202,8 +206,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
 
   useEffect(() => {
     loadBrandingData();
-    // Only depend on user.id if orgId is not provided
-  }, [user?.id, organizationId]);
+  }, [user?.id, organizationId, activePlan]);
 
   const refreshBranding = async () => {
     await loadBrandingData();

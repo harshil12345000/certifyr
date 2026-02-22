@@ -11,118 +11,125 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TemplatesSkeleton } from "@/components/dashboard/TemplatesSkeleton";
 import { documentConfigs } from "@/config/documentConfigs";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
 
 // Document metadata for UI display
 const documentMetadata = [{
   id: "bonafide-1",
   configKey: "bonafide",
-  category: "Academic",
-  usageCount: 45
+  category: "Academic"
 }, {
   id: "character-1",
   configKey: "character",
-  category: "Academic",
-  usageCount: 42
+  category: "Academic"
 }, {
   id: "experience-1",
   configKey: "experience",
-  category: "Employment",
-  usageCount: 38
+  category: "Employment"
 }, {
   id: "transfer-1",
   configKey: "transfer",
-  category: "Academic",
-  usageCount: 25
+  category: "Academic"
 }, {
   id: "academic-transcript-1",
   configKey: "academic-transcript",
-  category: "Academic",
-  usageCount: 35
+  category: "Academic"
 }, {
   id: "completion-1",
   configKey: "completion",
-  category: "Academic",
-  usageCount: 28
+  category: "Academic"
 }, {
   id: "income-1",
   configKey: "income",
-  category: "Employment",
-  usageCount: 23
+  category: "Employment"
 }, {
   id: "maternity-leave-1",
   configKey: "maternity-leave",
-  category: "Employment",
-  usageCount: 22
+  category: "Employment"
 }, {
   id: "offer-letter-1",
   configKey: "offer-letter",
-  category: "Employment",
-  usageCount: 18
+  category: "Employment"
 }, {
   id: "noc-visa-1",
   configKey: "noc-visa",
-  category: "Travel",
-  usageCount: 20
+  category: "Travel"
 }, {
   id: "bank-verification-1",
   configKey: "bank-verification",
-  category: "Financial",
-  usageCount: 19
+  category: "Financial"
 }, {
   id: "address-proof-1",
   configKey: "address-proof",
-  category: "Legal",
-  usageCount: 17
+  category: "Legal"
 }, {
   id: "nda-1",
   configKey: "nda",
-  category: "Corporate",
-  usageCount: 16
+  category: "Corporate"
 }, {
   id: "employment-agreement-1",
   configKey: "employment-agreement",
-  category: "Corporate",
-  usageCount: 14
+  category: "Corporate"
 }, {
   id: "articles-incorporation-1",
   configKey: "articles-incorporation",
-  category: "Corporate",
-  usageCount: 15
+  category: "Corporate"
 }, {
   id: "corporate-bylaws-1",
   configKey: "corporate-bylaws",
-  category: "Corporate",
-  usageCount: 12
+  category: "Corporate"
 }, {
   id: "founders-agreement-1",
   configKey: "founders-agreement",
-  category: "Corporate",
-  usageCount: 10
+  category: "Corporate"
 }, {
   id: "stock-purchase-agreement-1",
   configKey: "stock-purchase-agreement",
-  category: "Corporate",
-  usageCount: 8
+  category: "Corporate"
 }, {
   id: "embassy-attestation-1",
   configKey: "embassy-attestation",
-  category: "Travel",
-  usageCount: 31
+  category: "Travel"
 }, {
   id: "embassy-attestation-letter-1",
   configKey: "embassy-attestation-letter",
-  category: "Travel",
-  usageCount: 26
+  category: "Travel"
 }];
 const NewDocuments = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [orgType, setOrgType] = useState<string>("");
+  const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
+
+  // Check document limit on mount for Basic users
+  useEffect(() => {
+    const checkDocumentLimit = async () => {
+      if (!user?.id) return;
+      
+      // Check if user is on Basic plan
+      const isBasicPlan = subscription?.active_plan === 'basic';
+      
+      if (isBasicPlan && user.id) {
+        const { data: limitData } = await supabase.rpc('check_document_limit', { p_user_id: user.id });
+        
+        // Show upgrade popup if limit reached OR if they've already used 25+ docs
+        if (limitData && (!limitData.allowed || limitData.used >= 25)) {
+          setShowUpgradePaywall(true);
+        }
+      }
+    };
+    
+    // Run check after a short delay to ensure subscription is loaded
+    if (subscription !== undefined) {
+      const timer = setTimeout(checkDocumentLimit, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [subscription, user]);
 
   useEffect(() => {
     const fetchOrgType = async () => {
@@ -250,6 +257,15 @@ const NewDocuments = () => {
         
         
       </div>
+
+      <UpgradePrompt 
+        requiredPlan="pro" 
+        variant="force"
+        open={showUpgradePaywall}
+        onOpenChange={setShowUpgradePaywall}
+      />
     </DashboardLayout>;
+  );
 };
+
 export default NewDocuments;
