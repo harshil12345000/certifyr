@@ -1,0 +1,2894 @@
+
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+
+COMMENT ON SCHEMA "public" IS 'standard public schema';
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE TYPE "public"."employee_status" AS ENUM (
+    'pending',
+    'approved',
+    'rejected'
+);
+
+
+ALTER TYPE "public"."employee_status" OWNER TO "postgres";
+
+
+CREATE TYPE "public"."request_status" AS ENUM (
+    'pending',
+    'approved',
+    'rejected'
+);
+
+
+ALTER TYPE "public"."request_status" OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."complete_user_onboarding"("p_user_id" "uuid", "p_organization_name" "text", "p_organization_address" "text" DEFAULT NULL::"text", "p_organization_type" "text" DEFAULT NULL::"text", "p_organization_size" "text" DEFAULT NULL::"text", "p_organization_website" "text" DEFAULT NULL::"text", "p_organization_location" "text" DEFAULT NULL::"text", "p_plan" "text" DEFAULT 'basic'::"text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_org_id UUID;
+  v_portal_slug TEXT;
+  v_existing_membership RECORD;
+BEGIN
+  -- Check if user already has an organization
+  SELECT om.organization_id INTO v_existing_membership
+  FROM organization_members om
+  WHERE om.user_id = p_user_id
+    AND om.role = 'admin'
+    AND om.status = 'active'
+  LIMIT 1;
+
+  IF v_existing_membership.organization_id IS NOT NULL THEN
+    RETURN json_build_object(
+      'success', true,
+      'message', 'User already has an organization',
+      'organization_id', v_existing_membership.organization_id
+    );
+  END IF;
+
+  -- Generate unique portal slug
+  v_portal_slug := lower(regexp_replace(p_organization_name, '[^a-zA-Z0-9]+', '-', 'g'));
+  v_portal_slug := trim(both '-' from v_portal_slug);
+  
+  -- Ensure it starts with a letter
+  IF v_portal_slug !~ '^[a-z]' THEN
+    v_portal_slug := 'org-' || v_portal_slug;
+  END IF;
+  
+  -- Ensure minimum length
+  IF length(v_portal_slug) < 3 THEN
+    v_portal_slug := v_portal_slug || '-org';
+  END IF;
+  
+  -- Make unique by appending counter if needed
+  DECLARE
+    v_counter INT := 1;
+    v_base_slug TEXT := v_portal_slug;
+  BEGIN
+    WHILE EXISTS (SELECT 1 FROM organizations WHERE portal_slug = v_portal_slug) LOOP
+      v_counter := v_counter + 1;
+      v_portal_slug := v_base_slug || '-' || v_counter;
+    END LOOP;
+  END;
+
+  -- Create organization
+  INSERT INTO organizations (name, address, portal_slug)
+  VALUES (p_organization_name, p_organization_address, v_portal_slug)
+  RETURNING id INTO v_org_id;
+
+  -- Add user as admin member
+  INSERT INTO organization_members (organization_id, user_id, role, status)
+  VALUES (v_org_id, p_user_id, 'admin', 'active');
+
+  -- Initialize user statistics
+  INSERT INTO user_statistics (user_id, organization_id, documents_created, documents_signed, pending_documents, portal_members, requested_documents, total_verifications)
+  VALUES (p_user_id, v_org_id, 0, 0, 0, 0, 0, 0)
+  ON CONFLICT (user_id, organization_id) DO NOTHING;
+
+  -- Update user profile with organization info
+  UPDATE user_profiles
+  SET 
+    organization_name = p_organization_name,
+    organization_type = p_organization_type,
+    organization_size = p_organization_size,
+    organization_website = p_organization_website,
+    organization_location = p_organization_location,
+    plan = p_plan,
+    updated_at = now()
+  WHERE user_id = p_user_id;
+
+  RETURN json_build_object(
+    'success', true,
+    'message', 'Organization created successfully',
+    'organization_id', v_org_id,
+    'portal_slug', v_portal_slug
+  );
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN json_build_object(
+      'success', false,
+      'error', SQLERRM
+    );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."complete_user_onboarding"("p_user_id" "uuid", "p_organization_name" "text", "p_organization_address" "text", "p_organization_type" "text", "p_organization_size" "text", "p_organization_website" "text", "p_organization_location" "text", "p_plan" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."delete_user_account"() RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $_$
+DECLARE
+  current_user_id uuid;
+  table_record RECORD;
+  deletion_count integer := 0;
+  total_deleted integer := 0;
+BEGIN
+  -- Get the current authenticated user
+  current_user_id := auth.uid();
+  
+  -- Check if user is authenticated
+  IF current_user_id IS NULL THEN
+    RETURN json_build_object('success', false, 'error', 'Not authenticated');
+  END IF;
+  
+  RAISE NOTICE 'Starting deletion for user: %', current_user_id;
+  
+  -- EXPLICITLY delete from verified_documents first (this is causing the issue)
+  BEGIN
+    DELETE FROM public.verified_documents WHERE user_id = current_user_id;
+    GET DIAGNOSTICS deletion_count = ROW_COUNT;
+    total_deleted := total_deleted + deletion_count;
+    RAISE NOTICE 'Deleted % rows from verified_documents', deletion_count;
+  EXCEPTION
+    WHEN undefined_table THEN
+      RAISE NOTICE 'Table verified_documents does not exist';
+    WHEN undefined_column THEN
+      -- Try with different column names
+      BEGIN
+        DELETE FROM public.verified_documents WHERE id = current_user_id;
+        GET DIAGNOSTICS deletion_count = ROW_COUNT;
+        total_deleted := total_deleted + deletion_count;
+        RAISE NOTICE 'Deleted % rows from verified_documents using id column', deletion_count;
+      EXCEPTION
+        WHEN OTHERS THEN
+          RAISE NOTICE 'Could not delete from verified_documents: %', SQLERRM;
+      END;
+    WHEN OTHERS THEN
+      RAISE NOTICE 'Error with verified_documents: %', SQLERRM;
+  END;
+  
+  -- Find and delete from all tables in public schema that have a user_id column
+  FOR table_record IN 
+    SELECT table_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND column_name = 'user_id'
+    AND table_name != 'verified_documents' -- Already handled above
+  LOOP
+    BEGIN
+      EXECUTE format('DELETE FROM public.%I WHERE user_id = $1', table_record.table_name) 
+      USING current_user_id;
+      GET DIAGNOSTICS deletion_count = ROW_COUNT;
+      total_deleted := total_deleted + deletion_count;
+      RAISE NOTICE 'Deleted % rows from %', deletion_count, table_record.table_name;
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE NOTICE 'Error deleting from %: %', table_record.table_name, SQLERRM;
+    END;
+  END LOOP;
+  
+  -- Check for tables with 'id' column that might reference the user
+  FOR table_record IN 
+    SELECT table_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND column_name = 'id'
+    AND table_name IN ('profiles', 'user_profiles')
+  LOOP
+    BEGIN
+      EXECUTE format('DELETE FROM public.%I WHERE id = $1', table_record.table_name) 
+      USING current_user_id;
+      GET DIAGNOSTICS deletion_count = ROW_COUNT;
+      total_deleted := total_deleted + deletion_count;
+      RAISE NOTICE 'Deleted % rows from %', deletion_count, table_record.table_name;
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE NOTICE 'Error deleting from %: %', table_record.table_name, SQLERRM;
+    END;
+  END LOOP;
+  
+  -- Check for tables with owner_id column
+  FOR table_record IN 
+    SELECT table_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND column_name = 'owner_id'
+  LOOP
+    BEGIN
+      EXECUTE format('DELETE FROM public.%I WHERE owner_id = $1', table_record.table_name) 
+      USING current_user_id;
+      GET DIAGNOSTICS deletion_count = ROW_COUNT;
+      total_deleted := total_deleted + deletion_count;
+      RAISE NOTICE 'Deleted % rows from %', deletion_count, table_record.table_name;
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE NOTICE 'Error deleting from %: %', table_record.table_name, SQLERRM;
+    END;
+  END LOOP;
+  
+  -- Check for tables with created_by column
+  FOR table_record IN 
+    SELECT table_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND column_name = 'created_by'
+  LOOP
+    BEGIN
+      EXECUTE format('DELETE FROM public.%I WHERE created_by = $1', table_record.table_name) 
+      USING current_user_id;
+      GET DIAGNOSTICS deletion_count = ROW_COUNT;
+      total_deleted := total_deleted + deletion_count;
+      RAISE NOTICE 'Deleted % rows from %', deletion_count, table_record.table_name;
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE NOTICE 'Error deleting from %: %', table_record.table_name, SQLERRM;
+    END;
+  END LOOP;
+  
+  RAISE NOTICE 'Total rows deleted from all tables: %', total_deleted;
+  
+  -- Finally, delete the user from auth.users
+  BEGIN
+    DELETE FROM auth.users WHERE id = current_user_id;
+    RAISE NOTICE 'Successfully deleted user from auth.users';
+  EXCEPTION
+    WHEN OTHERS THEN
+      RETURN json_build_object(
+        'success', false, 
+        'error', 'Failed to delete user from auth.users: ' || SQLERRM,
+        'rows_deleted', total_deleted
+      );
+  END;
+  
+  RETURN json_build_object(
+    'success', true, 
+    'message', 'Account deleted successfully',
+    'rows_deleted', total_deleted
+  );
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN json_build_object('success', false, 'error', SQLERRM);
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."delete_user_account"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."generate_unique_slug"("org_name" "text", "org_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  base_slug TEXT;
+  final_slug TEXT;
+  counter INTEGER := 1;
+BEGIN
+  -- Convert name to lowercase, replace spaces and special chars with hyphens
+  base_slug := lower(regexp_replace(org_name, '[^a-zA-Z0-9]+', '-', 'g'));
+  -- Remove leading/trailing hyphens
+  base_slug := trim(both '-' from base_slug);
+  -- Ensure it starts with a letter
+  IF base_slug !~ '^[a-z]' THEN
+    base_slug := 'org-' || base_slug;
+  END IF;
+  
+  final_slug := base_slug;
+  
+  -- Check if slug exists and increment counter if needed
+  WHILE EXISTS (
+    SELECT 1 FROM organizations 
+    WHERE portal_slug = final_slug 
+    AND id != org_id
+  ) LOOP
+    counter := counter + 1;
+    final_slug := base_slug || '-' || counter;
+  END LOOP;
+  
+  RETURN final_slug;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."generate_unique_slug"("org_name" "text", "org_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_active_plan"("check_user_id" "uuid") RETURNS "text"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  SELECT active_plan FROM subscriptions
+  WHERE user_id = check_user_id
+  AND active_plan IS NOT NULL
+  AND (
+    subscription_status = 'active'
+    OR (subscription_status = 'trialing' AND current_period_end > now())
+  )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."get_active_plan"("check_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_organization_statistics"("org_id" "uuid") RETURNS TABLE("documents_created" bigint, "portal_members" bigint, "requested_documents" bigint, "total_verifications" bigint)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    -- Documents Created: count all preview generations (Update Preview clicks)
+    (SELECT COUNT(*) 
+     FROM preview_generations 
+     WHERE organization_id = org_id)::BIGINT,
+    
+    -- Portal Members: count approved employees in request portal
+    (SELECT COUNT(*) 
+     FROM request_portal_employees 
+     WHERE organization_id = org_id 
+     AND status = 'approved')::BIGINT,
+    
+    -- Requested Documents: count all document requests
+    (SELECT COUNT(*) 
+     FROM document_requests 
+     WHERE organization_id = org_id)::BIGINT,
+    
+    -- Total Verifications: count all QR scans and verification page views
+    (SELECT COUNT(*) 
+     FROM qr_verification_logs 
+     WHERE organization_id = org_id)::BIGINT;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_organization_statistics"("org_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_portal_info"("p_slug" "text") RETURNS TABLE("organization_id" "uuid", "enabled" boolean, "portal_url" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  SELECT 
+    rps.organization_id,
+    rps.enabled,
+    rps.portal_url
+  FROM request_portal_settings rps
+  JOIN organizations o ON o.id = rps.organization_id
+  WHERE o.portal_slug = p_slug AND rps.enabled = true;
+$$;
+
+
+ALTER FUNCTION "public"."get_portal_info"("p_slug" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_user_organization_id"("user_id" "uuid") RETURNS "uuid"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    AS $_$
+  SELECT organization_id 
+  FROM organization_members 
+  WHERE user_id = $1 
+  AND role = 'admin'
+  AND status = 'active'
+  LIMIT 1;
+$_$;
+
+
+ALTER FUNCTION "public"."get_user_organization_id"("user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_user_organizations"("check_user_id" "uuid") RETURNS TABLE("organization_id" "uuid", "role" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    AS $$
+  SELECT om.organization_id, om.role
+  FROM organization_members om
+  WHERE om.user_id = check_user_id;
+$$;
+
+
+ALTER FUNCTION "public"."get_user_organizations"("check_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  pending_invite RECORD;
+BEGIN
+  -- Check for pending organization invitation
+  SELECT * INTO pending_invite
+  FROM public.organization_invites
+  WHERE email = NEW.email
+    AND status = 'pending'
+    AND expires_at > NOW()
+  ORDER BY invited_at DESC
+  LIMIT 1;
+
+  -- If there's a pending invitation, add user to organization
+  IF pending_invite.id IS NOT NULL THEN
+    -- Add user to organization members
+    INSERT INTO public.organization_members (
+      user_id,
+      organization_id,
+      role,
+      status,
+      invited_email
+    ) VALUES (
+      NEW.id,
+      pending_invite.organization_id,
+      pending_invite.role,
+      'active',
+      NEW.email
+    )
+    ON CONFLICT (user_id, organization_id) DO UPDATE SET
+      role = EXCLUDED.role,
+      status = 'active',
+      invited_email = EXCLUDED.invited_email;
+
+    -- Mark invitation as accepted
+    UPDATE public.organization_invites
+    SET status = 'accepted'
+    WHERE id = pending_invite.id;
+
+    -- Initialize user statistics for this organization
+    INSERT INTO public.user_statistics (
+      user_id,
+      organization_id,
+      documents_created,
+      documents_signed,
+      pending_documents,
+      portal_members,
+      requested_documents,
+      total_verifications
+    ) VALUES (
+      NEW.id,
+      pending_invite.organization_id,
+      0, 0, 0, 0, 0, 0
+    )
+    ON CONFLICT (user_id, organization_id) DO NOTHING;
+
+  ELSE
+    -- No invitation found, create user profile
+    INSERT INTO public.user_profiles (
+      user_id,
+      first_name,
+      last_name,
+      email,
+      phone_number,
+      organization_name,
+      organization_type,
+      organization_size,
+      organization_website,
+      organization_location,
+      plan
+    ) VALUES (
+      NEW.id,
+      COALESCE(SPLIT_PART(NEW.raw_user_meta_data->>'full_name', ' ', 1), 'User'),
+      COALESCE(NULLIF(SPLIT_PART(NEW.raw_user_meta_data->>'full_name', ' ', 2), ''), ''),
+      NEW.email,
+      NEW.raw_user_meta_data->>'phone_number',
+      NEW.raw_user_meta_data->>'organization_name',
+      CASE 
+        WHEN NEW.raw_user_meta_data->>'organization_type' = 'Other' 
+        THEN NEW.raw_user_meta_data->>'organization_type_other'
+        ELSE NEW.raw_user_meta_data->>'organization_type'
+      END,
+      NEW.raw_user_meta_data->>'organization_size',
+      NEW.raw_user_meta_data->>'organization_website',
+      NEW.raw_user_meta_data->>'organization_location',
+      COALESCE(NEW.raw_user_meta_data->>'selectedPlan', 'basic')
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+      email = EXCLUDED.email,
+      phone_number = EXCLUDED.phone_number,
+      organization_name = EXCLUDED.organization_name,
+      organization_type = EXCLUDED.organization_type,
+      organization_size = EXCLUDED.organization_size,
+      organization_website = EXCLUDED.organization_website,
+      organization_location = EXCLUDED.organization_location,
+      plan = COALESCE(EXCLUDED.plan, user_profiles.plan),
+      updated_at = now();
+  END IF;
+  
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log the error but don't block user creation
+    RAISE LOG 'Error in handle_new_user: %', SQLERRM;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."has_active_subscription"("check_user_id" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM subscriptions
+    WHERE user_id = check_user_id
+    AND active_plan IS NOT NULL
+    AND (
+      subscription_status = 'active'
+      OR (subscription_status = 'trialing' AND current_period_end > now())
+    )
+  );
+$$;
+
+
+ALTER FUNCTION "public"."has_active_subscription"("check_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."hash_owner_password"("p_password" "text") RETURNS "text"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'extensions'
+    AS $$
+  SELECT crypt(p_password, gen_salt('bf'));
+$$;
+
+
+ALTER FUNCTION "public"."hash_owner_password"("p_password" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."increment_user_stat"("p_user_id" "uuid", "p_organization_id" "uuid", "p_stat_field" "text") RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $_$
+BEGIN
+  -- Handle null organization_id case
+  IF p_organization_id IS NULL THEN
+    -- Insert or update without organization_id (backward compatibility)
+    EXECUTE format('insert into user_statistics (user_id, %I) values ($1, 1)
+      on conflict (user_id) do update set %I = user_statistics.%I + 1, updated_at = now()', p_stat_field, p_stat_field, p_stat_field)
+    USING p_user_id;
+  ELSE
+    -- Insert or update with organization_id
+    EXECUTE format('insert into user_statistics (user_id, organization_id, %I) values ($1, $2, 1)
+      on conflict (user_id, organization_id) do update set %I = user_statistics.%I + 1, updated_at = now()', p_stat_field, p_stat_field, p_stat_field)
+    USING p_user_id, p_organization_id;
+  END IF;
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."increment_user_stat"("p_user_id" "uuid", "p_organization_id" "uuid", "p_stat_field" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_org_member_admin"("check_user_id" "uuid", "check_org_id" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 
+    FROM organization_members 
+    WHERE user_id = check_user_id 
+    AND organization_id = check_org_id 
+    AND role = 'admin' 
+    AND status = 'active'
+  );
+$$;
+
+
+ALTER FUNCTION "public"."is_org_member_admin"("check_user_id" "uuid", "check_org_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_organization_admin"("check_user_id" "uuid", "check_org_id" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 
+    FROM organization_members 
+    WHERE user_id = check_user_id 
+    AND organization_id = check_org_id 
+    AND role = 'admin'
+  );
+$$;
+
+
+ALTER FUNCTION "public"."is_organization_admin"("check_user_id" "uuid", "check_org_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_user_admin"() RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 
+    FROM organization_members 
+    WHERE user_id = auth.uid() 
+    AND role = 'admin'
+  );
+$$;
+
+
+ALTER FUNCTION "public"."is_user_admin"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_user_admin_of_org"("user_id" "uuid", "org_id" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    AS $_$
+  SELECT EXISTS (
+    SELECT 1 
+    FROM organization_members 
+    WHERE user_id = $1 
+    AND organization_id = $2 
+    AND role = 'admin'
+  );
+$_$;
+
+
+ALTER FUNCTION "public"."is_user_admin_of_org"("user_id" "uuid", "org_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."prevent_seal_upload"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  IF NEW.name = 'seal' THEN
+    RAISE EXCEPTION 'Seal uploads are no longer supported';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."prevent_seal_upload"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  INSERT INTO subscriptions (
+    user_id,
+    active_plan,
+    polar_customer_id,
+    polar_subscription_id,
+    subscription_status,
+    current_period_start,
+    current_period_end
+  ) VALUES (
+    p_user_id,
+    p_active_plan,
+    p_polar_customer_id,
+    p_polar_subscription_id,
+    p_subscription_status,
+    p_current_period_start,
+    p_current_period_end
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    active_plan = EXCLUDED.active_plan,
+    polar_customer_id = EXCLUDED.polar_customer_id,
+    polar_subscription_id = EXCLUDED.polar_subscription_id,
+    subscription_status = EXCLUDED.subscription_status,
+    current_period_start = EXCLUDED.current_period_start,
+    current_period_end = EXCLUDED.current_period_end,
+    updated_at = now();
+    
+  RETURN json_build_object('success', true);
+EXCEPTION WHEN OTHERS THEN
+  RETURN json_build_object('success', false, 'error', SQLERRM);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_trial_start" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_trial_end" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  INSERT INTO subscriptions (
+    user_id,
+    active_plan,
+    polar_customer_id,
+    polar_subscription_id,
+    subscription_status,
+    current_period_start,
+    current_period_end,
+    trial_start,
+    trial_end
+  ) VALUES (
+    p_user_id,
+    p_active_plan,
+    p_polar_customer_id,
+    p_polar_subscription_id,
+    p_subscription_status,
+    p_current_period_start,
+    p_current_period_end,
+    p_trial_start,
+    p_trial_end
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    active_plan = EXCLUDED.active_plan,
+    polar_customer_id = EXCLUDED.polar_customer_id,
+    polar_subscription_id = EXCLUDED.polar_subscription_id,
+    subscription_status = EXCLUDED.subscription_status,
+    current_period_start = EXCLUDED.current_period_start,
+    current_period_end = EXCLUDED.current_period_end,
+    trial_start = COALESCE(EXCLUDED.trial_start, subscriptions.trial_start),
+    trial_end = COALESCE(EXCLUDED.trial_end, subscriptions.trial_end),
+    updated_at = now();
+    
+  RETURN json_build_object('success', true);
+EXCEPTION WHEN OTHERS THEN
+  RETURN json_build_object('success', false, 'error', SQLERRM);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_trial_start" timestamp with time zone, "p_trial_end" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_user_statistics_on_documents"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+begin
+  insert into user_statistics (user_id, organization_id, documents_created, documents_signed, downloaded_documents, total_verifications, updated_at)
+  values (
+    new.user_id,
+    new.organization_id,
+    (select count(*) from documents where user_id = new.user_id and organization_id = new.organization_id),
+    (select count(*) from documents where user_id = new.user_id and organization_id = new.organization_id and status = 'Signed'),
+    (select count(*) from documents where user_id = new.user_id and organization_id = new.organization_id and (status = 'Created' or status = 'Sent')),
+    coalesce((select total_verifications from user_statistics where user_id = new.user_id and organization_id = new.organization_id), 0),
+    now()
+  )
+  on conflict (user_id, organization_id) do update set
+    documents_created = excluded.documents_created,
+    documents_signed = excluded.documents_signed,
+    downloaded_documents = excluded.downloaded_documents,
+    updated_at = now();
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."update_user_statistics_on_documents"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_user_statistics_on_verifications"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+begin
+  -- Guard against NULL user_id to avoid NOT NULL constraint violations
+  IF new.user_id IS NULL THEN
+    RETURN new;
+  END IF;
+
+  insert into user_statistics (user_id, documents_created, documents_signed, pending_documents, total_verifications, updated_at)
+  values (
+    new.user_id,
+    coalesce((select documents_created from user_statistics where user_id = new.user_id), 0),
+    coalesce((select documents_signed from user_statistics where user_id = new.user_id), 0),
+    coalesce((select pending_documents from user_statistics where user_id = new.user_id), 0),
+    (select count(*) from verified_documents where user_id = new.user_id),
+    now()
+  )
+  on conflict (user_id) do update set
+    total_verifications = excluded.total_verifications,
+    updated_at = now();
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."update_user_statistics_on_verifications"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_user_statistics_on_verified_documents"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+begin
+  update user_statistics
+  set total_verifications = (select count(*) from verified_documents where user_id = new.user_id and organization_id = new.organization_id),
+      updated_at = now()
+  where user_id = new.user_id and organization_id = new.organization_id;
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."update_user_statistics_on_verified_documents"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."user_belongs_to_organization"("user_uuid" "uuid", "org_uuid" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM organization_members 
+    WHERE user_id = user_uuid 
+    AND organization_id = org_uuid 
+    AND status = 'active'
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."user_belongs_to_organization"("user_uuid" "uuid", "org_uuid" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."user_is_org_admin"("user_uuid" "uuid", "org_uuid" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM organization_members 
+    WHERE user_id = user_uuid 
+    AND organization_id = org_uuid 
+    AND role = 'admin' 
+    AND status = 'active'
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."user_is_org_admin"("user_uuid" "uuid", "org_uuid" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."validate_portal_password"("p_organization_id" "uuid", "p_password" "text") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  stored_hash text;
+BEGIN
+  SELECT password_hash INTO stored_hash
+  FROM request_portal_settings
+  WHERE organization_id = p_organization_id AND enabled = true;
+  
+  IF stored_hash IS NULL THEN
+    RETURN false;
+  END IF;
+  
+  -- Check using pgcrypto crypt function for bcrypt comparison
+  RETURN stored_hash = crypt(p_password, stored_hash);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."validate_portal_password"("p_organization_id" "uuid", "p_password" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."validate_portal_slug"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $_$
+BEGIN
+  -- Force lowercase
+  NEW.portal_slug := lower(NEW.portal_slug);
+  
+  -- Validate format: must start with letter, only lowercase letters, numbers, hyphens, 3-50 chars
+  IF NEW.portal_slug !~ '^[a-z][a-z0-9-]{2,49}$' THEN
+    RAISE EXCEPTION 'Invalid portal slug format. Must start with a letter, contain only lowercase letters, numbers, and hyphens, and be 3-50 characters long.';
+  END IF;
+  
+  RETURN NEW;
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."validate_portal_slug"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."verify_owner_password"("p_email" "text", "p_password" "text") RETURNS boolean
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'extensions'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM owner_credentials
+    WHERE email = p_email
+    AND password_hash = crypt(p_password, password_hash)
+  );
+$$;
+
+
+ALTER FUNCTION "public"."verify_owner_password"("p_email" "text", "p_password" "text") OWNER TO "postgres";
+
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."ai_chat_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "title" "text" DEFAULT 'New Chat'::"text" NOT NULL,
+    "messages" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."ai_chat_sessions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."announcements" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" "text" NOT NULL,
+    "content" "text" NOT NULL,
+    "created_by" "uuid" NOT NULL,
+    "organization_id" "uuid",
+    "is_global" boolean DEFAULT false NOT NULL,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "expires_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."announcements" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."branding_files" (
+    "id" bigint NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "name" "text",
+    "path" "text",
+    "organization_id" "uuid",
+    "uploaded_by" "uuid"
+);
+
+
+ALTER TABLE "public"."branding_files" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."branding_files" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."branding_files_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."document_drafts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid",
+    "name" "text" NOT NULL,
+    "template_id" "text" NOT NULL,
+    "form_data" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."document_drafts" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."document_history" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "document_name" "text" NOT NULL,
+    "form_data" "jsonb" NOT NULL,
+    "template_id" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "is_editable" boolean DEFAULT true,
+    "status" "text" DEFAULT 'draft'::"text"
+);
+
+
+ALTER TABLE "public"."document_history" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."document_requests" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "employee_id" "uuid" NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "template_id" "text" NOT NULL,
+    "template_data" "jsonb" NOT NULL,
+    "status" "public"."request_status" DEFAULT 'pending'::"public"."request_status" NOT NULL,
+    "requested_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "processed_at" timestamp with time zone,
+    "processed_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."document_requests" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."document_verifications" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "verification_hash" character varying(64) NOT NULL,
+    "verified_at" timestamp with time zone DEFAULT "now"(),
+    "ip_address" "inet",
+    "user_agent" "text",
+    "verification_result" character varying(20) NOT NULL,
+    CONSTRAINT "document_verifications_verification_result_check" CHECK ((("verification_result")::"text" = ANY ((ARRAY['valid'::character varying, 'invalid'::character varying, 'expired'::character varying, 'not_found'::character varying])::"text"[])))
+);
+
+
+ALTER TABLE "public"."document_verifications" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."documents" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "type" "text" NOT NULL,
+    "status" "text" NOT NULL,
+    "recipient" "text",
+    "template_id" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "documents_status_check" CHECK (("status" = ANY (ARRAY['Created'::"text", 'Sent'::"text", 'Signed'::"text"])))
+);
+
+
+ALTER TABLE "public"."documents" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."notifications" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "org_id" "uuid" NOT NULL,
+    "type" "text" NOT NULL,
+    "subject" "text" NOT NULL,
+    "body" "text" NOT NULL,
+    "data" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "read_by" "uuid"[] DEFAULT '{}'::"uuid"[]
+);
+
+
+ALTER TABLE "public"."notifications" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organization_data_records" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "data" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."organization_data_records" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organization_data_sources" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "file_name" "text" NOT NULL,
+    "column_names" "text"[] NOT NULL,
+    "record_count" integer DEFAULT 0 NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."organization_data_sources" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organization_invites" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "email" "text" NOT NULL,
+    "role" "text" NOT NULL,
+    "invited_by" "uuid",
+    "invited_at" timestamp with time zone DEFAULT "now"(),
+    "expires_at" timestamp with time zone DEFAULT ("now"() + '7 days'::interval),
+    "status" "text" DEFAULT 'pending'::"text",
+    CONSTRAINT "organization_invites_role_check" CHECK (("role" = ANY (ARRAY['admin'::"text", 'member'::"text"]))),
+    CONSTRAINT "organization_invites_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'expired'::"text"])))
+);
+
+
+ALTER TABLE "public"."organization_invites" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organization_members" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid",
+    "user_id" "uuid",
+    "role" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "invited_email" "text",
+    "status" "text" DEFAULT 'active'::"text",
+    CONSTRAINT "organization_members_role_check" CHECK (("role" = ANY (ARRAY['admin'::"text", 'member'::"text"]))),
+    CONSTRAINT "organization_members_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'active'::"text", 'inactive'::"text"])))
+);
+
+
+ALTER TABLE "public"."organization_members" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organizations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "address" "text",
+    "phone" "text",
+    "email" "text",
+    "portal_slug" "text" NOT NULL,
+    "ai_context_country" "text" DEFAULT 'global'::"text",
+    "enable_qr" boolean DEFAULT true
+);
+
+
+ALTER TABLE "public"."organizations" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."owner_credentials" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "email" "text" NOT NULL,
+    "password_hash" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."owner_credentials" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."preview_generations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "organization_id" "uuid",
+    "template_id" "text" NOT NULL,
+    "action_type" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "preview_generations_action_type_check" CHECK (("action_type" = ANY (ARRAY['generate'::"text", 'update'::"text"])))
+);
+
+
+ALTER TABLE "public"."preview_generations" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."qr_verification_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "verification_hash" character varying NOT NULL,
+    "scanned_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "ip_address" "inet",
+    "user_agent" "text",
+    "verification_result" character varying NOT NULL,
+    "document_id" "uuid",
+    "template_type" character varying,
+    "organization_id" "uuid",
+    "user_id" "uuid",
+    CONSTRAINT "qr_verification_logs_verification_result_check" CHECK ((("verification_result")::"text" = ANY ((ARRAY['verified'::character varying, 'not_found'::character varying, 'expired'::character varying])::"text"[])))
+);
+
+
+ALTER TABLE "public"."qr_verification_logs" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."request_portal_employees" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "full_name" "text" NOT NULL,
+    "phone_number" "text",
+    "employee_id" "text" NOT NULL,
+    "email" "text" NOT NULL,
+    "manager_name" "text",
+    "status" "public"."employee_status" DEFAULT 'pending'::"public"."employee_status" NOT NULL,
+    "registered_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "approved_at" timestamp with time zone,
+    "approved_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "password_hash" "text",
+    "user_id" "uuid"
+);
+
+
+ALTER TABLE "public"."request_portal_employees" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."request_portal_settings" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "enabled" boolean DEFAULT false NOT NULL,
+    "password_hash" "text" NOT NULL,
+    "portal_url" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."request_portal_settings" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "selected_plan" "text",
+    "active_plan" "text",
+    "polar_customer_id" "text",
+    "polar_subscription_id" "text",
+    "polar_checkout_id" "text",
+    "subscription_status" "text",
+    "current_period_start" timestamp with time zone,
+    "current_period_end" timestamp with time zone,
+    "canceled_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "trial_start" timestamp with time zone,
+    "trial_end" timestamp with time zone,
+    CONSTRAINT "subscriptions_active_plan_check" CHECK (("active_plan" = ANY (ARRAY['basic'::"text", 'pro'::"text", 'ultra'::"text"]))),
+    CONSTRAINT "subscriptions_selected_plan_check" CHECK (("selected_plan" = ANY (ARRAY['basic'::"text", 'pro'::"text", 'ultra'::"text"]))),
+    CONSTRAINT "subscriptions_subscription_status_check" CHECK (("subscription_status" = ANY (ARRAY['active'::"text", 'canceled'::"text", 'past_due'::"text", 'incomplete'::"text", 'trialing'::"text"])))
+);
+
+
+ALTER TABLE "public"."subscriptions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_announcement_reads" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "announcement_id" "uuid" NOT NULL,
+    "read_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."user_announcement_reads" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_appearance_settings" (
+    "id" "text" DEFAULT '1'::"text" NOT NULL,
+    "user_id" "uuid",
+    "theme" "text" DEFAULT 'light'::"text",
+    "text_size" "text" DEFAULT 'medium'::"text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."user_appearance_settings" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "first_name" "text",
+    "last_name" "text",
+    "email" "text",
+    "phone_number" "text",
+    "organization_name" "text",
+    "organization_type" "text",
+    "organization_size" "text",
+    "organization_website" "text",
+    "organization_location" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "plan" "text" DEFAULT 'basic'::"text" NOT NULL,
+    "designation" "text",
+    "signature_path" "text"
+);
+
+
+ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."user_profiles"."signature_path" IS 'Path to admin-specific digital signature in branding-assets storage bucket';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_statistics" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "documents_created" integer DEFAULT 0 NOT NULL,
+    "documents_signed" integer DEFAULT 0 NOT NULL,
+    "pending_documents" integer DEFAULT 0 NOT NULL,
+    "total_verifications" integer DEFAULT 0 NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "organization_id" "uuid",
+    "requested_documents" integer DEFAULT 0,
+    "portal_members" integer DEFAULT 0
+);
+
+
+ALTER TABLE "public"."user_statistics" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."verified_documents" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "document_id" "uuid",
+    "verification_hash" character varying(64) NOT NULL,
+    "document_data" "jsonb" NOT NULL,
+    "template_type" character varying(50) NOT NULL,
+    "generated_at" timestamp with time zone DEFAULT "now"(),
+    "expires_at" timestamp with time zone,
+    "is_active" boolean DEFAULT true,
+    "organization_id" "uuid",
+    "user_id" "uuid"
+);
+
+
+ALTER TABLE "public"."verified_documents" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."verified_documents_backup_user_f7cf1643" (
+    "id" "uuid",
+    "document_id" "uuid",
+    "verification_hash" character varying(64),
+    "document_data" "jsonb",
+    "template_type" character varying(50),
+    "generated_at" timestamp with time zone,
+    "expires_at" timestamp with time zone,
+    "is_active" boolean,
+    "organization_id" "uuid",
+    "user_id" "uuid"
+);
+
+
+ALTER TABLE "public"."verified_documents_backup_user_f7cf1643" OWNER TO "postgres";
+
+
+ALTER TABLE ONLY "public"."ai_chat_sessions"
+    ADD CONSTRAINT "ai_chat_sessions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."announcements"
+    ADD CONSTRAINT "announcements_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."branding_files"
+    ADD CONSTRAINT "branding_files_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."document_drafts"
+    ADD CONSTRAINT "document_drafts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."document_history"
+    ADD CONSTRAINT "document_history_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."document_requests"
+    ADD CONSTRAINT "document_requests_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."document_verifications"
+    ADD CONSTRAINT "document_verifications_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."documents"
+    ADD CONSTRAINT "documents_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."notifications"
+    ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."organization_data_records"
+    ADD CONSTRAINT "organization_data_records_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."organization_data_sources"
+    ADD CONSTRAINT "organization_data_sources_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."organization_invites"
+    ADD CONSTRAINT "organization_invites_organization_id_email_key" UNIQUE ("organization_id", "email");
+
+
+
+ALTER TABLE ONLY "public"."organization_invites"
+    ADD CONSTRAINT "organization_invites_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."organization_members"
+    ADD CONSTRAINT "organization_members_organization_id_user_id_key" UNIQUE ("organization_id", "user_id");
+
+
+
+ALTER TABLE ONLY "public"."organization_members"
+    ADD CONSTRAINT "organization_members_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."organizations"
+    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."owner_credentials"
+    ADD CONSTRAINT "owner_credentials_email_key" UNIQUE ("email");
+
+
+
+ALTER TABLE ONLY "public"."owner_credentials"
+    ADD CONSTRAINT "owner_credentials_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."preview_generations"
+    ADD CONSTRAINT "preview_generations_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."qr_verification_logs"
+    ADD CONSTRAINT "qr_verification_logs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_employees"
+    ADD CONSTRAINT "request_portal_employees_organization_id_email_key" UNIQUE ("organization_id", "email");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_employees"
+    ADD CONSTRAINT "request_portal_employees_organization_id_employee_id_key" UNIQUE ("organization_id", "employee_id");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_employees"
+    ADD CONSTRAINT "request_portal_employees_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_settings"
+    ADD CONSTRAINT "request_portal_settings_organization_id_key" UNIQUE ("organization_id");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_settings"
+    ADD CONSTRAINT "request_portal_settings_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_settings"
+    ADD CONSTRAINT "request_portal_settings_portal_url_key" UNIQUE ("portal_url");
+
+
+
+ALTER TABLE ONLY "public"."subscriptions"
+    ADD CONSTRAINT "subscriptions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."subscriptions"
+    ADD CONSTRAINT "subscriptions_polar_subscription_id_key" UNIQUE ("polar_subscription_id");
+
+
+
+ALTER TABLE ONLY "public"."subscriptions"
+    ADD CONSTRAINT "subscriptions_user_id_key" UNIQUE ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."branding_files"
+    ADD CONSTRAINT "unique_org_branding_name" UNIQUE ("organization_id", "name");
+
+
+
+ALTER TABLE ONLY "public"."user_announcement_reads"
+    ADD CONSTRAINT "user_announcement_reads_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_announcement_reads"
+    ADD CONSTRAINT "user_announcement_reads_user_id_announcement_id_key" UNIQUE ("user_id", "announcement_id");
+
+
+
+ALTER TABLE ONLY "public"."user_appearance_settings"
+    ADD CONSTRAINT "user_appearance_settings_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_profiles"
+    ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_profiles"
+    ADD CONSTRAINT "user_profiles_user_id_key" UNIQUE ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."user_statistics"
+    ADD CONSTRAINT "user_statistics_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_statistics"
+    ADD CONSTRAINT "user_statistics_user_id_key" UNIQUE ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."verified_documents"
+    ADD CONSTRAINT "verified_documents_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."verified_documents"
+    ADD CONSTRAINT "verified_documents_verification_hash_key" UNIQUE ("verification_hash");
+
+
+
+CREATE INDEX "idx_ai_chat_sessions_org_id" ON "public"."ai_chat_sessions" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_ai_chat_sessions_user_id" ON "public"."ai_chat_sessions" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_document_history_created" ON "public"."document_history" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_document_history_org_user" ON "public"."document_history" USING "btree" ("organization_id", "user_id");
+
+
+
+CREATE INDEX "idx_document_verifications_hash" ON "public"."document_verifications" USING "btree" ("verification_hash");
+
+
+
+CREATE INDEX "idx_documents_user_id_created_at" ON "public"."documents" USING "btree" ("user_id", "created_at" DESC);
+
+
+
+CREATE UNIQUE INDEX "idx_one_admin_org_per_user" ON "public"."organization_members" USING "btree" ("user_id") WHERE (("role" = 'admin'::"text") AND ("status" = 'active'::"text"));
+
+
+
+CREATE INDEX "idx_organization_data_records_org_id" ON "public"."organization_data_records" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_organization_data_sources_org_id" ON "public"."organization_data_sources" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_preview_generations_created_at" ON "public"."preview_generations" USING "btree" ("created_at");
+
+
+
+CREATE INDEX "idx_preview_generations_org_id" ON "public"."preview_generations" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_preview_generations_user_id" ON "public"."preview_generations" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_qr_verification_logs_hash" ON "public"."qr_verification_logs" USING "btree" ("verification_hash");
+
+
+
+CREATE INDEX "idx_qr_verification_logs_scanned_at" ON "public"."qr_verification_logs" USING "btree" ("scanned_at");
+
+
+
+CREATE INDEX "idx_user_profiles_plan" ON "public"."user_profiles" USING "btree" ("plan");
+
+
+
+CREATE INDEX "idx_verified_documents_hash" ON "public"."verified_documents" USING "btree" ("verification_hash");
+
+
+
+CREATE INDEX "idx_verified_documents_org" ON "public"."verified_documents" USING "btree" ("organization_id");
+
+
+
+CREATE UNIQUE INDEX "organizations_portal_slug_key" ON "public"."organizations" USING "btree" ("portal_slug") WHERE (("portal_slug" IS NOT NULL) AND ("portal_slug" <> ''::"text"));
+
+
+
+CREATE UNIQUE INDEX "user_statistics_user_org_idx" ON "public"."user_statistics" USING "btree" ("user_id", "organization_id");
+
+
+
+CREATE OR REPLACE TRIGGER "documents_user_stats_trigger" AFTER INSERT OR UPDATE ON "public"."documents" FOR EACH ROW EXECUTE FUNCTION "public"."update_user_statistics_on_documents"();
+
+
+
+CREATE OR REPLACE TRIGGER "prevent_seal_upload_trigger" BEFORE INSERT OR UPDATE ON "public"."branding_files" FOR EACH ROW EXECUTE FUNCTION "public"."prevent_seal_upload"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_document_history_updated_at" BEFORE UPDATE ON "public"."document_history" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_document_requests_updated_at" BEFORE UPDATE ON "public"."document_requests" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_request_portal_employees_updated_at" BEFORE UPDATE ON "public"."request_portal_employees" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_request_portal_settings_updated_at" BEFORE UPDATE ON "public"."request_portal_settings" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_subscriptions_updated_at" BEFORE UPDATE ON "public"."subscriptions" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "validate_portal_slug_trigger" BEFORE INSERT OR UPDATE OF "portal_slug" ON "public"."organizations" FOR EACH ROW EXECUTE FUNCTION "public"."validate_portal_slug"();
+
+
+
+CREATE OR REPLACE TRIGGER "verifications_user_stats_trigger" AFTER INSERT OR UPDATE ON "public"."verified_documents" FOR EACH ROW EXECUTE FUNCTION "public"."update_user_statistics_on_verifications"();
+
+
+
+ALTER TABLE ONLY "public"."ai_chat_sessions"
+    ADD CONSTRAINT "ai_chat_sessions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."ai_chat_sessions"
+    ADD CONSTRAINT "ai_chat_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."announcements"
+    ADD CONSTRAINT "announcements_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."announcements"
+    ADD CONSTRAINT "announcements_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
+
+
+
+ALTER TABLE ONLY "public"."document_drafts"
+    ADD CONSTRAINT "document_drafts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."document_requests"
+    ADD CONSTRAINT "document_requests_employee_id_fkey" FOREIGN KEY ("employee_id") REFERENCES "public"."request_portal_employees"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."document_requests"
+    ADD CONSTRAINT "document_requests_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."document_requests"
+    ADD CONSTRAINT "document_requests_processed_by_fkey" FOREIGN KEY ("processed_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."documents"
+    ADD CONSTRAINT "documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."notifications"
+    ADD CONSTRAINT "notifications_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."organization_data_records"
+    ADD CONSTRAINT "organization_data_records_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."organization_data_sources"
+    ADD CONSTRAINT "organization_data_sources_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."organization_invites"
+    ADD CONSTRAINT "organization_invites_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."organization_invites"
+    ADD CONSTRAINT "organization_invites_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."organization_members"
+    ADD CONSTRAINT "organization_members_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."organization_members"
+    ADD CONSTRAINT "organization_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."preview_generations"
+    ADD CONSTRAINT "preview_generations_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."preview_generations"
+    ADD CONSTRAINT "preview_generations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."request_portal_employees"
+    ADD CONSTRAINT "request_portal_employees_approved_by_fkey" FOREIGN KEY ("approved_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."request_portal_employees"
+    ADD CONSTRAINT "request_portal_employees_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."request_portal_settings"
+    ADD CONSTRAINT "request_portal_settings_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."subscriptions"
+    ADD CONSTRAINT "subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_announcement_reads"
+    ADD CONSTRAINT "user_announcement_reads_announcement_id_fkey" FOREIGN KEY ("announcement_id") REFERENCES "public"."announcements"("id");
+
+
+
+ALTER TABLE ONLY "public"."user_announcement_reads"
+    ADD CONSTRAINT "user_announcement_reads_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."user_appearance_settings"
+    ADD CONSTRAINT "user_appearance_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_profiles"
+    ADD CONSTRAINT "user_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_statistics"
+    ADD CONSTRAINT "user_statistics_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
+
+
+
+ALTER TABLE ONLY "public"."user_statistics"
+    ADD CONSTRAINT "user_statistics_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."verified_documents"
+    ADD CONSTRAINT "verified_documents_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
+
+
+
+ALTER TABLE ONLY "public"."verified_documents"
+    ADD CONSTRAINT "verified_documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+CREATE POLICY "Admins can create org announcements" ON "public"."announcements" FOR INSERT TO "authenticated" WITH CHECK ((("organization_id" = "public"."get_user_organization_id"("auth"."uid"())) AND "public"."is_user_admin_of_org"("auth"."uid"(), "organization_id")));
+
+
+
+CREATE POLICY "Admins can create org invites" ON "public"."organization_invites" FOR INSERT TO "authenticated" WITH CHECK (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Admins can delete org invites" ON "public"."organization_invites" FOR DELETE TO "authenticated" USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Admins can delete org members" ON "public"."organization_members" FOR DELETE USING ("public"."is_org_member_admin"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Admins can manage their org announcements" ON "public"."announcements" TO "authenticated" USING ((("created_by" = "auth"."uid"()) AND ("organization_id" = "public"."get_user_organization_id"("auth"."uid"())) AND "public"."is_user_admin_of_org"("auth"."uid"(), "organization_id")));
+
+
+
+CREATE POLICY "Admins can update org invites" ON "public"."organization_invites" FOR UPDATE TO "authenticated" USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Admins can update org members" ON "public"."organization_members" FOR UPDATE USING ("public"."is_org_member_admin"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Admins can view org invites" ON "public"."organization_invites" FOR SELECT TO "authenticated" USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Admins can view org members" ON "public"."organization_members" FOR SELECT USING ("public"."is_org_member_admin"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Allow only approved employees to access their own data" ON "public"."request_portal_employees" FOR SELECT USING ((("status" = 'approved'::"public"."employee_status") AND ("user_id" = "auth"."uid"())));
+
+
+
+CREATE POLICY "Allow public verification logging" ON "public"."qr_verification_logs" FOR INSERT WITH CHECK (true);
+
+
+
+CREATE POLICY "Allow user to read their own profile" ON "public"."user_profiles" FOR SELECT USING (("email" = "auth"."email"()));
+
+
+
+CREATE POLICY "Anyone can insert verification attempts" ON "public"."document_verifications" FOR INSERT WITH CHECK (true);
+
+
+
+CREATE POLICY "Organization admins can insert their organization" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Organization admins can manage employees" ON "public"."request_portal_employees" USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization admins can manage notifications" ON "public"."notifications" USING (("auth"."uid"() IN ( SELECT "organization_members"."user_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."organization_id" = "notifications"."org_id") AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization admins can manage portal settings" ON "public"."request_portal_settings" USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization admins can manage requests" ON "public"."document_requests" USING ("public"."user_is_org_admin"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Organization admins can update their organization" ON "public"."organizations" FOR UPDATE TO "authenticated" USING (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text"))))) WITH CHECK (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization admins can view portal settings" ON "public"."request_portal_settings" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization members can delete branding files" ON "public"."branding_files" FOR DELETE USING ("public"."user_belongs_to_organization"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Organization members can insert branding files" ON "public"."branding_files" FOR INSERT WITH CHECK ("public"."user_belongs_to_organization"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Organization members can update branding files" ON "public"."branding_files" FOR UPDATE USING ("public"."user_belongs_to_organization"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Organization members can view branding files" ON "public"."branding_files" FOR SELECT USING ("public"."user_belongs_to_organization"("auth"."uid"(), "organization_id"));
+
+
+
+CREATE POLICY "Organization members can view their org notifications" ON "public"."notifications" FOR SELECT USING (("auth"."uid"() IN ( SELECT "organization_members"."user_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."organization_id" = "notifications"."org_id") AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization members can view their organization" ON "public"."organizations" FOR SELECT TO "authenticated" USING (("id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Organization members can view verification logs" ON "public"."qr_verification_logs" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Public can create requests" ON "public"."document_requests" FOR INSERT WITH CHECK (true);
+
+
+
+CREATE POLICY "Public can register as employees" ON "public"."request_portal_employees" FOR INSERT WITH CHECK (true);
+
+
+
+CREATE POLICY "Public can verify document status only" ON "public"."verified_documents" FOR SELECT USING (("is_active" = true));
+
+
+
+CREATE POLICY "Public can view verification results" ON "public"."document_verifications" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "System can update user statistics" ON "public"."user_statistics" FOR UPDATE USING ((("auth"."uid"() = "user_id") OR (("organization_id" IS NOT NULL) AND ("auth"."uid"() IN ( SELECT "organization_members"."user_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."organization_id" = "user_statistics"."organization_id") AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))))));
+
+
+
+CREATE POLICY "Users can add members to organizations" ON "public"."organization_members" FOR INSERT TO "authenticated" WITH CHECK (("public"."is_org_member_admin"("auth"."uid"(), "organization_id") OR (("user_id" = "auth"."uid"()) AND ("role" = 'admin'::"text"))));
+
+
+
+CREATE POLICY "Users can create history in their organization" ON "public"."document_history" FOR INSERT WITH CHECK ((("user_id" = "auth"."uid"()) AND ("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."status" = 'active'::"text"))))));
+
+
+
+CREATE POLICY "Users can create own subscription" ON "public"."subscriptions" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can create own verified documents" ON "public"."verified_documents" FOR INSERT TO "authenticated" WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can create their own documents" ON "public"."documents" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can create their own drafts" ON "public"."document_drafts" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can delete expired invites" ON "public"."organization_invites" FOR DELETE USING ((("expires_at" < "now"()) AND "public"."user_is_org_admin"("auth"."uid"(), "organization_id")));
+
+
+
+CREATE POLICY "Users can delete their chat sessions" ON "public"."ai_chat_sessions" FOR DELETE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can delete their organization's data records" ON "public"."organization_data_records" FOR DELETE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Users can delete their organization's data sources" ON "public"."organization_data_sources" FOR DELETE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Users can delete their own documents" ON "public"."documents" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can delete their own drafts" ON "public"."document_drafts" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can delete their own history" ON "public"."document_history" FOR DELETE USING ((("user_id" = "auth"."uid"()) AND ("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."status" = 'active'::"text"))))));
+
+
+
+CREATE POLICY "Users can insert own profile" ON "public"."user_profiles" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their chat sessions" ON "public"."ai_chat_sessions" FOR INSERT WITH CHECK (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can insert their organization's data records" ON "public"."organization_data_records" FOR INSERT WITH CHECK (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Users can insert their organization's data sources" ON "public"."organization_data_sources" FOR INSERT WITH CHECK (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Users can insert their own preview generations" ON "public"."preview_generations" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own profile" ON "public"."user_profiles" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own statistics" ON "public"."user_statistics" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own verified documents" ON "public"."verified_documents" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can manage own documents" ON "public"."documents" TO "authenticated" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can manage their own appearance settings" ON "public"."user_appearance_settings" TO "authenticated" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can mark own announcement reads" ON "public"."user_announcement_reads" FOR INSERT TO "authenticated" WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can read their org announcements" ON "public"."announcements" FOR SELECT TO "authenticated" USING ((("is_active" = true) AND (("expires_at" IS NULL) OR ("expires_at" > "now"())) AND ("organization_id" = "public"."get_user_organization_id"("auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can update own profile" ON "public"."user_profiles" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update selected_plan only" ON "public"."subscriptions" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update their chat sessions" ON "public"."ai_chat_sessions" FOR UPDATE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can update their organization's data records" ON "public"."organization_data_records" FOR UPDATE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Users can update their organization's data sources" ON "public"."organization_data_sources" FOR UPDATE USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Users can update their own documents" ON "public"."documents" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update their own drafts" ON "public"."document_drafts" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update their own history" ON "public"."document_history" FOR UPDATE USING ((("user_id" = "auth"."uid"()) AND ("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."status" = 'active'::"text"))))));
+
+
+
+CREATE POLICY "Users can update their own profile" ON "public"."user_profiles" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own announcement reads" ON "public"."user_announcement_reads" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can view own profile" ON "public"."user_profiles" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own subscription" ON "public"."subscriptions" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own verified documents" ON "public"."verified_documents" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can view their chat sessions" ON "public"."ai_chat_sessions" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can view their organization's data records" ON "public"."organization_data_records" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can view their organization's data sources" ON "public"."organization_data_sources" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE ("organization_members"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Users can view their organization's history" ON "public"."document_history" FOR SELECT USING (("organization_id" IN ( SELECT "organization_members"."organization_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."user_id" = "auth"."uid"()) AND ("organization_members"."status" = 'active'::"text")))));
+
+
+
+CREATE POLICY "Users can view their own documents" ON "public"."documents" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own drafts" ON "public"."document_drafts" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own memberships" ON "public"."organization_members" FOR SELECT USING (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can view their own preview generations" ON "public"."preview_generations" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own profile" ON "public"."user_profiles" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own statistics" ON "public"."user_statistics" FOR SELECT USING ((("auth"."uid"() = "user_id") OR (("organization_id" IS NOT NULL) AND ("auth"."uid"() IN ( SELECT "organization_members"."user_id"
+   FROM "public"."organization_members"
+  WHERE (("organization_members"."organization_id" = "user_statistics"."organization_id") AND ("organization_members"."role" = 'admin'::"text") AND ("organization_members"."status" = 'active'::"text")))))));
+
+
+
+CREATE POLICY "Users can view their own verified documents" ON "public"."verified_documents" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."ai_chat_sessions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."announcements" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."branding_files" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."document_drafts" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."document_history" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."document_requests" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."document_verifications" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."documents" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."organization_data_records" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."organization_data_sources" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."organization_invites" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."organization_members" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."owner_credentials" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."preview_generations" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."qr_verification_logs" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."request_portal_employees" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."request_portal_settings" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."subscriptions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_announcement_reads" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_appearance_settings" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_statistics" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."verified_documents" ENABLE ROW LEVEL SECURITY;
+
+
+
+
+ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
+
+
+
+
+
+
+GRANT USAGE ON SCHEMA "public" TO "postgres";
+GRANT USAGE ON SCHEMA "public" TO "anon";
+GRANT USAGE ON SCHEMA "public" TO "authenticated";
+GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON FUNCTION "public"."complete_user_onboarding"("p_user_id" "uuid", "p_organization_name" "text", "p_organization_address" "text", "p_organization_type" "text", "p_organization_size" "text", "p_organization_website" "text", "p_organization_location" "text", "p_plan" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."complete_user_onboarding"("p_user_id" "uuid", "p_organization_name" "text", "p_organization_address" "text", "p_organization_type" "text", "p_organization_size" "text", "p_organization_website" "text", "p_organization_location" "text", "p_plan" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."complete_user_onboarding"("p_user_id" "uuid", "p_organization_name" "text", "p_organization_address" "text", "p_organization_type" "text", "p_organization_size" "text", "p_organization_website" "text", "p_organization_location" "text", "p_plan" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."delete_user_account"() TO "anon";
+GRANT ALL ON FUNCTION "public"."delete_user_account"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete_user_account"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."generate_unique_slug"("org_name" "text", "org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."generate_unique_slug"("org_name" "text", "org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."generate_unique_slug"("org_name" "text", "org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_active_plan"("check_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_active_plan"("check_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_active_plan"("check_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_organization_statistics"("org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_organization_statistics"("org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_organization_statistics"("org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_portal_info"("p_slug" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_portal_info"("p_slug" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_portal_info"("p_slug" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_user_organization_id"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_user_organization_id"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_user_organization_id"("user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_user_organizations"("check_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_user_organizations"("check_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_user_organizations"("check_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_active_subscription"("check_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_active_subscription"("check_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_active_subscription"("check_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hash_owner_password"("p_password" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hash_owner_password"("p_password" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hash_owner_password"("p_password" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."increment_user_stat"("p_user_id" "uuid", "p_organization_id" "uuid", "p_stat_field" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."increment_user_stat"("p_user_id" "uuid", "p_organization_id" "uuid", "p_stat_field" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."increment_user_stat"("p_user_id" "uuid", "p_organization_id" "uuid", "p_stat_field" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_org_member_admin"("check_user_id" "uuid", "check_org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_org_member_admin"("check_user_id" "uuid", "check_org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_org_member_admin"("check_user_id" "uuid", "check_org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_organization_admin"("check_user_id" "uuid", "check_org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_organization_admin"("check_user_id" "uuid", "check_org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_organization_admin"("check_user_id" "uuid", "check_org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_user_admin"() TO "anon";
+GRANT ALL ON FUNCTION "public"."is_user_admin"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_user_admin"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_user_admin_of_org"("user_id" "uuid", "org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_user_admin_of_org"("user_id" "uuid", "org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_user_admin_of_org"("user_id" "uuid", "org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."prevent_seal_upload"() TO "anon";
+GRANT ALL ON FUNCTION "public"."prevent_seal_upload"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."prevent_seal_upload"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_trial_start" timestamp with time zone, "p_trial_end" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_trial_start" timestamp with time zone, "p_trial_end" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_subscription_from_webhook"("p_user_id" "uuid", "p_active_plan" "text", "p_polar_customer_id" "text", "p_polar_subscription_id" "text", "p_subscription_status" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_trial_start" timestamp with time zone, "p_trial_end" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_documents"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_documents"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_documents"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_verifications"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_verifications"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_verifications"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_verified_documents"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_verified_documents"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_user_statistics_on_verified_documents"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."user_belongs_to_organization"("user_uuid" "uuid", "org_uuid" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."user_belongs_to_organization"("user_uuid" "uuid", "org_uuid" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."user_belongs_to_organization"("user_uuid" "uuid", "org_uuid" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."user_is_org_admin"("user_uuid" "uuid", "org_uuid" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."user_is_org_admin"("user_uuid" "uuid", "org_uuid" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."user_is_org_admin"("user_uuid" "uuid", "org_uuid" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."validate_portal_password"("p_organization_id" "uuid", "p_password" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."validate_portal_password"("p_organization_id" "uuid", "p_password" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."validate_portal_password"("p_organization_id" "uuid", "p_password" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."validate_portal_slug"() TO "anon";
+GRANT ALL ON FUNCTION "public"."validate_portal_slug"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."validate_portal_slug"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."verify_owner_password"("p_email" "text", "p_password" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."verify_owner_password"("p_email" "text", "p_password" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."verify_owner_password"("p_email" "text", "p_password" "text") TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON TABLE "public"."ai_chat_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."ai_chat_sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."ai_chat_sessions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."announcements" TO "anon";
+GRANT ALL ON TABLE "public"."announcements" TO "authenticated";
+GRANT ALL ON TABLE "public"."announcements" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."branding_files" TO "anon";
+GRANT ALL ON TABLE "public"."branding_files" TO "authenticated";
+GRANT ALL ON TABLE "public"."branding_files" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."branding_files_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."branding_files_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."branding_files_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."document_drafts" TO "anon";
+GRANT ALL ON TABLE "public"."document_drafts" TO "authenticated";
+GRANT ALL ON TABLE "public"."document_drafts" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."document_history" TO "anon";
+GRANT ALL ON TABLE "public"."document_history" TO "authenticated";
+GRANT ALL ON TABLE "public"."document_history" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."document_requests" TO "anon";
+GRANT ALL ON TABLE "public"."document_requests" TO "authenticated";
+GRANT ALL ON TABLE "public"."document_requests" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."document_verifications" TO "anon";
+GRANT ALL ON TABLE "public"."document_verifications" TO "authenticated";
+GRANT ALL ON TABLE "public"."document_verifications" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."documents" TO "anon";
+GRANT ALL ON TABLE "public"."documents" TO "authenticated";
+GRANT ALL ON TABLE "public"."documents" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."notifications" TO "anon";
+GRANT ALL ON TABLE "public"."notifications" TO "authenticated";
+GRANT ALL ON TABLE "public"."notifications" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organization_data_records" TO "anon";
+GRANT ALL ON TABLE "public"."organization_data_records" TO "authenticated";
+GRANT ALL ON TABLE "public"."organization_data_records" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organization_data_sources" TO "anon";
+GRANT ALL ON TABLE "public"."organization_data_sources" TO "authenticated";
+GRANT ALL ON TABLE "public"."organization_data_sources" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organization_invites" TO "anon";
+GRANT ALL ON TABLE "public"."organization_invites" TO "authenticated";
+GRANT ALL ON TABLE "public"."organization_invites" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organization_members" TO "anon";
+GRANT ALL ON TABLE "public"."organization_members" TO "authenticated";
+GRANT ALL ON TABLE "public"."organization_members" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organizations" TO "anon";
+GRANT ALL ON TABLE "public"."organizations" TO "authenticated";
+GRANT ALL ON TABLE "public"."organizations" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."owner_credentials" TO "anon";
+GRANT ALL ON TABLE "public"."owner_credentials" TO "authenticated";
+GRANT ALL ON TABLE "public"."owner_credentials" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."preview_generations" TO "anon";
+GRANT ALL ON TABLE "public"."preview_generations" TO "authenticated";
+GRANT ALL ON TABLE "public"."preview_generations" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."qr_verification_logs" TO "anon";
+GRANT ALL ON TABLE "public"."qr_verification_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."qr_verification_logs" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."request_portal_employees" TO "anon";
+GRANT ALL ON TABLE "public"."request_portal_employees" TO "authenticated";
+GRANT ALL ON TABLE "public"."request_portal_employees" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."request_portal_settings" TO "anon";
+GRANT ALL ON TABLE "public"."request_portal_settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."request_portal_settings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."subscriptions" TO "anon";
+GRANT ALL ON TABLE "public"."subscriptions" TO "authenticated";
+GRANT ALL ON TABLE "public"."subscriptions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_announcement_reads" TO "anon";
+GRANT ALL ON TABLE "public"."user_announcement_reads" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_announcement_reads" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_appearance_settings" TO "anon";
+GRANT ALL ON TABLE "public"."user_appearance_settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_appearance_settings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
+GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_statistics" TO "anon";
+GRANT ALL ON TABLE "public"."user_statistics" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_statistics" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."verified_documents" TO "anon";
+GRANT ALL ON TABLE "public"."verified_documents" TO "authenticated";
+GRANT ALL ON TABLE "public"."verified_documents" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."verified_documents_backup_user_f7cf1643" TO "anon";
+GRANT ALL ON TABLE "public"."verified_documents_backup_user_f7cf1643" TO "authenticated";
+GRANT ALL ON TABLE "public"."verified_documents_backup_user_f7cf1643" TO "service_role";
+
+
+
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
