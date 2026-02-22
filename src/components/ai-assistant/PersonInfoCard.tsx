@@ -1,4 +1,4 @@
-import { CheckCircle, User, Building, GraduationCap } from 'lucide-react';
+import { CheckCircle, User, Building, GraduationCap, Mail, Phone, Calendar, MapPin, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PersonInfoCardProps {
@@ -7,58 +7,98 @@ interface PersonInfoCardProps {
   className?: string;
 }
 
-function getFieldValue(record: Record<string, unknown>, ...fieldNames: string[]): string {
-  for (const field of fieldNames) {
-    const value = record[field];
-    if (value !== null && value !== undefined && value !== '') {
-      return String(value);
-    }
-  }
-  return '';
+const FIELD_ICONS: Record<string, React.ElementType> = {
+  name: User,
+  fullname: User,
+  full_name: User,
+  employeename: User,
+  studentname: User,
+  employeeid: CreditCard,
+  employee_id: CreditCard,
+  studentid: CreditCard,
+  student_id: CreditCard,
+  id: CreditCard,
+  roll_number: CreditCard,
+  department: Building,
+  dept: Building,
+  course: GraduationCap,
+  designation: Building,
+  email: Mail,
+  phone: Phone,
+  mobile: Phone,
+  dateofbirth: Calendar,
+  date_of_birth: Calendar,
+  dob: Calendar,
+  joiningdate: Calendar,
+  date_of_joining: Calendar,
+  startdate: Calendar,
+  start_date: Calendar,
+  address: MapPin,
+  location: MapPin,
+};
+
+function formatFieldName(key: string): string {
+  const fieldMap: Record<string, string> = {
+    'fullName': 'Full Name',
+    'full_name': 'Full Name',
+    'employeeName': 'Employee Name',
+    'studentName': 'Student Name',
+    'employeeId': 'Employee ID',
+    'employee_id': 'Employee ID',
+    'studentId': 'Student ID',
+    'student_id': 'Student ID',
+    'roll_number': 'Roll Number',
+    'dateOfBirth': 'Date of Birth',
+    'date_of_birth': 'Date of Birth',
+    'joiningDate': 'Joining Date',
+    'date_of_joining': 'Joining Date',
+    'startDate': 'Start Date',
+    'start_date': 'Start Date',
+    'parentName': "Parent's Name",
+    'parent_name': "Parent's Name",
+    'fatherName': "Father's Name",
+    'father_name': "Father's Name",
+    'motherName': "Mother's Name",
+  };
+  
+  if (fieldMap[key]) return fieldMap[key];
+  
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .replace(/_/g, ' ')
+    .trim();
 }
 
-function getDisplayFields(record: Record<string, unknown>): { label: string; value: string; icon: React.ElementType }[] {
-  const fields: { label: string; value: string; icon: React.ElementType }[] = [];
-
-  // Name
-  const name = getFieldValue(
-    record,
-    'fullName', 'full_name', 'name', 'employeeName', 'studentName',
-    'Full Name', 'FullName', 'Name', 'Employee Name', 'Student Name'
-  );
-  if (name) {
-    fields.push({ label: 'Name', value: name, icon: User });
-  }
-
-  // ID
-  const id = getFieldValue(
-    record,
-    'employeeId', 'employee_id', 'studentId', 'student_id',
-    'id', 'ID', 'Employee ID', 'Student ID', 'emp_id', 'roll_number', 'rollNumber'
-  );
-  if (id) {
-    fields.push({ label: 'ID', value: id, icon: Building });
-  }
-
-  // Department or Course
-  const dept = getFieldValue(
-    record,
-    'department', 'Department', 'dept', 'course', 'Course', 'designation', 'Designation'
-  );
-  if (dept) {
-    const isCourse = record.course || record['Course'];
-    fields.push({ 
-      label: isCourse ? 'Course' : 'Department', 
-      value: dept, 
-      icon: isCourse ? GraduationCap : Building 
-    });
-  }
-
-  return fields;
+function getIconForField(key: string): React.ElementType {
+  const lowerKey = key.toLowerCase();
+  return FIELD_ICONS[lowerKey] || User;
 }
+
+const EXCLUDED_FIELDS = new Set([
+  'organization name',
+  'institution name',
+  'company name',
+  'organization_name',
+  'institution_name',
+  'company_name',
+]);
 
 export function PersonInfoCard({ record, templateName, className }: PersonInfoCardProps) {
-  const displayFields = getDisplayFields(record);
+  // Get all non-empty fields from the record
+  const displayFields = Object.entries(record)
+    .filter(([key, value]) => {
+      // Exclude empty values
+      if (value === null || value === undefined || value === '') return false;
+      // Exclude organization-level fields
+      if (EXCLUDED_FIELDS.has(key.toLowerCase())) return false;
+      return true;
+    })
+    .map(([key, value]) => ({
+      label: formatFieldName(key),
+      value: String(value),
+      icon: getIconForField(key),
+    }));
 
   return (
     <div className={cn(
@@ -67,10 +107,10 @@ export function PersonInfoCard({ record, templateName, className }: PersonInfoCa
     )}>
       <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide bg-green-100 text-green-700 flex items-center gap-2">
         <CheckCircle className="h-3 w-3" />
-        Selected Person
+        Known Information
         {templateName && <span className="font-normal">- {templateName}</span>}
       </div>
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
         {displayFields.map((field, idx) => (
           <div key={idx} className="flex items-start gap-2">
             <field.icon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
