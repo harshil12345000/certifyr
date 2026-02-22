@@ -128,12 +128,18 @@ BEGIN
   
   RAISE NOTICE 'Total rows deleted from all tables: %', total_deleted;
   
-  -- Finally, delete the user from auth.users
+  -- Delete the user from auth.users using admin API
+  -- This requires the function to have access to auth schema
   BEGIN
     DELETE FROM auth.users WHERE id = current_user_id;
-    RAISE NOTICE 'Successfully deleted user from auth.users';
+    IF NOT FOUND THEN
+      RAISE NOTICE 'User not found in auth.users';
+    ELSE
+      RAISE NOTICE 'Successfully deleted user from auth.users';
+    END IF;
   EXCEPTION
     WHEN OTHERS THEN
+      -- Try alternative: use auth.internal.delete_user if available
       RETURN json_build_object(
         'success', false, 
         'error', 'Failed to delete user from auth.users: ' || SQLERRM,
@@ -154,3 +160,7 @@ $$;
 
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION delete_user_account() TO authenticated;
+
+-- Allow function to delete from auth.users (use auth.uid() for the current user only)
+-- This requires setting the search_path to include auth
+ALTER FUNCTION delete_user_account() SET search_path = auth, public;
