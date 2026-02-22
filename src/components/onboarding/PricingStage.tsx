@@ -187,6 +187,10 @@ export function PricingStage({ data, updateData, onPrev, loading }: PricingStage
         );
         
         if (subError) throw subError;
+        const result = subData as { success?: boolean; error?: string } | null;
+        if (result?.success === false) {
+          throw new Error(result.error || 'Failed to activate Basic plan');
+        }
 
         toast({
           title: "Account Created!",
