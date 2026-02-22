@@ -2,11 +2,20 @@ import { Sparkles, User, CheckCircle, Circle, FileText, ExternalLink } from 'luc
 import { Link } from 'react-router-dom';
 import { ChatMessage } from '@/hooks/useChatSessions';
 import { DisambiguationCard } from './DisambiguationCard';
+import { PersonInfoCard } from './PersonInfoCard';
+import { FieldCollectionCard } from './FieldCollectionCard';
 import { cn } from '@/lib/utils';
 
 interface MessageBubbleProps {
   message: ChatMessage;
   onDisambiguationSelect?: (match: { name: string; id: string; department: string }) => void;
+  personInfoRecord?: Record<string, unknown>;
+  personInfoTemplateName?: string;
+  missingFields?: string[];
+  collectedFields?: Record<string, string>;
+  templateName?: string;
+  onFieldChange?: (field: string, value: string) => void;
+  onFieldSubmit?: () => void;
 }
 
 interface FieldInfo {
@@ -231,7 +240,17 @@ function FieldCard({ fields, title, type }: { fields: FieldInfo[]; title: string
   );
 }
 
-export function MessageBubble({ message, onDisambiguationSelect }: MessageBubbleProps) {
+export function MessageBubble({ 
+  message, 
+  onDisambiguationSelect,
+  personInfoRecord,
+  personInfoTemplateName,
+  missingFields,
+  collectedFields,
+  templateName,
+  onFieldChange,
+  onFieldSubmit,
+}: MessageBubbleProps) {
   const isUser = message.role === 'user';
   
   // Check for generated document link
@@ -283,6 +302,34 @@ export function MessageBubble({ message, onDisambiguationSelect }: MessageBubble
     } catch {
       // Fall through to normal rendering
     }
+  }
+
+  // Render PersonInfoCard and FieldCollectionCard if provided
+  if (!isUser && personInfoRecord && (personInfoTemplateName || missingFields)) {
+    return (
+      <div className="flex items-start gap-3">
+        <div
+          className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"
+        >
+          <Sparkles className="h-4 w-4 text-blue-600" />
+        </div>
+        <div className="max-w-[80%] space-y-3">
+          <PersonInfoCard 
+            record={personInfoRecord} 
+            templateName={personInfoTemplateName}
+          />
+          {missingFields && missingFields.length > 0 && (
+            <FieldCollectionCard
+              missingFields={missingFields}
+              collectedFields={collectedFields || {}}
+              templateName={templateName || 'Document'}
+              onFieldChange={onFieldChange || (() => {})}
+              onSubmit={onFieldSubmit || (() => {})}
+            />
+          )}
+        </div>
+      </div>
+    );
   }
   
   const parsedFields = !isUser ? parseFieldLists(message.content) : null;

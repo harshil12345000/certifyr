@@ -123,7 +123,7 @@ export const SubscriptionManagementPanel: React.FC<
   const planConfig = activePlan ? PLAN_PRICING[activePlan] : null;
   const status = subscription?.subscription_status || "none";
   const isCanceled = status === "canceled" || !!subscription?.canceled_at;
-  const isBasicFree = activePlan === 'basic' && status === 'active';
+  const isBasicFree = activePlan === 'basic';
 
   // Determine billing period from dates
   const periodStart = subscription?.current_period_start
@@ -308,16 +308,18 @@ export const SubscriptionManagementPanel: React.FC<
               <div className="text-2xl font-bold">
                 {planConfig?.label || activePlan}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {isYearly ? "Yearly billing" : "Monthly billing"}
-              </div>
+              {currentPrice > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {isYearly ? "Yearly billing" : "Monthly billing"}
+                </div>
+              )}
             </div>
 
             {/* Price */}
             <div className="rounded-lg border p-4 space-y-1">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
                 Amount
-                {savings && !isBasicFree && (
+                {!!savings && currentPrice > 0 && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
@@ -334,14 +336,14 @@ export const SubscriptionManagementPanel: React.FC<
                 )}
               </div>
               <div className="text-2xl font-bold">
-                {isBasicFree ? 'Free' : `$${currentPrice}`}
-                {!isBasicFree && (
+                {currentPrice === 0 ? 'Free' : `$${currentPrice}`}
+                {currentPrice > 0 && (
                   <span className="text-sm font-normal text-muted-foreground">
                     /{isYearly ? "year" : "month"}
                   </span>
                 )}
               </div>
-              {savings && (
+              {!!savings && currentPrice > 0 && (
                 <div className="text-xs text-green-600 font-medium">
                   Saving ${savings}/year vs monthly
                 </div>
@@ -352,9 +354,9 @@ export const SubscriptionManagementPanel: React.FC<
             <div className="rounded-lg border p-4 space-y-1">
               <div className="text-sm text-muted-foreground flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                {isBasicFree ? "Plan Status" : "Billing Period"}
+                {currentPrice === 0 ? "Plan Status" : "Billing Period"}
               </div>
-              {isBasicFree ? (
+              {currentPrice === 0 ? (
                 <div className="text-sm font-medium text-green-600">
                   Free Plan
                 </div>
