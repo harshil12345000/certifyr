@@ -104,41 +104,6 @@ export default function Checkout() {
     }
   }, []);
 
-  // Auto-process plan change if user is already on a paid plan (not Basic)
-  useEffect(() => {
-    const processPlanChange = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const planParam = params.get('plan');
-      
-      if (!planParam || !['pro', 'ultra'].includes(planParam)) return;
-      if (!user?.id || subLoading) return;
-      if (!hasActiveSubscription || subscription?.active_plan === 'basic') return;
-      
-      // User is on a paid plan and wants to change - auto-process and redirect to dashboard
-      try {
-        const { data, error } = await supabase.functions.invoke('manage-subscription', {
-          body: { action: 'change-plan', plan: planParam, billingPeriod },
-        });
-        
-        if (error) throw error;
-        
-        if (data?.error) {
-          toast({ title: 'Error', description: data.error, variant: 'destructive' });
-        } else {
-          toast({ title: 'Plan Updated', description: `Your subscription has been changed to ${planParam.toUpperCase()}` });
-          navigate('/dashboard', { replace: true });
-        }
-      } catch (err: any) {
-        console.error('Plan change error:', err);
-        toast({ title: 'Error', description: err.message || 'Failed to change plan', variant: 'destructive' });
-      }
-    };
-    
-    if (!subLoading && subscription) {
-      processPlanChange();
-    }
-  }, [subLoading, subscription, user, navigate, toast, billingPeriod]);
-
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth', { replace: true });
@@ -153,6 +118,30 @@ export default function Checkout() {
 
     // Handle free Basic plan
     if (selectedPlan === 'basic') {
+      // If user has existing paid subscription, cancel it first
+      if (subscription?.polar_subscription_id && ['pro', 'ultra'].includes(subscription.active_plan || '')) {
+        setIsRedirecting(true);
+        try {
+          const response = await supabase.functions.invoke('manage-subscription', {
+            body: { action: 'cancel' },
+          });
+
+          if (response.error) throw new Error(response.error.message || 'Failed to cancel subscription');
+          if (response.data?.error) throw new Error(response.data.error);
+
+          await refetch();
+          toast({ title: 'Success', description: 'Your subscription has been canceled. You are now on the Basic plan.' });
+          navigate('/dashboard', { replace: true });
+          return;
+        } catch (err: any) {
+          console.error('Cancel subscription error:', err);
+          toast({ title: 'Error', description: err.message || 'Failed to cancel subscription. Please try again.', variant: 'destructive' });
+          setIsRedirecting(false);
+          return;
+        }
+      }
+
+      // No existing paid subscription - just activate Basic
       try {
         const { data, error } = await supabase.rpc('create_free_subscription', {
           p_user_id: user.id,
@@ -178,6 +167,38 @@ export default function Checkout() {
       }
     }
 
+    // Check if user already has an active paid subscription - use change-plan API instead of new checkout
+    const hasExistingPaidSubscription = subscription?.polar_subscription_id && 
+      ['pro', 'ultra'].includes(subscription.active_plan || '');
+
+    // For existing paid users switching between Pro/Ultra, use the change-plan API
+    if (hasExistingPaidSubscription) {
+      setIsRedirecting(true);
+      try {
+        const response = await supabase.functions.invoke('manage-subscription', {
+          body: { 
+            action: 'change-plan', 
+            plan: selectedPlan, 
+            billingPeriod 
+          },
+        });
+
+        if (response.error) throw new Error(response.error.message || 'Failed to change plan');
+        if (response.data?.error) throw new Error(response.data.error);
+
+        await refetch();
+        toast({ title: 'Success', description: `Your plan has been changed to ${selectedPlan.toUpperCase()}!` });
+        navigate('/dashboard', { replace: true });
+        return;
+      } catch (err: any) {
+        console.error('Plan change error:', err);
+        toast({ title: 'Error', description: err.message || 'Failed to change plan. Please try again.', variant: 'destructive' });
+        setIsRedirecting(false);
+        return;
+      }
+    }
+
+    // For new subscriptions or Basic -> Pro/Ultra upgrades, create a checkout session
     setIsRedirecting(true);
 
     try {
