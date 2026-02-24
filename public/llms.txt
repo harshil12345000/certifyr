@@ -1,0 +1,40 @@
+# Certifyr - LLM Documentation
+
+## Overview
+Certifyr is a platform that simplifies official documentation for institutions and teams. It enables users to create professional, legally reliable documents including certificates, letters, and official paperwork in minutes using easy-to-use templates and seamless exports.
+
+## Website Information
+- **URL**: https://certifyr.framer.website/
+- **Platform**: Framer
+- **Purpose**: Document creation and management platform
+
+## Available Pages
+
+### Main Pages
+- `/` - Homepage (landing page)
+- `/landing/index.html` - Main landing page with product overview
+- `/landing/use-cases.html` - Use cases and feature demonstrations
+- `/landing/waitlist.html` - Waitlist signup page
+- `/landing/privacy-policy.html` - Privacy policy
+
+### Assets
+- `/uploads/` - Logo and brand assets
+
+## Features
+- Certificate generation
+- Letter creation
+- Official document templates
+- Professional document exports
+- Easy-to-use template system
+
+## Target Users
+- Educational institutions
+- Businesses and teams
+- HR departments
+- Any organization needing professional documentation
+
+## Contact
+For inquiries, visit the main website.
+
+## Last Updated
+February 2026
