@@ -199,7 +199,8 @@ export const logQRVerification = async (
           // Fallback to legacy method without organization_id
           const { error: legacyError } = await supabase.rpc("increment_user_stat", {
             p_user_id: userId,
-            p_stat_name: "total_verifications",
+            p_stat_field: "total_verifications",
+            p_organization_id: "",
           });
           if (legacyError) {
             console.error("Error incrementing legacy total_verifications stat:", legacyError);
