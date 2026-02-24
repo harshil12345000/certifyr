@@ -295,24 +295,44 @@ serve(async (req) => {
 
         const { organization_id, password, enabled, portal_url } = payload;
         
-        if (!organization_id || !password) {
+        if (!organization_id) {
           return new Response(
-            JSON.stringify({ success: false, error: "Missing required fields" }),
+            JSON.stringify({ success: false, error: "Missing organization_id" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        // Hash password with PBKDF2
-        const passwordHash = await hashPassword(password);
+        // Build upsert data
+        const upsertData: Record<string, unknown> = {
+          organization_id,
+          enabled: enabled ?? false,
+          portal_url: portal_url || "",
+        };
+
+        // Only update password if a new one was provided
+        if (password && password.trim()) {
+          upsertData.password_hash = await hashPassword(password);
+        }
+
+        // If no existing record and no password provided, require password
+        if (!password || !password.trim()) {
+          const { data: existing } = await supabase
+            .from("request_portal_settings")
+            .select("id")
+            .eq("organization_id", organization_id)
+            .maybeSingle();
+          
+          if (!existing) {
+            return new Response(
+              JSON.stringify({ success: false, error: "Password is required for initial setup" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
 
         const { error } = await supabase
           .from("request_portal_settings")
-          .upsert({
-            organization_id,
-            enabled: enabled ?? false,
-            password_hash: passwordHash,
-            portal_url: portal_url || "",
-          }, { onConflict: "organization_id" });
+          .upsert(upsertData, { onConflict: "organization_id" });
 
         if (error) {
           console.error("Error saving portal settings:", error);

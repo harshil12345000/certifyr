@@ -34,6 +34,7 @@ export function RequestPortalSettings() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasExistingPassword, setHasExistingPassword] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -80,11 +81,12 @@ export function RequestPortalSettings() {
       // Generate the portal URL using slug
       const portalUrl = `${window.location.origin}/portal/${orgData.portal_slug || 'your-org'}`;
       
-      // Password is now bcrypt hashed - we don't decode it
-      // User must enter a new password if they want to change it
+      // Password is hashed - we can't decode it, but we track if one exists
+      const passwordExists = !!settingsData?.password_hash;
+      setHasExistingPassword(passwordExists);
       setSettings({
         enabled: settingsData?.enabled ?? false,
-        password: "", // Don't pre-fill - bcrypt is one-way
+        password: "", // Don't pre-fill - hash is one-way
         portalUrl,
         portalSlug: orgData.portal_slug || ""
       });
@@ -170,7 +172,7 @@ export function RequestPortalSettings() {
       return;
     }
     
-    if (!settings.password.trim()) {
+    if (!settings.password.trim() && !hasExistingPassword) {
       toast({
         title: "Error",
         description: "Password is required",
@@ -210,15 +212,19 @@ export function RequestPortalSettings() {
         throw orgError;
       }
 
-      // Save portal password via edge function (bcrypt hashing)
+      // Save portal settings via edge function
+      // Only send password if user entered a new one
+      const body: Record<string, unknown> = {
+        action: "save_portal_password",
+        organization_id: orgId,
+        enabled: settings.enabled,
+        portal_url: settings.portalUrl,
+      };
+      if (settings.password.trim()) {
+        body.password = settings.password;
+      }
       const { data, error: funcError } = await supabase.functions.invoke("portal-auth", {
-        body: {
-          action: "save_portal_password",
-          organization_id: orgId,
-          password: settings.password,
-          enabled: settings.enabled,
-          portal_url: settings.portalUrl,
-        },
+        body,
       });
 
       if (funcError || !data?.success) {
@@ -315,7 +321,7 @@ export function RequestPortalSettings() {
                     ...prev,
                     password: e.target.value
                   }))} 
-                  placeholder="Enter a secure password" 
+                  placeholder={hasExistingPassword ? "••••••••  (leave blank to keep current)" : "Enter a secure password"} 
                 />
                 <Button 
                   type="button" 
