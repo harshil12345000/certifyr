@@ -19,7 +19,7 @@ export type Database = {
           created_at: string
           id: string
           messages: Json
-          organization_id: string | null
+          organization_id: string
           title: string
           updated_at: string
           user_id: string
@@ -28,7 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           messages?: Json
-          organization_id?: string | null
+          organization_id: string
           title?: string
           updated_at?: string
           user_id: string
@@ -37,7 +37,7 @@ export type Database = {
           created_at?: string
           id?: string
           messages?: Json
-          organization_id?: string | null
+          organization_id?: string
           title?: string
           updated_at?: string
           user_id?: string
@@ -128,92 +128,84 @@ export type Database = {
       }
       document_drafts: {
         Row: {
-          created_at: string
+          created_at: string | null
           form_data: Json | null
           id: string
           name: string
           template_id: string
-          updated_at: string
-          user_id: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           form_data?: Json | null
           id?: string
-          name?: string
-          template_id?: string
-          updated_at?: string
-          user_id: string
+          name: string
+          template_id: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           form_data?: Json | null
           id?: string
           name?: string
           template_id?: string
-          updated_at?: string
-          user_id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
       document_history: {
         Row: {
-          created_at: string
+          created_at: string | null
           document_name: string
-          form_data: Json | null
+          form_data: Json
           id: string
-          is_editable: boolean
-          organization_id: string | null
-          status: string
+          is_editable: boolean | null
+          organization_id: string
+          status: string | null
           template_id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
-          document_name?: string
-          form_data?: Json | null
+          created_at?: string | null
+          document_name: string
+          form_data: Json
           id?: string
-          is_editable?: boolean
-          organization_id?: string | null
-          status?: string
-          template_id?: string
-          updated_at?: string
+          is_editable?: boolean | null
+          organization_id: string
+          status?: string | null
+          template_id: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           document_name?: string
-          form_data?: Json | null
+          form_data?: Json
           id?: string
-          is_editable?: boolean
-          organization_id?: string | null
-          status?: string
+          is_editable?: boolean | null
+          organization_id?: string
+          status?: string | null
           template_id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "document_history_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       document_requests: {
         Row: {
           created_at: string
           employee_id: string
           id: string
-          organization_id: string | null
+          organization_id: string
           processed_at: string | null
           processed_by: string | null
           requested_at: string
-          status: string
-          template_data: Json | null
+          status: Database["public"]["Enums"]["request_status"]
+          template_data: Json
           template_id: string
           updated_at: string
         }
@@ -221,12 +213,12 @@ export type Database = {
           created_at?: string
           employee_id: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           processed_at?: string | null
           processed_by?: string | null
           requested_at?: string
-          status?: string
-          template_data?: Json | null
+          status?: Database["public"]["Enums"]["request_status"]
+          template_data: Json
           template_id: string
           updated_at?: string
         }
@@ -234,28 +226,28 @@ export type Database = {
           created_at?: string
           employee_id?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           processed_at?: string | null
           processed_by?: string | null
           requested_at?: string
-          status?: string
-          template_data?: Json | null
+          status?: Database["public"]["Enums"]["request_status"]
+          template_data?: Json
           template_id?: string
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "document_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "request_portal_employees"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "document_requests_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_document_requests_employee"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "request_portal_employees"
             referencedColumns: ["id"]
           },
         ]
@@ -326,27 +318,30 @@ export type Database = {
       notifications: {
         Row: {
           body: string
-          created_at: string
+          created_at: string | null
+          data: Json | null
           id: string
-          org_id: string | null
+          org_id: string
           read_by: string[] | null
           subject: string
           type: string
         }
         Insert: {
-          body?: string
-          created_at?: string
+          body: string
+          created_at?: string | null
+          data?: Json | null
           id?: string
-          org_id?: string | null
+          org_id: string
           read_by?: string[] | null
-          subject?: string
-          type?: string
+          subject: string
+          type: string
         }
         Update: {
           body?: string
-          created_at?: string
+          created_at?: string | null
+          data?: Json | null
           id?: string
-          org_id?: string | null
+          org_id?: string
           read_by?: string[] | null
           subject?: string
           type?: string
@@ -355,6 +350,76 @@ export type Database = {
           {
             foreignKeyName: "notifications_org_id_fkey"
             columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_data_records: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_data_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_data_sources: {
+        Row: {
+          column_names: string[]
+          created_at: string
+          file_name: string
+          id: string
+          organization_id: string
+          record_count: number
+          updated_at: string
+        }
+        Insert: {
+          column_names: string[]
+          created_at?: string
+          file_name: string
+          id?: string
+          organization_id: string
+          record_count?: number
+          updated_at?: string
+        }
+        Update: {
+          column_names?: string[]
+          created_at?: string
+          file_name?: string
+          id?: string
+          organization_id?: string
+          record_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_data_sources_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
@@ -446,33 +511,33 @@ export type Database = {
           ai_context_country: string | null
           created_at: string | null
           email: string | null
-          enable_qr: boolean
+          enable_qr: boolean | null
           id: string
           name: string
           phone: string | null
-          portal_slug: string | null
+          portal_slug: string
         }
         Insert: {
           address?: string | null
           ai_context_country?: string | null
           created_at?: string | null
           email?: string | null
-          enable_qr?: boolean
+          enable_qr?: boolean | null
           id?: string
           name: string
           phone?: string | null
-          portal_slug?: string | null
+          portal_slug: string
         }
         Update: {
           address?: string | null
           ai_context_country?: string | null
           created_at?: string | null
           email?: string | null
-          enable_qr?: boolean
+          enable_qr?: boolean | null
           id?: string
           name?: string
           phone?: string | null
-          portal_slug?: string | null
+          portal_slug?: string
         }
         Relationships: []
       }
@@ -502,24 +567,27 @@ export type Database = {
       }
       preview_generations: {
         Row: {
-          created_at: string
+          action_type: string
+          created_at: string | null
           id: string
           organization_id: string | null
-          template_id: string | null
+          template_id: string
           user_id: string
         }
         Insert: {
-          created_at?: string
+          action_type: string
+          created_at?: string | null
           id?: string
           organization_id?: string | null
-          template_id?: string | null
+          template_id: string
           user_id: string
         }
         Update: {
-          created_at?: string
+          action_type?: string
+          created_at?: string | null
           id?: string
           organization_id?: string | null
-          template_id?: string | null
+          template_id?: string
           user_id?: string
         }
         Relationships: [
@@ -531,30 +599,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      profiles: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          full_name: string | null
-          id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       qr_verification_logs: {
         Row: {
@@ -597,40 +641,55 @@ export type Database = {
       }
       request_portal_employees: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
           email: string
           employee_id: string
           full_name: string
           id: string
           manager_name: string | null
-          organization_id: string | null
+          organization_id: string
           password_hash: string | null
           phone_number: string | null
           registered_at: string
-          status: string
+          status: Database["public"]["Enums"]["employee_status"]
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
           email: string
-          employee_id?: string
+          employee_id: string
           full_name: string
           id?: string
           manager_name?: string | null
-          organization_id?: string | null
+          organization_id: string
           password_hash?: string | null
           phone_number?: string | null
           registered_at?: string
-          status?: string
+          status?: Database["public"]["Enums"]["employee_status"]
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
           email?: string
           employee_id?: string
           full_name?: string
           id?: string
           manager_name?: string | null
-          organization_id?: string | null
+          organization_id?: string
           password_hash?: string | null
           phone_number?: string | null
           registered_at?: string
-          status?: string
+          status?: Database["public"]["Enums"]["employee_status"]
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -647,24 +706,27 @@ export type Database = {
           created_at: string
           enabled: boolean
           id: string
-          organization_id: string | null
-          password_hash: string | null
+          organization_id: string
+          password_hash: string
+          portal_url: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           enabled?: boolean
           id?: string
-          organization_id?: string | null
-          password_hash?: string | null
+          organization_id: string
+          password_hash: string
+          portal_url: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           enabled?: boolean
           id?: string
-          organization_id?: string | null
-          password_hash?: string | null
+          organization_id?: string
+          password_hash?: string
+          portal_url?: string
           updated_at?: string
         }
         Relationships: [
@@ -679,51 +741,54 @@ export type Database = {
       }
       subscriptions: {
         Row: {
-          active_plan: string
+          active_plan: string | null
           canceled_at: string | null
-          created_at: string | null
+          created_at: string
           current_period_end: string | null
           current_period_start: string | null
-          documents_used_this_month: number | null
           id: string
-          monthly_usage_reset_date: string | null
+          polar_checkout_id: string | null
           polar_customer_id: string | null
           polar_subscription_id: string | null
-          selected_plan: string
+          selected_plan: string | null
           subscription_status: string | null
-          updated_at: string | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
-          active_plan?: string
+          active_plan?: string | null
           canceled_at?: string | null
-          created_at?: string | null
+          created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
-          documents_used_this_month?: number | null
           id?: string
-          monthly_usage_reset_date?: string | null
+          polar_checkout_id?: string | null
           polar_customer_id?: string | null
           polar_subscription_id?: string | null
-          selected_plan?: string
+          selected_plan?: string | null
           subscription_status?: string | null
-          updated_at?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
-          active_plan?: string
+          active_plan?: string | null
           canceled_at?: string | null
-          created_at?: string | null
+          created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
-          documents_used_this_month?: number | null
           id?: string
-          monthly_usage_reset_date?: string | null
+          polar_checkout_id?: string | null
           polar_customer_id?: string | null
           polar_subscription_id?: string | null
-          selected_plan?: string
+          selected_plan?: string | null
           subscription_status?: string | null
-          updated_at?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -798,6 +863,7 @@ export type Database = {
           organization_type: string | null
           organization_website: string | null
           phone_number: string | null
+          plan: string
           signature_path: string | null
           updated_at: string | null
           user_id: string
@@ -815,6 +881,7 @@ export type Database = {
           organization_type?: string | null
           organization_website?: string | null
           phone_number?: string | null
+          plan?: string
           signature_path?: string | null
           updated_at?: string | null
           user_id: string
@@ -832,11 +899,59 @@ export type Database = {
           organization_type?: string | null
           organization_website?: string | null
           phone_number?: string | null
+          plan?: string
           signature_path?: string | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      user_statistics: {
+        Row: {
+          documents_created: number
+          documents_signed: number
+          id: string
+          organization_id: string | null
+          pending_documents: number
+          portal_members: number | null
+          requested_documents: number | null
+          total_verifications: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          documents_created?: number
+          documents_signed?: number
+          id?: string
+          organization_id?: string | null
+          pending_documents?: number
+          portal_members?: number | null
+          requested_documents?: number | null
+          total_verifications?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          documents_created?: number
+          documents_signed?: number
+          id?: string
+          organization_id?: string | null
+          pending_documents?: number
+          portal_members?: number | null
+          requested_documents?: number | null
+          total_verifications?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_statistics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       verified_documents: {
         Row: {
@@ -885,6 +1000,45 @@ export type Database = {
           },
         ]
       }
+      verified_documents_backup_user_f7cf1643: {
+        Row: {
+          document_data: Json | null
+          document_id: string | null
+          expires_at: string | null
+          generated_at: string | null
+          id: string | null
+          is_active: boolean | null
+          organization_id: string | null
+          template_type: string | null
+          user_id: string | null
+          verification_hash: string | null
+        }
+        Insert: {
+          document_data?: Json | null
+          document_id?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          template_type?: string | null
+          user_id?: string | null
+          verification_hash?: string | null
+        }
+        Update: {
+          document_data?: Json | null
+          document_id?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          template_type?: string | null
+          user_id?: string | null
+          verification_hash?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -913,7 +1067,7 @@ export type Database = {
         Args: { org_id: string; org_name: string }
         Returns: string
       }
-      get_active_plan: { Args: { p_user_id: string }; Returns: string }
+      get_active_plan: { Args: { check_user_id: string }; Returns: string }
       get_organization_statistics: {
         Args: { org_id: string }
         Returns: {
@@ -939,10 +1093,26 @@ export type Database = {
           role: string
         }[]
       }
-      increment_document_count: { Args: { p_user_id: string }; Returns: Json }
-      increment_user_stat: {
-        Args: { p_increment?: number; p_stat_name: string; p_user_id: string }
+      has_active_subscription: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
+      hash_owner_password: { Args: { p_password: string }; Returns: string }
+      increment_document_count: {
+        Args: { p_user_id: string }
         Returns: undefined
+      }
+      increment_user_stat: {
+        Args: {
+          p_organization_id: string
+          p_stat_field: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      is_org_member_admin: {
+        Args: { check_org_id: string; check_user_id: string }
+        Returns: boolean
       }
       is_organization_admin: {
         Args: { check_org_id: string; check_user_id: string }
@@ -953,9 +1123,53 @@ export type Database = {
         Args: { org_id: string; user_id: string }
         Returns: boolean
       }
+      update_subscription_from_webhook:
+        | {
+            Args: {
+              p_active_plan: string
+              p_current_period_end: string
+              p_current_period_start: string
+              p_polar_customer_id: string
+              p_polar_subscription_id: string
+              p_subscription_status: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_active_plan: string
+              p_current_period_end: string
+              p_current_period_start: string
+              p_polar_customer_id: string
+              p_polar_subscription_id: string
+              p_subscription_status: string
+              p_trial_end?: string
+              p_trial_start?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+      user_belongs_to_organization: {
+        Args: { org_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      user_is_org_admin: {
+        Args: { org_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      validate_portal_password: {
+        Args: { p_organization_id: string; p_password: string }
+        Returns: boolean
+      }
+      verify_owner_password: {
+        Args: { p_email: string; p_password: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      employee_status: "pending" | "approved" | "rejected"
+      request_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1082,6 +1296,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      employee_status: ["pending", "approved", "rejected"],
+      request_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const

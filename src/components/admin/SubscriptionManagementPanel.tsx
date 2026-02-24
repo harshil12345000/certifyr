@@ -82,10 +82,11 @@ export const SubscriptionManagementPanel: React.FC<
       try {
         const { data, error } = await supabase.rpc('check_document_limit', { p_user_id: subscription.user_id });
         if (!error && data) {
+          const d = data as Record<string, unknown>;
           setDocumentUsage({ 
-            used: data.used || 0, 
-            limit: data.limit || 25,
-            reset_date: data.reset_date || null
+            used: (d.used as number) || 0, 
+            limit: (d.limit as number) || 25,
+            reset_date: (d.reset_date as string) || null
           });
         }
       } catch (err) {

@@ -149,10 +149,10 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
       }
     }
     const { data, error } = await supabase
-      .from('ai_chat_sessions' as never)
-      .insert({ organization_id: organizationId, user_id: userId, title: 'Widget Chat', messages: [] })
+      .from('ai_chat_sessions')
+      .insert({ organization_id: organizationId, user_id: userId, title: 'Widget Chat', messages: [] as never })
       .select()
-      .single() as unknown as { data: { id: string } | null; error: unknown };
+      .single();
     if (!error && data) {
       setSessionId(data.id);
       sessionStorage.setItem(SESSION_STORAGE_KEY, data.id);
@@ -166,8 +166,8 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
   const saveMessages = useCallback(async (msgs: ChatMessage[]) => {
     if (!sessionId) return;
     await supabase
-      .from('ai_chat_sessions' as never)
-      .update({ messages: msgs as never, updated_at: new Date().toISOString() })
+      .from('ai_chat_sessions')
+      .update({ messages: msgs as unknown as never, updated_at: new Date().toISOString() } as never)
       .eq('id', sessionId);
   }, [sessionId]);
 

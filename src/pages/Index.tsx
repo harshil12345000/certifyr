@@ -27,7 +27,7 @@ const Index = () => {
   const { subscription, isBasicFree } = useSubscription();
 
   // Document usage for Basic plan - count from preview_generations table (same as "Documents Created" card)
-  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date?: string } | null>(null);
 
   // Fetch document usage - count from preview_generations table to match "Documents Created" card
   useEffect(() => {
