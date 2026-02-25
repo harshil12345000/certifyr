@@ -197,30 +197,25 @@ export function DataTab({ organizationId }: DataTabProps) {
                 </div>
 
                 {previewData.allRows.length > 0 && (
-                  <div className="max-h-96 overflow-auto">
+                  <div className="max-h-[70vh] overflow-auto border rounded">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           {previewData.headers.map((header) => (
-                            <TableHead key={header}>{header}</TableHead>
+                            <TableHead key={header} className="whitespace-nowrap">{header}</TableHead>
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {previewData.allRows.slice(0, 10).map((row, idx) => (
+                        {previewData.allRows.map((row, idx) => (
                           <TableRow key={idx}>
                             {previewData.headers.map((header) => (
-                              <TableCell key={header}>{String(row[header as keyof EmployeeRecord] ?? '-')}</TableCell>
+                              <TableCell key={header} className="whitespace-nowrap">{String(row[header as keyof EmployeeRecord] ?? '-')}</TableCell>
                             ))}
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                    {previewData.allRows.length > 10 && (
-                      <p className="text-xs text-muted-foreground text-center mt-2">
-                        Showing 10 of {previewData.allRows.length} rows
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -279,30 +274,25 @@ export function DataTab({ organizationId }: DataTabProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="max-h-96 overflow-auto">
+            <div className="max-h-[70vh] overflow-auto border rounded">
               <Table>
                 <TableHeader>
                   <TableRow>
                     {Object.keys(employeeData[0] || {}).map((key) => (
-                      <TableHead key={key}>{key}</TableHead>
+                      <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employeeData.slice(0, 20).map((row, idx) => (
+                  {employeeData.map((row, idx) => (
                     <TableRow key={idx}>
                       {Object.values(row).map((value, vIdx) => (
-                        <TableCell key={vIdx}>{String(value ?? '-')}</TableCell>
+                        <TableCell key={vIdx} className="whitespace-nowrap">{String(value ?? '-')}</TableCell>
                       ))}
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              {employeeData.length > 20 && (
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Showing 20 of {employeeData.length} records
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>
