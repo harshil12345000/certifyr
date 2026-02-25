@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Upload, FileSpreadsheet, Trash2, X, Check, AlertCircle } from 'lucide-react';
+import { Loader2, Upload, FileSpreadsheet, Trash2, X, Check, AlertCircle, Search } from 'lucide-react';
 import { useEmployeeData, EmployeeRecord, FieldMapping } from '@/hooks/useEmployeeData';
 
 interface DataTabProps {
@@ -30,6 +30,7 @@ export function DataTab({ organizationId }: DataTabProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<{ headers: string[]; rows: EmployeeRecord[]; allRows: EmployeeRecord[]; mappings: FieldMapping[] } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [dataSearchQuery, setDataSearchQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -267,40 +268,68 @@ export function DataTab({ organizationId }: DataTabProps) {
         </Card>
       )}
 
-      {employeeData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Preview</CardTitle>
-            <CardDescription>
-              {employeeData.length} records • {Object.keys(employeeData[0] || {}).length} columns
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-[70vh] overflow-auto border rounded">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                      <TableHead className="whitespace-nowrap w-12 text-center">#</TableHead>
-                      {Object.keys(employeeData[0] || {}).map((key) => (
-                        <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employeeData.map((row, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="whitespace-nowrap text-center text-muted-foreground">{idx + 1}</TableCell>
-                        {Object.values(row).map((value, vIdx) => (
-                          <TableCell key={vIdx} className="whitespace-nowrap">{String(value ?? '-')}</TableCell>
+      {employeeData.length > 0 && (() => {
+        const query = dataSearchQuery.toLowerCase().trim();
+        const filteredData = query
+          ? employeeData.filter((row) =>
+              Object.values(row).some((val) =>
+                String(val ?? '').toLowerCase().includes(query)
+              )
+            )
+          : employeeData;
+
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Data Preview</CardTitle>
+                  <CardDescription>
+                    {query ? `${filteredData.length} of ${employeeData.length} records` : `${employeeData.length} records`} • {Object.keys(employeeData[0] || {}).length} columns
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="relative mt-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search across all data..."
+                  value={dataSearchQuery}
+                  onChange={(e) => setDataSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {filteredData.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No matching records found.</p>
+              ) : (
+                <div className="max-h-[70vh] overflow-auto border rounded">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap w-12 text-center">#</TableHead>
+                        {Object.keys(employeeData[0] || {}).map((key) => (
+                          <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>
                         ))}
                       </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    </TableHeader>
+                    <TableBody>
+                      {filteredData.map((row, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="whitespace-nowrap text-center text-muted-foreground">{idx + 1}</TableCell>
+                          {Object.values(row).map((value, vIdx) => (
+                            <TableCell key={vIdx} className="whitespace-nowrap">{String(value ?? '-')}</TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {loading && (
         <div className="flex items-center justify-center py-8">
