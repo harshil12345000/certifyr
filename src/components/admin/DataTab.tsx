@@ -201,6 +201,7 @@ export function DataTab({ organizationId }: DataTabProps) {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="whitespace-nowrap w-12 text-center">#</TableHead>
                           {previewData.headers.map((header) => (
                             <TableHead key={header} className="whitespace-nowrap">{header}</TableHead>
                           ))}
@@ -209,6 +210,7 @@ export function DataTab({ organizationId }: DataTabProps) {
                       <TableBody>
                         {previewData.allRows.map((row, idx) => (
                           <TableRow key={idx}>
+                            <TableCell className="whitespace-nowrap text-center text-muted-foreground">{idx + 1}</TableCell>
                             {previewData.headers.map((header) => (
                               <TableCell key={header} className="whitespace-nowrap">{String(row[header as keyof EmployeeRecord] ?? '-')}</TableCell>
                             ))}
@@ -278,18 +280,20 @@ export function DataTab({ organizationId }: DataTabProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {Object.keys(employeeData[0] || {}).map((key) => (
-                      <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {employeeData.map((row, idx) => (
-                    <TableRow key={idx}>
-                      {Object.values(row).map((value, vIdx) => (
-                        <TableCell key={vIdx} className="whitespace-nowrap">{String(value ?? '-')}</TableCell>
+                      <TableHead className="whitespace-nowrap w-12 text-center">#</TableHead>
+                      {Object.keys(employeeData[0] || {}).map((key) => (
+                        <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>
                       ))}
                     </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeData.map((row, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="whitespace-nowrap text-center text-muted-foreground">{idx + 1}</TableCell>
+                        {Object.values(row).map((value, vIdx) => (
+                          <TableCell key={vIdx} className="whitespace-nowrap">{String(value ?? '-')}</TableCell>
+                        ))}
+                      </TableRow>
                   ))}
                 </TableBody>
               </Table>
