@@ -86,6 +86,8 @@ export function UserPermissionsPanel({
     .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())[0];
 
   const normalizeEmail = (email?: string | null) => email?.trim().toLowerCase() ?? null;
+  const toTitleCase = (value: string) =>
+    value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 
   const collaboratorEmails = useMemo(() => {
     const emails = new Set<string>();
@@ -282,7 +284,7 @@ export function UserPermissionsPanel({
     } as const;
     return (
       <Badge variant={variants[status as keyof typeof variants] || "outline"}>
-        {status}
+        {toTitleCase(status)}
       </Badge>
     );
   };
@@ -452,7 +454,7 @@ export function UserPermissionsPanel({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{invite.email}</span>
                       {getStatusBadge(invite.status)}
-                      <Badge variant="outline">{invite.role}</Badge>
+                      <Badge variant="outline">{toTitleCase(invite.role)}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Invited {dayjs(invite.invited_at).format("MMM D, YYYY")}{" "}
@@ -515,7 +517,7 @@ export function UserPermissionsPanel({
                           <Badge variant="outline">You</Badge>
                         )}
                         {member.status && getStatusBadge(member.status)}
-                        <Badge variant="outline">{member.role}</Badge>
+                        <Badge variant="outline">{toTitleCase(member.role)}</Badge>
                       </div>
                       {getMemberEmail(member) && (
                         <p className="text-sm text-muted-foreground">
