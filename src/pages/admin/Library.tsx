@@ -586,14 +586,15 @@ export default function AdminLibrary() {
     setIsProcessing(true);
     setUploadProgress(0);
 
-    const results: JsonUploadItem[] = [];
-    
-    for (let i = 0; i < jsonUploadItems.length; i++) {
+    // Process all files in parallel
+    const processPromises = jsonUploadItems.map(async (item, i) => {
+      const result = await processJsonWithSarvam(item);
+      setJsonUploadItems(prev => prev.map((prevItem, idx) => idx === i ? result : prevItem));
       setUploadProgress(Math.round(((i + 1) / jsonUploadItems.length) * 100));
-      const result = await processJsonWithSarvam(jsonUploadItems[i]);
-      results.push(result);
-      setJsonUploadItems(prev => prev.map((item, idx) => idx === i ? result : item));
-    }
+      return result;
+    });
+
+    const results = await Promise.all(processPromises);
 
     setIsProcessing(false);
     
