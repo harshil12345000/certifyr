@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -205,13 +206,13 @@ export function SetupGuideWidget() {
   return (
     <div className="fixed bottom-6 left-6 z-50 w-[360px] max-w-[calc(100vw-2rem)]">
       <Card className="shadow-lg bg-background border-border">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
+        <CardHeader className={cn(isCollapsed ? "py-3" : "pb-2")}>
+          <div className={cn("flex items-center justify-between", isCollapsed && "relative min-h-14")}>
+            <div className={cn(isCollapsed && "w-full text-center")}>
               <CardTitle className="text-lg">Finish Setup</CardTitle>
               <CardDescription>{completedSteps}/{steps.length} completed</CardDescription>
             </div>
-            <div className="flex items-center gap-1">
+            <div className={cn("flex items-center gap-1", isCollapsed && "absolute right-0 top-1/2 -translate-y-1/2")}>
               <Button
                 type="button"
                 variant="ghost"
