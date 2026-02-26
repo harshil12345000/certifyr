@@ -3,10 +3,10 @@ import { useSubscription } from "@/hooks/useSubscription";
 
 export function useAIWidgetEligibility() {
   const { user } = useAuth();
-  const { subscription, loading } = useSubscription();
+  const { activePlan, loading } = useSubscription();
   
   if (loading) return false;
   if (!user) return false;
   
-  return subscription?.active_plan?.toLowerCase() === 'ultra';
+  return activePlan?.toLowerCase() === 'ultra';
 }

@@ -53,10 +53,10 @@ interface AIFloatingWidgetProps {
 function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
   const { user } = useAuth();
   const { organizationId, organizationDetails, userProfile } = useBranding();
-  const { subscription } = useSubscription();
+  const { activePlan } = useSubscription();
   const navigate = useNavigate();
 
-  const isUltraPlan = subscription?.active_plan?.toLowerCase() === 'ultra';
+  const isUltraPlan = activePlan?.toLowerCase() === 'ultra';
 
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -430,7 +430,7 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       {isOpen && (
-        <div style={{ width: '380px', height: '520px' }} className="mb-3 mr-0 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
+        <div style={{ width: '380px', height: '440px' }} className="mb-3 mr-0 bg-background rounded-lg shadow-2xl border overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
           <div className="flex items-center justify-between px-3 py-2.5 bg-blue-600 text-white shrink-0">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
@@ -475,7 +475,7 @@ function AIFloatingWidgetComponent({ className }: AIFloatingWidgetProps) {
         )}
       >
         {isOpen ? (
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         ) : (
           <Sparkles className="h-5 w-5" />
         )}

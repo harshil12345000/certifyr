@@ -247,6 +247,51 @@ serve(async (req) => {
       });
     }
 
+    // CREATE GLOBAL ANNOUNCEMENT
+    if (action === "create_announcement") {
+      const { title, content, expires_at } = await req.json();
+      
+      if (!title || !content) {
+        return new Response(JSON.stringify({ error: "Title and content required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Create the announcement using RPC (bypasses RLS)
+      const { data: announcementId, error: annError } = await supabase.rpc(
+        "create_global_announcement",
+        {
+          p_title: title,
+          p_content: content,
+          p_expires_at: expires_at || null,
+        }
+      );
+
+      if (annError) {
+        return new Response(JSON.stringify({ error: annError.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Send notifications to all organizations
+      const { error: notifError } = await supabase.rpc(
+        "notify_all_orgs_announcement",
+        {
+          p_announcement_id: announcementId,
+          p_subject: `📢 ${title}`,
+          p_body: content,
+        }
+      );
+
+      if (notifError) {
+        console.error("Error creating notifications:", notifError);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
