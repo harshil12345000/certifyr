@@ -45,13 +45,11 @@ import {
   X,
 } from "lucide-react";
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  "United States": "🇺🇸",
-  India: "🇮🇳",
-  UK: "🇬🇧",
-  Canada: "🇨🇦",
-  Australia: "🇦🇺",
-};
+import { countries, getFlagUrl } from '../lib/countries';
+
+const COUNTRY_FLAGS: Record<string, string> = Object.fromEntries(
+  countries.map(c => [c.name, getFlagUrl(c.iso)])
+);
 
 const TAG_COLORS: Record<string, string> = {
   country: "bg-blue-50 border-blue-300 text-blue-700",

@@ -29,17 +29,17 @@ import {
   AlertCircle,
   FilePlus,
   Download,
-  Eye
+  Eye,
+  Loader2,
+  Wand2
 } from "lucide-react";
 import { openPdfInNewTab } from "@/lib/pdf-utils";
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  "United States": "🇺🇸",
-  "India": "🇮🇳",
-  "UK": "🇬🇧",
-  "Canada": "🇨🇦",
-  "Australia": "🇦🇺",
-};
+import { countries, getFlagUrl } from '../lib/countries';
+
+const COUNTRY_FLAGS: Record<string, string> = Object.fromEntries(
+  countries.map(c => [c.name, getFlagUrl(c.iso)])
+);
 
 const TAG_COLORS: Record<string, string> = {
   country: "bg-blue-50 border-blue-300 text-blue-700",
@@ -215,6 +215,8 @@ interface LibraryFormTabProps {
 function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(!!document.official_pdf_url);
 
   const formSchema = z.object(
     fields.reduce((acc, field) => {
@@ -258,6 +260,49 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
       console.error("Error generating PDF:", error);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleAutoFillFromPdf = async () => {
+    if (!document.official_pdf_url || fields.length === 0) return;
+    
+    setIsAutoFilling(true);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const pdfUrl = document.official_pdf_url;
+      const fieldInfo = fields.map(f => ({
+        name: f.field_name,
+        label: f.field_label,
+        type: f.field_type,
+        required: f.required
+      }));
+
+      const { data, error } = await supabase.functions.invoke('pdf-form-fill', {
+        body: {
+          pdf_url: pdfUrl,
+          fields: fieldInfo,
+          current_data: formData,
+          document_name: document.form_name || document.official_name,
+          authority: document.authority,
+          country: document.country,
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.filled_fields) {
+        const updatedData = { ...formData, ...data.filled_fields };
+        setFormData(updatedData);
+        
+        Object.entries(data.filled_fields).forEach(([key, value]) => {
+          form.setValue(key, value as string);
+        });
+      }
+    } catch (error) {
+      console.error("Error auto-filling from PDF:", error);
+    } finally {
+      setIsAutoFilling(false);
     }
   };
 
@@ -460,52 +505,102 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Preview</CardTitle>
-            <CardDescription>
-              Live preview of your document
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Preview</CardTitle>
+                <CardDescription>
+                  {showPdfPreview ? 'Official PDF form' : 'Live preview of your document'}
+                </CardDescription>
+              </div>
+              {document.official_pdf_url && (
+                <div className="flex gap-2">
+                  <Button
+                    variant={showPdfPreview ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowPdfPreview(true)}
+                  >
+                    PDF
+                  </Button>
+                  <Button
+                    variant={!showPdfPreview ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowPdfPreview(false)}
+                  >
+                    Form
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div 
-              id={`library-doc-preview-${document.id}`}
-              className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed border rounded-lg"
-            >
-              <div className="text-center mb-6">
-                <h1 className="text-xl font-bold uppercase">
-                  {document.form_name || document.official_name}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {document.authority} - {document.country}
-                  {document.state && `, ${document.state}`}
-                </p>
-              </div>
+            {showPdfPreview && document.official_pdf_url ? (
+              <iframe
+                src={document.official_pdf_url}
+                className="w-full h-[600px] border rounded-lg"
+                title="PDF Preview"
+              />
+            ) : (
+              <div 
+                id={`library-doc-preview-${document.id}`}
+                className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed border rounded-lg"
+              >
+                <div className="text-center mb-6">
+                  <h1 className="text-xl font-bold uppercase">
+                    {document.form_name || document.official_name}
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {document.authority} - {document.country}
+                    {document.state && `, ${document.state}`}
+                  </p>
+                </div>
 
-              {document.short_description && (
-                <p className="text-sm mb-4">{document.short_description}</p>
-              )}
+                {document.short_description && (
+                  <p className="text-sm mb-4">{document.short_description}</p>
+                )}
 
-              <div className="space-y-3 mt-6">
-                {fields.map((field) => (
-                  <div key={field.id} className="flex">
-                    <span className="font-medium w-1/3">{field.field_label}:</span>
-                    <span className="flex-1">
-                      {formData[field.field_name] || `[${field.field_label}]`}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                <div className="space-y-3 mt-6">
+                  {fields.map((field) => (
+                    <div key={field.id} className="flex">
+                      <span className="font-medium w-1/3">{field.field_label}:</span>
+                      <span className="flex-1">
+                        {formData[field.field_name] || `[${field.field_label}]`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="mt-8 pt-4 border-t text-xs text-muted-foreground">
-                <p>This is a preview generated by Certifyr.</p>
-                <p>For official documents, please refer to the source.</p>
+                <div className="mt-8 pt-4 border-t text-xs text-muted-foreground">
+                  <p>This is a preview generated by Certifyr.</p>
+                  <p>For official documents, please refer to the source.</p>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="gap-2">
+            {document.official_pdf_url && (
+              <Button 
+                onClick={handleAutoFillFromPdf}
+                disabled={isAutoFilling}
+                variant="secondary"
+                className="flex-1"
+              >
+                {isAutoFilling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing PDF...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Auto-fill from PDF
+                  </>
+                )}
+              </Button>
+            )}
             <Button 
               onClick={handleCreatePdf} 
               disabled={isGenerating}
-              className="w-full"
+              className="flex-1"
             >
               {isGenerating ? (
                 <>
@@ -602,7 +697,6 @@ export default function LibraryDetail() {
             </Button>
           </div>
         </div>
-
         <Tabs defaultValue="details" className="space-y-6">
           <TabsList>
             <TabsTrigger value="details" className="gap-2">
@@ -788,6 +882,7 @@ export default function LibraryDetail() {
           />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
