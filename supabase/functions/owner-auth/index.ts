@@ -6,18 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const getServiceRoleClient = () => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { action, email, password, ownerToken, targetUserId, newPlan } = await req.json();
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(JSON.stringify({ error: "Invalid JSON", details: e.message }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const { action, email, password, ownerToken, targetUserId, newPlan, title, content, expires_at } = body;
+    const supabase = getServiceRoleClient();
 
     // LOGIN
     if (action === "login") {
@@ -257,39 +273,97 @@ serve(async (req) => {
         });
       }
 
-      // Create the announcement using RPC (bypasses RLS)
-      const { data: announcementId, error: annError } = await supabase.rpc(
-        "create_global_announcement",
-        {
-          p_title: title,
-          p_content: content,
-          p_expires_at: expires_at || null,
-        }
-      );
+      try {
+        const supabase = getServiceRoleClient();
+        
+        // Insert directly with service role (bypasses RLS)
+        const { data: announcement, error: annError } = await supabase
+          .from("announcements")
+          .insert({
+            title,
+            content,
+            expires_at: expires_at || null,
+            is_active: true,
+            is_global: true,
+            organization_id: null,
+            created_by: "00000000-0000-0000-0000-000000000000",
+          })
+          .select()
+          .single();
 
-      if (annError) {
-        return new Response(JSON.stringify({ error: annError.message }), {
+        if (annError) {
+          console.error("Announcement insert error:", JSON.stringify(annError));
+          return new Response(JSON.stringify({ error: annError.message, code: annError.code }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Get all organizations
+        const { data: orgs, error: orgsError } = await supabase
+          .from("organizations")
+          .select("id");
+
+        if (orgsError) {
+          console.error("Org fetch error:", JSON.stringify(orgsError));
+        }
+
+        if (orgs && orgs.length > 0) {
+          const notifications = orgs.map(org => ({
+            org_id: org.id,
+            subject: `📢 ${title}`,
+            body: content,
+            type: "announcement",
+            read_by: [],
+            data: { announcement_id: announcement.id },
+          }));
+
+          const { error: notifError } = await supabase
+            .from("notifications")
+            .insert(notifications);
+
+          if (notifError) {
+            console.error("Notifications insert error:", JSON.stringify(notifError));
+          }
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err: any) {
+        console.error("Unexpected error:", JSON.stringify(err));
+        return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    }
 
-      // Send notifications to all organizations
-      const { error: notifError } = await supabase.rpc(
-        "notify_all_orgs_announcement",
-        {
-          p_announcement_id: announcementId,
-          p_subject: `📢 ${title}`,
-          p_body: content,
+    // LIST GLOBAL ANNOUNCEMENTS
+    if (action === "list_announcements") {
+      try {
+        const supabase = getServiceRoleClient();
+        
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("*")
+          .is("organization_id", null)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("List announcements error:", JSON.stringify(error));
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-      );
 
-      if (notifError) {
-        console.error("Error creating notifications:", notifError);
+        return new Response(JSON.stringify({ announcements: data }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err: any) {
+        console.error("Unexpected error:", JSON.stringify(err));
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {

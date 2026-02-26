@@ -162,70 +162,133 @@ export function UserPermissionsPanel({
   }, [user?.id, organizationId]);
 
   const fetchMembers = async (orgId: string) => {
+    try {
+      const { data: membersData, error: membersError } = await supabase.rpc(
+        'get_org_members_with_names' as any,
+        { p_org_id: orgId }
+      );
+      
+      if (membersError) {
+        console.error('Error fetching members with names:', membersError);
+        await fetchMembersFallback(orgId);
+        return;
+      }
+
+      const membersArray = membersData as unknown as any[];
+      if (!membersArray || membersArray.length === 0) {
+        console.log('No members returned from RPC, trying fallback');
+        await fetchMembersFallback(orgId);
+        return;
+      }
+      
+      if (membersArray && membersArray.length > 0) {
+        const mappedMembers = membersArray.map((m) => ({
+          id: m.member_id,
+          user_id: m.user_id,
+          role: m.role,
+          status: m.status,
+          invited_email: m.invited_email,
+          created_at: m.created_at,
+        }));
+        setMembers(mappedMembers);
+
+        const profileMap: Record<string, MemberProfile> = {};
+        const profileEmailMap: Record<string, MemberProfile> = {};
+
+        membersArray.forEach((m) => {
+          if (m.user_id) {
+            const profile: MemberProfile = {
+              first_name: m.first_name,
+              last_name: m.last_name,
+              email: m.email,
+            };
+            profileMap[m.user_id] = profile;
+            const normalizedEmail = normalizeEmail(m.email);
+            if (normalizedEmail) {
+              profileEmailMap[normalizedEmail] = profile;
+            }
+          }
+        });
+
+        setMemberProfiles(profileMap);
+        setMemberProfilesByEmail(profileEmailMap);
+      }
+    } catch (err) {
+      console.error('Exception fetching members:', err);
+      await fetchMembersFallback(orgId);
+    }
+  };
+
+  const fetchMembersFallback = async (orgId: string) => {
     const { data, error } = await supabase
       .from("organization_members")
       .select("id, user_id, role, status, invited_email, created_at")
       .eq("organization_id", orgId)
       .order("created_at", { ascending: true });
-    if (!error && data) {
-      setMembers(data);
-      // Fetch profiles for members with user_id
-      const userIds = data.filter(m => m.user_id).map(m => m.user_id!);
-      const invitedEmails = data
-        .map((m) => normalizeEmail(m.invited_email))
-        .filter((email): email is string => !!email);
-
-      const profileMap: Record<string, MemberProfile> = {};
-      const profileEmailMap: Record<string, MemberProfile> = {};
-
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("user_profiles")
-          .select("user_id, first_name, last_name, email")
-          .in("user_id", userIds);
-        if (profiles) {
-          profiles.forEach(p => {
-            const profile: MemberProfile = {
-              first_name: p.first_name,
-              last_name: p.last_name,
-              email: p.email,
-            };
-            profileMap[p.user_id] = profile;
-            const normalizedEmail = normalizeEmail(p.email);
-            if (normalizedEmail) {
-              profileEmailMap[normalizedEmail] = profile;
-            }
-          });
-        }
-      }
-
-      if (invitedEmails.length > 0) {
-        const { data: profilesByEmail } = await supabase
-          .from("user_profiles")
-          .select("user_id, first_name, last_name, email")
-          .in("email", invitedEmails);
-
-        if (profilesByEmail) {
-          profilesByEmail.forEach((p) => {
-            const profile: MemberProfile = {
-              first_name: p.first_name,
-              last_name: p.last_name,
-              email: p.email,
-            };
-            const normalizedEmail = normalizeEmail(p.email);
-            if (normalizedEmail) {
-              profileEmailMap[normalizedEmail] = profile;
-            }
-            if (p.user_id && !profileMap[p.user_id]) {
-              profileMap[p.user_id] = profile;
-            }
-          });
-        }
-      }
-
-      setMemberProfiles(profileMap);
-      setMemberProfilesByEmail(profileEmailMap);
+    
+    if (error || !data) {
+      console.error('Fallback also failed:', error);
+      return;
     }
+    
+    setMembers(data);
+    
+    const userIds = data.filter(m => m.user_id).map(m => m.user_id!);
+    const invitedEmails = data
+      .map((m) => normalizeEmail(m.invited_email))
+      .filter((email): email is string => !!email);
+
+    const profileMap: Record<string, MemberProfile> = {};
+    const profileEmailMap: Record<string, MemberProfile> = {};
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("user_profiles")
+        .select("user_id, first_name, last_name, email")
+        .in("user_id", userIds);
+      
+      if (profiles) {
+        profiles.forEach(p => {
+          const profile: MemberProfile = {
+            first_name: p.first_name,
+            last_name: p.last_name,
+            email: p.email,
+          };
+          profileMap[p.user_id] = profile;
+          const normalizedEmail = normalizeEmail(p.email);
+          if (normalizedEmail) {
+            profileEmailMap[normalizedEmail] = profile;
+          }
+        });
+      }
+    }
+
+    if (invitedEmails.length > 0) {
+      const { data: profilesByEmail } = await supabase
+        .from("user_profiles")
+        .select("user_id, first_name, last_name, email")
+        .in("email", invitedEmails);
+
+      if (profilesByEmail) {
+        profilesByEmail.forEach((p) => {
+          const profile: MemberProfile = {
+            first_name: p.first_name,
+            last_name: p.last_name,
+            email: p.email,
+          };
+          const normalizedEmail = normalizeEmail(p.email);
+          if (normalizedEmail) {
+            profileEmailMap[normalizedEmail] = profile;
+          }
+          if (p.user_id && !profileMap[p.user_id]) {
+            profileMap[p.user_id] = profile;
+          }
+        });
+      }
+    }
+
+    setMemberProfiles(profileMap);
+    setMemberProfilesByEmail(profileEmailMap);
   };
 
   const fetchInvites = async (orgId: string) => {

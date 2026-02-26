@@ -86,20 +86,14 @@ export default function OwnerDashboard() {
   const fetchAnnouncements = useCallback(async () => {
     setLoadingAnnouncements(true);
     try {
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .is('organization_id', null)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setAnnouncements(data || []);
+      const data = await callOwnerApi({ action: "list_announcements", ownerToken: token });
+      setAnnouncements(data.announcements || []);
     } catch (err: any) {
       console.error('Error fetching announcements:', err);
     } finally {
       setLoadingAnnouncements(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (token) {
