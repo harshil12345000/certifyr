@@ -264,7 +264,10 @@ export default function LibraryDetail() {
             <div className="flex items-start gap-3">
               <span className="text-4xl">{COUNTRY_FLAGS[document.country] || "🌐"}</span>
               <div className="flex-1">
-                <CardTitle className="text-2xl">{document.official_name}</CardTitle>
+                <CardTitle className="text-2xl">{document.form_name || document.official_name}</CardTitle>
+                {document.form_name && document.official_name !== document.form_name && (
+                  <p className="text-sm text-muted-foreground mt-1">{document.official_name}</p>
+                )}
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <Badge variant="outline" className="text-sm">
                     <Globe className="w-3 h-3 mr-1" />

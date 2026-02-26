@@ -8,6 +8,7 @@ export interface LibraryDocument {
   authority: string;
   domain: string;
   official_name: string;
+  form_name?: string | null;
   slug: string;
   short_description: string | null;
   full_description: string | null;

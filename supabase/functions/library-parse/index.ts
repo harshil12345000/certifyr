@@ -33,6 +33,7 @@ interface LegalDocumentSchema {
   authority: string;
   domain: string;
   official_name: string;
+  form_name?: string;
   description?: string;
   purpose?: string;
   who_must_file?: string;
@@ -182,7 +183,8 @@ Extract and return complete JSON with these ENHANCED fields:
   "state": "State/Province if applicable",
   "authority": "Government authority name",
   "domain": "Category (Taxation, Business Registration, Compliance, Licensing, Healthcare, Food Safety, MSME, etc.)",
-  "official_name": "Full official name of the form/document",
+  "official_name": "The FULL official government form code/number (e.g., FORM GST REG-01, EIN-Form, FSSAI-Form-001). This is what the government calls it.",
+  "form_name": "A SIMPLE, CONSUMER-FRIENDLY name for this document. Make it easy to understand for regular people. Examples: 'GST Registration', 'Business Tax ID (EIN)', 'Food Safety License', 'Business Registration Certificate', 'Udyam Registration'. Keep it short and descriptive.",
   "description": "Comprehensive description (2-3 sentences)",
   "purpose": "Why this document is required and its significance",
   "who_must_file": "Detailed eligibility criteria with thresholds",
@@ -334,6 +336,7 @@ Return ONLY valid JSON, no explanation.`;
             authority: parsedDocument.authority,
             domain: parsedDocument.domain,
             official_name: parsedDocument.official_name,
+            form_name: parsedDocument.form_name || parsedDocument.official_name,
             slug,
             short_description: parsedDocument.description?.substring(0, 200) || null,
             full_description: parsedDocument.description || null,
@@ -421,6 +424,7 @@ Return ONLY valid JSON, no explanation.`;
         authority: parsedDocument.authority,
         domain: parsedDocument.domain,
         official_name: parsedDocument.official_name,
+        form_name: parsedDocument.form_name || parsedDocument.official_name,
         slug,
         short_description: parsedDocument.description?.substring(0, 200) || null,
         full_description: parsedDocument.description || null,

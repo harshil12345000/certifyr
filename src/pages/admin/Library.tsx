@@ -292,39 +292,21 @@ export default function AdminLibrary() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
-        try {
-          const parsed = JSON.parse(content);
-          
-          if (Array.isArray(parsed)) {
-            // It's an array of documents
-            parsed.forEach((item, idx) => {
-              newItems.push({
-                id: `item-${Date.now()}-${fileIdx}-${idx}`,
-                data: item,
-                status: "pending" as const,
-              });
-            });
-          } else if (typeof parsed === 'object' && parsed !== null) {
-            // It's a single document object
-            newItems.push({
-              id: `item-${Date.now()}-${fileIdx}`,
-              data: parsed,
-              status: "pending" as const,
-            });
-          }
-        } catch (parseError) {
-          console.error("Error parsing file:", file.name, parseError);
-        }
+        
+        // Pass raw content to Sarvam - don't parse it ourselves
+        newItems.push({
+          id: `item-${Date.now()}-${fileIdx}`,
+          data: {},
+          rawContent: content,
+          status: "pending" as const,
+        });
         
         processedCount++;
         if (processedCount === jsonFiles.length) {
-          // All files processed
-          setJsonInput(JSON.stringify(newItems.map(item => item.data), null, 2));
+          setJsonInput(content);
           setJsonUploadItems(newItems);
           if (newItems.length > 0) {
-            toast({ title: `Loaded ${newItems.length} document(s) from ${jsonFiles.length} file(s)` });
-          } else {
-            toast({ title: "No valid JSON found in files", variant: "destructive" });
+            toast({ title: `Loaded ${newItems.length} document(s) - will parse with Sarvam AI` });
           }
         }
       };
@@ -496,6 +478,7 @@ export default function AdminLibrary() {
       const pdfUrl = getField(['official_pdf_url', 'officialPdfUrl', 'pdfUrl', 'pdf_url', 'formUrl', 'form_url', 'downloadUrl', 'download_url']) || "";
       const version = getField(['version', 'Version', 'VERSION', 'ver', 'v']) || "1.0";
       const state = getField(['state', 'State', 'STATE', 'province', 'Province']) || "";
+      const formName = getField(['form_name', 'formName', 'simple_name', 'simpleName', 'consumer_name', 'consumerName']) || "";
 
       // Try to save directly to database
       try {
@@ -506,6 +489,7 @@ export default function AdminLibrary() {
           authority,
           domain,
           official_name: officialName,
+          form_name: formName || officialName,
           slug,
           short_description: description?.substring(0, 200) || null,
           full_description: description || null,

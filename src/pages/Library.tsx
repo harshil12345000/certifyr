@@ -76,7 +76,7 @@ function DocumentCard({ document }: { document: LibraryDocument }) {
         </div>
 
         <CardTitle className="text-lg font-semibold line-clamp-2 mt-2">
-          {document.official_name}
+          {document.form_name || document.official_name}
         </CardTitle>
       </CardHeader>
 
