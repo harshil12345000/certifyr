@@ -3,10 +3,11 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   ChangeEvent,
   FormEvent,
 } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +30,15 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
+  CheckCircle2,
+  Circle,
   ImagePlus,
   Cloud,
   Image as ImageIcon,
@@ -67,6 +71,15 @@ interface BrandingFileState {
 
 interface BrandingFilePreview {
   logoUrl: string | null;
+}
+
+interface SetupStep {
+  id: "account-settings" | "organization-overview" | "branding-logo";
+  label: string;
+  description: string;
+  completed: boolean;
+  actionLabel: string;
+  onAction: () => void;
 }
 
 // FileDropzone component
@@ -244,6 +257,7 @@ const VALID_TABS = ["organization", "branding", "admin", "announcements", "subsc
 
 const AdminPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { refreshBranding, enableQr: brandingEnableQr } = useBranding();
   const { hasFeature } = usePlanFeatures();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -277,11 +291,80 @@ const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [enableQr, setEnableQr] = useState<boolean>(true);
+  const [isAccountSettingsComplete, setIsAccountSettingsComplete] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<{
     [key in keyof BrandingFileState]: File | null;
   }>({
     logo: null,
   });
+
+  const hasText = (value?: string | null) => Boolean(value?.trim());
+
+  const isOrganizationOverviewComplete = useMemo(() => {
+    if (!organizationId) return false;
+    return [
+      formState.organizationName,
+      formState.streetAddress,
+      formState.city,
+      formState.state,
+      formState.postalCode,
+      formState.country,
+      formState.phoneNumber,
+      formState.email,
+      formState.organizationType,
+      formState.organizationSize,
+    ].every(hasText);
+  }, [organizationId, formState]);
+
+  const isBrandingComplete = Boolean(brandingPreviews.logoUrl);
+
+  const setupSteps = useMemo<SetupStep[]>(() => {
+    const steps: SetupStep[] = [
+      {
+        id: "account-settings",
+        label: "Fill out Account Settings",
+        description: "Complete your profile details. Digital signature is optional.",
+        completed: isAccountSettingsComplete,
+        actionLabel: "Open Account Settings",
+        onAction: () => navigate("/settings"),
+      },
+    ];
+
+    if (!isOrganizationOverviewComplete) {
+      steps.push({
+        id: "organization-overview",
+        label: "Fill out Organization Overview",
+        description: "Complete organization details once for your organization.",
+        completed: false,
+        actionLabel: "Go to Overview",
+        onAction: () => handleTabChange("organization"),
+      });
+    }
+
+    if (!isBrandingComplete) {
+      steps.push({
+        id: "branding-logo",
+        label: "Upload Organization Logo",
+        description: "Add branding logo once for your organization.",
+        completed: false,
+        actionLabel: "Go to Branding",
+        onAction: () => handleTabChange("branding"),
+      });
+    }
+
+    return steps;
+  }, [
+    isAccountSettingsComplete,
+    isOrganizationOverviewComplete,
+    isBrandingComplete,
+    navigate,
+  ]);
+
+  const completedSetupSteps = setupSteps.filter((step) => step.completed).length;
+  const hasIncompleteSetupSteps = setupSteps.some((step) => !step.completed);
+  const setupProgress = setupSteps.length === 0
+    ? 100
+    : Math.round((completedSetupSteps / setupSteps.length) * 100);
 
 
   // Fetch user profile data and organization data
@@ -297,10 +380,19 @@ const AdminPage = () => {
         const { data: profileData } = await supabase
           .from("user_profiles")
           .select(
-            "organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email",
+            "organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email, first_name, last_name, designation",
           )
           .eq("user_id", user.id)
           .maybeSingle();
+
+        setIsAccountSettingsComplete(
+          Boolean(profileData) &&
+            hasText(profileData?.first_name) &&
+            hasText(profileData?.last_name) &&
+            hasText(profileData?.email) &&
+            hasText(profileData?.designation) &&
+            hasText(profileData?.phone_number),
+        );
 
         // Get user's organization ID using RPC function
         const { data: orgId, error: rpcError } = await supabase.rpc(
@@ -694,6 +786,55 @@ const AdminPage = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
+        {setupSteps.length > 0 && hasIncompleteSetupSteps && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Account Setup</CardTitle>
+              <CardDescription>
+                Complete these steps to finish your workspace setup.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Progress</span>
+                  <span>{completedSetupSteps}/{setupSteps.length} completed</span>
+                </div>
+                <Progress value={setupProgress} className="h-2" />
+              </div>
+
+              <div className="space-y-3">
+                {setupSteps.map((step) => (
+                  <div
+                    key={step.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      {step.completed ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      )}
+                      <div>
+                        <p className="font-medium">{step.label}</p>
+                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant={step.completed ? "outline" : "default"}
+                      size="sm"
+                      onClick={step.onAction}
+                    >
+                      {step.completed ? "Completed" : step.actionLabel}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="organization">Overview</TabsTrigger>
