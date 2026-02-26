@@ -100,7 +100,8 @@ serve(async (req) => {
     const { data: ownerPlan } = await supabaseAdmin.rpc('get_org_owner_plan', { p_org_id: organizationId });
 
     const planLimits: Record<string, number | null> = { basic: 1, pro: 5, ultra: null };
-    const maxAdmins = planLimits[(ownerPlan || 'basic') as string] ?? 1;
+    const normalizedPlan = (ownerPlan || 'basic').toString().toLowerCase().trim();
+    const maxAdmins = planLimits[normalizedPlan] !== undefined ? planLimits[normalizedPlan] : 1;
 
     if (maxAdmins !== null && (adminCount ?? 0) >= maxAdmins) {
       console.error(`Admin limit reached: ${adminCount}/${maxAdmins} for plan ${ownerPlan}`);
