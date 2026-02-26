@@ -68,7 +68,7 @@ export const SubscriptionManagementPanel: React.FC<
   SubscriptionManagementPanelProps
 > = ({ organizationId }) => {
   const navigate = useNavigate();
-  const { subscription, loading, refetch } = useSubscription();
+  const { subscription, loading, refetch, activePlan: effectivePlan } = useSubscription();
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [dodoDetails, setDodoDetails] = useState<any>(null);
@@ -124,9 +124,12 @@ export const SubscriptionManagementPanel: React.FC<
     }
   }, [fetchDodoDetails]);
 
-  const activePlan = subscription?.active_plan?.toLowerCase() || null;
+  const activePlan =
+    effectivePlan?.toLowerCase() ||
+    subscription?.active_plan?.toLowerCase() ||
+    null;
   const planConfig = activePlan ? PLAN_PRICING[activePlan] : null;
-  const status = subscription?.subscription_status || "none";
+  const status = subscription?.subscription_status || (activePlan ? "active" : "none");
   const isCanceled = status === "canceled" || !!subscription?.canceled_at;
   const isBasicFree = activePlan === 'basic';
 
@@ -245,7 +248,7 @@ export const SubscriptionManagementPanel: React.FC<
     );
   }
 
-  if (!subscription || !activePlan) {
+  if (!activePlan) {
     return (
       <Card>
         <CardHeader>
@@ -406,7 +409,7 @@ export const SubscriptionManagementPanel: React.FC<
       </Card>
 
       {/* Change Plan Section */}
-      {availablePlans.length > 0 && (status === "active" || status === "trialing") && !isCanceled && (
+      {!!subscription && availablePlans.length > 0 && (status === "active" || status === "trialing") && !isCanceled && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -472,7 +475,7 @@ export const SubscriptionManagementPanel: React.FC<
       )}
 
       {/* Cancel Section - Downgrade to Free Basic for paid plans */}
-      {(status === "active" || status === "trialing") && !isCanceled && !isBasicFree && (
+      {!!subscription && (status === "active" || status === "trialing") && !isCanceled && !isBasicFree && (
         <Card className="border-yellow-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-yellow-700">

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { PLAN_HIERARCHY } from "@/config/planFeatures";
 
 // Define an interface for the additional sign-up data
 export interface SignUpData {
@@ -48,6 +49,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const syncAdminPlanWithOrganization = async (
+    userId: string,
+    organizationId: string,
+  ) => {
+    try {
+      const { data: ownerPlan } = await supabase.rpc("get_org_owner_plan", {
+        p_org_id: organizationId,
+      } as any);
+
+      const normalizedOwnerPlan = (ownerPlan || "")
+        .toString()
+        .toLowerCase()
+        .trim();
+
+      if (!(normalizedOwnerPlan in PLAN_HIERARCHY)) {
+        return;
+      }
+
+      const { data: currentSubscription } = await supabase
+        .from("subscriptions")
+        .select("active_plan")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const normalizedUserPlan = (currentSubscription?.active_plan || "basic")
+        .toString()
+        .toLowerCase()
+        .trim();
+
+      const ownerRank =
+        PLAN_HIERARCHY[normalizedOwnerPlan as keyof typeof PLAN_HIERARCHY] ?? 0;
+      const userRank =
+        PLAN_HIERARCHY[normalizedUserPlan as keyof typeof PLAN_HIERARCHY] ?? 0;
+
+      if (ownerRank <= userRank) {
+        return;
+      }
+
+      const { data: syncResult, error: syncError } = await supabase.rpc(
+        "create_free_subscription",
+        {
+          p_user_id: userId,
+          p_plan: normalizedOwnerPlan,
+        },
+      );
+
+      if (syncError) {
+        console.error("[PLAN SYNC] Failed to sync admin subscription:", syncError);
+        return;
+      }
+
+      if ((syncResult as any)?.success === false) {
+        console.error(
+          "[PLAN SYNC] Sync function returned error:",
+          (syncResult as any)?.error,
+        );
+      } else {
+        console.log(
+          `[PLAN SYNC] Admin plan upgraded to org plan: ${normalizedOwnerPlan}`,
+        );
+      }
+    } catch (error) {
+      console.error("[PLAN SYNC] Unexpected error syncing admin plan:", error);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -178,6 +245,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (membershipError) {
         console.error("[ORG ERROR] Error checking memberships:", membershipError);
+      }
+
+      const adminMembership = existingMembership?.find(
+        (m) => m.role === "admin" && m.status === "active" && !!m.organization_id,
+      );
+
+      if (adminMembership?.organization_id) {
+        await syncAdminPlanWithOrganization(user.id, adminMembership.organization_id);
       }
 
       if (existingMembership && existingMembership.length > 0) {
