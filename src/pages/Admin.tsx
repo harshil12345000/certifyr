@@ -34,6 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { useOrganizationId } from "@/hooks/useOrganizationId";
 import {
   ImagePlus,
   Cloud,
@@ -244,6 +245,7 @@ const VALID_TABS = ["organization", "branding", "admin", "announcements", "subsc
 
 const AdminPage = () => {
   const { user } = useAuth();
+  const { orgId, loading: orgLoading } = useOrganizationId();
   const { refreshBranding, enableQr: brandingEnableQr } = useBranding();
   const { hasFeature } = usePlanFeatures();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -286,7 +288,7 @@ const AdminPage = () => {
   // Fetch user profile data and organization data
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!user?.id) {
+      if (!user?.id || orgLoading) {
         setIsLoading(false);
         return;
       }
@@ -301,13 +303,7 @@ const AdminPage = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        // Get user's organization ID using RPC function
-        const { data: orgId, error: rpcError } = await supabase.rpc(
-          'get_user_organization_id',
-          { user_id: user.id }
-        );
-
-        if (rpcError || !orgId) {
+        if (!orgId) {
           setOrganizationId(null);
           setHasOrganization(false);
         } else {
@@ -376,7 +372,7 @@ const AdminPage = () => {
       }
     };
     fetchUserProfile();
-  }, [user]);
+  }, [user?.id, orgId, orgLoading]);
 
   const fetchBrandingFiles = async (orgId: string) => {
     try {

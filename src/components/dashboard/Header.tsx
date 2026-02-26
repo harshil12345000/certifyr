@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
 import { cn } from "@/lib/utils";
 import { NotificationSkeleton } from "@/components/ui/notification-skeleton";
+import { useOrganizationMembership } from "@/hooks/useOrganizationMembership";
 interface Notification {
   id: string;
   subject: string;
@@ -127,6 +128,7 @@ export function Header() {
     user,
     signOut
   } = useAuth();
+  const { membership, loading: orgLoading } = useOrganizationMembership();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -168,21 +170,16 @@ export function Header() {
 
   // Fetch notifications
   useEffect(() => {
-    if (!user) return;
+    if (!user || orgLoading) return;
     setLoadingNotifications(true);
     const fetchNotifications = async () => {
-      // 1. Fetch user's organization (any role, not just admin)
-      const {
-        data: orgs,
-        error: orgsError
-      } = await supabase.from("organization_members").select("organization_id").eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle();
-      if (orgsError || !orgs?.organization_id) {
+      const orgId = membership?.organization_id;
+      if (!orgId) {
         setNotifications([]);
         setUnread([]);
         setLoadingNotifications(false);
         return;
       }
-      const orgId = orgs.organization_id;
 
       // 2. Fetch notifications for this org
       const {
@@ -235,7 +232,7 @@ export function Header() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, membership?.organization_id, orgLoading]);
 
   // Mark as read in database
   const markAsRead = async (notificationId: string) => {

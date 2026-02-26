@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { activateBasicPlan } from '@/lib/subscription-activation';
 import { PLAN_HIERARCHY } from '@/config/planFeatures';
+import { useOrganizationMembership } from './useOrganizationMembership';
 
 export interface Subscription {
   id: string;
@@ -19,6 +20,7 @@ export interface Subscription {
 
 export function useSubscription() {
   const { user } = useAuth();
+  const { membership, loading: orgLoading } = useOrganizationMembership();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export function useSubscription() {
 
   // Set up realtime subscription updates
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || orgLoading) return;
 
     const channel = supabase
       .channel('subscription-changes')
@@ -180,13 +182,11 @@ export function useSubscription() {
 
     const fetchOrgPlan = async () => {
       try {
-        // Get user's org id
-        const { data: orgId } = await supabase
-          .rpc('get_user_organization_id', { user_id: user.id });
-        if (!orgId) return;
+        const memberOrgId = membership?.organization_id;
+        if (!memberOrgId) return;
 
         const { data: ownerPlan } = await supabase
-          .rpc('get_org_owner_plan', { p_org_id: orgId } as any);
+          .rpc('get_org_owner_plan', { p_org_id: memberOrgId } as any);
         if (ownerPlan && typeof ownerPlan === 'string') {
           const ownerRank = PLAN_HIERARCHY[ownerPlan as keyof typeof PLAN_HIERARCHY] ?? 0;
           const userRank = PLAN_HIERARCHY[(userPlan ?? 'basic') as keyof typeof PLAN_HIERARCHY] ?? 0;
@@ -201,7 +201,7 @@ export function useSubscription() {
       }
     };
     fetchOrgPlan();
-  }, [user?.id, subscription?.active_plan]);
+  }, [user?.id, subscription?.active_plan, membership?.organization_id, orgLoading]);
 
   const activePlan = orgPlan ?? subscription?.active_plan ?? null;
   const selectedPlan = subscription?.selected_plan ?? null;

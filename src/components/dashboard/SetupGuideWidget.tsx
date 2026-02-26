@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizationId } from "@/hooks/useOrganizationId";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ const hasText = (value?: string | null) => Boolean(value?.trim());
 
 export function SetupGuideWidget() {
   const { user } = useAuth();
+  const { orgId, loading: orgLoading } = useOrganizationId();
   const navigate = useNavigate();
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [isStatusLoaded, setIsStatusLoaded] = useState(false);
@@ -62,21 +64,18 @@ export function SetupGuideWidget() {
     setIsCollapsed(value);
   }, [collapseKey]);
 
-  const fetchSetupStatus = useCallback(async () => {
+  const fetchSetupStatus = useCallback(async (showLoading = false) => {
     if (!user?.id) return;
 
-    setIsStatusLoaded(false);
+    if (showLoading) {
+      setIsStatusLoaded(false);
+    }
     try {
-      const [{ data: profileData }, { data: orgId }] = await Promise.all([
-        supabase
-          .from("user_profiles")
-          .select("first_name, last_name, email, designation, phone_number")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase.rpc("get_user_organization_id", {
-          user_id: user.id,
-        }),
-      ]);
+      const { data: profileData } = await supabase
+        .from("user_profiles")
+        .select("first_name, last_name, email, designation, phone_number")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       const isAccountSettingsComplete =
         Boolean(profileData) &&
@@ -128,7 +127,7 @@ export function SetupGuideWidget() {
     } finally {
       setIsStatusLoaded(true);
     }
-  }, [user?.id]);
+  }, [orgId, user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -142,12 +141,14 @@ export function SetupGuideWidget() {
     }
     setIsDismissed(dismissKey ? localStorage.getItem(dismissKey) === "1" : false);
     setIsCollapsed(collapseKey ? localStorage.getItem(collapseKey) === "1" : false);
-    fetchSetupStatus();
-  }, [collapseKey, dismissKey, fetchSetupStatus, user?.id]);
+    if (!orgLoading) {
+      fetchSetupStatus(true);
+    }
+  }, [collapseKey, dismissKey, fetchSetupStatus, user?.id, orgLoading]);
 
   useEffect(() => {
     const onRefresh = () => {
-      fetchSetupStatus();
+      fetchSetupStatus(false);
     };
     window.addEventListener("setup-guide-refresh", onRefresh);
     return () => window.removeEventListener("setup-guide-refresh", onRefresh);
@@ -167,20 +168,20 @@ export function SetupGuideWidget() {
     setIsDismissed(true);
   };
 
-  const goToSettings = () => {
+  const goToSettings = useCallback(() => {
     setCollapsedWithPersist(true);
     navigate("/settings");
-  };
+  }, [navigate, setCollapsedWithPersist]);
 
-  const goToOverview = () => {
+  const goToOverview = useCallback(() => {
     setCollapsedWithPersist(true);
     navigate("/admin?tab=organization");
-  };
+  }, [navigate, setCollapsedWithPersist]);
 
-  const goToBranding = () => {
+  const goToBranding = useCallback(() => {
     setCollapsedWithPersist(true);
     navigate("/admin?tab=branding");
-  };
+  }, [navigate, setCollapsedWithPersist]);
 
   const steps = useMemo<SetupStep[]>(() => {
     if (!status) return [];
@@ -241,7 +242,7 @@ export function SetupGuideWidget() {
     }
   }, [hasIncomplete, isStatusLoaded]);
 
-  if (!user?.id || !isStatusLoaded || isDismissed) {
+  if (!user?.id || orgLoading || !isStatusLoaded || isDismissed) {
     return null;
   }
 

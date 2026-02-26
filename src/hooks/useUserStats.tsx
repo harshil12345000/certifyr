@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizationId } from "./useOrganizationId";
+import { getOrganizationMembershipForUser } from "./useOrganizationMembership";
 
 interface UserStats {
   documentsCreated: number;
@@ -153,17 +154,8 @@ export function useUserStats(refreshIndex?: number) {
 
 // Legacy helper function - kept for backward compatibility but no longer used internally
 export async function getOrganizationIdForUser(userId: string) {
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data?.organization_id) return null;
-  return data.organization_id;
+  const membership = await getOrganizationMembershipForUser(userId);
+  return membership?.organization_id ?? null;
 }
 
 // Legacy helper function - kept for backward compatibility

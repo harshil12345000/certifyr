@@ -119,7 +119,7 @@ export function UserPermissionsPanel({
     });
 
     return emails;
-  }, [members, memberProfiles]);
+  }, [members, memberProfiles, memberProfilesByEmail]);
 
   const pendingInvites = useMemo(
     () =>
@@ -159,7 +159,7 @@ export function UserPermissionsPanel({
       }
     };
     fetchData();
-  }, [user, organizationId]);
+  }, [user?.id, organizationId]);
 
   const fetchMembers = async (orgId: string) => {
     const { data, error } = await supabase
