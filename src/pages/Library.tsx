@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Library as LibraryIcon } from "lucide-react";
 import {
   useLibraryDocuments,
   useLibraryFilterOptions,
@@ -211,8 +211,16 @@ export default function Library() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <LibraryIcon className="w-6 h-6" />
+            <span className="font-semibold text-lg">Certifyr</span>
+          </Link>
+        </div>
+      </header>
+      <div className="container mx-auto px-4 py-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Legal Library</h1>
           <p className="text-muted-foreground mt-1">
@@ -395,6 +403,6 @@ export default function Library() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Library as LibraryIcon } from "lucide-react";
 import { useLibraryDocument, LibraryTag, LibraryField, LibraryDependency, LibraryAttachment } from "@/hooks/useLibrary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -191,42 +191,68 @@ export default function LibraryDetail() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <LibraryIcon className="w-6 h-6" />
+              <span className="font-semibold text-lg">Certifyr</span>
+            </Link>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-8 space-y-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="h-4 bg-muted rounded w-1/2"></div>
             <div className="h-64 bg-muted rounded"></div>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (error || !data) {
     return (
-      <DashboardLayout>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-            <h3 className="text-lg font-semibold">Document Not Found</h3>
-            <p className="text-muted-foreground mb-4">
-              The requested document could not be found.
-            </p>
-            <Button asChild>
-              <Link to="/library">Back to Library</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </DashboardLayout>
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <LibraryIcon className="w-6 h-6" />
+              <span className="font-semibold text-lg">Certifyr</span>
+            </Link>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+              <h3 className="text-lg font-semibold">Document Not Found</h3>
+              <p className="text-muted-foreground mb-4">
+                The requested document could not be found.
+              </p>
+              <Button asChild>
+                <Link to="/library">Back to Library</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
   const { document, tags, fields, dependencies, attachments } = data;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <LibraryIcon className="w-6 h-6" />
+            <span className="font-semibold text-lg">Certifyr</span>
+          </Link>
+        </div>
+      </header>
+      <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="sm">
             <Link to="/library">
@@ -396,6 +422,6 @@ export default function LibraryDetail() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

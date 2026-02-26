@@ -129,8 +129,8 @@ function AppContent() {
         <Route path="/verify/:hash" element={<VerifyDocument />} />
         <Route path="/no-access" element={<NoAccess />} />
         <Route path="/owner" element={<OwnerDashboard />} />
-        <Route path="/library" element={<Gated><Library /></Gated>} />
-        <Route path="/library/:slug" element={<Gated><LibraryDetail /></Gated>} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/library/:slug" element={<LibraryDetail />} />
         <Route path="/admin/library" element={<Gated><AdminLibrary /></Gated>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
