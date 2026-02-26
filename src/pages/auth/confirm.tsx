@@ -21,9 +21,9 @@ export default function AuthConfirm() {
 
         // Get parameters from query string (PKCE flow)
         const tokenHash = searchParams.get('token_hash');
-        const type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | 'magiclink' | null;
+        const type = searchParams.get('type') as 'recovery' | 'signup' | 'email' | 'magiclink' | 'invite' | null;
         const code = searchParams.get('code');
-        const next = searchParams.get('next') || '/dashboard';
+        const next = searchParams.get('next') || (type === 'invite' ? '/admin' : '/dashboard');
         const errorParam = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
 
@@ -41,6 +41,7 @@ export default function AuthConfirm() {
           const accessToken = hashParams.get('access_token');
           const refreshToken = hashParams.get('refresh_token');
           const hashType = hashParams.get('type');
+          const hashNext = searchParams.get('next') || (hashType === 'invite' ? '/admin' : '/dashboard');
           const hashError = hashParams.get('error');
           const hashErrorDesc = hashParams.get('error_description');
 
@@ -70,7 +71,7 @@ export default function AuthConfirm() {
               navigate('/reset-password', { replace: true });
             } else {
               setSuccess(true);
-              setTimeout(() => navigate(next, { replace: true }), 1500);
+              setTimeout(() => navigate(hashNext, { replace: true }), 1500);
             }
             return;
           }

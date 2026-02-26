@@ -14,9 +14,13 @@ serve(async (req) => {
 
   try {
     const fallbackUrl = "https://yjeeamhahyhfawwgebtd.supabase.co";
+    const adminInviteFallbackRedirect = "https://certifyr.vercel.app/auth/confirm?next=/admin";
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || fallbackUrl;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const adminInviteRedirectTo = (
+      Deno.env.get('ADMIN_INVITE_REDIRECT_URL') || adminInviteFallbackRedirect
+    ).trim();
 
     if (!supabaseUrl) {
       console.error('Missing database URL.');
@@ -53,13 +57,20 @@ serve(async (req) => {
 
     // Parse body
     const { email, role, organizationId } = await req.json();
+    const normalizedRole = String(role || '').toLowerCase().trim();
 
     console.log('Received invitation request:', { email, role, organizationId });
 
-    if (!email || !role || !organizationId) {
-      console.error('Missing required fields:', { email: !!email, role: !!role, organizationId: !!organizationId });
+    if (!email || !normalizedRole || !organizationId) {
+      console.error('Missing required fields:', { email: !!email, role: !!normalizedRole, organizationId: !!organizationId });
       return new Response(
         JSON.stringify({ error: 'Missing required fields: email, role, and organizationId are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (normalizedRole !== 'admin' && normalizedRole !== 'member') {
+      return new Response(
+        JSON.stringify({ error: "Invalid role. Allowed roles are 'admin' and 'member'." }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -135,7 +146,7 @@ serve(async (req) => {
       .from('organization_invites')
       .insert({
         email: String(email).toLowerCase().trim(),
-        role,
+        role: normalizedRole,
         organization_id: organizationId,
         invited_by: inviterId,
         status: 'pending',
@@ -158,11 +169,11 @@ serve(async (req) => {
     const { data: inviteData, error: emailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       String(email).toLowerCase().trim(),
       {
-        // Do not set redirectTo here; use project Site URL configured in Supabase
+        ...(normalizedRole === 'admin' ? { redirectTo: adminInviteRedirectTo } : {}),
         data: {
           organization_id: organizationId,
           organization_name: organization.name,
-          role,
+          role: normalizedRole,
           invited_by: inviterId,
           invite_id: invite.id,
         },
@@ -194,7 +205,7 @@ serve(async (req) => {
             .insert({
               user_id: existingUser.id,
               organization_id: organizationId,
-              role,
+              role: normalizedRole,
               status: 'active',
               invited_email: String(email).toLowerCase().trim(),
             });
