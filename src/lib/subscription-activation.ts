@@ -16,7 +16,7 @@ const hasMissingFreemiumColumnError = (message?: string | null) => {
   return MISSING_COLUMN_ERRORS.some((column) => text.includes(column));
 };
 
-const fallbackActivateBasicPlan = async (userId: string): Promise<ActivationResult> => {
+const fallbackActivatePlan = async (userId: string, plan: string = 'basic'): Promise<ActivationResult> => {
   const now = new Date().toISOString();
 
   const { error: upsertError } = await supabase
@@ -24,8 +24,8 @@ const fallbackActivateBasicPlan = async (userId: string): Promise<ActivationResu
     .upsert(
       {
         user_id: userId,
-        active_plan: 'basic',
-        selected_plan: 'basic',
+        active_plan: plan,
+        selected_plan: plan,
         subscription_status: 'active',
         current_period_start: now,
         current_period_end: null,
@@ -40,33 +40,33 @@ const fallbackActivateBasicPlan = async (userId: string): Promise<ActivationResu
 
   await supabase
     .from('user_profiles')
-    .update({ plan: 'basic', updated_at: now } as any)
+    .update({ plan: plan, updated_at: now } as any)
     .eq('user_id', userId);
 
   return { success: true };
 };
 
-export const activateBasicPlan = async (userId: string): Promise<ActivationResult> => {
+export const activateBasicPlan = async (userId: string, plan: string = 'basic'): Promise<ActivationResult> => {
   const { data, error } = await supabase.rpc('create_free_subscription', {
     p_user_id: userId,
-    p_plan: 'basic',
+    p_plan: plan,
   });
 
   if (!error) {
     const result = data as { success?: boolean; error?: string } | null;
     if (result?.success === false) {
       if (hasMissingFreemiumColumnError(result.error)) {
-        return fallbackActivateBasicPlan(userId);
+        return fallbackActivatePlan(userId, plan);
       }
 
-      return { success: false, error: result.error || 'Failed to activate Basic plan' };
+      return { success: false, error: result.error || `Failed to activate ${plan} plan` };
     }
 
     return { success: true };
   }
 
   if (hasMissingFreemiumColumnError(error.message)) {
-    return fallbackActivateBasicPlan(userId);
+    return fallbackActivatePlan(userId, plan);
   }
 
   return { success: false, error: error.message };

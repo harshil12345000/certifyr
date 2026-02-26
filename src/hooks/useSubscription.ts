@@ -32,13 +32,30 @@ export function useSubscription() {
   const ensureBasicSubscription = useCallback(async () => {
     if (!user?.id) return false;
 
-    const result = await activateBasicPlan(user.id);
+    let planToUse = 'basic';
+    
+    // Check if user has an organization membership
+    if (membership?.organization_id) {
+      try {
+        const { data: ownerPlan } = await supabase.rpc('get_org_owner_plan', { 
+          p_org_id: membership.organization_id 
+        } as any);
+        
+        if (ownerPlan && typeof ownerPlan === 'string' && ownerPlan !== '') {
+          planToUse = ownerPlan;
+        }
+      } catch (orgPlanError) {
+        console.warn('Could not get org plan, defaulting to basic:', orgPlanError);
+      }
+    }
+
+    const result = await activateBasicPlan(user.id, planToUse);
     if (!result.success) {
-      throw new Error(result.error || 'Failed to auto-create Basic subscription');
+      throw new Error(result.error || `Failed to auto-create ${planToUse} subscription`);
     }
 
     return true;
-  }, [user?.id]);
+  }, [user?.id, membership?.organization_id]);
 
   const fetchSubscription = useCallback(async () => {
     if (!user?.id) {
