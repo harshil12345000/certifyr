@@ -214,10 +214,9 @@ export default function LibraryDetail() {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
+          <div className="container mx-auto px-4 py-4 flex justify-center">
+            <Link to="/">
               <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-10" />
-              <span className="font-semibold text-lg">Certifyr</span>
             </Link>
           </div>
         </header>
@@ -242,15 +241,14 @@ export default function LibraryDetail() {
   const { document, tags, fields, dependencies, attachments } = data;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-8" />
-            <span className="font-semibold text-lg">Certifyr</span>
-          </Link>
-        </div>
-      </header>
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4 flex justify-center">
+            <Link to="/">
+              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-10" />
+            </Link>
+          </div>
+        </header>
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="sm">

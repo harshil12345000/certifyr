@@ -212,8 +212,8 @@ export default function Library() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="container mx-auto px-4 py-1 flex justify-center">
+          <Link to="/">
             <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-12" />
           </Link>
         </div>
