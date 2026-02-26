@@ -101,13 +101,18 @@ function determineConditionalLogic(fieldName: string, allFields: string[]): Reco
 }
 
 async function callSarvamAI(prompt: string): Promise<string> {
-  const sarvamApiKey = Deno.env.get('SARVAM_API_KEY');
+  const sarvamApiKey = Deno.env.get('SARVAM_LIBRARY_PARSER');
+  
+  console.log("Sarvam API key present:", !!sarvamApiKey);
+  console.log("Sarvam API key length:", sarvamApiKey?.length || 0);
+  console.log("Prompt length:", prompt.length);
   
   if (!sarvamApiKey) {
-    throw new Error('SARVAM_API_KEY not configured');
+    throw new Error('SARVAM_LIBRARY_PARSER not configured. Please set SARVAM_LIBRARY_PARSER environment variable.');
   }
 
   try {
+    console.log("Making request to Sarvam AI...");
     const response = await fetch('https://api.sarvam.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -119,29 +124,105 @@ async function callSarvamAI(prompt: string): Promise<string> {
         messages: [
           {
             role: 'system',
-            content: 'You are a legal document parser. Extract structured information from legal documents and return valid JSON.'
+            content: `You are an expert legal document analyst AI. Your task is to analyze legal documents, government forms, and compliance requirements to extract comprehensive structured information.
+
+For each document, you MUST extract and enhance:
+1. Basic Info: country, state, authority, domain, official name
+2. Detailed Description: Comprehensive description of what the document is
+3. Purpose: Why this document is required and its business significance
+4. Eligibility: Who must file this (business types, size thresholds, industries)
+5. Filing Method: How to file (online portal, mail, in-person, through agent)
+6. Required Fields: Every field needed with proper types and validation
+7. Attachments: Required documents to attach
+8. Dependencies: Other documents that must be obtained first
+9. Compliance Details: Deadlines, penalties, renewal requirements
+10. Validation Rules: Regex patterns for fields like PAN, GSTIN, Aadhaar, SSN, etc.
+
+Return ONLY valid JSON - no explanations, no markdown, just JSON.`
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.1,
-        max_tokens: 4000,
+        temperature: 0.3,
+        max_tokens: 8000,
       }),
     });
 
+    console.log("Sarvam response status:", response.status);
+    
     if (!response.ok) {
-      throw new Error(`Sarvam API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("Sarvam API error response:", errorText);
+      throw new Error(`Sarvam API error (${response.status}): ${errorText}`);
     }
 
     const data = await response.json() as { choices?: { message?: { content?: string } }[] };
-    return data.choices?.[0]?.message?.content || '';
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    if (!content) {
+      throw new Error('Empty response from Sarvam AI');
+    }
+    
+    console.log("Sarvam response received, length:", content.length);
+    return content;
   } catch (error) {
     console.error('Sarvam AI error:', error);
     throw error;
   }
 }
+
+const ENHANCE_JSON_PROMPT = `Analyze the following legal document JSON and enhance/validate it. If any fields are missing, infer them. If the JSON is incomplete or missing key information, fill in the gaps with sensible defaults based on the document type.
+
+Extract and return complete JSON with these ENHANCED fields:
+
+{
+  "country": "Country name (e.g., India, United States)",
+  "state": "State/Province if applicable",
+  "authority": "Government authority name",
+  "domain": "Category (Taxation, Business Registration, Compliance, Licensing, Healthcare, Food Safety, MSME, etc.)",
+  "official_name": "Full official name of the form/document",
+  "description": "Comprehensive description (2-3 sentences)",
+  "purpose": "Why this document is required and its significance",
+  "who_must_file": "Detailed eligibility criteria with thresholds",
+  "filing_method": "How to file (online/mail/in-person/agent)",
+  "official_source_url": "Official government website URL",
+  "official_pdf_url": "Direct PDF download URL if available",
+  "version": "Form version",
+  "required_fields": [
+    {
+      "field_name": "technical field name (e.g., legal_name, pan_number)",
+      "field_label": "Human readable label (e.g., Legal Name, PAN Number)",
+      "field_type": "text|number|date|email|tel|select|checkbox|radio|textarea",
+      "required": true|false,
+      "validation_regex": "Regex pattern if applicable (e.g., ^[A-Z]{5}[0-9]{4}[A-Z]{1}$ for PAN)",
+      "conditional_logic": {"field": "dependent field", "operator": "==|!=|>|<", "value": "value"} or null
+    }
+  ],
+  "attachments_required": [
+    {
+      "attachment_name": "Name of required document",
+      "is_required": true|false,
+      "description": "What this attachment must contain"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependency_name": "Prerequisite document name",
+      "description": "Why it's needed"
+    }
+  ],
+  "filing_deadline": "Due date/frequency if applicable",
+  "penalty_info": "Penalties for non-compliance",
+  "renewal_required": "Yes/No and frequency if applicable",
+  "official_contact": "Official helpline/email if available",
+  "common_mistakes": ["List of common mistakes to avoid"],
+  "tips": ["Tips for smooth filing"]
+}
+
+Original JSON to analyze and enhance:
+`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -159,20 +240,36 @@ serve(async (req) => {
     let parsingConfidence = 0.5;
 
     if (json_content) {
+      let jsonString: string;
+      
+      if (typeof json_content === 'string') {
+        jsonString = json_content;
+      } else {
+        jsonString = JSON.stringify(json_content, null, 2);
+      }
+      
+      const sarvamPrompt = `${ENHANCE_JSON_PROMPT}${jsonString}`;
+      
+      const sarvamResponse = await callSarvamAI(sarvamPrompt);
+      
       try {
-        if (typeof json_content === 'string') {
-          parsedDocument = JSON.parse(json_content) as LegalDocumentSchema;
+        const jsonMatch = sarvamResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedDocument = JSON.parse(jsonMatch[0]) as LegalDocumentSchema;
+          
+          if (!parsedDocument.country || !parsedDocument.authority || !parsedDocument.official_name) {
+            throw new Error('Missing required fields: country, authority, official_name');
+          }
+          
+          parsingConfidence = 0.85;
         } else {
-          parsedDocument = json_content as LegalDocumentSchema;
+          throw new Error('No valid JSON found in AI response');
         }
-        
-        if (!parsedDocument.country || !parsedDocument.authority || !parsedDocument.official_name) {
-          throw new Error('Missing required fields: country, authority, official_name');
-        }
-        
-        parsingConfidence = 0.85;
       } catch (e) {
-        throw new Error(`Invalid JSON format: ${(e as Error).message}`);
+        if ((e as Error).message.includes('AI response')) {
+          throw e;
+        }
+        throw new Error(`Failed to parse AI enhanced JSON: ${(e as Error).message}`);
       }
     } else if (pdf_url) {
       const prompt = `Parse the following legal document and extract structured information. Return JSON with these fields:
@@ -396,10 +493,13 @@ Return ONLY valid JSON, no explanation.`;
 
   } catch (error) {
     console.error("Library Parse Error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Error details:", errorMessage, errorStack);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        details: error instanceof Error ? error.stack : undefined
+        error: errorMessage,
+        details: errorStack
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

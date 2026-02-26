@@ -56,36 +56,8 @@ interface LibraryFormData {
 
 interface JsonUploadItem {
   id: string;
-  data: {
-    country: string;
-    state?: string;
-    authority: string;
-    domain: string;
-    official_name: string;
-    description?: string;
-    purpose?: string;
-    who_must_file?: string;
-    filing_method?: string;
-    official_source_url?: string;
-    official_pdf_url?: string;
-    version?: string;
-    required_fields?: Array<{
-      field_name: string;
-      field_label: string;
-      field_type: string;
-      required?: boolean;
-      validation_regex?: string;
-    }>;
-    attachments_required?: Array<{
-      attachment_name: string;
-      is_required?: boolean;
-      description?: string;
-    }>;
-    dependencies?: Array<{
-      dependency_name: string;
-      description?: string;
-    }>;
-  };
+  data: Record<string, unknown>;
+  rawContent?: string;
   status: "pending" | "processing" | "success" | "error";
   error?: string;
 }
@@ -283,62 +255,81 @@ export default function AdminLibrary() {
   const handleJsonInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJsonInput(e.target.value);
     
-    // Try to parse and validate JSON
-    try {
-      const parsed = JSON.parse(e.target.value);
-      if (Array.isArray(parsed)) {
-        const items: JsonUploadItem[] = parsed.map((item, idx) => ({
-          id: `item-${Date.now()}-${idx}`,
-          data: item,
-          status: "pending" as const,
-        }));
-        setJsonUploadItems(items);
-      } else {
-        // Single object - wrap in array
-        setJsonUploadItems([{
-          id: `item-${Date.now()}`,
-          data: parsed,
-          status: "pending" as const,
-        }]);
-      }
-    } catch {
+    const rawContent = e.target.value;
+    
+    if (rawContent.trim()) {
+      setJsonUploadItems([{
+        id: `item-${Date.now()}`,
+        data: {},
+        rawContent: rawContent,
+        status: "pending" as const,
+      }]);
+    } else {
       setJsonUploadItems([]);
     }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
-    setSelectedFile(file);
+    // Handle multiple files
+    const jsonFiles = Array.from(files).filter(file => 
+      file.type === "application/json" || 
+      file.name.endsWith(".json") ||
+      file.name.toLowerCase().endsWith(".json")
+    );
     
-    if (file.type === "application/json" || file.name.endsWith(".json")) {
+    if (jsonFiles.length === 0) {
+      toast({ title: "No JSON files selected. Please select .json files.", variant: "destructive" });
+      return;
+    }
+
+    let processedCount = 0;
+    const newItems: JsonUploadItem[] = [];
+
+    jsonFiles.forEach((file, fileIdx) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
-        setJsonInput(content);
         try {
           const parsed = JSON.parse(content);
+          
           if (Array.isArray(parsed)) {
-            const items: JsonUploadItem[] = parsed.map((item, idx) => ({
-              id: `item-${Date.now()}-${idx}`,
-              data: item,
-              status: "pending" as const,
-            }));
-            setJsonUploadItems(items);
-          } else {
-            setJsonUploadItems([{
-              id: `item-${Date.now()}`,
+            // It's an array of documents
+            parsed.forEach((item, idx) => {
+              newItems.push({
+                id: `item-${Date.now()}-${fileIdx}-${idx}`,
+                data: item,
+                status: "pending" as const,
+              });
+            });
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            // It's a single document object
+            newItems.push({
+              id: `item-${Date.now()}-${fileIdx}`,
               data: parsed,
               status: "pending" as const,
-            }]);
+            });
           }
-        } catch {
-          toast({ title: "Invalid JSON file", variant: "destructive" });
+        } catch (parseError) {
+          console.error("Error parsing file:", file.name, parseError);
+        }
+        
+        processedCount++;
+        if (processedCount === jsonFiles.length) {
+          // All files processed
+          setJsonInput(JSON.stringify(newItems.map(item => item.data), null, 2));
+          setJsonUploadItems(newItems);
+          if (newItems.length > 0) {
+            toast({ title: `Loaded ${newItems.length} document(s) from ${jsonFiles.length} file(s)` });
+          } else {
+            toast({ title: "No valid JSON found in files", variant: "destructive" });
+          }
         }
       };
       reader.readAsText(file);
-    }
+    });
   };
 
   // Drag and drop handlers
@@ -376,56 +367,86 @@ export default function AdminLibrary() {
 
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type === "application/json" || file.name.endsWith(".json")) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const content = event.target?.result as string;
-          setJsonInput(content);
-          try {
-            const parsed = JSON.parse(content);
-            if (Array.isArray(parsed)) {
-              const items: JsonUploadItem[] = parsed.map((item, idx) => ({
-                id: `item-${Date.now()}-${idx}`,
-                data: item,
-                status: "pending" as const,
-              }));
-              setJsonUploadItems(items);
-              toast({ title: `Loaded ${items.length} documents from file` });
-            } else {
-              setJsonUploadItems([{
-                id: `item-${Date.now()}`,
-                data: parsed,
-                status: "pending" as const,
-              }]);
-              toast({ title: "Loaded 1 document from file" });
-            }
-          } catch {
-            toast({ title: "Invalid JSON file", variant: "destructive" });
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        toast({ title: "Please drop a JSON file", variant: "destructive" });
+      // Accept any file type on drop - try to parse as JSON
+      const jsonFiles = Array.from(files).filter(file => 
+        file.type === "application/json" || 
+        file.name.endsWith(".json") ||
+        file.name.toLowerCase().endsWith(".json") ||
+        file.type === "" || // Unknown type
+        file.type === "text/plain" // Sometimes JSON files are detected as text
+      );
+      
+      if (jsonFiles.length === 0) {
+        // Try all dropped files as JSON anyway
+        const allFiles = Array.from(files);
+        processDroppedFiles(allFiles);
+        return;
       }
+      
+      processDroppedFiles(jsonFiles);
     }
   }, []);
+
+  const processDroppedFiles = (files: File[]) => {
+    let processedCount = 0;
+    const newItems: JsonUploadItem[] = [];
+
+    files.forEach((file, fileIdx) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        
+        newItems.push({
+          id: `item-${Date.now()}-${fileIdx}`,
+          data: {},
+          rawContent: content,
+          status: "pending" as const,
+        });
+        
+        processedCount++;
+        if (processedCount === files.length) {
+          setJsonInput(content);
+          setJsonUploadItems(newItems);
+          if (newItems.length > 0) {
+            toast({ title: `Loaded ${newItems.length} document(s) - will parse with Sarvam AI` });
+          }
+        }
+      };
+      reader.readAsText(file);
+    });
+  };
 
   const processJsonWithSarvam = async (item: JsonUploadItem): Promise<JsonUploadItem> => {
     try {
       // Call the library-parse edge function with JSON content
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://yjeeamhahyhfawwgebtd.supabase.co";
+      
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || "";
+
       const response = await fetch(`${supabaseUrl}/functions/v1/library-parse`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          "Authorization": `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          json_content: JSON.stringify(item.data),
+          json_content: item.rawContent || JSON.stringify(item.data),
         }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Edge function error response:", errorText);
+        let parsedError = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          parsedError = parsed.error || parsed.details || errorText;
+        } catch {}
+        throw new Error(`HTTP ${response.status}: ${parsedError}`);
+      }
+      
       const result = await response.json();
       
       if (result.error) {
@@ -434,25 +455,66 @@ export default function AdminLibrary() {
 
       return { ...item, status: "success" };
     } catch (error) {
-      console.error("Sarvam AI error:", error);
-      // If Sarvam fails, save directly to database
+      console.error("Sarvam AI error, falling back to direct save:", error);
+      
+      // Parse from rawContent if data is empty
+      let data = item.data;
+      if (Object.keys(data).length === 0 && item.rawContent) {
+        try {
+          data = JSON.parse(item.rawContent);
+        } catch {
+          // If rawContent is not valid JSON, try to extract info from text
+          data = {};
+        }
+      }
+      
+      const getField = (possibleNames: string[]): string | undefined => {
+        for (const name of possibleNames) {
+          const value = data[name];
+          if (typeof value === 'string' && value.trim()) return value.trim();
+          // Also check case-insensitive
+          const lowerName = name.toLowerCase();
+          for (const [key, val] of Object.entries(data)) {
+            if (key.toLowerCase() === lowerName && typeof val === 'string' && val.trim()) {
+              return val.trim();
+            }
+          }
+        }
+        return undefined;
+      };
+
+      // Try to extract document info with flexible field names
+      const country = getField(['country', 'Country', 'COUNTRY', 'nation', 'CountryName']) || "Unknown";
+      const authority = getField(['authority', 'Authority', 'AUTHORITY', 'issuingAuthority', 'issuing_authority', 'agency', 'Agency']) || "Unknown";
+      const domain = getField(['domain', 'Domain', 'DOMAIN', 'category', 'Category', 'type', 'Type']) || "Compliance";
+      const officialName = getField(['official_name', 'officialName', 'name', 'Name', 'documentName', 'document_name', 'formName', 'form_name', 'title', 'Title']) || "Untitled Document";
+      const description = getField(['description', 'Description', 'DESC', 'shortDescription', 'short_description', 'summary', 'Summary']) || "";
+      const purpose = getField(['purpose', 'Purpose', 'PURPOSE', 'reason', 'Reason', 'whyRequired', 'why_required']) || "";
+      const whoMustFile = getField(['who_must_file', 'whoMustFile', 'eligibility', 'Eligibility', 'whoCanApply', 'who_can_apply', 'applicableTo', 'applicable_to']) || "";
+      const filingMethod = getField(['filing_method', 'filingMethod', 'howToFile', 'how_to_file', 'method', 'Method', 'submissionMethod', 'submission_method']) || "";
+      const sourceUrl = getField(['official_source_url', 'officialSourceUrl', 'sourceUrl', 'source_url', 'websiteUrl', 'website_url', 'url', 'URL', 'link', 'Link']) || "";
+      const pdfUrl = getField(['official_pdf_url', 'officialPdfUrl', 'pdfUrl', 'pdf_url', 'formUrl', 'form_url', 'downloadUrl', 'download_url']) || "";
+      const version = getField(['version', 'Version', 'VERSION', 'ver', 'v']) || "1.0";
+      const state = getField(['state', 'State', 'STATE', 'province', 'Province']) || "";
+
+      // Try to save directly to database
       try {
-        const slug = generateSlug(item.data.official_name);
+        const slug = generateSlug(officialName);
         const docData = {
-          country: item.data.country,
-          state: item.data.state || null,
-          authority: item.data.authority,
-          domain: item.data.domain,
-          official_name: item.data.official_name,
+          country,
+          state: state || null,
+          authority,
+          domain,
+          official_name: officialName,
           slug,
-          short_description: item.data.description?.substring(0, 200) || null,
-          full_description: item.data.description || null,
-          purpose: item.data.purpose || null,
-          who_must_file: item.data.who_must_file || null,
-          filing_method: item.data.filing_method || null,
-          official_source_url: item.data.official_source_url || null,
-          official_pdf_url: item.data.official_pdf_url || null,
-          version: item.data.version || "1.0",
+          short_description: description?.substring(0, 200) || null,
+          full_description: description || null,
+          purpose: purpose || null,
+          who_must_file: whoMustFile || null,
+          filing_method: filingMethod || null,
+          official_source_url: sourceUrl || null,
+          official_pdf_url: pdfUrl || null,
+          version,
           last_verified_at: new Date().toISOString(),
           parsing_confidence: 0.5,
           needs_review: true,
@@ -466,35 +528,38 @@ export default function AdminLibrary() {
 
         if (insertError) throw insertError;
 
-        // Add fields if present
-        if (item.data.required_fields && newDoc) {
-          const fieldsToInsert = item.data.required_fields.map(field => ({
+        // Try to extract and save fields if present
+        const fieldsData = data.required_fields || data.fields || data.fieldsRequired || data.requiredFields || [];
+        if (Array.isArray(fieldsData) && fieldsData.length > 0 && newDoc) {
+          const fieldsToInsert = fieldsData.map((field: any) => ({
             document_id: newDoc.id,
-            field_name: field.field_name,
-            field_label: field.field_label,
-            field_type: field.field_type || "text",
-            required: field.required ?? true,
-            validation_regex: field.validation_regex || null,
+            field_name: field.field_name || field.fieldName || field.name || "field",
+            field_label: field.field_label || field.fieldLabel || field.label || field.name || "Field",
+            field_type: field.field_type || field.fieldType || field.type || "text",
+            required: field.required ?? field.required ?? true,
+            validation_regex: field.validation_regex || field.validationRegex || null,
           }));
           await supabase.from("library_fields").insert(fieldsToInsert);
         }
 
-        // Add attachments if present
-        if (item.data.attachments_required && newDoc) {
-          const attachmentsToInsert = item.data.attachments_required.map(att => ({
+        // Try to extract attachments
+        const attachmentsData = data.attachments_required || data.attachments || data.requiredAttachments || data.attachmentsRequired || [];
+        if (Array.isArray(attachmentsData) && attachmentsData.length > 0 && newDoc) {
+          const attachmentsToInsert = attachmentsData.map((att: any) => ({
             document_id: newDoc.id,
-            attachment_name: att.attachment_name,
-            is_required: att.is_required ?? true,
+            attachment_name: att.attachment_name || att.attachmentName || att.name || "Attachment",
+            is_required: att.is_required ?? att.isRequired ?? att.required ?? true,
             description: att.description || null,
           }));
           await supabase.from("library_attachments").insert(attachmentsToInsert);
         }
 
-        // Add dependencies if present
-        if (item.data.dependencies && newDoc) {
-          const depsToInsert = item.data.dependencies.map(dep => ({
+        // Try to extract dependencies
+        const depsData = data.dependencies || data.dependsOn || data.prerequisites || [];
+        if (Array.isArray(depsData) && depsData.length > 0 && newDoc) {
+          const depsToInsert = depsData.map((dep: any) => ({
             document_id: newDoc.id,
-            dependency_name: dep.dependency_name,
+            dependency_name: dep.dependency_name || dep.name || dep.dependency || "Dependency",
             dependency_slug: null,
             description: dep.description || null,
           }));
@@ -506,7 +571,7 @@ export default function AdminLibrary() {
         return { 
           ...item, 
           status: "error", 
-          error: dbError instanceof Error ? dbError.message : "Unknown error" 
+          error: dbError instanceof Error ? dbError.message : "Failed to save document" 
         };
       }
     }
@@ -1099,9 +1164,9 @@ export default function AdminLibrary() {
                     {jsonUploadItems.map((item, idx) => (
                       <div key={item.id} className="flex items-center justify-between p-3 border-b last:border-0">
                         <div>
-                          <div className="font-medium">{item.data.official_name || `Document ${idx + 1}`}</div>
+                          <div className="font-medium">{String(item.data.official_name || item.data.name || item.data.title || `Document ${idx + 1}`)}</div>
                           <div className="text-xs text-muted-foreground">
-                            {item.data.country} • {item.data.authority} • {item.data.domain}
+                            {String(item.data.country || item.data.country || '')} • {String(item.data.authority || item.data.agency || '')} • {String(item.data.domain || item.data.category || '')}
                           </div>
                         </div>
                         {item.status === "pending" && (
@@ -1160,30 +1225,22 @@ export default function AdminLibrary() {
               </Button>
 
               <div className="text-xs text-muted-foreground p-3 bg-muted rounded-lg">
-                <strong>Expected JSON format:</strong>
-                <pre className="mt-2 whitespace-pre-wrap">{`{
-  "country": "India",
-  "state": "Maharashtra",
-  "authority": "CBIC",
-  "domain": "Taxation",
-  "official_name": "GST Registration",
-  "description": "Register for GST...",
-  "purpose": "To collect GST...",
-  "who_must_file": "Businesses > 40L",
-  "filing_method": "Online",
-  "official_source_url": "https://...",
-  "official_pdf_url": "https://...",
-  "version": "1.0",
-  "required_fields": [
-    {"field_name": "pan", "field_label": "PAN Number", "field_type": "text", "required": true}
-  ],
-  "attachments_required": [
-    {"attachment_name": "Address Proof", "is_required": true}
-  ],
-  "dependencies": [
-    {"dependency_name": "PAN Card"}
-  ]
-}`}</pre>
+                <strong>Accepted JSON format (flexible - any of these work):</strong>
+                <ul className="mt-2 ml-4 list-disc space-y-1">
+                  <li><code>country</code> / <code>Country</code> / <code>nation</code></li>
+                  <li><code>authority</code> / <code>Agency</code> / <code>issuingAuthority</code></li>
+                  <li><code>domain</code> / <code>Category</code> / <code>Type</code></li>
+                  <li><code>official_name</code> / <code>name</code> / <code>documentName</code> / <code>title</code></li>
+                  <li><code>description</code> / <code>summary</code></li>
+                  <li><code>purpose</code> / <code>reason</code></li>
+                  <li><code>who_must_file</code> / <code>eligibility</code></li>
+                  <li><code>filing_method</code> / <code>howToFile</code> / <code>method</code></li>
+                  <li><code>official_source_url</code> / <code>url</code> / <code>websiteUrl</code></li>
+                  <li><code>official_pdf_url</code> / <code>pdfUrl</code> / <code>downloadUrl</code></li>
+                </ul>
+                <p className="mt-2 text-yellow-600">
+                  If Sarvam AI fails, the system auto-maps any JSON format!
+                </p>
               </div>
             </TabsContent>
 
