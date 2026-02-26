@@ -16,17 +16,35 @@ export const RootRedirect = () => {
 
   useEffect(() => {
     const checkAuthAndRedirect = () => {
+      // Check for Supabase auth hash fragments (invite, recovery, signup, magiclink)
+      // These arrive when an invited admin clicks the email link
+      if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+        if (accessToken && type) {
+          // Preserve the hash and redirect to auth/confirm for processing
+          navigate(`/auth/confirm${window.location.hash}`, { replace: true });
+          return;
+        }
+      }
+
+      // Check for query-based auth params (token, token_hash, code)
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('token') || searchParams.get('token_hash') || searchParams.get('code')) {
+        navigate(`/auth/confirm${window.location.search}${window.location.hash}`, { replace: true });
+        return;
+      }
+
       const authToken = localStorage.getItem("authToken");
       const lastLogin = localStorage.getItem("lastLogin");
 
-      // Check if both token and lastLogin exist
       if (authToken && lastLogin) {
         const lastLoginTime = parseInt(lastLogin, 10);
         const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
         const now = Date.now();
         const timeSinceLogin = now - lastLoginTime;
 
-        // If lastLogin is within the last 7 days, redirect to dashboard
         if (timeSinceLogin < sevenDaysInMs && timeSinceLogin >= 0) {
           navigate("/dashboard", { replace: true });
           return;
