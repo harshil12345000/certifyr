@@ -929,7 +929,6 @@ export default function AdminLibrary() {
                 <TableHead>Authority</TableHead>
                 <TableHead>Domain</TableHead>
                 <TableHead>Version</TableHead>
-                <TableHead>Confidence</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -959,11 +958,6 @@ export default function AdminLibrary() {
                     <TableCell>{doc.authority}</TableCell>
                     <TableCell>{doc.domain}</TableCell>
                     <TableCell>{doc.version}</TableCell>
-                    <TableCell>
-                      {doc.parsing_confidence 
-                        ? `${(doc.parsing_confidence * 100).toFixed(0)}%`
-                        : "-"}
-                    </TableCell>
                     <TableCell>
                       {doc.needs_review ? (
                         <Badge variant="destructive" className="text-xs">

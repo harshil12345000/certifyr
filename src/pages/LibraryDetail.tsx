@@ -273,11 +273,6 @@ export default function LibraryDetail() {
                   Verified: {new Date(document.last_verified_at).toLocaleDateString()}
                 </span>
               )}
-              {document.parsing_confidence && (
-                <span className="flex items-center gap-1">
-                  Confidence: {(document.parsing_confidence * 100).toFixed(0)}%
-                </span>
-              )}
               {document.needs_review && (
                 <Badge variant="destructive" className="text-xs">
                   <AlertTriangle className="w-3 h-3 mr-1" />

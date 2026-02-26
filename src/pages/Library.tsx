@@ -106,12 +106,6 @@ function DocumentCard({ document }: { document: LibraryDocument }) {
               {new Date(document.last_verified_at).toLocaleDateString()}
             </span>
           )}
-
-          {typeof document.parsing_confidence === "number" && (
-            <span>
-              Confidence: {document.parsing_confidence.toFixed(2)}
-            </span>
-          )}
         </div>
 
         <div className="flex gap-2 pt-2">
