@@ -49,6 +49,8 @@ import { useBranding } from "@/contexts/BrandingContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
   X,
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   Circle,
   ArrowRight,
@@ -306,6 +308,7 @@ const AdminPage = () => {
   const [enableQr, setEnableQr] = useState<boolean>(true);
   const [isAccountSettingsComplete, setIsAccountSettingsComplete] = useState(false);
   const [isSetupWidgetDismissed, setIsSetupWidgetDismissed] = useState(false);
+  const [isSetupWidgetCollapsed, setIsSetupWidgetCollapsed] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<{
     [key in keyof BrandingFileState]: File | null;
   }>({
@@ -1118,71 +1121,87 @@ const AdminPage = () => {
       {setupSteps.length > 0 && hasIncompleteSetupSteps && !isSetupWidgetDismissed && (
         <div className="fixed bottom-6 left-6 z-50 w-[360px] max-w-[calc(100vw-2rem)]">
           <Card className="shadow-lg bg-background border-border">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">Getting Started</CardTitle>
+                  <CardTitle className="text-lg">Finish Setup</CardTitle>
                   <CardDescription>
                     {completedSetupSteps}/{setupSteps.length} completed
                   </CardDescription>
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Close setup guide"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remove setup guide widget?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to remove this setup guide widget?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>No</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDismissSetupWidget}>
-                        Yes
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label={isSetupWidgetCollapsed ? "Expand setup guide" : "Collapse setup guide"}
+                    onClick={() => setIsSetupWidgetCollapsed((prev) => !prev)}
+                  >
+                    {isSetupWidgetCollapsed ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label="Close setup guide"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove setup guide widget?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove this setup guide widget?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>No</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDismissSetupWidget}>
+                          Yes
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Progress value={setupProgress} className="h-2" />
-              <div className="space-y-2">
-                {setupSteps.map((step) => (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={step.onAction}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-left hover:bg-accent transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2.5">
-                        {step.completed ? (
-                          <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        )}
-                        <div>
+
+            {!isSetupWidgetCollapsed && (
+              <CardContent className="space-y-2 pt-0">
+                <Progress value={setupProgress} className="h-1.5" />
+                <div className="space-y-1.5">
+                  {setupSteps.map((step) => (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={step.onAction}
+                      className="w-full rounded-lg border bg-background px-3 py-2 text-left hover:bg-accent transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          {step.completed ? (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <Circle className="h-4 w-4 text-muted-foreground" />
+                          )}
                           <p className="text-sm font-medium">{step.label}</p>
-                          <p className="text-xs text-muted-foreground">{step.description}</p>
                         </div>
+                        {!step.completed && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
                       </div>
-                      {!step.completed && <ArrowRight className="h-4 w-4 text-muted-foreground mt-0.5" />}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            )}
           </Card>
         </div>
       )}
