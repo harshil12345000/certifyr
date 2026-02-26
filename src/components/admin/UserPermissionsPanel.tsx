@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,36 @@ export function UserPermissionsPanel({
     .filter(m => m.role === "admin" && m.status === "active")
     .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())[0];
 
+  const normalizeEmail = (email?: string | null) => email?.trim().toLowerCase() ?? null;
+
+  const collaboratorEmails = useMemo(() => {
+    const emails = new Set<string>();
+
+    members.forEach((member) => {
+      if (member.status !== "active") return;
+
+      const invitedEmail = normalizeEmail(member.invited_email);
+      const profileEmail = normalizeEmail(
+        member.user_id ? memberProfiles[member.user_id]?.email : null
+      );
+
+      if (invitedEmail) emails.add(invitedEmail);
+      if (profileEmail) emails.add(profileEmail);
+    });
+
+    return emails;
+  }, [members, memberProfiles]);
+
+  const pendingInvites = useMemo(
+    () =>
+      invites.filter((invite) => {
+        if (invite.status.toLowerCase() !== "pending") return false;
+        const inviteEmail = normalizeEmail(invite.email);
+        return !!inviteEmail && !collaboratorEmails.has(inviteEmail);
+      }),
+    [invites, collaboratorEmails]
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id || !organizationId) {
@@ -150,6 +180,7 @@ export function UserPermissionsPanel({
       .from("organization_invites")
       .select("id, email, role, invited_at, expires_at, status, invited_by")
       .eq("organization_id", orgId)
+      .eq("status", "pending")
       .order("invited_at", { ascending: false });
     if (!error && data) {
       setInvites(data);
@@ -408,11 +439,11 @@ export function UserPermissionsPanel({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {invites.length === 0 ? (
+          {pendingInvites.length === 0 ? (
             <p className="text-muted-foreground text-sm">No pending invitations.</p>
           ) : (
             <div className="space-y-3">
-              {invites.map((invite) => (
+              {pendingInvites.map((invite) => (
                 <div
                   key={invite.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
