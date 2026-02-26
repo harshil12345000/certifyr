@@ -22,6 +22,7 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orgPlan, setOrgPlan] = useState<string | null>(null);
 
   const hasFetchedOnce = useRef(false);
   const hasAttemptedBasicEnsure = useRef(false);
@@ -167,9 +168,6 @@ export function useSubscription() {
         (new Date(subscription.current_period_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       ))
     : 0;
-
-  // Org plan fallback: if user's own plan is basic/null, check org owner's plan
-  const [orgPlan, setOrgPlan] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
