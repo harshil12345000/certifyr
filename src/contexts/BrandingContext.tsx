@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { useOrganizationMembership } from "@/hooks/useOrganizationMembership";
 
 interface OrganizationDetails {
   name: string | null;
@@ -57,25 +58,16 @@ export function BrandingProvider({ children, organizationId }: { children: React
   const [enableQr, setEnableQr] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { membership, loading: membershipLoading } = useOrganizationMembership();
   const { activePlan, hasFeature } = usePlanFeatures();
 
   const loadBrandingData = async () => {
     // If organizationId is provided, use it directly (for employee portal)
-    const orgIdToUse = organizationId || (user?.id ? await (async () => {
-      // Use RPC function to get just one organization ID
-      const { data: orgId, error: rpcError } = await supabase.rpc(
-        'get_user_organization_id',
-        { user_id: user.id }
-      );
-      
-      if (rpcError) {
-        console.error("Error fetching organization ID via RPC:", rpcError);
-        return null;
-      }
-      
-      console.log("Organization ID for user:", orgId);
-      return orgId;
-    })() : null);
+    if (!organizationId && user?.id && membershipLoading) {
+      return;
+    }
+
+    const orgIdToUse = organizationId || membership?.organization_id || null;
 
     if (!orgIdToUse) {
       console.log("No organization ID found, skipping branding data load");
@@ -206,7 +198,7 @@ export function BrandingProvider({ children, organizationId }: { children: React
 
   useEffect(() => {
     loadBrandingData();
-  }, [user?.id, organizationId, activePlan]);
+  }, [user?.id, organizationId, activePlan, membership?.organization_id, membershipLoading]);
 
   const refreshBranding = async () => {
     await loadBrandingData();

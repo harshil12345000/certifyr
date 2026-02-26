@@ -13,6 +13,7 @@ import { documentConfigs } from "@/config/documentConfigs";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
+import { getOrganizationMembershipForUser } from "@/hooks/useOrganizationMembership";
 
 // Document metadata for UI display
 const documentMetadata = [{
@@ -115,18 +116,15 @@ const NewDocuments = () => {
         const isBasicPlan = activePlan === 'basic';
       
       if (isBasicPlan && user.id) {
-        // Get organization ID first
-        const { data: orgData } = await supabase.rpc(
-          'get_user_organization_id',
-          { user_id: user.id }
-        );
-        
-        if (orgData) {
+        const membership = await getOrganizationMembershipForUser(user.id);
+        const organizationId = membership?.organization_id;
+
+        if (organizationId) {
           // Count from preview_generations table (same as "Documents Created" card)
           const { count } = await supabase
             .from('preview_generations')
             .select('*', { count: 'exact', head: true })
-            .eq('organization_id', orgData);
+            .eq('organization_id', organizationId);
           
           const used = count || 0;
           if (used >= 25) {

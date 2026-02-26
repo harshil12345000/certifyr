@@ -5,7 +5,8 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
-import { getOrganizationIdForUser, incrementUserStat } from "@/hooks/useUserStats";
+import { incrementUserStat } from "@/hooks/useUserStats";
+import { getOrganizationMembershipForUser } from "@/hooks/useOrganizationMembership";
 
 export interface DocumentVerificationData {
   documentId: string;
@@ -49,11 +50,7 @@ export const saveVerifiedDocument = async (
     // Check document limit for Basic users before allowing save
     // Count from preview_generations table (same source as "Documents Created" card)
     if (data.userId) {
-      // Get organization ID first
-      const { data: orgData } = await supabase.rpc(
-        'get_user_organization_id',
-        { user_id: data.userId }
-      );
+      const orgData = data.organizationId || (await getOrganizationMembershipForUser(data.userId))?.organization_id || null;
       
       if (orgData) {
           // Check plan first — only basic plan users have a document limit

@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrganizationSecurity } from "./useOrganizationSecurity";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "./useSubscription";
+import { getOrganizationMembershipForUser } from "./useOrganizationMembership";
 
 export interface DocumentHistoryItem {
   id: string;
@@ -20,7 +21,7 @@ export interface DocumentHistoryItem {
 
 export function useDocumentHistory() {
   const { user } = useAuth();
-  const { organizationId } = useOrganizationSecurity();
+  const { organizationId, loading: orgLoading } = useOrganizationSecurity();
   const { activePlan } = useSubscription();
   const [history, setHistory] = useState<DocumentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,17 +36,11 @@ export function useDocumentHistory() {
 
     try {
       setLoading(true);
-      // Resolve organization id via hook or RPC fallback
+      // Resolve organization id via hook or cached membership fallback
       let orgId = organizationId as string | null | undefined;
-      if (!orgId) {
-        const { data: fetchedOrgId, error: orgErr } = await supabase.rpc(
-          "get_user_organization_id",
-          { user_id: user.id }
-        );
-        if (orgErr) {
-          console.error("Error fetching organization id via RPC:", orgErr);
-        }
-        orgId = (fetchedOrgId as string | null) || null;
+      if (!orgId && user?.id) {
+        const membership = await getOrganizationMembershipForUser(user.id);
+        orgId = membership?.organization_id ?? null;
       }
 
       if (!orgId) {
@@ -74,8 +69,9 @@ export function useDocumentHistory() {
   };
 
   useEffect(() => {
+    if (orgLoading) return;
     fetchHistory();
-  }, [user, organizationId]);
+  }, [user, organizationId, orgLoading]);
 
   const saveDocument = async (
     documentName: string,
@@ -94,12 +90,11 @@ export function useDocumentHistory() {
       // Check document limit for Basic plan users only (not pro/ultra)
       const isBasicFree = activePlan === 'basic';
       if (isBasicFree) {
-      // Get organization ID first
-      const { data: orgData } = await supabase.rpc(
-        'get_user_organization_id',
-        { user_id: user.id }
-      );
-      
+      const orgData =
+        organizationId ??
+        (await getOrganizationMembershipForUser(user.id))?.organization_id ??
+        null;
+
       if (orgData) {
         // Count from preview_generations table (same as "Documents Created" card)
         const { count } = await supabase
@@ -120,17 +115,11 @@ export function useDocumentHistory() {
       }
     }
 
-    // Ensure we have an organization ID; fetch via RPC if missing
+    // Ensure we have an organization ID; fetch via cached membership if missing
     let orgId = organizationId as string | null | undefined;
-    if (!orgId) {
-      const { data: fetchedOrgId, error: orgErr } = await supabase.rpc(
-        "get_user_organization_id",
-        { user_id: user.id }
-      );
-      if (orgErr) {
-        console.error("Error fetching organization id via RPC:", orgErr);
-      }
-      orgId = (fetchedOrgId as string | null) || null;
+    if (!orgId && user?.id) {
+      const membership = await getOrganizationMembershipForUser(user.id);
+      orgId = membership?.organization_id ?? null;
     }
     if (!orgId) {
       toast({

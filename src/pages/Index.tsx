@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
 import { BookmarkCheck } from "lucide-react";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { getOrganizationMembershipForUser } from "@/hooks/useOrganizationMembership";
 const Index = () => {
   const {
     user
@@ -42,14 +43,10 @@ const Index = () => {
       }
       
       try {
-        // Get organization ID first
-        const { data: orgData, error: orgError } = await supabase.rpc(
-          'get_user_organization_id',
-          { user_id: user.id }
-        );
-        
-        if (orgError || !orgData) {
-          console.error('Error getting organization:', orgError);
+        const membership = await getOrganizationMembershipForUser(user.id);
+        const organizationId = membership?.organization_id;
+
+        if (!organizationId) {
           setDocumentUsage({ used: 0, limit: 25, remaining: 25 });
           return;
         }
@@ -58,7 +55,7 @@ const Index = () => {
         const { count, error } = await supabase
           .from('preview_generations')
           .select('*', { count: 'exact', head: true })
-          .eq('organization_id', orgData);
+          .eq('organization_id', organizationId);
         
         if (error) {
           console.error('Error counting preview generations:', error);
