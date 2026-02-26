@@ -24,19 +24,22 @@ const Index = () => {
   const {
     user
   } = useAuth();
-  const { subscription, isBasicFree } = useSubscription();
+  const { subscription, isBasicFree, loading: subscriptionLoading } = useSubscription();
 
   // Document usage for Basic plan - count from preview_generations table (same as "Documents Created" card)
-  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date?: string } | null>(null);
 
   // Fetch document usage - count from preview_generations table to match "Documents Created" card
   useEffect(() => {
     const fetchDocumentUsage = async () => {
       if (!user) return;
       
-      // Only show banner for Basic users or users without subscription
-      const isBasicUser = subscription?.active_plan === 'basic' || !subscription?.active_plan;
-      if (!isBasicUser) return;
+      // Only show banner for Basic users - wait until subscription is loaded
+      if (subscriptionLoading) return;
+      if (subscription?.active_plan && subscription.active_plan !== 'basic') {
+        setDocumentUsage(null);
+        return;
+      }
       
       try {
         // Get organization ID first
@@ -74,7 +77,7 @@ const Index = () => {
       }
     };
     fetchDocumentUsage();
-  }, [user, subscription]);
+  }, [user, subscription, subscriptionLoading]);
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
@@ -150,7 +153,7 @@ const Index = () => {
         </div>
 
         {/* Document Usage Banner for Basic Users */}
-        {documentUsage && (subscription?.active_plan === 'basic' || !subscription?.active_plan) && (
+        {!subscriptionLoading && documentUsage && subscription?.active_plan === 'basic' && (
           <div className={`p-4 rounded-lg border ${documentUsage.remaining <= 5 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

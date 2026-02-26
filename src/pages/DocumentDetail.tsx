@@ -188,7 +188,8 @@ export default function DocumentDetail() {
         // Increment documents_created stat
         await supabase.rpc('increment_user_stat', {
           p_user_id: user.id,
-          p_stat_name: 'documents_created'
+          p_stat_field: 'documents_created',
+          p_organization_id: organizationId || '',
         });
       }
       
