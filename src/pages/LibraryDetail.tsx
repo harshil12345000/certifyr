@@ -1,5 +1,4 @@
 import { useParams, Link } from "react-router-dom";
-import { Library as LibraryIcon } from "lucide-react";
 import { useLibraryDocument, LibraryTag, LibraryField, LibraryDependency, LibraryAttachment } from "@/hooks/useLibrary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -195,7 +194,7 @@ export default function LibraryDetail() {
         <header className="border-b">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <LibraryIcon className="w-6 h-6" />
+              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-8" />
               <span className="font-semibold text-lg">Certifyr</span>
             </Link>
           </div>
@@ -217,7 +216,7 @@ export default function LibraryDetail() {
         <header className="border-b">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <LibraryIcon className="w-6 h-6" />
+              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-8" />
               <span className="font-semibold text-lg">Certifyr</span>
             </Link>
           </div>
@@ -247,7 +246,7 @@ export default function LibraryDetail() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <LibraryIcon className="w-6 h-6" />
+            <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-8" />
             <span className="font-semibold text-lg">Certifyr</span>
           </Link>
         </div>
