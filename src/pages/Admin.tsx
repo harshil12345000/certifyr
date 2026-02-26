@@ -37,8 +37,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   Circle,
+  ArrowRight,
   ImagePlus,
   Cloud,
   Image as ImageIcon,
@@ -292,6 +295,7 @@ const AdminPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [enableQr, setEnableQr] = useState<boolean>(true);
   const [isAccountSettingsComplete, setIsAccountSettingsComplete] = useState(false);
+  const [isSetupWidgetOpen, setIsSetupWidgetOpen] = useState(true);
   const [selectedFiles, setSelectedFiles] = useState<{
     [key in keyof BrandingFileState]: File | null;
   }>({
@@ -786,55 +790,6 @@ const AdminPage = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        {setupSteps.length > 0 && hasIncompleteSetupSteps && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Account Setup</CardTitle>
-              <CardDescription>
-                Complete these steps to finish your workspace setup.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Progress</span>
-                  <span>{completedSetupSteps}/{setupSteps.length} completed</span>
-                </div>
-                <Progress value={setupProgress} className="h-2" />
-              </div>
-
-              <div className="space-y-3">
-                {setupSteps.map((step) => (
-                  <div
-                    key={step.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      {step.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-muted-foreground mt-0.5" />
-                      )}
-                      <div>
-                        <p className="font-medium">{step.label}</p>
-                        <p className="text-sm text-muted-foreground">{step.description}</p>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant={step.completed ? "outline" : "default"}
-                      size="sm"
-                      onClick={step.onAction}
-                    >
-                      {step.completed ? "Completed" : step.actionLabel}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="organization">Overview</TabsTrigger>
@@ -1134,6 +1089,71 @@ const AdminPage = () => {
           )}
         </Tabs>
       </div>
+
+      {setupSteps.length > 0 && hasIncompleteSetupSteps && (
+        <div className="fixed bottom-6 left-6 z-50 w-[360px] max-w-[calc(100vw-2rem)]">
+          {isSetupWidgetOpen ? (
+            <Card className="shadow-lg">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Getting Started</CardTitle>
+                    <CardDescription>
+                      {completedSetupSteps}/{setupSteps.length} completed
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setIsSetupWidgetOpen(false)}
+                    aria-label="Collapse setup widget"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Progress value={setupProgress} className="h-2" />
+                <div className="space-y-2">
+                  {setupSteps.map((step) => (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={step.onAction}
+                      className="w-full rounded-lg border bg-background px-3 py-2 text-left hover:bg-accent/40 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5">
+                          {step.completed ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                          )}
+                          <div>
+                            <p className="text-sm font-medium">{step.label}</p>
+                            <p className="text-xs text-muted-foreground">{step.description}</p>
+                          </div>
+                        </div>
+                        {!step.completed && <ArrowRight className="h-4 w-4 text-muted-foreground mt-0.5" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsSetupWidgetOpen(true)}
+              className="flex w-full items-center justify-between rounded-full border bg-background px-4 py-3 shadow-lg hover:bg-accent/40 transition-colors"
+            >
+              <span className="text-sm font-medium">Getting Started: {setupProgress}%</span>
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 };
