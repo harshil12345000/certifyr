@@ -70,6 +70,7 @@ export function UserPermissionsPanel({
   const [isAdmin, setIsAdmin] = useState(false);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
+  const [memberProfilesByEmail, setMemberProfilesByEmail] = useState<Record<string, MemberProfile>>({});
   const [invites, setInvites] = useState<OrganizationInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteForm, setInviteForm] = useState({ email: "", role: "admin" });
@@ -89,6 +90,19 @@ export function UserPermissionsPanel({
   const toTitleCase = (value: string) =>
     value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 
+  const getProfileForMember = (member: OrganizationMember): MemberProfile | undefined => {
+    if (member.user_id && memberProfiles[member.user_id]) {
+      return memberProfiles[member.user_id];
+    }
+
+    const invitedEmail = normalizeEmail(member.invited_email);
+    if (invitedEmail && memberProfilesByEmail[invitedEmail]) {
+      return memberProfilesByEmail[invitedEmail];
+    }
+
+    return undefined;
+  };
+
   const collaboratorEmails = useMemo(() => {
     const emails = new Set<string>();
 
@@ -96,9 +110,8 @@ export function UserPermissionsPanel({
       if (member.status !== "active") return;
 
       const invitedEmail = normalizeEmail(member.invited_email);
-      const profileEmail = normalizeEmail(
-        member.user_id ? memberProfiles[member.user_id]?.email : null
-      );
+      const profile = getProfileForMember(member);
+      const profileEmail = normalizeEmail(profile?.email);
 
       if (invitedEmail) emails.add(invitedEmail);
       if (profileEmail) emails.add(profileEmail);
@@ -157,23 +170,60 @@ export function UserPermissionsPanel({
       setMembers(data);
       // Fetch profiles for members with user_id
       const userIds = data.filter(m => m.user_id).map(m => m.user_id!);
+      const invitedEmails = data
+        .map((m) => normalizeEmail(m.invited_email))
+        .filter((email): email is string => !!email);
+
+      const profileMap: Record<string, MemberProfile> = {};
+      const profileEmailMap: Record<string, MemberProfile> = {};
+
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from("user_profiles")
           .select("user_id, first_name, last_name, email")
           .in("user_id", userIds);
         if (profiles) {
-          const profileMap: Record<string, MemberProfile> = {};
           profiles.forEach(p => {
-            profileMap[p.user_id] = {
+            const profile: MemberProfile = {
               first_name: p.first_name,
               last_name: p.last_name,
               email: p.email,
             };
+            profileMap[p.user_id] = profile;
+            const normalizedEmail = normalizeEmail(p.email);
+            if (normalizedEmail) {
+              profileEmailMap[normalizedEmail] = profile;
+            }
           });
-          setMemberProfiles(profileMap);
         }
       }
+
+      if (invitedEmails.length > 0) {
+        const { data: profilesByEmail } = await supabase
+          .from("user_profiles")
+          .select("user_id, first_name, last_name, email")
+          .in("email", invitedEmails);
+
+        if (profilesByEmail) {
+          profilesByEmail.forEach((p) => {
+            const profile: MemberProfile = {
+              first_name: p.first_name,
+              last_name: p.last_name,
+              email: p.email,
+            };
+            const normalizedEmail = normalizeEmail(p.email);
+            if (normalizedEmail) {
+              profileEmailMap[normalizedEmail] = profile;
+            }
+            if (p.user_id && !profileMap[p.user_id]) {
+              profileMap[p.user_id] = profile;
+            }
+          });
+        }
+      }
+
+      setMemberProfiles(profileMap);
+      setMemberProfilesByEmail(profileEmailMap);
     }
   };
 
@@ -260,8 +310,8 @@ export function UserPermissionsPanel({
   };
 
   const getMemberDisplayName = (member: OrganizationMember) => {
-    if (member.user_id && memberProfiles[member.user_id]) {
-      const profile = memberProfiles[member.user_id];
+    const profile = getProfileForMember(member);
+    if (profile) {
       const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
       return name || profile.email || member.invited_email || "Active User";
     }
@@ -269,8 +319,9 @@ export function UserPermissionsPanel({
   };
 
   const getMemberEmail = (member: OrganizationMember) => {
-    if (member.user_id && memberProfiles[member.user_id]?.email) {
-      return memberProfiles[member.user_id].email;
+    const profile = getProfileForMember(member);
+    if (profile?.email) {
+      return profile.email;
     }
     return member.invited_email;
   };
