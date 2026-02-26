@@ -154,7 +154,7 @@ export function useSubscription() {
     !!subscription?.current_period_end &&
     new Date(subscription.current_period_end) > new Date();
 
-  const isBasicFree = subscription?.active_plan === 'basic' &&
+  const isBasicFree = (orgPlan ?? subscription?.active_plan) === 'basic' &&
     subscription?.subscription_status === 'active';
 
   // Allow users without subscription (treat as Basic free)
@@ -209,7 +209,7 @@ export function useSubscription() {
   const selectedPlan = subscription?.selected_plan ?? null;
 
   // Export isBasicFree for use in components - only true when explicitly on basic plan
-  const isBasicFreeExported = subscription?.active_plan === 'basic';
+  const isBasicFreeExported = activePlan === 'basic';
 
   return {
     subscription,

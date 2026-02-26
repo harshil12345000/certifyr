@@ -21,7 +21,7 @@ export interface DocumentHistoryItem {
 export function useDocumentHistory() {
   const { user } = useAuth();
   const { organizationId } = useOrganizationSecurity();
-  const { subscription } = useSubscription();
+  const { activePlan } = useSubscription();
   const [history, setHistory] = useState<DocumentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
@@ -92,7 +92,7 @@ export function useDocumentHistory() {
     }
 
       // Check document limit for Basic plan users only (not pro/ultra)
-      const isBasicFree = subscription?.active_plan === 'basic';
+      const isBasicFree = activePlan === 'basic';
       if (isBasicFree) {
       // Get organization ID first
       const { data: orgData } = await supabase.rpc(

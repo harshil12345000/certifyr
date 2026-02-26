@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { PLAN_HIERARCHY } from "@/config/planFeatures";
 
 // Define an interface for the additional sign-up data
 export interface SignUpData {
@@ -59,58 +58,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         p_org_id: organizationId,
       } as any);
 
-      const normalizedOwnerPlan = (ownerPlan || "")
-        .toString()
-        .toLowerCase()
-        .trim();
-
-      if (!(normalizedOwnerPlan in PLAN_HIERARCHY)) {
+      const normalizedOwnerPlan = (ownerPlan || "").toString().toLowerCase().trim();
+      if (!["basic", "pro", "ultra"].includes(normalizedOwnerPlan)) {
         return;
       }
 
-      const { data: currentSubscription } = await supabase
-        .from("subscriptions")
-        .select("active_plan")
-        .eq("user_id", userId)
-        .maybeSingle();
+      // Do not create or alter per-admin trial/subscription state here.
+      // Owner subscription (plan + trial) remains the single source of truth.
+      const { error: profilePlanError } = await supabase
+        .from("user_profiles")
+        .update({
+          plan: normalizedOwnerPlan,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
 
-      const normalizedUserPlan = (currentSubscription?.active_plan || "basic")
-        .toString()
-        .toLowerCase()
-        .trim();
-
-      const ownerRank =
-        PLAN_HIERARCHY[normalizedOwnerPlan as keyof typeof PLAN_HIERARCHY] ?? 0;
-      const userRank =
-        PLAN_HIERARCHY[normalizedUserPlan as keyof typeof PLAN_HIERARCHY] ?? 0;
-
-      if (ownerRank <= userRank) {
+      if (profilePlanError) {
+        console.error("[PLAN SYNC] Failed to sync admin profile plan:", profilePlanError);
         return;
       }
-
-      const { data: syncResult, error: syncError } = await supabase.rpc(
-        "create_free_subscription",
-        {
-          p_user_id: userId,
-          p_plan: normalizedOwnerPlan,
-        },
-      );
-
-      if (syncError) {
-        console.error("[PLAN SYNC] Failed to sync admin subscription:", syncError);
-        return;
-      }
-
-      if ((syncResult as any)?.success === false) {
-        console.error(
-          "[PLAN SYNC] Sync function returned error:",
-          (syncResult as any)?.error,
-        );
-      } else {
-        console.log(
-          `[PLAN SYNC] Admin plan upgraded to org plan: ${normalizedOwnerPlan}`,
-        );
-      }
+      console.log(`[PLAN SYNC] Admin profile plan synced to org plan: ${normalizedOwnerPlan}`);
     } catch (error) {
       console.error("[PLAN SYNC] Unexpected error syncing admin plan:", error);
     }

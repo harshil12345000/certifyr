@@ -40,7 +40,7 @@ export default function DocumentDetail() {
   const { saveDocument } = useDocumentHistory();
   const { userProfile, organizationDetails, isLoading: brandingLoading } = useBranding();
   const { trackPreviewGeneration } = usePreviewTracking();
-  const { subscription } = useSubscription();
+  const { activePlan } = useSubscription();
   const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   
@@ -255,7 +255,7 @@ export default function DocumentDetail() {
                   organizationType={userProfile?.organizationType || ""}
                   onSubmit={async (data) => {
                       // Check document limit for Basic plan users only (not pro/ultra)
-                      const isBasicPlan = subscription?.active_plan === 'basic';
+                      const isBasicPlan = activePlan === 'basic';
                       if (isBasicPlan && user?.id) {
                       // Get organization ID first
                       const { data: orgData } = await supabase.rpc(

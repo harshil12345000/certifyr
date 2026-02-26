@@ -151,7 +151,7 @@ const Documents = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscription } = useSubscription();
+  const { subscription, activePlan } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
   // TODO: Replace with real admin check
@@ -163,7 +163,7 @@ const Documents = () => {
       if (!user?.id) return;
       
       // Check if user is on Basic plan (or has no subscription - treat as basic)
-      const isBasicPlan = subscription?.active_plan === 'basic';
+      const isBasicPlan = activePlan === 'basic';
       
       if (isBasicPlan && user.id) {
         // Get organization ID first
@@ -192,7 +192,7 @@ const Documents = () => {
       const timer = setTimeout(checkDocumentLimit, 100);
       return () => clearTimeout(timer);
     }
-  }, [subscription, user]);
+  }, [subscription, activePlan, user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

@@ -24,7 +24,7 @@ const Index = () => {
   const {
     user
   } = useAuth();
-  const { subscription, isBasicFree, loading: subscriptionLoading } = useSubscription();
+  const { subscription, isBasicFree, activePlan, loading: subscriptionLoading } = useSubscription();
 
   // Document usage for Basic plan - count from preview_generations table (same as "Documents Created" card)
   const [documentUsage, setDocumentUsage] = useState<{ used: number; limit: number; remaining: number; reset_date?: string } | null>(null);
@@ -36,7 +36,7 @@ const Index = () => {
       
       // Only show banner for Basic users - wait until subscription is loaded
       if (subscriptionLoading) return;
-      if (subscription?.active_plan && subscription.active_plan !== 'basic') {
+      if (activePlan && activePlan !== 'basic') {
         setDocumentUsage(null);
         return;
       }
@@ -77,7 +77,7 @@ const Index = () => {
       }
     };
     fetchDocumentUsage();
-  }, [user, subscription, subscriptionLoading]);
+  }, [user, subscription, activePlan, subscriptionLoading]);
 
   // Persist last loaded values to avoid flicker
   const [lastStats, setLastStats] = useState<any>(null);
@@ -153,7 +153,7 @@ const Index = () => {
         </div>
 
         {/* Document Usage Banner for Basic Users */}
-        {!subscriptionLoading && documentUsage && subscription?.active_plan === 'basic' && (
+        {!subscriptionLoading && documentUsage && isBasicFree && (
           <div className={`p-4 rounded-lg border ${documentUsage.remaining <= 5 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
