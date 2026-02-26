@@ -621,29 +621,29 @@ export default function LibraryDetail() {
                 <div className="flex items-start gap-3">
                   <span className="text-4xl">{COUNTRY_FLAGS[document.country] || "🌐"}</span>
                   <div className="flex-1">
-                <CardTitle className="text-2xl">{document.form_name || document.official_name}</CardTitle>
-                {document.form_name && document.official_name !== document.form_name && (
-                  <p className="text-sm text-muted-foreground mt-1">{document.official_name}</p>
-                )}
-                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                  <Badge variant="outline" className="text-sm">
-                    <Globe className="w-3 h-3 mr-1" />
-                    {document.country}
-                  </Badge>
-                  {document.state && (
-                    <Badge variant="outline" className="text-sm">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {document.state}
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="text-sm">
-                    <Building2 className="w-3 h-3 mr-1" />
-                    {document.authority}
-                  </Badge>
+                    <CardTitle className="text-2xl">{document.form_name || document.official_name}</CardTitle>
+                    {document.form_name && document.official_name !== document.form_name && (
+                      <p className="text-sm text-muted-foreground mt-1">{document.official_name}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      <Badge variant="outline" className="text-sm">
+                        <Globe className="w-3 h-3 mr-1" />
+                        {document.country}
+                      </Badge>
+                      {document.state && (
+                        <Badge variant="outline" className="text-sm">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {document.state}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-sm">
+                        <Building2 className="w-3 h-3 mr-1" />
+                        {document.authority}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </CardHeader>
+              </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1">
@@ -779,14 +779,15 @@ export default function LibraryDetail() {
           </Card>
         )}
 
+        </TabsContent>
+
         <TabsContent value="form" className="space-y-6">
           <LibraryFormTab 
             document={document} 
             fields={fields} 
           />
         </TabsContent>
-        </Tabs>
-      </div>
+      </Tabs>
     </div>
   );
 }

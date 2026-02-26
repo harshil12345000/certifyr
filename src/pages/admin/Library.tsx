@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { uploadLibraryPdf, deleteLibraryPdf } from "@/lib/library-pdf";
 
 interface LibraryFormData {
   country: string;
@@ -146,6 +147,8 @@ export default function AdminLibrary() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -167,8 +170,32 @@ export default function AdminLibrary() {
     try {
       const slug = editingDoc?.slug || generateSlug(formData.official_name);
       
+      let pdfUrl = formData.official_pdf_url;
+      
+      // Upload PDF file if selected
+      if (pdfFile) {
+        setIsUploadingPdf(true);
+        try {
+          // Delete old PDF if updating and PDF changed
+          if (editingDoc?.official_pdf_url) {
+            await deleteLibraryPdf(editingDoc.official_pdf_url);
+          }
+          pdfUrl = await uploadLibraryPdf(pdfFile, slug);
+        } catch (pdfError) {
+          console.error("PDF upload error:", pdfError);
+          toast({ 
+            title: "Warning", 
+            description: "Document saved but PDF upload failed. You can add PDF URL manually.", 
+            variant: "default" 
+          });
+        } finally {
+          setIsUploadingPdf(false);
+        }
+      }
+      
       const docData = {
         ...formData,
+        official_pdf_url: pdfUrl || null,
         slug,
         state: formData.state || null,
         last_verified_at: new Date().toISOString(),
@@ -196,6 +223,7 @@ export default function AdminLibrary() {
       setIsDialogOpen(false);
       setEditingDoc(null);
       setFormData(initialFormData);
+      setPdfFile(null);
       refetch();
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -680,6 +708,7 @@ export default function AdminLibrary() {
                 if (!open) {
                   setEditingDoc(null);
                   setFormData(initialFormData);
+                  setPdfFile(null);
                 }
               }}>
                 <DialogTrigger asChild>
@@ -844,14 +873,69 @@ export default function AdminLibrary() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="official_pdf_url">Official PDF URL</Label>
+                          <Label>Official PDF File</Label>
+                          <div className="border-2 border-dashed border rounded-lg p-4">
+                            {pdfFile ? (
+                              <div className="flex items-center justify-between bg-muted p-3 rounded">
+                                <div className="flex items-center gap-2">
+                                  <File className="h-5 w-5 text-primary" />
+                                  <span className="text-sm font-medium truncate max-w-[200px]">{pdfFile.name}</span>
+                                </div>
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setPdfFile(null)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  Drop PDF here or click to upload
+                                </p>
+                                <Input
+                                  type="file"
+                                  accept="application/pdf"
+                                  className="hidden"
+                                  id="pdf-upload"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) setPdfFile(file);
+                                  }}
+                                />
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => document.getElementById("pdf-upload")?.click()}
+                                >
+                                  Select PDF
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Or enter URL manually below
+                          </p>
                           <Input
-                            id="official_pdf_url"
                             value={formData.official_pdf_url}
                             onChange={(e) => setFormData(prev => ({ ...prev, official_pdf_url: e.target.value }))}
-                            placeholder="https://..."
+                            placeholder="https://... (optional if uploading file)"
                             type="url"
                           />
+                          {formData.official_pdf_url && (
+                            <a 
+                              href={formData.official_pdf_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:underline"
+                            >
+                              View current PDF
+                            </a>
+                          )}
                         </div>
                       </div>
 
@@ -869,8 +953,8 @@ export default function AdminLibrary() {
                       <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : (editingDoc ? "Update" : "Create")}
+                      <Button type="submit" disabled={isSubmitting || isUploadingPdf}>
+                        {isUploadingPdf ? "Uploading PDF..." : (isSubmitting ? "Saving..." : (editingDoc ? "Update" : "Create"))}
                       </Button>
                     </DialogFooter>
                   </form>

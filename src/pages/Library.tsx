@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
   useLibraryDocuments,
@@ -301,6 +302,32 @@ export default function Library() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Helmet>
+        <title>Legal Library - Certifyr</title>
+        <meta name="description" content="Browse and explore legal documents, forms, and compliance requirements from around the world. Find GST registration, business licenses, tax IDs, and more." />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="Legal Library - Certifyr" />
+        <meta property="og:description" content="Browse and explore legal documents, forms, and compliance requirements from around the world." />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Certifyr Legal Library",
+            "description": "Browse and explore legal documents, forms, and compliance requirements from around the world",
+            "url": window.location.origin + "/library",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": window.location.origin + "/library?search={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          })}
+        </script>
+      </Helmet>
 
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div>
