@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   useLibraryDocuments,
@@ -23,6 +23,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CountryContextSelector } from "@/components/ai-assistant/CountryContextSelector";
 import {
   Search,
   ExternalLink,
@@ -152,6 +160,26 @@ export default function Library() {
   });
 
   const [searchInput, setSearchInput] = useState("");
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("");
+
+  useEffect(() => {
+    const savedCountry = localStorage.getItem("library_selected_country");
+    if (savedCountry) {
+      setFilters((prev) => ({ ...prev, country: savedCountry }));
+      setSelectedCountry(savedCountry);
+    } else {
+      setShowCountryModal(true);
+    }
+  }, []);
+
+  const handleCountrySelect = (country: string) => {
+    const countryValue = country === "global" ? "all" : country;
+    setFilters((prev) => ({ ...prev, country: countryValue }));
+    setSelectedCountry(countryValue);
+    localStorage.setItem("library_selected_country", countryValue);
+    setShowCountryModal(false);
+  };
 
   const { data, isLoading } = useLibraryDocuments({
     country: filters.country === "all" ? undefined : filters.country,
@@ -218,6 +246,25 @@ export default function Library() {
           </Link>
         </div>
       </header>
+
+      <Dialog open={showCountryModal} onOpenChange={setShowCountryModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Select Your Country</DialogTitle>
+            <DialogDescription>
+              Choose your country to see relevant legal documents and forms. 
+              You can change this anytime using the filter.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <CountryContextSelector
+              selectedCountry={selectedCountry || "global"}
+              onCountryChange={handleCountrySelect}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Legal Library</h1>
