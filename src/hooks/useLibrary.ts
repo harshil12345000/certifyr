@@ -73,6 +73,7 @@ export interface LibraryFilters {
   search?: string;
   page?: number;
   limit?: number;
+  needsReview?: boolean;
 }
 
 export function useLibraryDocuments(filters: LibraryFilters = {}) {
@@ -87,6 +88,7 @@ export function useLibraryDocuments(filters: LibraryFilters = {}) {
       if (filters.state) query = query.eq("state", filters.state);
       if (filters.domain) query = query.eq("domain", filters.domain);
       if (filters.authority) query = query.eq("authority", filters.authority);
+      if (filters.needsReview !== undefined) query = query.eq("needs_review", filters.needsReview);
       if (filters.search) {
         query = query.or(`official_name.ilike.%${filters.search}%,short_description.ilike.%${filters.search}%`);
       }
