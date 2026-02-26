@@ -183,6 +183,7 @@ const Settings = () => {
 
       console.log("Profile saved successfully");
       toast.success("Profile updated successfully");
+      window.dispatchEvent(new Event("setup-guide-refresh"));
     } catch (error: any) {
       console.error("Unexpected error saving profile:", error);
       toast.error("Failed to save profile: " + (error?.message || "Unknown error"));

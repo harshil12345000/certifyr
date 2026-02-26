@@ -3,11 +3,10 @@ import React, {
   useEffect,
   useRef,
   useCallback,
-  useMemo,
   ChangeEvent,
   FormEvent,
 } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,30 +29,12 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
-  X,
-  ChevronDown,
-  ChevronUp,
-  CheckCircle2,
-  Circle,
-  ArrowRight,
   ImagePlus,
   Cloud,
   Image as ImageIcon,
@@ -86,15 +67,6 @@ interface BrandingFileState {
 
 interface BrandingFilePreview {
   logoUrl: string | null;
-}
-
-interface SetupStep {
-  id: "account-settings" | "organization-overview" | "branding-logo";
-  label: string;
-  description: string;
-  completed: boolean;
-  actionLabel: string;
-  onAction: () => void;
 }
 
 // FileDropzone component
@@ -272,7 +244,6 @@ const VALID_TABS = ["organization", "branding", "admin", "announcements", "subsc
 
 const AdminPage = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { refreshBranding, enableQr: brandingEnableQr } = useBranding();
   const { hasFeature } = usePlanFeatures();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -306,98 +277,11 @@ const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [enableQr, setEnableQr] = useState<boolean>(true);
-  const [isAccountSettingsComplete, setIsAccountSettingsComplete] = useState(false);
-  const [isSetupWidgetDismissed, setIsSetupWidgetDismissed] = useState(false);
-  const [isSetupWidgetCollapsed, setIsSetupWidgetCollapsed] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<{
     [key in keyof BrandingFileState]: File | null;
   }>({
     logo: null,
   });
-
-  const hasText = (value?: string | null) => Boolean(value?.trim());
-
-  const isOrganizationOverviewComplete = useMemo(() => {
-    if (!organizationId) return false;
-    return [
-      formState.organizationName,
-      formState.streetAddress,
-      formState.city,
-      formState.state,
-      formState.postalCode,
-      formState.country,
-      formState.phoneNumber,
-      formState.email,
-      formState.organizationType,
-      formState.organizationSize,
-    ].every(hasText);
-  }, [organizationId, formState]);
-
-  const isBrandingComplete = Boolean(brandingPreviews.logoUrl);
-
-  const setupSteps = useMemo<SetupStep[]>(() => {
-    const steps: SetupStep[] = [
-      {
-        id: "account-settings",
-        label: "Fill out Account Settings",
-        description: "Complete your profile details. Digital signature is optional.",
-        completed: isAccountSettingsComplete,
-        actionLabel: "Open Account Settings",
-        onAction: () => navigate("/settings"),
-      },
-    ];
-
-    if (!isOrganizationOverviewComplete) {
-      steps.push({
-        id: "organization-overview",
-        label: "Fill out Organization Overview",
-        description: "Complete organization details once for your organization.",
-        completed: false,
-        actionLabel: "Go to Overview",
-        onAction: () => handleTabChange("organization"),
-      });
-    }
-
-    if (!isBrandingComplete) {
-      steps.push({
-        id: "branding-logo",
-        label: "Upload Organization Logo",
-        description: "Add branding logo once for your organization.",
-        completed: false,
-        actionLabel: "Go to Branding",
-        onAction: () => handleTabChange("branding"),
-      });
-    }
-
-    return steps;
-  }, [
-    isAccountSettingsComplete,
-    isOrganizationOverviewComplete,
-    isBrandingComplete,
-    navigate,
-  ]);
-
-  const completedSetupSteps = setupSteps.filter((step) => step.completed).length;
-  const hasIncompleteSetupSteps = setupSteps.some((step) => !step.completed);
-  const setupProgress = setupSteps.length === 0
-    ? 100
-    : Math.round((completedSetupSteps / setupSteps.length) * 100);
-
-  useEffect(() => {
-    if (!user?.id) {
-      setIsSetupWidgetDismissed(false);
-      return;
-    }
-    const dismissed = localStorage.getItem(`setup-guide-dismissed:${user.id}`) === "1";
-    setIsSetupWidgetDismissed(dismissed);
-  }, [user?.id]);
-
-  const handleDismissSetupWidget = () => {
-    if (!user?.id) return;
-    localStorage.setItem(`setup-guide-dismissed:${user.id}`, "1");
-    setIsSetupWidgetDismissed(true);
-  };
-
 
   // Fetch user profile data and organization data
   useEffect(() => {
@@ -412,19 +296,10 @@ const AdminPage = () => {
         const { data: profileData } = await supabase
           .from("user_profiles")
           .select(
-            "organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email, first_name, last_name, designation",
+            "organization_name, organization_type, organization_size, organization_website, organization_location, phone_number, email",
           )
           .eq("user_id", user.id)
           .maybeSingle();
-
-        setIsAccountSettingsComplete(
-          Boolean(profileData) &&
-            hasText(profileData?.first_name) &&
-            hasText(profileData?.last_name) &&
-            hasText(profileData?.email) &&
-            hasText(profileData?.designation) &&
-            hasText(profileData?.phone_number),
-        );
 
         // Get user's organization ID using RPC function
         const { data: orgId, error: rpcError } = await supabase.rpc(
@@ -783,6 +658,7 @@ const AdminPage = () => {
         await refreshBranding();
         setBrandingFiles({ logo: null });
       }
+      window.dispatchEvent(new Event("setup-guide-refresh"));
     } catch (error) {
       console.error("Failed to save organization data:", error);
       const errorMessage =
@@ -1118,93 +994,6 @@ const AdminPage = () => {
         </Tabs>
       </div>
 
-      {setupSteps.length > 0 && hasIncompleteSetupSteps && !isSetupWidgetDismissed && (
-        <div className="fixed bottom-6 left-6 z-50 w-[360px] max-w-[calc(100vw-2rem)]">
-          <Card className="shadow-lg bg-background border-border">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Finish Setup</CardTitle>
-                  <CardDescription>
-                    {completedSetupSteps}/{setupSteps.length} completed
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label={isSetupWidgetCollapsed ? "Expand setup guide" : "Collapse setup guide"}
-                    onClick={() => setIsSetupWidgetCollapsed((prev) => !prev)}
-                  >
-                    {isSetupWidgetCollapsed ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label="Close setup guide"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove setup guide widget?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to remove this setup guide widget?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>No</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDismissSetupWidget}>
-                          Yes
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </CardHeader>
-
-            {!isSetupWidgetCollapsed && (
-              <CardContent className="space-y-2 pt-0">
-                <Progress value={setupProgress} className="h-1.5" />
-                <div className="space-y-1.5">
-                  {setupSteps.map((step) => (
-                    <button
-                      key={step.id}
-                      type="button"
-                      onClick={step.onAction}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-left hover:bg-accent transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          {step.completed ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <p className="text-sm font-medium">{step.label}</p>
-                        </div>
-                        {!step.completed && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        </div>
-      )}
     </DashboardLayout>
   );
 };
