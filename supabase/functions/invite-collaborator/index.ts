@@ -107,21 +107,33 @@ serve(async (req) => {
     console.log('Inviter is verified admin of organization');
 
     // --- Server-side admin limit enforcement ---
-    const { data: adminCount } = await supabaseAdmin.rpc('count_org_admins', { p_org_id: organizationId });
-    const { data: ownerPlan } = await supabaseAdmin.rpc('get_org_owner_plan', { p_org_id: organizationId });
+    if (normalizedRole === 'admin') {
+      const [{ data: adminCount }, { data: ownerPlan }] = await Promise.all([
+        supabaseAdmin.rpc('count_org_admins', { p_org_id: organizationId }),
+        supabaseAdmin.rpc('get_org_owner_plan', { p_org_id: organizationId }),
+      ]);
 
-    const planLimits: Record<string, number | null> = { basic: 1, pro: 5, ultra: null };
-    const normalizedPlan = (ownerPlan || 'basic').toString().toLowerCase().trim();
-    const maxAdmins = planLimits[normalizedPlan] !== undefined ? planLimits[normalizedPlan] : 1;
+      const { count: pendingAdminInvites = 0 } = await supabaseAdmin
+        .from('organization_invites')
+        .select('*', { head: true, count: 'exact' })
+        .eq('organization_id', organizationId)
+        .eq('role', 'admin')
+        .eq('status', 'pending');
 
-    if (maxAdmins !== null && (adminCount ?? 0) >= maxAdmins) {
-      console.error(`Admin limit reached: ${adminCount}/${maxAdmins} for plan ${ownerPlan}`);
-      return new Response(
-        JSON.stringify({ error: `Admin limit reached (${maxAdmins} for ${ownerPlan || 'basic'} plan). Upgrade to add more admins.` }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const planLimits: Record<string, number | null> = { basic: 1, pro: 5, ultra: null };
+      const normalizedPlan = (ownerPlan || 'basic').toString().toLowerCase().trim();
+      const maxAdmins = planLimits[normalizedPlan] !== undefined ? planLimits[normalizedPlan] : 1;
+      const usedAdminSlots = (adminCount ?? 0) + pendingAdminInvites;
+
+      if (maxAdmins !== null && usedAdminSlots >= maxAdmins) {
+        console.error(`Admin limit reached: ${usedAdminSlots}/${maxAdmins} for plan ${ownerPlan}`);
+        return new Response(
+          JSON.stringify({ error: `Admin limit reached (${maxAdmins} for ${(ownerPlan || 'basic').toString().toLowerCase()} plan). Upgrade to add more admins.` }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log(`Admin usage: ${usedAdminSlots}/${maxAdmins ?? 'unlimited'} (active: ${adminCount ?? 0}, pending: ${pendingAdminInvites}, plan: ${ownerPlan})`);
     }
-    console.log(`Admin count: ${adminCount}/${maxAdmins ?? '∞'} (plan: ${ownerPlan})`);
 
     // Fetch organization for email metadata
     const { data: organization, error: orgError } = await supabaseAdmin

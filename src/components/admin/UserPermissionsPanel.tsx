@@ -79,7 +79,8 @@ export function UserPermissionsPanel({
 
   const adminCount = members.filter(m => m.role === "admin" && m.status === "active").length;
   const maxAdmins = limits.maxAdmins;
-  const isAtAdminLimit = maxAdmins !== null && adminCount >= maxAdmins;
+  const isProHardCapReached = activePlan === "pro" && adminCount >= 5;
+  const isAtAdminLimit = isProHardCapReached || (maxAdmins !== null && adminCount >= maxAdmins);
 
   // Determine owner: oldest admin by created_at
   const ownerMember = members
@@ -243,6 +244,14 @@ export function UserPermissionsPanel({
     e.preventDefault();
     if (!inviteForm.email.trim() || !organizationId) {
       toast({ title: "Please enter an email address", variant: "destructive" });
+      return;
+    }
+    if (inviteForm.role === "admin" && isAtAdminLimit) {
+      toast({
+        title: "Admin limit reached",
+        description: "Pro plan supports up to 5 admins. Upgrade your plan to add more.",
+        variant: "destructive",
+      });
       return;
     }
     setIsInviting(true);
