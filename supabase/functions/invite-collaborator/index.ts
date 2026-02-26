@@ -95,6 +95,23 @@ serve(async (req) => {
     }
     console.log('Inviter is verified admin of organization');
 
+    // --- Server-side admin limit enforcement ---
+    const { data: adminCount } = await supabaseAdmin.rpc('count_org_admins', { p_org_id: organizationId });
+    const { data: ownerPlan } = await supabaseAdmin.rpc('get_org_owner_plan', { p_org_id: organizationId });
+
+    const planLimits: Record<string, number | null> = { basic: 1, pro: 5, ultra: null };
+    const normalizedPlan = (ownerPlan || 'basic').toString().toLowerCase().trim();
+    const maxAdmins = planLimits[normalizedPlan] !== undefined ? planLimits[normalizedPlan] : 1;
+
+    if (maxAdmins !== null && (adminCount ?? 0) >= maxAdmins) {
+      console.error(`Admin limit reached: ${adminCount}/${maxAdmins} for plan ${ownerPlan}`);
+      return new Response(
+        JSON.stringify({ error: `Admin limit reached (${maxAdmins} for ${ownerPlan || 'basic'} plan). Upgrade to add more admins.` }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    console.log(`Admin count: ${adminCount}/${maxAdmins ?? '∞'} (plan: ${ownerPlan})`);
+
     // Fetch organization for email metadata
     const { data: organization, error: orgError } = await supabaseAdmin
       .from('organizations')

@@ -1058,6 +1058,7 @@ export type Database = {
         }
         Returns: Json
       }
+      count_org_admins: { Args: { p_org_id: string }; Returns: number }
       create_free_subscription: {
         Args: { p_plan?: string; p_user_id: string }
         Returns: Json
@@ -1068,6 +1069,7 @@ export type Database = {
         Returns: string
       }
       get_active_plan: { Args: { check_user_id: string }; Returns: string }
+      get_org_owner_plan: { Args: { p_org_id: string }; Returns: string }
       get_organization_statistics: {
         Args: { org_id: string }
         Returns: {
