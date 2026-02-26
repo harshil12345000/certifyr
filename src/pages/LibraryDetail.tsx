@@ -194,7 +194,7 @@ export default function LibraryDetail() {
         <header className="border-b">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-8" />
+              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-10" />
               <span className="font-semibold text-lg">Certifyr</span>
             </Link>
           </div>
@@ -216,7 +216,7 @@ export default function LibraryDetail() {
         <header className="border-b">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-8" />
+              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-10" />
               <span className="font-semibold text-lg">Certifyr</span>
             </Link>
           </div>
