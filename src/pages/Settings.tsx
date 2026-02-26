@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, Moon, Sun, User, Palette, Shield, Globe, Upload, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast as appToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +74,11 @@ const Settings = () => {
   const [showDeleteFinalDialog, setShowDeleteFinalDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const showSuccess = (title: string, description?: string) =>
+    appToast({ title, description });
+  const showError = (title: string, description?: string) =>
+    appToast({ title, description, variant: "destructive" });
+
   useEffect(() => {
     if (!user) return;
 
@@ -89,7 +94,7 @@ const Settings = () => {
 
         if (error) {
           console.error("Error loading user profile:", error);
-          toast.error("Failed to load profile data");
+          showError("Failed to load profile data");
           return;
         }
 
@@ -122,7 +127,7 @@ const Settings = () => {
         }
       } catch (error) {
         console.error("Unexpected error loading profile:", error);
-        toast.error("Failed to load profile data");
+        showError("Failed to load profile data");
       } finally {
         setLoading(false);
       }
@@ -136,6 +141,7 @@ const Settings = () => {
     if (!user) return;
 
     setSaving(true);
+    const saveStartedAt = Date.now();
 
     try {
       console.log("Saving profile data:", formData);
@@ -177,17 +183,21 @@ const Settings = () => {
 
       if (error) {
         console.error("Error saving profile:", error);
-        toast.error("Failed to save profile: " + error.message);
+        showError("Failed to save profile", error.message);
         return;
       }
 
       console.log("Profile saved successfully");
-      toast.success("Profile updated successfully");
+      showSuccess("Profile updated successfully");
       window.dispatchEvent(new Event("setup-guide-refresh"));
     } catch (error: any) {
       console.error("Unexpected error saving profile:", error);
-      toast.error("Failed to save profile: " + (error?.message || "Unknown error"));
+      showError("Failed to save profile", error?.message || "Unknown error");
     } finally {
+      const elapsed = Date.now() - saveStartedAt;
+      if (elapsed < 500) {
+        await new Promise((resolve) => setTimeout(resolve, 500 - elapsed));
+      }
       setSaving(false);
     }
   };
@@ -199,12 +209,12 @@ const Settings = () => {
 
     // Validate file type: only PNG or JPG
     if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
-      toast.error("Please upload PNG or JPG files only");
+      showError("Please upload PNG or JPG files only");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
+      showError("File size must be less than 5MB");
       return;
     }
 
@@ -228,7 +238,7 @@ const Settings = () => {
         .upload(filePath, processedFile, { cacheControl: "3600", upsert: false });
 
       if (uploadError) {
-        toast.error("Failed to upload signature: " + uploadError.message);
+        showError("Failed to upload signature", uploadError.message);
         return;
       }
 
@@ -241,7 +251,7 @@ const Settings = () => {
       if (dbError) {
         // Cleanup uploaded file
         await supabase.storage.from("branding-assets").remove([filePath]);
-        toast.error("Failed to save signature: " + dbError.message);
+        showError("Failed to save signature", dbError.message);
         return;
       }
 
@@ -250,9 +260,9 @@ const Settings = () => {
         .from("branding-assets")
         .getPublicUrl(filePath);
       setSignatureUrl(urlData.publicUrl);
-      toast.success("Signature uploaded successfully");
+      showSuccess("Signature uploaded successfully");
     } catch (err: any) {
-      toast.error("Failed to process signature: " + (err?.message || "Unknown error"));
+      showError("Failed to process signature", err?.message || "Unknown error");
     } finally {
       setUploadingSignature(false);
       e.target.value = "";
@@ -272,9 +282,9 @@ const Settings = () => {
 
       setSignaturePath(null);
       setSignatureUrl(null);
-      toast.success("Signature deleted");
+      showSuccess("Signature deleted");
     } catch (err) {
-      toast.error("Failed to delete signature");
+      showError("Failed to delete signature");
     }
   };
 
@@ -286,7 +296,7 @@ const Settings = () => {
     if (e) e.preventDefault();
     if (!user) return;
     if (!oldPassword || !newPassword) {
-      toast.error("Please fill both fields");
+      showError("Please fill both fields");
       return;
     }
     setChangingPassword(true);
@@ -297,7 +307,7 @@ const Settings = () => {
         password: oldPassword,
       });
       if (signInError) {
-        toast.error("Current password is incorrect");
+        showError("Current password is incorrect");
         setChangingPassword(false);
         return;
       }
@@ -306,15 +316,15 @@ const Settings = () => {
         password: newPassword,
       });
       if (error) {
-        toast.error("Failed to change password");
+        showError("Failed to change password");
       } else {
-        toast.success("Password changed successfully");
+        showSuccess("Password changed successfully");
         setShowPasswordDialog(false);
         setOldPassword("");
         setNewPassword("");
       }
     } catch (err) {
-      toast.error("An error occurred");
+      showError("An error occurred");
     }
     setChangingPassword(false);
   };
@@ -343,7 +353,7 @@ const Settings = () => {
 
       if (error) {
         console.error("Account deletion error:", error);
-        toast.error("Account deletion failed: " + error.message);
+        showError("Account deletion failed", error.message);
         setDeleting(false);
         return;
       }
@@ -358,15 +368,13 @@ const Settings = () => {
       if (result && result.success === false) {
         console.error("Deletion failed with result:", result);
         console.error("Error message:", result.error);
-        toast.error(
-          "Account deletion failed: " + (result.error || "Unknown error")
-        );
+        showError("Account deletion failed", result.error || "Unknown error");
         setDeleting(false);
         return;
       }
 
       console.log("Account deleted successfully, signing out...");
-      toast.success("Account deleted successfully. Redirecting...");
+      showSuccess("Account deleted successfully. Redirecting...");
       setShowDeleteFinalDialog(false);
 
       // Sign out first to clear the session completely
@@ -383,7 +391,7 @@ const Settings = () => {
       }, 1000);
     } catch (err: any) {
       console.error("Unexpected error during account deletion:", err);
-      toast.error("Error: " + (err?.message || "something went wrong."));
+      showError("Error", err?.message || "something went wrong.");
       setDeleting(false);
     }
   };

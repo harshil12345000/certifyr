@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { RootRedirect } from "@/components/auth/RootRedirect";
 import { AIFloatingWidget } from "@/components/ai-assistant/AIFloatingWidget";
 import { UpgradePrompt } from "@/components/shared/UpgradePrompt";
+import { SetupGuideWidget } from "@/components/dashboard/SetupGuideWidget";
+import { InvitePasswordSetupGate } from "@/components/auth/InvitePasswordSetupGate";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import Index from "@/pages/Index";
-import Documents from "@/pages/Documents";
 import NewDocuments from "@/pages/NewDocuments";
 import OldDocuments from "@/pages/OldDocuments";
 import DocumentDetail from "@/pages/DocumentDetail";
@@ -22,7 +24,6 @@ import Settings from "@/pages/Settings";
 import History from "@/pages/History";
 import RequestPortal from "@/pages/RequestPortal";
 import AIAssistant from "@/pages/AIAssistant";
-import Branding from "@/pages/admin/branding";
 import TempBonafideComparison from "@/pages/TempBonafideComparison";
 import AdminDocuments from "@/pages/admin/documents";
 import AdminDocumentBuilder from "@/pages/admin/documents/DocumentBuilder";
@@ -30,7 +31,6 @@ import NotFound from "@/pages/NotFound";
 import VerifyDocument from "@/pages/VerifyDocument";
 import EmployeePortal from "@/pages/EmployeePortal";
 import EmployeeDocumentDetail from "@/pages/employee-portal/EmployeeDocumentDetail";
-import { EmployeePortalProvider } from "@/contexts/EmployeePortalContext";
 import NoAccess from "@/pages/employee-portal/NoAccess";
 import { BookmarksPage } from "./pages/Index";
 import { BookmarksProvider } from "./contexts/BookmarksContext";
@@ -55,6 +55,25 @@ const Gated = ({ children }: { children: React.ReactNode }) => (
 function AppContent() {
   const [showUpgradePaywall, setShowUpgradePaywall] = useState(false);
   const { hasFeature } = usePlanFeatures();
+  const { user } = useAuth();
+  const location = useLocation();
+
+  const path = location.pathname.toLowerCase();
+  const hideGlobalGuidePrefixes = [
+    "/auth",
+    "/reset-password",
+    "/portal",
+    "/verify",
+    "/owner",
+    "/checkout",
+    "/no-access",
+  ];
+  const shouldHideGlobalGuides =
+    path === "/" ||
+    hideGlobalGuidePrefixes.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    );
+  const showGlobalGuides = Boolean(user) && !shouldHideGlobalGuides;
 
   useEffect(() => {
     const handleShowUpgradePaywall = () => {
@@ -109,6 +128,8 @@ function AppContent() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
+      {showGlobalGuides && <SetupGuideWidget />}
+      {showGlobalGuides && <InvitePasswordSetupGate />}
       {hasFeature('aiAssistant') && <AIFloatingWidget />}
       <UpgradePrompt 
         requiredPlan="pro" 

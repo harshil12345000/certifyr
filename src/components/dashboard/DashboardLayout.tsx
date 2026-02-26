@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { TrialBanner } from "./TrialBanner";
-import { SetupGuideWidget } from "./SetupGuideWidget";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -30,7 +29,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <TrialBanner />
           {children}
         </main>
-        <SetupGuideWidget />
       </div>
     </div>
   );
