@@ -38,7 +38,7 @@ import { openPdfInNewTab } from "@/lib/pdf-utils";
 import { countries, getFlagUrl } from '../lib/countries';
 
 const COUNTRY_FLAGS: Record<string, string> = Object.fromEntries(
-  countries.map(c => [c.name, getFlagUrl(c.iso)])
+  countries.map(c => [c.name, getFlagUrl(c.name)])
 );
 
 const TAG_COLORS: Record<string, string> = {
