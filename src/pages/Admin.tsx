@@ -31,12 +31,24 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
+  X,
   CheckCircle2,
   Circle,
   ArrowRight,
@@ -293,6 +305,7 @@ const AdminPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [enableQr, setEnableQr] = useState<boolean>(true);
   const [isAccountSettingsComplete, setIsAccountSettingsComplete] = useState(false);
+  const [isSetupWidgetDismissed, setIsSetupWidgetDismissed] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<{
     [key in keyof BrandingFileState]: File | null;
   }>({
@@ -366,6 +379,21 @@ const AdminPage = () => {
   const setupProgress = setupSteps.length === 0
     ? 100
     : Math.round((completedSetupSteps / setupSteps.length) * 100);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setIsSetupWidgetDismissed(false);
+      return;
+    }
+    const dismissed = localStorage.getItem(`setup-guide-dismissed:${user.id}`) === "1";
+    setIsSetupWidgetDismissed(dismissed);
+  }, [user?.id]);
+
+  const handleDismissSetupWidget = () => {
+    if (!user?.id) return;
+    localStorage.setItem(`setup-guide-dismissed:${user.id}`, "1");
+    setIsSetupWidgetDismissed(true);
+  };
 
 
   // Fetch user profile data and organization data
@@ -1087,7 +1115,7 @@ const AdminPage = () => {
         </Tabs>
       </div>
 
-      {setupSteps.length > 0 && hasIncompleteSetupSteps && (
+      {setupSteps.length > 0 && hasIncompleteSetupSteps && !isSetupWidgetDismissed && (
         <div className="fixed bottom-6 left-6 z-50 w-[360px] max-w-[calc(100vw-2rem)]">
           <Card className="shadow-lg bg-background border-border">
             <CardHeader className="pb-3">
@@ -1098,6 +1126,33 @@ const AdminPage = () => {
                     {completedSetupSteps}/{setupSteps.length} completed
                   </CardDescription>
                 </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Close setup guide"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove setup guide widget?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to remove this setup guide widget?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDismissSetupWidget}>
+                        Yes
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
