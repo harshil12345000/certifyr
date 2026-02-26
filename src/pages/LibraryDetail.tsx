@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLibraryDocument, LibraryTag, LibraryField, LibraryDependency, LibraryAttachment } from "@/hooks/useLibrary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { 
   ArrowLeft, 
   ExternalLink, 
@@ -17,8 +26,12 @@ import {
   Link2,
   Paperclip,
   ListChecks,
-  AlertCircle
+  AlertCircle,
+  FilePlus,
+  Download,
+  Eye
 } from "lucide-react";
+import { openPdfInNewTab } from "@/lib/pdf-utils";
 
 const COUNTRY_FLAGS: Record<string, string> = {
   "United States": "🇺🇸",
@@ -184,6 +197,335 @@ function AttachmentsSection({ attachments }: { attachments: LibraryAttachment[] 
   );
 }
 
+interface LibraryFormTabProps {
+  document: {
+    id: string;
+    official_name: string;
+    form_name?: string | null;
+    short_description: string | null;
+    authority: string;
+    country: string;
+    state: string | null;
+    domain: string;
+    official_pdf_url: string | null;
+  };
+  fields: LibraryField[];
+}
+
+function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const formSchema = z.object(
+    fields.reduce((acc, field) => {
+      if (field.field_type === "checkbox") {
+        acc[field.field_name] = z.boolean().optional();
+      } else if (field.field_type === "number") {
+        acc[field.field_name] = field.required 
+          ? z.string().min(1, { message: `${field.field_label} is required` })
+          : z.string().optional();
+      } else {
+        acc[field.field_name] = field.required 
+          ? z.string().min(1, { message: `${field.field_label} is required` })
+          : z.string().optional();
+      }
+      return acc;
+    }, {} as Record<string, z.ZodTypeAny>)
+  );
+
+  type FormValues = z.infer<typeof formSchema>;
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: fields.reduce((acc, field) => {
+      acc[field.field_name] = "";
+      return acc;
+    }, {} as Record<string, any>),
+  });
+
+  const handleSubmit = (values: FormValues) => {
+    setFormData(values);
+  };
+
+  const handleCreatePdf = async () => {
+    setIsGenerating(true);
+    try {
+      await openPdfInNewTab(
+        `library-doc-preview-${document.id}`,
+        `${document.form_name || document.official_name}.pdf`
+      );
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (fields.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <FilePlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Form Fields Available</h3>
+          <p className="text-muted-foreground">
+            This document doesn't have any configurable fields yet.
+            {document.official_pdf_url && (
+              <a 
+                href={document.official_pdf_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline ml-1"
+              >
+                Download the official PDF
+              </a>
+            )}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Fill Form Details</CardTitle>
+            <CardDescription>
+              Enter the required information for {document.form_name || document.official_name}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {fields.map((field) => (
+                  <div 
+                    key={field.id} 
+                    className={field.field_type === "textarea" ? "md:col-span-2" : ""}
+                  >
+                    {field.field_type === "text" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Input
+                          {...form.register(field.field_name)}
+                          placeholder={field.field_label}
+                        />
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "number" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Input
+                          type="number"
+                          {...form.register(field.field_name)}
+                          placeholder={field.field_label}
+                        />
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "date" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Input
+                          type="date"
+                          {...form.register(field.field_name)}
+                        />
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "email" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Input
+                          type="email"
+                          {...form.register(field.field_name)}
+                          placeholder="email@example.com"
+                        />
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "tel" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Input
+                          type="tel"
+                          {...form.register(field.field_name)}
+                          placeholder="+1 234 567 8900"
+                        />
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "textarea" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Textarea
+                          {...form.register(field.field_name)}
+                          placeholder={field.field_label}
+                          rows={3}
+                        />
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "select" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {field.field_label}
+                          {field.required && <span className="text-destructive ml-1">*</span>}
+                        </label>
+                        <Select
+                          {...form.register(field.field_name)}
+                          onValueChange={(value) => form.setValue(field.field_name, value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${field.field_label}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="option1">Option 1</SelectItem>
+                            <SelectItem value="option2">Option 2</SelectItem>
+                            <SelectItem value="option3">Option 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {form.formState.errors[field.field_name] && (
+                          <p className="text-xs text-destructive">
+                            {form.formState.errors[field.field_name]?.message as string}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {field.field_type === "checkbox" && (
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={field.field_name}
+                          {...form.register(field.field_name)}
+                          onCheckedChange={(checked) => form.setValue(field.field_name, checked)}
+                        />
+                        <label htmlFor={field.field_name} className="text-sm font-medium">
+                          {field.field_label}
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <Button type="submit" className="w-full">
+                <Eye className="w-4 h-4 mr-2" />
+                Update Preview
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Preview</CardTitle>
+            <CardDescription>
+              Live preview of your document
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div 
+              id={`library-doc-preview-${document.id}`}
+              className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed border rounded-lg"
+            >
+              <div className="text-center mb-6">
+                <h1 className="text-xl font-bold uppercase">
+                  {document.form_name || document.official_name}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {document.authority} - {document.country}
+                  {document.state && `, ${document.state}`}
+                </p>
+              </div>
+
+              {document.short_description && (
+                <p className="text-sm mb-4">{document.short_description}</p>
+              )}
+
+              <div className="space-y-3 mt-6">
+                {fields.map((field) => (
+                  <div key={field.id} className="flex">
+                    <span className="font-medium w-1/3">{field.field_label}:</span>
+                    <span className="flex-1">
+                      {formData[field.field_name] || `[${field.field_label}]`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-4 border-t text-xs text-muted-foreground">
+                <p>This is a preview generated by Certifyr.</p>
+                <p>For official documents, please refer to the source.</p>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={handleCreatePdf} 
+              disabled={isGenerating}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <Download className="w-4 h-4 mr-2 animate-spin" />
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Create PDF
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 export default function LibraryDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data, isLoading, error } = useLibraryDocument(slug || "");
@@ -241,29 +583,44 @@ export default function LibraryDetail() {
   const { document, tags, fields, dependencies, attachments } = data;
 
   return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex justify-center">
-            <Link to="/">
-              <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-10" />
-            </Link>
-          </div>
-        </header>
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex justify-center">
+          <Link to="/">
+            <img src="/uploads/Certifyr Black Logotype.png" alt="Certifyr" className="h-10" />
+          </Link>
+        </div>
+      </header>
       <div className="container mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/library">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Library
-            </Link>
-          </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/library">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Library
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-start gap-3">
-              <span className="text-4xl">{COUNTRY_FLAGS[document.country] || "🌐"}</span>
-              <div className="flex-1">
+        <Tabs defaultValue="details" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="details" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="form" className="gap-2">
+              <FilePlus className="w-4 h-4" />
+              Form
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <span className="text-4xl">{COUNTRY_FLAGS[document.country] || "🌐"}</span>
+                  <div className="flex-1">
                 <CardTitle className="text-2xl">{document.form_name || document.official_name}</CardTitle>
                 {document.form_name && document.official_name !== document.form_name && (
                   <p className="text-sm text-muted-foreground mt-1">{document.official_name}</p>
@@ -421,6 +778,14 @@ export default function LibraryDetail() {
             </CardFooter>
           </Card>
         )}
+
+        <TabsContent value="form" className="space-y-6">
+          <LibraryFormTab 
+            document={document} 
+            fields={fields} 
+          />
+        </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

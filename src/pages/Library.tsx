@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CountryContextSelector } from "@/components/ai-assistant/CountryContextSelector";
+import { sortedCountries } from "@/lib/countries";
 import {
   Search,
   ExternalLink,
@@ -40,6 +40,8 @@ import {
   Globe,
   MapPin,
   Building2,
+  Check,
+  X,
 } from "lucide-react";
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -162,6 +164,11 @@ export default function Library() {
   const [searchInput, setSearchInput] = useState("");
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [countrySearch, setCountrySearch] = useState("");
+
+  const filteredCountries = countrySearch.trim()
+    ? sortedCountries.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+    : sortedCountries.slice(0, 20);
 
   useEffect(() => {
     const savedCountry = localStorage.getItem("library_selected_country");
@@ -173,8 +180,8 @@ export default function Library() {
     }
   }, []);
 
-  const handleCountrySelect = (country: string) => {
-    const countryValue = country === "global" ? "all" : country;
+  const handleCountrySelect = (countryName: string) => {
+    const countryValue = countryName === "global" ? "all" : countryName;
     setFilters((prev) => ({ ...prev, country: countryValue }));
     setSelectedCountry(countryValue);
     localStorage.setItem("library_selected_country", countryValue);
@@ -256,11 +263,41 @@ export default function Library() {
               You can change this anytime using the filter.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <CountryContextSelector
-              selectedCountry={selectedCountry || "global"}
-              onCountryChange={handleCountrySelect}
+          <div className="py-4 space-y-4">
+            <Input
+              placeholder="Search country..."
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              className="w-full"
+              autoFocus
             />
+            <div className="border rounded-md max-h-[300px] overflow-y-auto">
+              <button
+                onClick={() => handleCountrySelect("global")}
+                className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-muted text-left ${selectedCountry === "all" || selectedCountry === "" ? "bg-muted" : ""}`}
+              >
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span className="flex-1">Global / All Countries</span>
+                {(selectedCountry === "all" || selectedCountry === "") && <Check className="h-4 w-4" />}
+              </button>
+              <div className="border-t" />
+              {filteredCountries.map((country) => (
+                <button
+                  key={country.code}
+                  onClick={() => handleCountrySelect(country.name)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-muted text-left ${selectedCountry === country.name ? "bg-muted" : ""}`}
+                >
+                  <span className="text-lg">{country.flag}</span>
+                  <span className="flex-1">{country.name}</span>
+                  {selectedCountry === country.name && <Check className="h-4 w-4" />}
+                </button>
+              ))}
+              {filteredCountries.length === 0 && (
+                <div className="px-3 py-4 text-center text-muted-foreground text-sm">
+                  No countries found
+                </div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

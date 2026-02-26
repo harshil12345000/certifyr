@@ -47,3 +47,55 @@ export const generateAndDownloadPdf = async (
     document.body.removeChild(tempDiv);
   }
 };
+
+export const generateLibraryDocumentPDF = async (
+  previewElementId: string,
+  filename: string,
+  returnBlob: boolean = false
+): Promise<void | Blob> => {
+  const previewElement = document.getElementById(previewElementId) as HTMLElement;
+
+  if (!previewElement) {
+    throw new Error("Preview element not found");
+  }
+
+  // Generate canvas from the preview element
+  const canvas = await html2canvas(previewElement, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: "#ffffff",
+    width: 794,
+    height: 1123,
+  });
+
+  // Create PDF
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "px",
+    format: [794, 1123],
+  });
+
+  const imgData = canvas.toDataURL("image/png");
+  pdf.addImage(imgData, "PNG", 0, 0, 794, 1123);
+
+  if (returnBlob) {
+    return pdf.output("blob");
+  }
+
+  pdf.save(filename);
+};
+
+export const openPdfInNewTab = async (
+  previewElementId: string,
+  filename: string
+): Promise<void> => {
+  const blob = await generateLibraryDocumentPDF(previewElementId, filename, true) as Blob;
+  
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    // Clean up after a delay
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+};
