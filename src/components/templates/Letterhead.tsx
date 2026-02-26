@@ -65,7 +65,7 @@ export const Letterhead: React.FC<LetterheadProps> = ({
           />
         </div>
       )}
-      <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-blue-600 mb-2">
+      <h1 className="text-2xl md:text-3xl font-bold uppercase tracking-wider text-black mb-2">
         {orgName}
       </h1>
       <div className="text-muted-foreground text-sm space-y-1">

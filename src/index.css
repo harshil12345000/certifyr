@@ -89,3 +89,9 @@
     @apply bg-gradient-to-br from-certifyr-blue-light via-certifyr-blue to-certifyr-blue-dark text-white;
   }
 }
+
+@layer utilities {
+  .a4-document {
+    font-family: "Times New Roman", Times, serif !important;
+  }
+}

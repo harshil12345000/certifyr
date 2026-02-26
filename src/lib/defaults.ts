@@ -6,7 +6,7 @@ export const defaultElementStyle: ElementStyle = {
   width: 150,
   height: 50,
   fontSize: 12,
-  fontFamily: "Arial",
+  fontFamily: "'Times New Roman', Times, serif",
   color: "#000000",
   backgroundColor: "transparent",
   borderWidth: 0,
