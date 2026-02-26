@@ -43,6 +43,9 @@ import ResetPassword from "@/pages/ResetPassword";
 import Checkout from "@/pages/Checkout";
 import CheckoutSuccess from "@/pages/CheckoutSuccess";
 import OwnerDashboard from "@/pages/OwnerDashboard";
+import Library from "@/pages/Library";
+import LibraryDetail from "@/pages/LibraryDetail";
+import AdminLibrary from "@/pages/admin/Library";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +70,7 @@ function AppContent() {
     "/owner",
     "/checkout",
     "/no-access",
+    "/library",
   ];
   const shouldHideGlobalGuides =
     path === "/" ||
@@ -125,6 +129,9 @@ function AppContent() {
         <Route path="/verify/:hash" element={<VerifyDocument />} />
         <Route path="/no-access" element={<NoAccess />} />
         <Route path="/owner" element={<OwnerDashboard />} />
+        <Route path="/library" element={<Gated><Library /></Gated>} />
+        <Route path="/library/:slug" element={<Gated><LibraryDetail /></Gated>} />
+        <Route path="/admin/library" element={<Gated><AdminLibrary /></Gated>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
