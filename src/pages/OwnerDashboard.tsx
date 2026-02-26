@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +80,11 @@ export default function OwnerDashboard() {
     }
   };
 
+  const handleLoginSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void handleLogin();
+  };
+
   const handleSetup = async () => {
     setLoading(true);
     try {
@@ -145,31 +150,34 @@ export default function OwnerDashboard() {
             <CardTitle className="text-xl">Owner Dashboard</CardTitle>
             <p className="text-sm text-muted-foreground">Restricted access</p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            />
-            <Input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            />
-            <Button className="w-full" onClick={handleLogin} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
-            </Button>
-            {needsSetup && (
-              <Button variant="outline" className="w-full" onClick={handleSetup} disabled={loading}>
+          <CardContent>
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <Input
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <Button className="w-full" type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Owner Account
+                Sign In
               </Button>
-            )}
+              {needsSetup && (
+                <Button variant="outline" className="w-full" onClick={handleSetup} disabled={loading} type="button">
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Owner Account
+                </Button>
+              )}
+            </form>
           </CardContent>
         </Card>
       </div>

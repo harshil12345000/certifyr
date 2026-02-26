@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganizationId } from "@/hooks/useOrganizationId";
@@ -241,6 +241,10 @@ export function RequestPortalSettings() {
       setSaving(false);
     }
   };
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void saveSettings();
+  };
   const copyUrl = () => {
     navigator.clipboard.writeText(settings.portalUrl);
     toast({
@@ -264,6 +268,7 @@ export function RequestPortalSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="flex items-center space-x-2">
           <Switch 
             id="portal-enabled" 
@@ -315,7 +320,8 @@ export function RequestPortalSettings() {
                     ...prev,
                     password: e.target.value
                   }))} 
-                  placeholder="Enter a secure password" 
+                  placeholder="Enter a secure password"
+                  autoComplete="new-password"
                 />
                 <Button 
                   type="button" 
@@ -358,9 +364,10 @@ export function RequestPortalSettings() {
             </Alert>
           </>}
 
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? "Saving..." : "Save Settings"}
         </Button>
+        </form>
       </CardContent>
     </Card>;
 }
