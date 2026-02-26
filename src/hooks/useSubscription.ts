@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { activateBasicPlan } from '@/lib/subscription-activation';
+import { PLAN_HIERARCHY } from '@/config/planFeatures';
 
 export interface Subscription {
   id: string;
@@ -167,7 +168,44 @@ export function useSubscription() {
       ))
     : 0;
 
-  const activePlan = subscription?.active_plan ?? null;
+  // Org plan fallback: if user's own plan is basic/null, check org owner's plan
+  const [orgPlan, setOrgPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const userPlan = subscription?.active_plan;
+    // Only fetch org plan if user plan is basic or absent
+    if (userPlan && userPlan !== 'basic') {
+      setOrgPlan(null);
+      return;
+    }
+
+    const fetchOrgPlan = async () => {
+      try {
+        // Get user's org id
+        const { data: orgId } = await supabase
+          .rpc('get_user_organization_id', { user_id: user.id });
+        if (!orgId) return;
+
+        const { data: ownerPlan } = await supabase
+          .rpc('get_org_owner_plan', { p_org_id: orgId } as any);
+        if (ownerPlan && typeof ownerPlan === 'string') {
+          const ownerRank = PLAN_HIERARCHY[ownerPlan as keyof typeof PLAN_HIERARCHY] ?? 0;
+          const userRank = PLAN_HIERARCHY[(userPlan ?? 'basic') as keyof typeof PLAN_HIERARCHY] ?? 0;
+          if (ownerRank > userRank) {
+            setOrgPlan(ownerPlan);
+          } else {
+            setOrgPlan(null);
+          }
+        }
+      } catch {
+        // Silently fail — user keeps their own plan
+      }
+    };
+    fetchOrgPlan();
+  }, [user?.id, subscription?.active_plan]);
+
+  const activePlan = orgPlan ?? subscription?.active_plan ?? null;
   const selectedPlan = subscription?.selected_plan ?? null;
 
   // Export isBasicFree for use in components - only true when explicitly on basic plan
