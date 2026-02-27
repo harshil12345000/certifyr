@@ -216,16 +216,13 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
-  const [showPdfPreview, setShowPdfPreview] = useState(!!document.official_pdf_url);
+  const [autoFillError, setAutoFillError] = useState<string | null>(null);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
 
   const formSchema = z.object(
     fields.reduce((acc, field) => {
       if (field.field_type === "checkbox") {
         acc[field.field_name] = z.boolean().optional();
-      } else if (field.field_type === "number") {
-        acc[field.field_name] = field.required 
-          ? z.string().min(1, { message: `${field.field_label} is required` })
-          : z.string().optional();
       } else {
         acc[field.field_name] = field.required 
           ? z.string().min(1, { message: `${field.field_label} is required` })
@@ -240,14 +237,13 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: fields.reduce((acc, field) => {
-      acc[field.field_name] = "";
+      acc[field.field_name] = field.field_type === "checkbox" ? false : "";
       return acc;
     }, {} as Record<string, any>),
   });
 
-  const handleSubmit = (values: FormValues) => {
-    setFormData(values);
-  };
+  // Watch all form values for live preview updates
+  const watchedValues = form.watch();
 
   const handleCreatePdf = async () => {
     setIsGenerating(true);
@@ -263,26 +259,34 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
     }
   };
 
-  const handleAutoFillFromPdf = async () => {
-    if (!document.official_pdf_url || fields.length === 0) return;
+  const handleAutoFillFromAI = async () => {
+    if (fields.length === 0) return;
     
     setIsAutoFilling(true);
+    setAutoFillError(null);
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      const pdfUrl = document.official_pdf_url;
       const fieldInfo = fields.map(f => ({
         name: f.field_name,
         label: f.field_label,
         type: f.field_type,
-        required: f.required
+        required: f.required,
+        pdf_field_mapping: f.pdf_field_mapping,
       }));
+
+      const currentValues: Record<string, string> = {};
+      for (const field of fields) {
+        const val = watchedValues[field.field_name];
+        if (val && val.toString().trim()) {
+          currentValues[field.field_name] = val.toString();
+        }
+      }
 
       const { data, error } = await supabase.functions.invoke('pdf-form-fill', {
         body: {
-          pdf_url: pdfUrl,
           fields: fieldInfo,
-          current_data: formData,
+          current_data: currentValues,
           document_name: document.form_name || document.official_name,
           authority: document.authority,
           country: document.country,
@@ -291,19 +295,105 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
 
       if (error) throw error;
       
-      if (data?.filled_fields) {
-        const updatedData = { ...formData, ...data.filled_fields };
-        setFormData(updatedData);
-        
+      if (data?.filled_fields && Object.keys(data.filled_fields).length > 0) {
         Object.entries(data.filled_fields).forEach(([key, value]) => {
-          form.setValue(key, value as string);
+          if (value && value.toString().trim()) {
+            form.setValue(key, value as string, { shouldDirty: true });
+          }
         });
+      } else if (data?.error) {
+        setAutoFillError(data.error);
+      } else {
+        setAutoFillError("No suggestions available for the empty fields.");
       }
     } catch (error) {
-      console.error("Error auto-filling from PDF:", error);
+      console.error("Error auto-filling:", error);
+      setAutoFillError("Failed to auto-fill. Please try again.");
     } finally {
       setIsAutoFilling(false);
     }
+  };
+
+  const renderFieldInput = (field: LibraryField) => {
+    const errorMessage = form.formState.errors[field.field_name]?.message as string | undefined;
+    const label = (
+      <label className="text-sm font-medium">
+        {field.field_label}
+        {field.required && <span className="text-destructive ml-1">*</span>}
+      </label>
+    );
+
+    if (field.field_type === "checkbox") {
+      return (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={field.field_name}
+            checked={!!watchedValues[field.field_name]}
+            onCheckedChange={(checked) => form.setValue(field.field_name, checked)}
+          />
+          <label htmlFor={field.field_name} className="text-sm font-medium">
+            {field.field_label}
+          </label>
+        </div>
+      );
+    }
+
+    if (field.field_type === "textarea") {
+      return (
+        <div className="space-y-2 md:col-span-2">
+          {label}
+          <Textarea
+            {...form.register(field.field_name)}
+            placeholder={field.field_label}
+            rows={3}
+          />
+          {errorMessage && <p className="text-xs text-destructive">{errorMessage}</p>}
+        </div>
+      );
+    }
+
+    if (field.field_type === "select") {
+      return (
+        <div className="space-y-2">
+          {label}
+          <Select
+            value={watchedValues[field.field_name] as string || ""}
+            onValueChange={(value) => form.setValue(field.field_name, value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={`Select ${field.field_label}`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="option1">Option 1</SelectItem>
+              <SelectItem value="option2">Option 2</SelectItem>
+              <SelectItem value="option3">Option 3</SelectItem>
+            </SelectContent>
+          </Select>
+          {errorMessage && <p className="text-xs text-destructive">{errorMessage}</p>}
+        </div>
+      );
+    }
+
+    // text, number, date, email, tel
+    const inputType = field.field_type === "number" ? "number" 
+      : field.field_type === "date" ? "date"
+      : field.field_type === "email" ? "email"
+      : field.field_type === "tel" ? "tel"
+      : "text";
+
+    return (
+      <div className="space-y-2">
+        {label}
+        <Input
+          type={inputType}
+          {...form.register(field.field_name)}
+          placeholder={inputType === "email" ? "email@example.com" 
+            : inputType === "tel" ? "+1 234 567 8900" 
+            : field.field_label}
+        />
+        {errorMessage && <p className="text-xs text-destructive">{errorMessage}</p>}
+      </div>
+    );
   };
 
   if (fields.length === 0) {
@@ -333,200 +423,80 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Form */}
         <Card>
           <CardHeader>
             <CardTitle>Fill Form Details</CardTitle>
             <CardDescription>
-              Enter the required information for {document.form_name || document.official_name}
+              Enter the required information for {document.form_name || document.official_name}. 
+              The preview updates live as you type.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {fields.map((field) => (
-                  <div 
-                    key={field.id} 
-                    className={field.field_type === "textarea" ? "md:col-span-2" : ""}
-                  >
-                    {field.field_type === "text" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Input
-                          {...form.register(field.field_name)}
-                          placeholder={field.field_label}
-                        />
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "number" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Input
-                          type="number"
-                          {...form.register(field.field_name)}
-                          placeholder={field.field_label}
-                        />
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "date" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Input
-                          type="date"
-                          {...form.register(field.field_name)}
-                        />
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "email" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Input
-                          type="email"
-                          {...form.register(field.field_name)}
-                          placeholder="email@example.com"
-                        />
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "tel" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Input
-                          type="tel"
-                          {...form.register(field.field_name)}
-                          placeholder="+1 234 567 8900"
-                        />
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "textarea" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Textarea
-                          {...form.register(field.field_name)}
-                          placeholder={field.field_label}
-                          rows={3}
-                        />
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "select" && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.field_label}
-                          {field.required && <span className="text-destructive ml-1">*</span>}
-                        </label>
-                        <Select
-                          {...form.register(field.field_name)}
-                          onValueChange={(value) => form.setValue(field.field_name, value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={`Select ${field.field_label}`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="option1">Option 1</SelectItem>
-                            <SelectItem value="option2">Option 2</SelectItem>
-                            <SelectItem value="option3">Option 3</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {form.formState.errors[field.field_name] && (
-                          <p className="text-xs text-destructive">
-                            {form.formState.errors[field.field_name]?.message as string}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {field.field_type === "checkbox" && (
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id={field.field_name}
-                          {...form.register(field.field_name)}
-                          onCheckedChange={(checked) => form.setValue(field.field_name, checked)}
-                        />
-                        <label htmlFor={field.field_name} className="text-sm font-medium">
-                          {field.field_label}
-                        </label>
-                      </div>
-                    )}
+                  <div key={field.id} className={field.field_type === "textarea" ? "md:col-span-2" : ""}>
+                    {renderFieldInput(field)}
                   </div>
                 ))}
               </div>
-              <Button type="submit" className="w-full">
-                <Eye className="w-4 h-4 mr-2" />
-                Update Preview
-              </Button>
-            </form>
+
+              {autoFillError && (
+                <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {autoFillError}
+                </div>
+              )}
+            </div>
           </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button
+              onClick={handleAutoFillFromAI}
+              disabled={isAutoFilling}
+              variant="secondary"
+              className="flex-1"
+            >
+              {isAutoFilling ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  AI Auto-filling...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  AI Auto-fill
+                </>
+              )}
+            </Button>
+          </CardFooter>
         </Card>
 
+        {/* Right: Preview */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Preview</CardTitle>
                 <CardDescription>
-                  {showPdfPreview ? 'Official PDF form' : 'Live preview of your document'}
+                  {showPdfPreview ? 'Official PDF form' : 'Live preview with your data'}
                 </CardDescription>
               </div>
               {document.official_pdf_url && (
                 <div className="flex gap-2">
                   <Button
-                    variant={showPdfPreview ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowPdfPreview(true)}
-                  >
-                    PDF
-                  </Button>
-                  <Button
                     variant={!showPdfPreview ? "default" : "outline"}
                     size="sm"
                     onClick={() => setShowPdfPreview(false)}
                   >
-                    Form
+                    Form Preview
+                  </Button>
+                  <Button
+                    variant={showPdfPreview ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowPdfPreview(true)}
+                  >
+                    Official PDF
                   </Button>
                 </div>
               )}
@@ -542,61 +512,61 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
             ) : (
               <div 
                 id={`library-doc-preview-${document.id}`}
-                className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed border rounded-lg"
+                className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed border rounded-lg min-h-[600px]"
               >
                 <div className="text-center mb-6">
                   <h1 className="text-xl font-bold uppercase">
                     {document.form_name || document.official_name}
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {document.authority} - {document.country}
+                  <p className="text-sm text-gray-500 mt-1">
+                    {document.authority} — {document.country}
                     {document.state && `, ${document.state}`}
                   </p>
+                  <div className="border-b-2 border-gray-300 mt-3" />
                 </div>
 
                 {document.short_description && (
-                  <p className="text-sm mb-4">{document.short_description}</p>
+                  <p className="text-sm mb-4 italic text-gray-600">{document.short_description}</p>
                 )}
 
                 <div className="space-y-3 mt-6">
-                  {fields.map((field) => (
-                    <div key={field.id} className="flex">
-                      <span className="font-medium w-1/3">{field.field_label}:</span>
-                      <span className="flex-1">
-                        {formData[field.field_name] || `[${field.field_label}]`}
-                      </span>
-                    </div>
-                  ))}
+                  {fields.map((field) => {
+                    const value = watchedValues[field.field_name];
+                    const displayValue = value && value.toString().trim() 
+                      ? value.toString() 
+                      : null;
+
+                    if (field.field_type === "checkbox") {
+                      return (
+                        <div key={field.id} className="flex items-center gap-2">
+                          <span className="inline-block w-4 h-4 border border-gray-400 text-center text-xs leading-4">
+                            {value ? "✓" : ""}
+                          </span>
+                          <span className="text-sm">{field.field_label}</span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={field.id} className="flex gap-2">
+                        <span className="font-semibold text-sm w-2/5 text-gray-700">
+                          {field.field_label}:
+                        </span>
+                        <span className={`flex-1 text-sm border-b ${displayValue ? 'border-transparent text-gray-900' : 'border-gray-300 text-gray-400'}`}>
+                          {displayValue || `[${field.field_label}]`}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <div className="mt-8 pt-4 border-t text-xs text-muted-foreground">
-                  <p>This is a preview generated by Certifyr.</p>
-                  <p>For official documents, please refer to the source.</p>
+                <div className="mt-12 pt-4 border-t text-xs text-gray-400">
+                  <p>Preview generated by Certifyr. For official documents, refer to the source authority.</p>
                 </div>
               </div>
             )}
           </CardContent>
           <CardFooter className="gap-2">
-            {document.official_pdf_url && (
-              <Button 
-                onClick={handleAutoFillFromPdf}
-                disabled={isAutoFilling}
-                variant="secondary"
-                className="flex-1"
-              >
-                {isAutoFilling ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing PDF...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Auto-fill from PDF
-                  </>
-                )}
-              </Button>
-            )}
             <Button 
               onClick={handleCreatePdf} 
               disabled={isGenerating}
@@ -604,16 +574,27 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
             >
               {isGenerating ? (
                 <>
-                  <Download className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Generating PDF...
                 </>
               ) : (
                 <>
                   <Download className="w-4 h-4 mr-2" />
-                  Create PDF
+                  Download as PDF
                 </>
               )}
             </Button>
+            {document.official_pdf_url && (
+              <Button 
+                variant="outline"
+                asChild
+              >
+                <a href={document.official_pdf_url} target="_blank" rel="noopener noreferrer">
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Official PDF
+                </a>
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>

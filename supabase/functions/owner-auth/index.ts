@@ -27,7 +27,7 @@ serve(async (req) => {
     try {
       body = await req.json();
     } catch (e) {
-      return new Response(JSON.stringify({ error: "Invalid JSON", details: e.message }), {
+      return new Response(JSON.stringify({ error: "Invalid JSON", details: e instanceof Error ? e.message : "Unknown error" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

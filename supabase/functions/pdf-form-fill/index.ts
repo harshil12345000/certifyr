@@ -14,10 +14,10 @@ interface FieldInfo {
   label: string;
   type: string;
   required: boolean;
+  pdf_field_mapping: string | null;
 }
 
 interface RequestBody {
-  pdf_url: string;
   fields: FieldInfo[];
   current_data: Record<string, string>;
   document_name: string;
@@ -31,57 +31,57 @@ serve(async (req) => {
   }
 
   try {
-    const { pdf_url, fields, current_data, document_name, authority, country }: RequestBody = await req.json();
+    const { fields, current_data, document_name, authority, country }: RequestBody = await req.json();
 
-    if (!pdf_url) {
+    if (!fields || fields.length === 0) {
       return new Response(
-        JSON.stringify({ error: "PDF URL is required" }),
+        JSON.stringify({ error: "Fields are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Build a mapping context from user-entered data and field definitions
     const fieldDescriptions = fields
-      .map((f) => `- ${f.name}: ${f.label} (${f.type}, ${f.required ? "required" : "optional"})`)
+      .map((f) => {
+        const mapping = f.pdf_field_mapping ? ` (PDF mapping: "${f.pdf_field_mapping}")` : "";
+        return `- "${f.name}" (label: "${f.label}", type: ${f.type}, ${f.required ? "required" : "optional"})${mapping}`;
+      })
       .join("\n");
 
-    const currentDataStr = Object.entries(current_data)
+    const currentDataEntries = Object.entries(current_data)
       .filter(([_, v]) => v && v.toString().trim())
-      .map(([k, v]) => `- ${k}: ${v}`)
+      .map(([k, v]) => `- ${k}: "${v}"`)
       .join("\n");
 
-    const systemPrompt = `You are an expert at analyzing government PDF forms and mapping user data to form fields.
-Your task is to:
-1. Analyze the official PDF form at the given URL
-2. Identify the fields in the PDF form
-3. Map the user's provided data to the correct PDF form fields
-4. Return the filled field values
+    const systemPrompt = `You are an expert at filling government and legal forms. You help auto-complete form fields based on the document context and any data the user has already provided.
 
-The form is: ${document_name}
+Document: ${document_name}
 Authority: ${authority}
 Country: ${country}
 
-Available form fields:
+Form fields:
 ${fieldDescriptions}
 
-User's current data:
-${currentDataStr || "(No data provided yet)"}
+User's already-entered data:
+${currentDataEntries || "(No data entered yet)"}
 
 Instructions:
-- Analyze the PDF form to understand what each field expects
-- Map user's data to the appropriate PDF fields based on field names and labels
-- For fields where user hasn't provided data but you can infer from context, make reasonable guesses
-- Return ONLY a JSON object with field_name: value pairs
-- Do NOT include any explanatory text
-- Use the exact field names as provided in the fields list
-- If a field cannot be determined, leave it empty string`;
+- For fields the user has NOT filled yet, suggest reasonable default values based on the document type, authority, and country context.
+- For date fields, use the format YYYY-MM-DD.
+- For fields that are highly specific to the user (like name, address, ID numbers), leave them as empty string "" — do NOT guess personal information.
+- For fields like "place of issue", "jurisdiction", "state", etc., infer from the country/authority context if possible.
+- For fields like "purpose", "subject", etc., provide a typical/common value for this document type.
+- Return ONLY a valid JSON object mapping field names to suggested values.
+- Use the exact field names from the fields list as keys.
+- Do NOT include any text outside the JSON object.`;
 
-    const userMessage = `Please analyze the PDF form at ${pdf_url} and map the user's data to the form fields. Return the filled field values as JSON.`;
+    const userMessage = `Based on the document "${document_name}" from ${authority} (${country}), suggest values for the empty fields. Only suggest values for fields where a reasonable default exists. Return as JSON.`;
 
     const sarvamKey = Deno.env.get("SARVAM_API_KEY");
     const groqKey = Deno.env.get("GROQ_API_KEY");
     let aiResponse = "";
 
-    // Try Sarvam first
+    // Try Sarvam first (better for Indian documents)
     if (sarvamKey) {
       try {
         const resp = await fetch(SARVAM_API_URL, {
@@ -93,7 +93,7 @@ Instructions:
               { role: "system", content: systemPrompt },
               { role: "user", content: userMessage }
             ],
-            temperature: 0.2,
+            temperature: 0.1,
             max_tokens: 2000
           }),
         });
@@ -110,41 +110,41 @@ Instructions:
 
     // Fallback to Groq
     if (!aiResponse && groqKey) {
-      const resp = await fetch(GROQ_API_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage }
-          ],
-          temperature: 0.2,
-          max_tokens: 2000
-        }),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        aiResponse = data.choices?.[0]?.message?.content || "";
-      } else {
-        const errText = await resp.text();
-        console.error("Groq error:", resp.status, errText);
-        if (resp.status === 429) {
-          return new Response(
-            JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+      try {
+        const resp = await fetch(GROQ_API_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage }
+            ],
+            temperature: 0.1,
+            max_tokens: 2000
+          }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          aiResponse = data.choices?.[0]?.message?.content || "";
+        } else {
+          const errText = await resp.text();
+          console.error("Groq error:", resp.status, errText);
+          if (resp.status === 429) {
+            return new Response(
+              JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+              { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
         }
-        return new Response(
-          JSON.stringify({ error: `AI API error: ${resp.status}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      } catch (err) {
+        console.error("Groq failed:", err);
       }
     }
 
     if (!aiResponse) {
       return new Response(
-        JSON.stringify({ error: "No AI API key configured. Contact support." }),
+        JSON.stringify({ error: "No AI API key configured or all providers failed." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -152,28 +152,40 @@ Instructions:
     // Parse the JSON response from AI
     let filledFields: Record<string, string> = {};
     try {
-      // Try to extract JSON from the response
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         filledFields = JSON.parse(jsonMatch[0]);
       }
     } catch (parseErr) {
-      console.error("Failed to parse AI response:", parseErr);
+      console.error("Failed to parse AI response:", parseErr, "Raw:", aiResponse);
       return new Response(
         JSON.stringify({ error: "Failed to parse AI response", filled_fields: {} }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Filter: only return fields that exist in the original field list
+    // and only for fields the user hasn't already filled
+    const validFieldNames = new Set(fields.map(f => f.name));
+    const filtered: Record<string, string> = {};
+    for (const [key, value] of Object.entries(filledFields)) {
+      if (validFieldNames.has(key) && value && value.toString().trim()) {
+        // Don't overwrite user-entered data
+        if (!current_data[key] || !current_data[key].toString().trim()) {
+          filtered[key] = value.toString();
+        }
+      }
+    }
+
     return new Response(
-      JSON.stringify({ filled_fields: filledFields }),
+      JSON.stringify({ filled_fields: filtered }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
