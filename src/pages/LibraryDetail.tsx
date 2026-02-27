@@ -219,6 +219,7 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
   const [filledPdfUrl, setFilledPdfUrl] = useState<string | null>(null);
   const [isFillingPdf, setIsFillingPdf] = useState(false);
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
+  const [pdfFieldsDebug, setPdfFieldsDebug] = useState<string[]>([]);
   const pdfBytesRef = useRef<Uint8Array | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -257,6 +258,20 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
         if (!response.ok) throw new Error("Failed to fetch PDF");
         const arrayBuffer = await response.arrayBuffer();
         pdfBytesRef.current = new Uint8Array(arrayBuffer);
+        
+        // Debug: extract field names from PDF
+        try {
+          const pdfDoc = await PDFDocument.load(pdfBytesRef.current, { ignoreEncryption: true });
+          const pdfForm = pdfDoc.getForm();
+          const pdfFields = pdfForm.getFields();
+          const fieldNames = pdfFields.map(f => f.getName());
+          console.log("PDF Fields found:", fieldNames);
+          setPdfFieldsDebug(fieldNames);
+        } catch (e) {
+          console.log("Could not extract PDF fields:", e);
+          setPdfFieldsDebug([]);
+        }
+        
         // Show the original PDF immediately
         setFilledPdfUrl(document.official_pdf_url!);
       } catch (err) {
@@ -278,6 +293,13 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
       const pdfDoc = await PDFDocument.load(pdfBytesRef.current, { ignoreEncryption: true });
       const pdfForm = pdfDoc.getForm();
       const pdfFields = pdfForm.getFields();
+      console.log("=== PDF FILLING DEBUG ===");
+      console.log("Form fields in PDF:", pdfFields.map(f => f.getName()));
+      console.log("Values to fill:", values);
+      
+      if (pdfFields.length === 0) {
+        console.log("WARNING: No form fields found in PDF! This PDF may be a flat form (scanned or filled manually).");
+      }
       
       // Build mapping: our field_name -> pdf_field_mapping (or field_name as fallback)
       const fieldMappings = new Map<string, string>();
@@ -292,6 +314,7 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
         pdfFieldNameMap.set(pf.getName().toLowerCase().trim(), pf.getName());
       }
 
+      let filledCount = 0;
       for (const [formFieldName, value] of Object.entries(values)) {
         if (!value || !value.toString().trim()) continue;
         
@@ -311,40 +334,51 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
               break;
             }
           }
-          if (!found) continue;
+          if (!found) {
+            console.log(`Field "${formFieldName}" (mapped to "${mappedName}") - NO MATCH in PDF`);
+            continue;
+          }
         } else {
           actualPdfFieldName = pdfFieldNameMap.get(mappedName.toLowerCase().trim()) || mappedName;
         }
 
+        console.log(`Filling field: "${actualPdfFieldName}" with value: "${value}"`);
         try {
           const pdfField = pdfForm.getField(actualPdfFieldName);
           const fieldType = pdfField.constructor.name;
+          console.log(`  Field type: ${fieldType}`);
           
           if (fieldType === "PDFTextField") {
             (pdfField as any).setText(value.toString());
+            filledCount++;
           } else if (fieldType === "PDFCheckBox") {
             if (value === true || value === "true" || value === "yes") {
               (pdfField as any).check();
+              filledCount++;
             } else {
               (pdfField as any).uncheck();
             }
           } else if (fieldType === "PDFDropdown") {
             try {
               (pdfField as any).select(value.toString());
-            } catch {
-              // Value not in dropdown options
+              filledCount++;
+            } catch (e) {
+              console.log(`  Dropdown select failed:`, e);
             }
           } else if (fieldType === "PDFRadioGroup") {
             try {
               (pdfField as any).select(value.toString());
-            } catch {
-              // Value not in radio options
+              filledCount++;
+            } catch (e) {
+              console.log(`  Radio select failed:`, e);
             }
           }
-        } catch {
-          // Field not found or type mismatch — skip
+        } catch (e) {
+          console.log(`  Error filling field:`, e);
         }
       }
+
+      console.log(`Filled ${filledCount} fields`);
 
       const filledBytes = await pdfDoc.save();
       const blob = new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
@@ -358,7 +392,6 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
       setFilledPdfUrl(newUrl);
     } catch (err) {
       console.error("Error filling PDF:", err);
-      // If pdf-lib fails (e.g., no form fields), keep original PDF visible
     } finally {
       setIsFillingPdf(false);
     }
@@ -403,10 +436,68 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
 
   const handleAutoFillFromAI = async () => {
     if (fields.length === 0) return;
+    if (!document.official_pdf_url) {
+      setAutoFillError("No PDF available for this document");
+      return;
+    }
     
     setIsAutoFilling(true);
     setAutoFillError(null);
     try {
+      // Client-side fuzzy matching first
+      const fuzzyMatch = (formName: string, pdfName: string): boolean => {
+        const f = formName.toLowerCase().replace(/_/g, '').replace(/ /g, '');
+        const p = pdfName.toLowerCase().replace(/_/g, '').replace(/ /g, '');
+        return f === p || f.includes(p) || p.includes(f) || 
+              Levenshtein(f, p) < 3;
+      };
+      
+      const Levenshtein = (a: string, b: string): number => {
+        const matrix: number[][] = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+              matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+              matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      };
+
+      const clientMappings: Record<string, string> = {};
+      for (const field of fields) {
+        for (const pdfField of pdfFieldsDebug) {
+          if (fuzzyMatch(field.field_name, pdfField)) {
+            clientMappings[field.field_name] = pdfField;
+            break;
+          }
+        }
+      }
+
+      console.log("Client fuzzy mappings:", clientMappings);
+
+      // If we have good mappings, use them directly
+      if (Object.keys(clientMappings).length > 0) {
+        const currentValues = form.getValues();
+        const mappedValues: Record<string, any> = {};
+        
+        for (const [formFieldName, value] of Object.entries(currentValues)) {
+          if (value && value.toString().trim()) {
+            const pdfFieldName = clientMappings[formFieldName] || formFieldName;
+            mappedValues[pdfFieldName] = value;
+          }
+        }
+        
+        fillPdfWithValues(mappedValues);
+        setIsAutoFilling(false);
+        return;
+      }
+
+      // Fallback to AI mapping
       const { supabase } = await import('@/integrations/supabase/client');
       
       const fieldInfo = fields.map(f => ({
@@ -414,43 +505,49 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
         label: f.field_label,
         type: f.field_type,
         required: f.required,
-        pdf_field_mapping: f.pdf_field_mapping,
       }));
 
-      const currentValues: Record<string, string> = {};
-      for (const field of fields) {
-        const val = watchedValues[field.field_name];
-        if (val && val.toString().trim()) {
-          currentValues[field.field_name] = val.toString();
-        }
-      }
-
-      const { data, error } = await supabase.functions.invoke('pdf-form-fill', {
+      const { data, error } = await supabase.functions.invoke('pdf-form-analyze', {
         body: {
           fields: fieldInfo,
-          current_data: currentValues,
-          document_name: document.form_name || document.official_name,
-          authority: document.authority,
-          country: document.country,
+          pdf_field_names: pdfFieldsDebug,
         }
       });
 
-      if (error) throw error;
-      
-      if (data?.filled_fields && Object.keys(data.filled_fields).length > 0) {
-        Object.entries(data.filled_fields).forEach(([key, value]) => {
-          if (value && value.toString().trim()) {
-            form.setValue(key, value as string, { shouldDirty: true });
-          }
-        });
-      } else if (data?.error) {
-        setAutoFillError(data.error);
-      } else {
-        setAutoFillError("No suggestions available for the empty fields.");
+      console.log("AI Response:", data);
+      if (error) {
+        console.error("Edge function error:", error);
+        setAutoFillError("AI service unavailable. Please fill fields manually.");
+        setIsAutoFilling(false);
+        return;
       }
-    } catch (error) {
-      console.error("Error auto-filling:", error);
-      setAutoFillError("Failed to auto-fill. Please try again.");
+      
+      if (data?.error) {
+        setAutoFillError(data.error);
+        setIsAutoFilling(false);
+        return;
+      }
+
+      // Apply AI field mappings and fill PDF
+      if (data?.field_mappings && Object.keys(data.field_mappings).length > 0) {
+        const mappings = data.field_mappings;
+        const currentValues = form.getValues();
+        const mappedValues: Record<string, any> = {};
+        
+        for (const [formFieldName, value] of Object.entries(currentValues)) {
+          if (value && value.toString().trim()) {
+            const pdfFieldName = mappings[formFieldName] || formFieldName;
+            mappedValues[pdfFieldName] = value;
+          }
+        }
+        
+        fillPdfWithValues(mappedValues);
+      } else {
+        setAutoFillError("Could not map fields. Please fill manually.");
+      }
+    } catch (err) {
+      console.error("Auto-fill error:", err);
+      setAutoFillError("Failed to create document. Please try again.");
     } finally {
       setIsAutoFilling(false);
     }
@@ -572,6 +669,23 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
               Enter the required information for {document.form_name || document.official_name}. 
               The official PDF updates live as you type.
             </CardDescription>
+            {pdfFieldsDebug.length > 0 && (
+              <div className="mt-2 text-xs text-muted-foreground bg-muted p-2 rounded">
+                <strong>PDF Fields detected:</strong> {pdfFieldsDebug.join(", ")}
+              </div>
+            )}
+            {pdfFieldsDebug.length === 0 && document.official_pdf_url && (
+              <div className="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                ⚠️ This PDF doesn't have fillable form fields. It may be a scanned document.
+              </div>
+            )}
+            {pdfFieldsDebug.length > 0 && fields.length > 0 && (
+              <div className="mt-2 text-xs bg-blue-50 p-2 rounded border border-blue-200">
+                <div className="font-medium">Debug Info:</div>
+                <div>Form fields: {fields.map(f => f.field_name).join(", ")}</div>
+                <div>PDF fields: {pdfFieldsDebug.join(", ")}</div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -601,12 +715,12 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
               {isAutoFilling ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  AI Auto-filling...
+                  Creating Document...
                 </>
               ) : (
                 <>
                   <Wand2 className="w-4 h-4 mr-2" />
-                  AI Auto-fill
+                  Create Document
                 </>
               )}
             </Button>

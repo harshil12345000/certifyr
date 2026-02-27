@@ -33,7 +33,9 @@ import {
   Loader2,
   UploadCloud,
   File,
-  FolderOpen
+  FolderOpen,
+  History,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -61,6 +63,14 @@ interface JsonUploadItem {
   rawContent?: string;
   status: "pending" | "processing" | "success" | "error";
   error?: string;
+}
+
+interface LibraryDocumentVersion {
+  id: string;
+  document_id: string;
+  version: string;
+  data: Record<string, unknown>;
+  created_at: string;
 }
 
 const SARVAM_PROMPT = `You are an expert legal document parser. Your task is to extract structured information from legal documents and return valid JSON.
@@ -147,6 +157,12 @@ export default function AdminLibrary() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Version history state
+  const [versionsDialogOpen, setVersionsDialogOpen] = useState(false);
+  const [selectedDocForVersions, setSelectedDocForVersions] = useState<LibraryDocument | null>(null);
+  const [documentVersions, setDocumentVersions] = useState<LibraryDocumentVersion[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   
@@ -204,13 +220,36 @@ export default function AdminLibrary() {
       };
 
       if (editingDoc) {
+        // Save previous version before updating
+        const oldVersionData = {
+          version: editingDoc.version || "1.0",
+          official_name: editingDoc.official_name,
+          short_description: editingDoc.short_description,
+          full_description: editingDoc.full_description,
+          purpose: editingDoc.purpose,
+          who_must_file: editingDoc.who_must_file,
+          filing_method: editingDoc.filing_method,
+          official_source_url: editingDoc.official_source_url,
+          official_pdf_url: editingDoc.official_pdf_url,
+          authority: editingDoc.authority,
+          country: editingDoc.country,
+          state: editingDoc.state,
+          domain: editingDoc.domain,
+        };
+        
+        await (supabase as any).from("library_document_versions").insert({
+          document_id: editingDoc.id,
+          version: editingDoc.version || "1.0",
+          data: oldVersionData,
+        });
+
         const { error } = await supabase
           .from("library_documents")
           .update(docData)
           .eq("id", editingDoc.id);
 
         if (error) throw error;
-        toast({ title: "Document updated successfully" });
+        toast({ title: "Document updated successfully", description: "Previous version saved" });
       } else {
         const { error } = await supabase
           .from("library_documents")
@@ -234,6 +273,28 @@ export default function AdminLibrary() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleViewVersions = async (doc: LibraryDocument) => {
+    setSelectedDocForVersions(doc);
+    setVersionsDialogOpen(true);
+    setIsLoadingVersions(true);
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from("library_document_versions")
+        .select("*")
+        .eq("document_id", doc.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      setDocumentVersions(data || []);
+    } catch (err) {
+      console.error("Error fetching versions:", err);
+      setDocumentVersions([]);
+    } finally {
+      setIsLoadingVersions(false);
     }
   };
 
@@ -1046,13 +1107,23 @@ export default function AdminLibrary() {
                           variant="ghost" 
                           size="icon"
                           onClick={() => navigate(`/library/${doc.slug}`)}
+                          title="View"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="icon"
+                          onClick={() => handleViewVersions(doc)}
+                          title="View Old Versions"
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
                           onClick={() => handleEdit(doc)}
+                          title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -1060,6 +1131,7 @@ export default function AdminLibrary() {
                           variant="ghost" 
                           size="icon"
                           onClick={() => handleDelete(doc.id)}
+                          title="Delete"
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -1386,6 +1458,83 @@ export default function AdminLibrary() {
               </div>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Version History Dialog */}
+      <Dialog open={versionsDialogOpen} onOpenChange={setVersionsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Version History
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDocForVersions?.official_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isLoadingVersions ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : documentVersions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No previous versions found.</p>
+              <p className="text-sm">Updates to this document will create version history.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {documentVersions.map((version, index) => (
+                <Card key={version.id} className={index === 0 ? "border-primary" : ""}>
+                  <CardHeader className="py-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">
+                        Version {version.version}
+                        {index === 0 && <Badge className="ml-2 text-xs">Current</Badge>}
+                      </CardTitle>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(version.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                      {version.data.official_name && (
+                        <div><span className="font-medium">Name:</span> {(version.data as any).official_name}</div>
+                      )}
+                      {version.data.authority && (
+                        <div><span className="font-medium">Authority:</span> {(version.data as any).authority}</div>
+                      )}
+                      {version.data.country && (
+                        <div><span className="font-medium">Country:</span> {(version.data as any).country}</div>
+                      )}
+                      {version.data.domain && (
+                        <div><span className="font-medium">Domain:</span> {(version.data as any).domain}</div>
+                      )}
+                      {version.data.short_description && (
+                        <div className="col-span-2"><span className="font-medium">Description:</span> {(version.data as any).short_description}</div>
+                      )}
+                      {version.data.official_pdf_url && (
+                        <div className="col-span-2">
+                          <span className="font-medium">PDF:</span>{" "}
+                          <a 
+                            href={(version.data as any).official_pdf_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            View PDF
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>

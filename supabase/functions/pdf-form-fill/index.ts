@@ -53,7 +53,7 @@ serve(async (req) => {
       .map(([k, v]) => `- ${k}: "${v}"`)
       .join("\n");
 
-    const systemPrompt = `You are an expert at filling government and legal forms. You help auto-complete form fields based on the document context and any data the user has already provided.
+    const systemPrompt = `You are an expert at filling government and legal forms. You help auto-complete form fields ONLY when the value is definitively known from the context.
 
 Document: ${document_name}
 Authority: ${authority}
@@ -66,16 +66,16 @@ User's already-entered data:
 ${currentDataEntries || "(No data entered yet)"}
 
 Instructions:
-- For fields the user has NOT filled yet, suggest reasonable default values based on the document type, authority, and country context.
-- For date fields, use the format YYYY-MM-DD.
-- For fields that are highly specific to the user (like name, address, ID numbers), leave them as empty string "" — do NOT guess personal information.
-- For fields like "place of issue", "jurisdiction", "state", etc., infer from the country/authority context if possible.
-- For fields like "purpose", "subject", etc., provide a typical/common value for this document type.
+- Only fill fields with values that are DEFINITIVELY known from the document context, authority, or country — never guess or infer.
+- For fields like "country", if the document is for India, fill with "India".
+- For fields like "state", if the state is known from authority or country context, fill it.
+- For ALL other fields (name, address, ID numbers, dates, purpose, subject, place of issue, jurisdiction, etc.) — leave them as empty string "".
+- Do NOT provide typical/common values — leave them empty for the user to fill.
 - Return ONLY a valid JSON object mapping field names to suggested values.
 - Use the exact field names from the fields list as keys.
 - Do NOT include any text outside the JSON object.`;
 
-    const userMessage = `Based on the document "${document_name}" from ${authority} (${country}), suggest values for the empty fields. Only suggest values for fields where a reasonable default exists. Return as JSON.`;
+    const userMessage = `Based on the document "${document_name}" from ${authority} (${country}), ONLY fill in values that are DEFINITIVELY known (like country = "${country}"). Leave all other fields empty. Return as JSON.`;
 
     const sarvamKey = Deno.env.get("SARVAM_API_KEY");
     const groqKey = Deno.env.get("GROQ_API_KEY");
