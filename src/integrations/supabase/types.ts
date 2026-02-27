@@ -6,8 +6,6 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type LibraryTagType = 'country' | 'state' | 'domain' | 'authority' | 'industry'
-
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -314,6 +312,240 @@ export type Database = {
           type?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      library_attachments: {
+        Row: {
+          attachment_name: string
+          description: string | null
+          document_id: string
+          id: string
+          is_required: boolean | null
+        }
+        Insert: {
+          attachment_name: string
+          description?: string | null
+          document_id: string
+          id?: string
+          is_required?: boolean | null
+        }
+        Update: {
+          attachment_name?: string
+          description?: string | null
+          document_id?: string
+          id?: string
+          is_required?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_attachments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "library_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_dependencies: {
+        Row: {
+          dependency_name: string
+          dependency_slug: string | null
+          description: string | null
+          document_id: string
+          id: string
+        }
+        Insert: {
+          dependency_name: string
+          dependency_slug?: string | null
+          description?: string | null
+          document_id: string
+          id?: string
+        }
+        Update: {
+          dependency_name?: string
+          dependency_slug?: string | null
+          description?: string | null
+          document_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_dependencies_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "library_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_document_tags: {
+        Row: {
+          document_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          document_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          document_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_document_tags_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "library_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_document_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "library_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_documents: {
+        Row: {
+          authority: string
+          country: string
+          created_at: string | null
+          created_by_admin: string | null
+          domain: string
+          filing_method: string | null
+          form_name: string | null
+          full_description: string | null
+          id: string
+          last_verified_at: string | null
+          needs_review: boolean | null
+          official_name: string
+          official_pdf_url: string | null
+          official_source_url: string | null
+          parsing_confidence: number | null
+          purpose: string | null
+          short_description: string | null
+          slug: string
+          state: string | null
+          updated_at: string | null
+          version: string | null
+          who_must_file: string | null
+        }
+        Insert: {
+          authority: string
+          country: string
+          created_at?: string | null
+          created_by_admin?: string | null
+          domain: string
+          filing_method?: string | null
+          form_name?: string | null
+          full_description?: string | null
+          id?: string
+          last_verified_at?: string | null
+          needs_review?: boolean | null
+          official_name: string
+          official_pdf_url?: string | null
+          official_source_url?: string | null
+          parsing_confidence?: number | null
+          purpose?: string | null
+          short_description?: string | null
+          slug: string
+          state?: string | null
+          updated_at?: string | null
+          version?: string | null
+          who_must_file?: string | null
+        }
+        Update: {
+          authority?: string
+          country?: string
+          created_at?: string | null
+          created_by_admin?: string | null
+          domain?: string
+          filing_method?: string | null
+          form_name?: string | null
+          full_description?: string | null
+          id?: string
+          last_verified_at?: string | null
+          needs_review?: boolean | null
+          official_name?: string
+          official_pdf_url?: string | null
+          official_source_url?: string | null
+          parsing_confidence?: number | null
+          purpose?: string | null
+          short_description?: string | null
+          slug?: string
+          state?: string | null
+          updated_at?: string | null
+          version?: string | null
+          who_must_file?: string | null
+        }
+        Relationships: []
+      }
+      library_fields: {
+        Row: {
+          conditional_logic: Json | null
+          document_id: string
+          field_label: string
+          field_name: string
+          field_type: string
+          id: string
+          pdf_field_mapping: string | null
+          required: boolean | null
+          validation_regex: string | null
+        }
+        Insert: {
+          conditional_logic?: Json | null
+          document_id: string
+          field_label: string
+          field_name: string
+          field_type: string
+          id?: string
+          pdf_field_mapping?: string | null
+          required?: boolean | null
+          validation_regex?: string | null
+        }
+        Update: {
+          conditional_logic?: Json | null
+          document_id?: string
+          field_label?: string
+          field_name?: string
+          field_type?: string
+          id?: string
+          pdf_field_mapping?: string | null
+          required?: boolean | null
+          validation_regex?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_fields_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "library_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_tags: {
+        Row: {
+          id: string
+          tag_name: string
+          tag_type: Database["public"]["Enums"]["library_tag_type"]
+        }
+        Insert: {
+          id?: string
+          tag_name: string
+          tag_type: Database["public"]["Enums"]["library_tag_type"]
+        }
+        Update: {
+          id?: string
+          tag_name?: string
+          tag_type?: Database["public"]["Enums"]["library_tag_type"]
         }
         Relationships: []
       }
@@ -1041,237 +1273,6 @@ export type Database = {
         }
         Relationships: []
       }
-      library_documents: {
-        Row: {
-          id: string
-          country: string
-          state: string | null
-          authority: string
-          domain: string
-          official_name: string
-          slug: string
-          short_description: string | null
-          full_description: string | null
-          purpose: string | null
-          who_must_file: string | null
-          filing_method: string | null
-          official_source_url: string | null
-          official_pdf_url: string | null
-          version: string
-          last_verified_at: string | null
-          parsing_confidence: number | null
-          needs_review: boolean | null
-          created_by_admin: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          country: string
-          state?: string | null
-          authority: string
-          domain: string
-          official_name: string
-          slug: string
-          short_description?: string | null
-          full_description?: string | null
-          purpose?: string | null
-          who_must_file?: string | null
-          filing_method?: string | null
-          official_source_url?: string | null
-          official_pdf_url?: string | null
-          version?: string
-          last_verified_at?: string | null
-          parsing_confidence?: number | null
-          needs_review?: boolean | null
-          created_by_admin?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          country?: string
-          state?: string | null
-          authority?: string
-          domain?: string
-          official_name?: string
-          slug?: string
-          short_description?: string | null
-          full_description?: string | null
-          purpose?: string | null
-          who_must_file?: string | null
-          filing_method?: string | null
-          official_source_url?: string | null
-          official_pdf_url?: string | null
-          version?: string
-          last_verified_at?: string | null
-          parsing_confidence?: number | null
-          needs_review?: boolean | null
-          created_by_admin?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      library_tags: {
-        Row: {
-          id: string
-          tag_name: string
-          tag_type: LibraryTagType
-        }
-        Insert: {
-          id?: string
-          tag_name: string
-          tag_type: LibraryTagType
-        }
-        Update: {
-          id?: string
-          tag_name?: string
-          tag_type?: LibraryTagType
-        }
-        Relationships: []
-      }
-      library_document_tags: {
-        Row: {
-          id: string
-          document_id: string
-          tag_id: string
-        }
-        Insert: {
-          id?: string
-          document_id: string
-          tag_id: string
-        }
-        Update: {
-          id?: string
-          document_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "library_document_tags_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "library_documents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "library_document_tags_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "library_tags"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      library_fields: {
-        Row: {
-          id: string
-          document_id: string
-          field_name: string
-          field_label: string
-          field_type: string
-          required: boolean
-          validation_regex: string | null
-          conditional_logic: Json | null
-          pdf_field_mapping: string | null
-        }
-        Insert: {
-          id?: string
-          document_id: string
-          field_name: string
-          field_label: string
-          field_type: string
-          required?: boolean
-          validation_regex?: string | null
-          conditional_logic?: Json | null
-          pdf_field_mapping?: string | null
-        }
-        Update: {
-          id?: string
-          document_id?: string
-          field_name?: string
-          field_label?: string
-          field_type?: string
-          required?: boolean
-          validation_regex?: string | null
-          conditional_logic?: Json | null
-          pdf_field_mapping?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "library_fields_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "library_documents"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      library_dependencies: {
-        Row: {
-          id: string
-          document_id: string
-          dependency_name: string
-          dependency_slug: string | null
-          description: string | null
-        }
-        Insert: {
-          id?: string
-          document_id: string
-          dependency_name: string
-          dependency_slug?: string | null
-          description?: string | null
-        }
-        Update: {
-          id?: string
-          document_id?: string
-          dependency_name?: string
-          dependency_slug?: string | null
-          description?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "library_dependencies_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "library_documents"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      library_attachments: {
-        Row: {
-          id: string
-          document_id: string
-          attachment_name: string
-          is_required: boolean
-          description: string | null
-        }
-        Insert: {
-          id?: string
-          document_id: string
-          attachment_name: string
-          is_required?: boolean
-          description?: string | null
-        }
-        Update: {
-          id?: string
-          document_id?: string
-          attachment_name?: string
-          is_required?: boolean
-          description?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "library_attachments_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "library_documents"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -1302,6 +1303,20 @@ export type Database = {
         Returns: string
       }
       get_active_plan: { Args: { check_user_id: string }; Returns: string }
+      get_org_members_with_names: {
+        Args: { p_org_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          first_name: string
+          invited_email: string
+          last_name: string
+          member_id: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_org_owner_plan: { Args: { p_org_id: string }; Returns: string }
       get_organization_statistics: {
         Args: { org_id: string }
@@ -1404,8 +1419,13 @@ export type Database = {
     }
     Enums: {
       employee_status: "pending" | "approved" | "rejected"
+      library_tag_type:
+        | "country"
+        | "state"
+        | "domain"
+        | "authority"
+        | "industry"
       request_status: "pending" | "approved" | "rejected"
-      library_tag_type: "country" | "state" | "domain" | "authority" | "industry"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1534,6 +1554,7 @@ export const Constants = {
   public: {
     Enums: {
       employee_status: ["pending", "approved", "rejected"],
+      library_tag_type: ["country", "state", "domain", "authority", "industry"],
       request_status: ["pending", "approved", "rejected"],
     },
   },
