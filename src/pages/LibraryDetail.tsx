@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLibraryDocument, LibraryTag, LibraryField, LibraryDependency, LibraryAttachment } from "@/hooks/useLibrary";
+import { PDFDocument } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -213,11 +214,13 @@ interface LibraryFormTabProps {
 }
 
 function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [autoFillError, setAutoFillError] = useState<string | null>(null);
-  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [filledPdfUrl, setFilledPdfUrl] = useState<string | null>(null);
+  const [isFillingPdf, setIsFillingPdf] = useState(false);
+  const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
+  const pdfBytesRef = useRef<Uint8Array | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const formSchema = z.object(
     fields.reduce((acc, field) => {
@@ -242,21 +245,160 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
     }, {} as Record<string, any>),
   });
 
-  // Watch all form values for live preview updates
   const watchedValues = form.watch();
 
-  const handleCreatePdf = async () => {
-    setIsGenerating(true);
+  // Fetch original PDF bytes once
+  useEffect(() => {
+    if (!document.official_pdf_url) return;
+    
+    const fetchPdf = async () => {
+      try {
+        const response = await fetch(document.official_pdf_url!);
+        if (!response.ok) throw new Error("Failed to fetch PDF");
+        const arrayBuffer = await response.arrayBuffer();
+        pdfBytesRef.current = new Uint8Array(arrayBuffer);
+        // Show the original PDF immediately
+        setFilledPdfUrl(document.official_pdf_url!);
+      } catch (err) {
+        console.error("Error loading PDF:", err);
+        setPdfLoadError("Could not load the official PDF. It may be blocked by CORS.");
+        // Still show via iframe direct URL as fallback
+        setFilledPdfUrl(document.official_pdf_url!);
+      }
+    };
+    fetchPdf();
+  }, [document.official_pdf_url]);
+
+  // Fill PDF form fields whenever watched values change
+  const fillPdfWithValues = useCallback(async (values: Record<string, any>) => {
+    if (!pdfBytesRef.current) return;
+
+    setIsFillingPdf(true);
     try {
-      await openPdfInNewTab(
-        `library-doc-preview-${document.id}`,
-        `${document.form_name || document.official_name}.pdf`
-      );
-    } catch (error) {
-      console.error("Error generating PDF:", error);
+      const pdfDoc = await PDFDocument.load(pdfBytesRef.current, { ignoreEncryption: true });
+      const pdfForm = pdfDoc.getForm();
+      const pdfFields = pdfForm.getFields();
+      
+      // Build mapping: our field_name -> pdf_field_mapping (or field_name as fallback)
+      const fieldMappings = new Map<string, string>();
+      for (const field of fields) {
+        const pdfFieldName = field.pdf_field_mapping || field.field_name;
+        fieldMappings.set(field.field_name, pdfFieldName);
+      }
+
+      // Also build a reverse lookup of all PDF field names (lowercase) for fuzzy matching
+      const pdfFieldNameMap = new Map<string, string>();
+      for (const pf of pdfFields) {
+        pdfFieldNameMap.set(pf.getName().toLowerCase().trim(), pf.getName());
+      }
+
+      for (const [formFieldName, value] of Object.entries(values)) {
+        if (!value || !value.toString().trim()) continue;
+        
+        const mappedName = fieldMappings.get(formFieldName);
+        if (!mappedName) continue;
+
+        // Try exact match first, then case-insensitive
+        let actualPdfFieldName = mappedName;
+        if (!pdfFieldNameMap.has(mappedName) && !pdfFieldNameMap.has(mappedName.toLowerCase())) {
+          // Try fuzzy: look for partial match
+          const lower = mappedName.toLowerCase().trim();
+          let found = false;
+          for (const [key, realName] of pdfFieldNameMap) {
+            if (key.includes(lower) || lower.includes(key)) {
+              actualPdfFieldName = realName;
+              found = true;
+              break;
+            }
+          }
+          if (!found) continue;
+        } else {
+          actualPdfFieldName = pdfFieldNameMap.get(mappedName.toLowerCase().trim()) || mappedName;
+        }
+
+        try {
+          const pdfField = pdfForm.getField(actualPdfFieldName);
+          const fieldType = pdfField.constructor.name;
+          
+          if (fieldType === "PDFTextField") {
+            (pdfField as any).setText(value.toString());
+          } else if (fieldType === "PDFCheckBox") {
+            if (value === true || value === "true" || value === "yes") {
+              (pdfField as any).check();
+            } else {
+              (pdfField as any).uncheck();
+            }
+          } else if (fieldType === "PDFDropdown") {
+            try {
+              (pdfField as any).select(value.toString());
+            } catch {
+              // Value not in dropdown options
+            }
+          } else if (fieldType === "PDFRadioGroup") {
+            try {
+              (pdfField as any).select(value.toString());
+            } catch {
+              // Value not in radio options
+            }
+          }
+        } catch {
+          // Field not found or type mismatch — skip
+        }
+      }
+
+      const filledBytes = await pdfDoc.save();
+      const blob = new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+      
+      // Revoke old URL to prevent memory leaks
+      if (filledPdfUrl && filledPdfUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(filledPdfUrl);
+      }
+      
+      const newUrl = URL.createObjectURL(blob);
+      setFilledPdfUrl(newUrl);
+    } catch (err) {
+      console.error("Error filling PDF:", err);
+      // If pdf-lib fails (e.g., no form fields), keep original PDF visible
     } finally {
-      setIsGenerating(false);
+      setIsFillingPdf(false);
     }
+  }, [fields, filledPdfUrl]);
+
+  // Debounce PDF filling on value changes
+  useEffect(() => {
+    if (!pdfBytesRef.current) return;
+    
+    // Check if any values are non-empty
+    const hasValues = Object.values(watchedValues).some(v => v && v.toString().trim());
+    if (!hasValues) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fillPdfWithValues(watchedValues);
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [watchedValues, fillPdfWithValues]);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (filledPdfUrl && filledPdfUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(filledPdfUrl);
+      }
+    };
+  }, []);
+
+  const handleDownloadFilledPdf = () => {
+    if (!filledPdfUrl) return;
+    const a = window.document.createElement("a");
+    a.href = filledPdfUrl;
+    a.download = `${document.form_name || document.official_name} - Filled.pdf`;
+    window.document.body.appendChild(a);
+    a.click();
+    window.document.body.removeChild(a);
   };
 
   const handleAutoFillFromAI = async () => {
@@ -374,7 +516,6 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
       );
     }
 
-    // text, number, date, email, tel
     const inputType = field.field_type === "number" ? "number" 
       : field.field_type === "date" ? "date"
       : field.field_type === "email" ? "email"
@@ -429,7 +570,7 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
             <CardTitle>Fill Form Details</CardTitle>
             <CardDescription>
               Enter the required information for {document.form_name || document.official_name}. 
-              The preview updates live as you type.
+              The official PDF updates live as you type.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -472,126 +613,56 @@ function LibraryFormTab({ document, fields }: LibraryFormTabProps) {
           </CardFooter>
         </Card>
 
-        {/* Right: Preview */}
+        {/* Right: Official PDF Preview */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Preview</CardTitle>
+                <CardTitle>Official PDF</CardTitle>
                 <CardDescription>
-                  {showPdfPreview ? 'Official PDF form' : 'Live preview with your data'}
+                  {isFillingPdf ? 'Updating PDF with your data...' : 'Your inputs are filled into the official form'}
                 </CardDescription>
               </div>
-              {document.official_pdf_url && (
-                <div className="flex gap-2">
-                  <Button
-                    variant={!showPdfPreview ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowPdfPreview(false)}
-                  >
-                    Form Preview
-                  </Button>
-                  <Button
-                    variant={showPdfPreview ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowPdfPreview(true)}
-                  >
-                    Official PDF
-                  </Button>
-                </div>
-              )}
+              {isFillingPdf && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
             </div>
           </CardHeader>
           <CardContent>
-            {showPdfPreview && document.official_pdf_url ? (
+            {pdfLoadError && !filledPdfUrl && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm mb-4">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                {pdfLoadError}
+              </div>
+            )}
+            {filledPdfUrl ? (
               <iframe
-                src={document.official_pdf_url}
-                className="w-full h-[600px] border rounded-lg"
-                title="PDF Preview"
+                key={filledPdfUrl}
+                src={filledPdfUrl}
+                className="w-full h-[700px] border rounded-lg"
+                title="Filled PDF Preview"
               />
             ) : (
-              <div 
-                id={`library-doc-preview-${document.id}`}
-                className="a4-document p-8 bg-white text-gray-800 font-sans text-sm leading-relaxed border rounded-lg min-h-[600px]"
-              >
-                <div className="text-center mb-6">
-                  <h1 className="text-xl font-bold uppercase">
-                    {document.form_name || document.official_name}
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {document.authority} — {document.country}
-                    {document.state && `, ${document.state}`}
-                  </p>
-                  <div className="border-b-2 border-gray-300 mt-3" />
-                </div>
-
-                {document.short_description && (
-                  <p className="text-sm mb-4 italic text-gray-600">{document.short_description}</p>
-                )}
-
-                <div className="space-y-3 mt-6">
-                  {fields.map((field) => {
-                    const value = watchedValues[field.field_name];
-                    const displayValue = value && value.toString().trim() 
-                      ? value.toString() 
-                      : null;
-
-                    if (field.field_type === "checkbox") {
-                      return (
-                        <div key={field.id} className="flex items-center gap-2">
-                          <span className="inline-block w-4 h-4 border border-gray-400 text-center text-xs leading-4">
-                            {value ? "✓" : ""}
-                          </span>
-                          <span className="text-sm">{field.field_label}</span>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={field.id} className="flex gap-2">
-                        <span className="font-semibold text-sm w-2/5 text-gray-700">
-                          {field.field_label}:
-                        </span>
-                        <span className={`flex-1 text-sm border-b ${displayValue ? 'border-transparent text-gray-900' : 'border-gray-300 text-gray-400'}`}>
-                          {displayValue || `[${field.field_label}]`}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-12 pt-4 border-t text-xs text-gray-400">
-                  <p>Preview generated by Certifyr. For official documents, refer to the source authority.</p>
+              <div className="flex items-center justify-center h-[700px] border rounded-lg bg-muted/30">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Loading official PDF...</p>
                 </div>
               </div>
             )}
           </CardContent>
           <CardFooter className="gap-2">
             <Button 
-              onClick={handleCreatePdf} 
-              disabled={isGenerating}
+              onClick={handleDownloadFilledPdf} 
+              disabled={!filledPdfUrl}
               className="flex-1"
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download as PDF
-                </>
-              )}
+              <Download className="w-4 h-4 mr-2" />
+              Download Filled PDF
             </Button>
             {document.official_pdf_url && (
-              <Button 
-                variant="outline"
-                asChild
-              >
+              <Button variant="outline" asChild>
                 <a href={document.official_pdf_url} target="_blank" rel="noopener noreferrer">
                   <FileDown className="w-4 h-4 mr-2" />
-                  Official PDF
+                  Original PDF
                 </a>
               </Button>
             )}
