@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Certifyr Legal Library API
+  description: Public JSON API for querying government and legal document metadata — fields, attachments, dependencies, and official PDF links.
+  version: "1.0"
+  contact:
+    name: Certifyr
+    url: https://certifyr.lovable.app
+
+servers:
+  - url: https://yjeeamhahyhfawwgebtd.supabase.co/functions/v1
+    description: Production
+
+paths:
+  /library-api:
+    get:
+      operationId: queryLibrary
+      summary: Query the legal document library
+      description: Use the `action` parameter to list, get, search, or view the schema.
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [list, get, search, schema]
+          description: The action to perform.
+        - name: slug
+          in: query
+          schema:
+            type: string
+          description: Document slug (required for action=get).
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query (required for action=search).
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: Filter by country (action=list).
+        - name: domain
+          in: query
+          schema:
+            type: string
+          description: Filter by domain (action=list).
+        - name: authority
+          in: query
+          schema:
+            type: string
+          description: Filter by issuing authority (action=list).
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: Filter by state/province (action=list).
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Results per page.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+        "404":
+          description: Document not found
+        "500":
+          description: Server error

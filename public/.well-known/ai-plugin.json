@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Certifyr Legal Library",
+  "name_for_model": "certifyr_legal_library",
+  "description_for_human": "Search and explore government and legal document metadata — required fields, attachments, dependencies, and official PDF links.",
+  "description_for_model": "Query the Certifyr Legal Document Library for structured metadata about government and regulatory documents worldwide. Use this to find required form fields, attachments, dependencies, filing methods, and links to official PDFs. Supports listing, filtering by country/domain/authority, searching by keyword, and fetching full document details by slug.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://certifyr.lovable.app/openapi.yaml"
+  },
+  "logo_url": "https://certifyr.lovable.app/uploads/Certifyr%20Logo.png",
+  "contact_email": "support@certifyr.com",
+  "legal_info_url": "https://certifyr.lovable.app/landing/privacy-policy.html"
+}
