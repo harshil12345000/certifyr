@@ -1,40 +1,73 @@
-# Certifyr - LLM Documentation
+# Certifyr — LLM & AI Agent Documentation
 
-## Overview
-Certifyr is a platform that simplifies official documentation for institutions and teams. It enables users to create professional, legally reliable documents including certificates, letters, and official paperwork in minutes using easy-to-use templates and seamless exports.
+## What is Certifyr?
+Certifyr is a platform for creating, managing, and verifying official documents — certificates, letters, legal forms, and corporate paperwork. It serves educational institutions, businesses, HR departments, and any organization needing professional, verifiable documentation.
 
-## Website Information
-- **URL**: https://certifyr.framer.website/
-- **Platform**: Framer
-- **Purpose**: Document creation and management platform
+## Legal Document Library
+Certifyr maintains a structured Legal Document Library containing metadata for government and regulatory documents worldwide. Each entry includes:
+- Official name, form number, and issuing authority
+- Country and state/province jurisdiction
+- Domain classification (Tax, Corporate, Employment, etc.)
+- Purpose, who must file, and filing method
+- Required form fields with types and validation rules
+- Required attachments (supporting documents)
+- Dependencies (prerequisite documents)
+- Links to official source and PDF forms
 
-## Available Pages
+## API Access (JSON)
+The library is accessible via a public JSON API — no authentication required.
 
-### Main Pages
-- `/` - Homepage (landing page)
-- `/landing/index.html` - Main landing page with product overview
-- `/landing/use-cases.html` - Use cases and feature demonstrations
-- `/landing/waitlist.html` - Waitlist signup page
-- `/landing/privacy-policy.html` - Privacy policy
+**Base URL:** `https://yjeeamhahyhfawwgebtd.supabase.co/functions/v1/library-api`
 
-### Assets
-- `/uploads/` - Logo and brand assets
+### Actions
 
-## Features
-- Certificate generation
-- Letter creation
-- Official document templates
-- Professional document exports
-- Easy-to-use template system
+#### List all documents
+```
+GET ?action=list&country=India&domain=Tax&page=1&limit=20
+```
+Optional filters: `country`, `domain`, `authority`, `state`, `page`, `limit`
 
-## Target Users
-- Educational institutions
-- Businesses and teams
-- HR departments
-- Any organization needing professional documentation
+#### Get document detail
+```
+GET ?action=get&slug=gst-reg-01
+```
+Returns full document with fields, attachments, and dependencies.
 
-## Contact
-For inquiries, visit the main website.
+#### Search documents
+```
+GET ?action=search&q=tax+registration+india
+```
+Full-text search across names, descriptions, purposes, and domains.
+
+#### API schema
+```
+GET ?action=schema
+```
+Returns the API schema with all endpoints, parameters, and data model.
+
+## Example Queries for AI Agents
+
+1. **Find all tax documents in India:**
+   `?action=list&country=India&domain=Tax`
+
+2. **Get details for a specific form:**
+   `?action=get&slug=gst-reg-01`
+
+3. **Search for business registration documents:**
+   `?action=search&q=business+registration`
+
+4. **List all corporate documents:**
+   `?action=list&domain=Corporate`
+
+## OpenAPI Spec
+Machine-readable API spec: `/openapi.yaml`
+
+## AI Plugin Manifest
+Plugin manifest: `/.well-known/ai-plugin.json`
+
+## Website
+- App: https://certifyr.lovable.app
+- Landing: https://certifyr.framer.website
 
 ## Last Updated
 February 2026
