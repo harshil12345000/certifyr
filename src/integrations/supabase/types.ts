@@ -412,6 +412,41 @@ export type Database = {
           },
         ]
       }
+      library_document_versions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          document_id: string
+          id: string
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data: Json
+          document_id: string
+          id?: string
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json
+          document_id?: string
+          id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "library_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library_documents: {
         Row: {
           authority: string
